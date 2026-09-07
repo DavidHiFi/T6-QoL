@@ -702,26 +702,32 @@ CoD.PrivateGameLobby.Dvars[3].modeGroups[1] = "zsurvival"
 --  enable/disable solo easter eggs ... make sure to not add that option into
 --  survival maps that dont have easter eggs."*
 --
---  The server half is four files, one per map, each named qol_solo_ee.gsc and
---  living in that map's own scripts\zm\<map>\ folder. They are adapted from
---  Hadi77KSA's "Plutonium T6 Any Player EE Scripts" v2.4.1; each reads this
---  dvar once, after flag_wait( "initial_players_connected" ).
+--  The server half is five files, one per map, each named qol_solo_ee.gsc and
+--  living in that map's own scripts\zm\<map>\ folder. Four are adapted from
+--  Hadi77KSA's "Plutonium T6 Any Player EE Scripts" v2.4.1; the fifth (Mob of
+--  the Dead, v2.14.18) is written from Treyarch's own scripts because that mod
+--  does not cover Mob. Each reads this dvar once, after
+--  flag_wait( "initial_players_connected" ).
 --
 --  🌟 THE FILTERS ARE THE ONES ALREADY BUILT FOR THE CHARACTER AND MACHINE
 --  DROPS ROWS - `maps` is Treyarch's own, `modeGroups` was added in v1.99.58 -
 --  so this is one table entry and no new machinery.
 --
 --  🛑 THE MAP LIST IS THE ANSWER TO "not on survival maps that have no Easter
---  Egg", AND IT IS DELIBERATELY NOT ALL FIVE CLASSIC MAPS:
+--  Egg". All five classic maps are now on it:
 --
 --    zm_transit / zm_highrise / zm_buried / zm_tomb   -> listed. Each has a
 --        qol_solo_ee.gsc that changes something on that map.
---    zm_prison (Mob of the Dead)                      -> NOT listed. Its
---        Easter Egg is real, but the source mod does not cover it (its README
---        points at teh_bandit's separate motd_solo.gsc, which is not in this
---        workspace). A row that changed nothing would be exactly the kind of
---        lie the user asked to keep out of survival maps, so it is absent
---        until the script exists.
+--    zm_prison (Mob of the Dead)                      -> listed since v2.14.18
+--        (user, 2026-09-08: *"enable that for motd as well so every maps easter
+--        egg can be solo'd"*). It was held back while no script existed - the
+--        source mod does not cover Mob - and the row would have been a lie. It
+--        now has scripts\zm\zm_prison\qol_solo_ee.gsc, written from Treyarch's
+--        own scripts: Mob's whole quest is already soloable EXCEPT the final
+--        flight, which stock gates twice on getplayers().size >= 2 inside
+--        maps\mp\zm_prison_sq_final. That file lifts both, and restores the
+--        Pop Goes the Weasel achievement that stage_final() only hands out on
+--        its four-player showdown path. Full reasoning is in its header.
 --    zm_nuked (Nuketown)                              -> NOT listed, and could
 --        not be: it has no Easter Egg and is not a classic map at all.
 --
@@ -766,6 +772,7 @@ CoD.PrivateGameLobby.Dvars[4].maps[1] = "zm_transit"
 CoD.PrivateGameLobby.Dvars[4].maps[2] = "zm_highrise"
 CoD.PrivateGameLobby.Dvars[4].maps[3] = "zm_buried"
 CoD.PrivateGameLobby.Dvars[4].maps[4] = "zm_tomb"
+CoD.PrivateGameLobby.Dvars[4].maps[5] = "zm_prison"
 CoD.PrivateGameLobby.Dvars[4].modeGroups = {}
 CoD.PrivateGameLobby.Dvars[4].modeGroups[1] = "zclassic"
 CoD.PrivateGameLobby.ButtonPrompt_TeamPrev = function (f1_arg0, ClientInstance)

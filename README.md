@@ -169,7 +169,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * A **BETTER SPEED COLA** switch on the GAME tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
 
 * **Solo Easter Eggs:**
-  * A **SOLO EASTER EGGS** switch in the pre-game lobby on TranZit, Die Rise, Buried and Origins. Turn it on and the main quest scales to however many players are actually in the lobby, instead of always demanding four. Off by default, and the row is only shown on those four maps in Classic — never on Survival or Grief.
+  * A **SOLO EASTER EGGS** switch in the pre-game lobby on TranZit, Die Rise, Buried, Origins and Mob of the Dead. Turn it on and the main quest scales to however many players are actually in the lobby, instead of always demanding four. On Mob of the Dead that means the Final Flight can be boarded alone, and finishing it gives you Pop Goes the Weasel — which ending you get still depends on whether you are playing as the Weasel, exactly as the game decides it for a full team. Off by default, and the row is only shown on those five maps in Classic — never on Survival or Grief.
 
 * **Instant Pack-a-Punch:**
   * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War - Zombies. It can be turned on or off in the settings menu.
@@ -218,7 +218,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 | **sehteria** — *T6-ZM-Expanded* | The mod this one grew out of — extra weapons & perks on all maps. |
 | **SadSlothXL** | The Death Machine power-up — the drop, the weapon swap and its sounds. |
 | **Logo2K** — [Zombies Declassified](https://github.com/Logo-2K/zombies-declassified) | The native T6 Wave Gun package — Treyarch's DLC5 models, animations, effects, weapon defs, sounds and script. |
-| **Jbleezy** — [BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined) | The extra Survival locations, the Bouncing Betty carry animations, and the two lines that let Pack-a-Punch take the Sliquifier. |
+| **Jbleezy** — [BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined) | The extra Survival locations, the Bouncing Betty carry animations, the two lines that let Pack-a-Punch take the Sliquifier, and confirming which two checks stand between a solo player and Mob of the Dead's Final Flight. |
 | **5and5** — [BO2-Remix](https://github.com/5and5/BO2-Remix) | The Die Rise Semtex wall buy. |
 | **Fraaagaaa** — [Strat Tester](https://github.com/Fraaagaaa/Strat-Tester-BO2) | Every destination in the teleport list except Nuketown's three, which are the map's own respawn points. |
 | **B2ORG** — [T6-B2OP-PATCH](https://github.com/B2ORG/T6-B2OP-PATCH)<br><sub>built with **Astrox** and **NoMoleMan**</sub> | The basis for most of the patches — rebuilt against the game's own scripts rather than copied wholesale. |
