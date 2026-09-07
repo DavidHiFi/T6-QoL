@@ -20189,6 +20189,7 @@ zmqol_nb_watch_death_once()
     //  field on it reads undefined.
     self thread zmqol_nb_death_notify();
     self thread zmqol_nb_death_watch();
+    self thread zmqol_nb_stock_delete_watch();
 }
 
 zmqol_nb_death_watch()
@@ -20205,6 +20206,19 @@ zmqol_nb_death_watch()
     //  are different findings:
     //      !isdefined( self )  ->  DELETED. Nothing killed it; it was removed.
     //      !isalive( self )    ->  killed, and self.attacker names by what.
+    //
+    //  🛑 v2.14.19 - STANDS DOWN WHEN STOCK IS THE DELETER. Every map's
+    //  <map>_distance_tracking.gsc removes a zombie no player can see or reach,
+    //  and it does its own bookkeeping first (`level.zombie_total++`, the same
+    //  put-back this file's requeue does), THEN `self notify( "zombie_delete" )`,
+    //  THEN `self delete()` - read at zm_tomb_distance_tracking.gsc:109-152 and
+    //  identical in shape on Buried, Die Rise, Mob and TranZit. This thread used
+    //  to see only the deletion and put the zombie back a SECOND time: the
+    //  2026-09-08 6:47 AM Origins log had 127 VANISHED lines in round 1, 24 of
+    //  them requeued on top of stock's own 24, and the round never ended. So the
+    //  notify ends this thread, and zmqol_nb_stock_delete_watch() owns that case.
+    self endon( "zombie_delete" );
+
     str_zone  = "?";
     n_x = 0;
     n_y = 0;
@@ -20250,6 +20264,62 @@ zmqol_nb_death_watch()
         //  over. A one-second poll would lose that race about as often as it won.
         wait 0.25;
     }
+}
+
+//  ----------------------------------------------------------------------------
+//  zmqol_nb_stock_delete_watch  -  STOCK ALREADY PAID THIS ONE BACK   (v2.14.19)
+//
+//  The distance trackers are the second stock system found to be self-balancing
+//  (the first was the playspace timeout, _zm.gsc:3666). Their deleter runs
+//      level.zombie_total++      (unless excluded, screecher, or the endgame
+//                                 rule below says no)
+//      self notify( "zombie_delete" )
+//      self delete()
+//  with no wait between the three, so at the notify the entity is still whole
+//  and stock's decision is already made. Whatever it decided, the mod does not
+//  second-guess it: stock pays back a full-health zombie and any zombie while
+//  more than 24 remain, and deliberately DROPS a player-damaged one when 24 or
+//  fewer remain (`zombies.size + level.zombie_total <= 24 && health < maxhealth`)
+//  - that endgame trim is vanilla on every map and is left exactly as vanilla.
+//
+//  🛑 The one assumption, and the line that tests it: a GSC notify runs its
+//  waiting threads before returning to the notifier. If that were false the
+//  entity would already be gone here, and the "seen AFTER" line below would
+//  print instead of the "REMOVED BY STOCK" one. Neither is silent.
+//
+//  Die Rise's zombies_off_building() notifies the same thing and then KILLS the
+//  zombie with dodamage instead of deleting it (zm_highrise_distance_tracking
+//  .gsc:383) - so the notify thread's "counted" flag is set here too, and the
+//  kill path above returns on it without a second put-back.
+//  ----------------------------------------------------------------------------
+zmqol_nb_stock_delete_watch()
+{
+    self waittill( "zombie_delete" );
+
+    if ( !isdefined( self ) )
+    {
+        println( "[zm_qol] no_bleedout: stock zombie_delete seen AFTER the entity was gone - notify did not run inline, the double-count guard is NOT protecting this zombie" );
+        return;
+    }
+
+    self.zmqol_nb_counted = 1;
+
+    if ( !getdvarintdefault( "no_bleedout", 0 ) )
+        return;
+
+    str_zone = "?";
+
+    if ( isdefined( self.zone_name ) )
+        str_zone = self.zone_name;
+
+    str_mod = "?";
+
+    if ( isdefined( self.damagemod ) )
+        str_mod = self.damagemod;
+
+    a_ai = getaiarray( "axis" );
+
+    println( "[zm_qol] no_bleedout: REMOVED BY STOCK distance cleanup - stock keeps its own count, nothing owed - zone=" + str_zone + " hp=" + self.health + "/" + self.maxhealth + " mod=" + str_mod + " player_damaged=" + is_true( self.has_been_damaged_by_player ) + " ai=" + a_ai.size + " zombie_total=" + level.zombie_total + " round=" + level.round_number );
 }
 
 //  The KILL path, unchanged from v2.14.6 except for the requeue at the end: the
