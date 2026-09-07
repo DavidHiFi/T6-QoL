@@ -1557,6 +1557,52 @@ CoD.OptionsSettings.QolMigrateTimers = function ()
 	end)
 end
 
+-- ============================================================================
+--  QolMigrateFlash  -  v2.14.14, the FLASH CREDITS / FLASH HELP merge
+--
+--  The twin of QolMigrateTimers for the GAME tab's match-start flash rows. It
+--  reads the two dvars the old pair of rows wrote and writes the four-way
+--  value that means the same thing, once, while flash_intro is still empty:
+--
+--        credits  help      flash_intro
+--          1       1    ->      1   both
+--          1       0    ->      2   credits only
+--          0       1    ->      3   help only
+--          0       0    ->      0   off
+--
+--  Idempotent for the same reason: the first line returns the moment
+--  flash_intro holds anything, and the seta below is what puts it there.
+--  📝 qol_options.gsc::qol_opt_flash_seed() is the GSC side of the same table.
+-- ============================================================================
+CoD.OptionsSettings.QolMigrateFlash = function ()
+	pcall(function ()
+		local Cur = UIExpression.DvarString(nil, "flash_intro")
+		if Cur ~= nil and Cur ~= "" then
+			return
+		end
+
+		local function OldOn(Name)
+			local V = UIExpression.DvarString(nil, Name)
+			-- Unset means the player never touched it, and both rows shipped ON.
+			if V == nil or V == "" then
+				return true
+			end
+			return V ~= "0"
+		end
+
+		local Value = 0
+		if OldOn("intro_credits") and OldOn("flash_help") then
+			Value = 1
+		elseif OldOn("intro_credits") then
+			Value = 2
+		elseif OldOn("flash_help") then
+			Value = 3
+		end
+
+		Engine.Exec(nil, "seta flash_intro \"" .. Value .. "\"")
+	end)
+end
+
 CoD.OptionsSettings.QolToggle = function (ButtonList, LocalClientIndex, Label, DvarName, Description)
 	local Selector = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize(Label), DvarName, Engine.Localize(Description))
 	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
@@ -1657,6 +1703,7 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	QolContainer:addElement(QolButtons)
 
 	local T = CoD.OptionsSettings.QolToggle
+	local C = CoD.OptionsSettings.QolChoice
 
 	-- The standard Plutonium game options.                            3 rows
 	T(QolButtons, LocalClientIndex, "ALLOW DOWNLOADING",  "cl_allowDownload",     "Lets a server send you its mod files when you join.")
@@ -1816,9 +1863,40 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	--  between tabs never renames its dvar, exactly as renaming a label never
 	--  does: the name is archived in every player's config and it is what the
 	--  console takes.
+	--
+	--  🌟 v2.14.14 - THE TWO ROWS ARE NOW ONE FOUR-WAY ROW, flash_intro.
+	--
+	--  User, 2026-09-08: *"combine them into 1 option to save space for another
+	--  option ... one cycleable option where you can choose from just flash
+	--  credits, just flashing help, flashing both, or nothing popping up at all
+	--  (Disabled)"*. Same shape as the GAME TIMERS merge (v2.1.3, HUD tab):
+	--
+	--        1 = both (the shipped default)   2 = credits only
+	--        3 = help only                    0 = off
+	--
+	--  1 is "both" because intro_credits "1" + flash_help "1" was the shipped
+	--  default, so the migration is the identity for every player on defaults.
+	--  The user's own order is what the row cycles through; addChoice order is
+	--  what shows, the number behind it is free.
+	--
+	--  🛑 THE OLD DVARS ARE NOT RENAMED, THEY ARE MIGRATED. QolMigrateFlash reads
+	--  intro_credits and flash_help ONCE, while flash_intro is still empty, and
+	--  writes the value that means the same thing; qol_options.gsc's
+	--  qol_opt_flash_seed() does the identical derivation for a player who never
+	--  opens this menu. Same table on both sides - change one and change the
+	--  other. Nothing reads the two old names any more.
+	--
+	--  📝 The freed pitch is left FREE on purpose - that was the point of the
+	--  request. GAME is 14 rows + 0 spacers = 14.0, one full row under the 15.0
+	--  ceiling. Do not spend it on a spacer.
 	-- ========================================================================
-	T(QolButtons, LocalClientIndex, "FLASH CREDITS",      "intro_credits",      "Mod name and credits flashed at match start.")
-	T(QolButtons, LocalClientIndex, "FLASH HELP",         "flash_help",         "Flashes how to open the chat command list at match start.")
+	CoD.OptionsSettings.QolMigrateFlash()
+	C(QolButtons, LocalClientIndex, "FLASH MESSAGES",     "flash_intro",        "Text flashed at match start: the credits, how to find the chat commands, both, or nothing.", {
+		{ "CREDITS",        2 },
+		{ "HELP",           3 },
+		{ "CREDITS + HELP", 1 },
+		{ "DISABLED",       0 }
+	})
 
 	-- 🛑 v1.99.61 - INTRO CREDITS IS GONE FROM THIS TAB. It moved to HUD and was
 	-- renamed FLASH CREDITS (user, 2026-08-18: *"it should be under the HUD tab
@@ -1837,7 +1915,9 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	-- 🛑 STALE AGAIN, FIXED 2026-08-30 - said "14 rows + 1 spacer = 14.5";
 	-- PERMA-PERKS (v2.8.0) was added and the spacer had already gone. Recounted
 	-- against the T() calls: 15 rows, no spacer - also at the 15.0 ceiling.
-	return QolContainer                              -- 15 rows + 0 spacers = 15.0
+	-- v2.14.14 - FLASH CREDITS + FLASH HELP became the one FLASH MESSAGES row:
+	-- 13 T() + 1 C() = 14 rows, no spacer. One row of room, kept free on purpose.
+	return QolContainer                              -- 14 rows + 0 spacers = 14.0
 end
 
 CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)

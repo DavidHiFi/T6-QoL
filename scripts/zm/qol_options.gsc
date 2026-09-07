@@ -224,7 +224,27 @@ init()
     qol_opt_dvar( "downed_sound",  "0" );
     qol_opt_dvar( "crit_sound",    "0" );
     qol_opt_dvar( "round_summary", "1" );
-    qol_opt_dvar( "intro_credits", "1" );
+    // ========================================================================
+    //  v2.14.14 - flash_intro, the FOUR-WAY row that replaced FLASH CREDITS
+    //  (intro_credits) and FLASH HELP (flash_help) on the GAME tab.
+    //
+    //  User, 2026-09-08: *"combine them into 1 option to save space for another
+    //  option ... just flash credits, just flashing help, flashing both, or
+    //  nothing popping up at all (Disabled)"*.
+    //
+    //      1 = both (the shipped default)   2 = credits only
+    //      3 = help only                    0 = off
+    //
+    //  🛑 NOT a plain qol_opt_dvar default, for the same reason as hud_timers:
+    //  seeding a blank flash_intro with "1" would hand both flashes back to a
+    //  player who had switched one of them off, because their choice lives in
+    //  the two old dvars. qol_opt_flash_seed() derives the value from those two
+    //  instead; optionssettings.lua::QolMigrateFlash does the same derivation
+    //  when the menu is opened before a map has loaded. Both are skipped the
+    //  moment flash_intro holds anything. Read in ONE place:
+    //  quality_of_life.gsc's zmqol_credits_banner_print().
+    // ========================================================================
+    qol_opt_flash_seed();
 
     //  v1.99.61 - PERK BONUS POINTS, user request 2026-08-18. ON by default:
     //  the +100 for proning at a perk machine is behaviour this mod has always
@@ -237,12 +257,11 @@ init()
     //  origins_change_patch(), so it takes effect mid-match both ways.
     qol_opt_dvar( "perk_bonus_points", "1" );
 
-    //  v1.99.61 - FLASH HELP, user request 2026-08-18. The HUD tab's second
-    //  match-start flash line: it tells players how to open chat and reach
-    //  .help. ON by default - the user asked for the feature, not merely for a
-    //  switch. Printed by zmqol_credits_banner_print() in quality_of_life.gsc,
-    //  gated separately from intro_credits so either can be silenced alone.
-    qol_opt_dvar( "flash_help", "1" );
+    //  v1.99.61 - FLASH HELP, user request 2026-08-18: the second match-start
+    //  flash line, telling players how to open chat and reach .help.
+    //  🛑 v2.14.14 - flash_help is no longer registered here. It and
+    //  intro_credits are folded into flash_intro (see qol_opt_flash_seed()
+    //  above); the old names stay in players' configs only as migration input.
 
     qol_opt_dvar( "no_power", "0" );
 
@@ -835,6 +854,45 @@ qol_opt_timer_seed()
         n_mode = 3;
 
     setdvar( "hud_timers", n_mode );
+}
+
+// ============================================================================
+//  qol_opt_flash_seed  -  v2.14.14, the FLASH CREDITS / FLASH HELP merge
+//
+//  Fills flash_intro in from the two dvars the old pair of GAME rows wrote,
+//  once, and only while flash_intro is still empty:
+//
+//        intro_credits  flash_help      flash_intro
+//              1            1        ->      1   both
+//              1            0        ->      2   credits only
+//              0            1        ->      3   help only
+//              0            0        ->      0   off
+//
+//  Idempotent by construction, exactly like qol_opt_timer_seed(): the only
+//  write is the setdvar at the bottom, and the first line returns the moment
+//  the name holds anything.
+//
+//  📝 Twin of optionssettings.lua::CoD.OptionsSettings.QolMigrateFlash. Same
+//  table on both sides - change one and change the other.
+// ============================================================================
+qol_opt_flash_seed()
+{
+    if ( getdvar( "flash_intro" ) != "" )
+        return;
+
+    b_credits = getdvarintdefault( "intro_credits", 1 ) != 0;
+    b_help    = getdvarintdefault( "flash_help", 1 ) != 0;
+
+    n_mode = 0;
+
+    if ( b_credits && b_help )
+        n_mode = 1;
+    else if ( b_credits )
+        n_mode = 2;
+    else if ( b_help )
+        n_mode = 3;
+
+    setdvar( "flash_intro", n_mode );
 }
 
 qol_opt_connect_loop()

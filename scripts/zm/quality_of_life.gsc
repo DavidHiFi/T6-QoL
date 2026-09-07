@@ -5264,8 +5264,39 @@ zmqol_credits_banner_print()
     //  that; the dvar name is deliberately unchanged - see the note in
     //  optionssettings.lua). User request, 2026-08-14: "add an option to
     //  disable auto flashing credits". On by default.
-    if ( getdvarintdefault( "intro_credits", 1 ) )
+    //
+    //  🌟 v2.14.14 - ONE DVAR NOW GATES BOTH FLASHES: flash_intro, the GAME
+    //  tab's FLASH MESSAGES row. User, 2026-09-08: *"combine them into 1 option
+    //  to save space for another option ... just flash credits, just flashing
+    //  help, flashing both, or nothing popping up at all (Disabled)"*.
+    //
+    //      1 = both (the shipped default)   2 = credits only
+    //      3 = help only                    0 = off
+    //
+    //  The value is seeded from the two old dvars by qol_options.gsc's
+    //  qol_opt_flash_seed() (and by the menu's QolMigrateFlash), so a player
+    //  who had switched one flash off keeps exactly that. This is the ONLY
+    //  reader; intro_credits and flash_help are migration input now, nothing
+    //  else.
+    //
+    //  🌟 THE SOURCE LINE. User, 2026-09-08: *"for the flash credits option,
+    //  make sure to add underneath 'Source: (Link to the github repo for my
+    //  mod)' same as how the B2OP patch gsc script does it."* B2OP's own line
+    //  (T6-B2OP-PATCH/b2op.gsc, the welcome print) is
+    //        self iprintln("Source: ^1github.com/B2ORG/T6-B2OP-PATCH");
+    //  - a plain "Source:" label, the repo address with no scheme, coloured, on
+    //  its own line under the banner. Same shape here, in this mod's palette.
+    //  The address is the public repo (`git remote -v` -> DavidHiFi/T6-QoL) and
+    //  the same one installer\README.txt prints, so it names nothing that is
+    //  specific to the dev's machine (the v2.3.4 rule below).
+    n_flash = getdvarintdefault( "flash_intro", 1 );
+
+    if ( n_flash == 1 || n_flash == 2 )
+    {
         self iprintln( "^5Quality Of Life Mod | Credits: DavidHiFi & Synarxis" );
+        wait 0.25;
+        self iprintln( "^5Source: ^3github.com/DavidHiFi/T6-QoL" );
+    }
 
     // ========================================================================
     //  v1.99.61 - FLASH HELP, user request 2026-08-18: *"another bit of text
@@ -5305,8 +5336,10 @@ zmqol_credits_banner_print()
     //  Separate dvar from intro_credits so either can be turned off alone. The
     //  short wait keeps the two banners from landing in the same frame and
     //  reads as two lines rather than one wrapped one.
+    //  v2.14.14 - "separate dvar" is now the 3 and 1 values of flash_intro;
+    //  see the note above. Either half can still be silenced alone.
     // ========================================================================
-    if ( !getdvarintdefault( "flash_help", 1 ) )
+    if ( n_flash != 1 && n_flash != 3 )
         return;
 
     wait 0.25;
