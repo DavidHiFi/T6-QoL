@@ -1627,11 +1627,12 @@ end
 --  past both ends of its container, over the tab strip above and the ESC
 --  prompt below. That is the whole of the reported "scuffed-ness".
 --
---  The mod's own tabs, as of v2.14.13: GAME 1 15.0, GAME 2 15.0, GAME 3 2.0,
+--  The mod's own tabs, as of v2.14.17: GAME 1 15.0, GAME 2 14.0, GAME 3 2.0,
 --  HUD 15.0 (v2.14.16, full), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
 --  PATCHES before v2.12.5; both were already at the ceiling, which is why
 --  GAME 3 exists.) The stock tabs this file also builds: ADVANCED 15.0 (full).
---  🛑 PATCHES IS NOW AT THE 15.0 CEILING - the next row has to displace one.
+--  🌟 v2.14.17 - GAME 2 HAS ONE FREE PITCH AGAIN: SLIQUIFIER PRE-NERF was
+--  removed at the user's request. GAME 1 and HUD are still at the ceiling.
 --  🛑 IF YOU ADD A ROW, ADD IT TO THE SHORTEST TAB IT HONESTLY BELONGS IN.
 --
 --  🌟 v1.99.61 - THE CEILING IS 15.0 PITCHES, NOT 14.5, AND IT IS MEASURED.
@@ -2154,20 +2155,17 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	-- ========================================================================
 	--  v1.99.96 - THE TWO DIE RISE ROWS. User request 2026-08-20, from
 	--  BO2-Remix's Die Rise feature list: *"all 4 of these options implement
-	--  them into my mod"*.
+	--  them into my mod"*. Both rows are now gone and both features live on
+	--  without a switch, so this block is history, not layout:
 	--
-	--  SLIQUIFIER PRE-NERF is the row v1.99.93 refused to ship, and it ships now
-	--  because a correct implementation turned up - Remix's - where the legacy
-	--  mod's two lines did the opposite of the label. It carries all three of
-	--  the listed behaviours as ONE row, because Remix ships them as one set and
-	--  the queue item the user already approved was a single "SLIQUIFIER
-	--  PRE-NERF" switch. Splitting it into three is a one-line change if they
-	--  want the granularity.
-	--
-	--  The row is DIE RISE ONLY and defaults OFF. It is shown on every map rather
-	--  than hidden, the same as the mod's other map-specific rows - the tab is a
-	--  settings list, not a context menu, and a row that appears and vanishes
-	--  with the map reads as a bug.
+	--  🛑 v2.14.17 - "SLIQUIFIER PRE-NERF" WAS HERE AND IS GONE. User,
+	--  2026-09-08: *"remove the option for sliquifier pre nerf patch, and then
+	--  make it so that the sliquifier is pack a punchable with my mod, and the
+	--  pack a punch version is infinite damage like the pre nerf version"*. The
+	--  row, its `sliquifier_prenerf` dvar and every reader of it are deleted;
+	--  the Sliquifier can now be Pack-a-Punched instead, and the packed gun is
+	--  the one that kills at any round. That needs no row - it is a weapon you
+	--  earn, not a setting. GAME 2 drops from 15.0 pitches to 14.0.
 	--
 	--  🛑 v2.0.2 - "SEMTEX WALL BUY" WAS HERE AND IS GONE. User, 2026-08-20,
 	--  screenshot `gxxTTWxkHW.jpg`: *"this semtex wall buy should just be apart
@@ -2198,8 +2196,6 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	-- ========================================================================
 	T(QolPatchesButtons, LocalClientIndex, "NO BLEEDOUT PATCH",    "no_bleedout",         "Stuck zombies stay alive. You have to kill every one yourself.")
 
-	T(QolPatchesButtons, LocalClientIndex, "SLIQUIFIER PRE-NERF", "sliquifier_prenerf",  "Die Rise. Sliquifier kills to round 255, chains while put away, and leaves no extra goo.")
-
 	-- ========================================================================
 	--  v2.7.0 - NO LAVA DAMAGE. User, 2026-08-28: *"add an option ... that lets
 	--  you turn off the lava in-game, it'll still obviously be visible on the
@@ -2207,7 +2203,7 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	--  explode once shot/killed, and the player will no longer take damage from
 	--  standing on any pits of lava."* TranZit-family only (Classic TranZit,
 	--  Diner, Farm, Town, Bus Depot). Shown on every map, same as the other
-	--  map-specific rows on this tab (SLIQUIFIER PRE-NERF above).
+	--  map-specific rows on this tab (NO BLEEDOUT PATCH above).
 	-- ========================================================================
 	T(QolPatchesButtons, LocalClientIndex, "NO LAVA DAMAGE",     "no_lava_damage",      "TranZit maps. The lava still glows, but it stops burning you and the zombies.")
 

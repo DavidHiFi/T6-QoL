@@ -12065,7 +12065,11 @@ perks()
     //  absent on purpose and the reason is recorded here rather than left to be
     //  rediscovered:
     //
-    //    SLIQUIFIER PRE-NERF - the legacy mod sets
+    //    SLIQUIFIER PRE-NERF - held back here in v1.99.93, shipped in v1.99.96
+    //      off BO2-Remix's correct implementation, and REMOVED AGAIN in v2.14.17
+    //      at the user's request ( the infinite damage is the Pack-a-Punched
+    //      Sliquifier's now ). The original reasoning is kept because it is still
+    //      the right reading of the shipped script: the legacy mod sets
     //      level.zombie_vars["slipgun_reslip_rate"] = 0, but the SHIPPED script
     //      guards that read with `if ( level.zombie_vars["slipgun_reslip_rate"]
     //      > 0 && randomint( ... ) == 0 )` ( _zm_weap_slipgun.gsc:745, and :779
@@ -12096,35 +12100,28 @@ perks()
     create_dvar( "network_frame_patch", 0 );   // v2.0.6 - see zmqol_wait_network_frame()
 
     //  ========================================================================
-    //  v1.99.96 - THE TWO DIE RISE ROWS. The SLIQUIFIER row that was held back
-    //  above now SHIPS, and the reason is a better source, not a change of mind:
-    //  the user found BO2-Remix's Die Rise feature list, and its source - already
-    //  in the workspace - implements the same three behaviours correctly where
-    //  the "legacy" mod's two lines did the opposite of their label. It sets
-    //  slipgun_max_kill_round to 255 instead of undefined, it rewrites
-    //  level.slipgun_damage ( which is the value the game actually reads, and
-    //  which the zombie_var alone cannot change after init ), and it treats
-    //  reslip = 0 as the FEATURE "no longer drops extra goo" rather than as a
-    //  buff. All three were re-checked against the shipped stock script before
-    //  being written - the working, the evidence and the one place this mod
-    //  deliberately departs from Remix are all in the banner at the bottom of
-    //  scripts\zm\zm_highrise\zm_highrise.gsc.
+    //  🛑 v2.14.17 - `create_dvar( "sliquifier_prenerf", 0 )` WAS HERE AND IS
+    //  GONE, and so is its PATCHES row. User, 2026-09-08: *"remove the option
+    //  for sliquifier pre nerf patch, and then make it so that the sliquifier is
+    //  pack a punchable with my mod, and the pack a punch version is infinite
+    //  damage like the pre nerf version"*. The Die Rise script keeps no reader
+    //  for it: the watch thread and the fallback death callback are deleted, and
+    //  the infinite damage now belongs to the Pack-a-Punched gun instead. See
+    //  the banner in scripts\zm\zm_highrise\zm_highrise.gsc for the whole of it.
     //
-    //  THE ROW DOES NOTHING OFF DIE RISE and that is by construction, not by a
-    //  guard: every line that implements it lives in the map's own script,
-    //  because maps\mp\zombies\_zm_weap_slipgun ships in zm_highrise_patch.ff
-    //  and a qualified reference to it from a root file is an Unresolved
-    //  external that kills every OTHER map at load ( AI_CONTEXT rule 2 ).
-    //
-    //  🛑 v2.0.2 - `create_dvar( "semtex_wallbuy", 0 )` WAS HERE AND IS GONE.
+    //  🛑 v2.0.2 - `create_dvar( "semtex_wallbuy", 0 )` WENT THE SAME WAY.
     //  User, 2026-08-20: *"this semtex wall buy should just be apart of the mod
     //  not an option you can toggle on or off."*  The Die Rise Semtex wall buy
     //  is unconditional now, so there is no dvar and no PATCHES row for it. The
     //  read in scripts\zm\zm_highrise\zm_highrise.gsc went with it - a dvar that
     //  no menu writes and no script reads is exactly the kind of leftover that
     //  turns into a false lead later.
+    //
+    //  Both features still live entirely in the map's own script, because
+    //  maps\mp\zombies\_zm_weap_slipgun ships in zm_highrise_patch.ff and a
+    //  qualified reference to it from a root file is an Unresolved external that
+    //  kills every OTHER map at load ( AI_CONTEXT rule 2 ).
     //  ========================================================================
-    create_dvar( "sliquifier_prenerf", 0 );
 
     level thread zmqol_patches_watch();
     level thread zmqol_solo_zombie_limit();
