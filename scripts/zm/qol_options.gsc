@@ -147,6 +147,9 @@ init()
     //  default: it is a NEW element, and a new toggle must not change what the
     //  mod already draws for someone who never asked for it.
     qol_opt_dvar( "hud_compass",      "0" );
+    //  v2.14.16 - SUBTITLES, user request 2026-09-08. Read per line in
+    //  scripts/zm/zmqol_subtitles.gsc. OFF by default.
+    qol_opt_dvar( "hud_subtitles",    "0" );
     //  v1.98.0 - the icon + name + description pop-up shown when you buy a perk
     //  (the Vanguard Perk Animation module in quality_of_life.gsc). User asked
     //  for a switch, 2026-08-16. ON by default - it is existing behaviour, and a

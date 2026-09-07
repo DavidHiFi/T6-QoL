@@ -17,6 +17,12 @@ main()
     //  v2.8.2 - Pack-a-Punch use trigger 40 -> 64. Nuketown only; see
     //  zmqol_perk_machine_spawn_init() at the bottom of this file.
     replaceFunc (maps\mp\zombies\_zm_perks::perk_machine_spawn_init, ::zmqol_perk_machine_spawn_init );
+    //  v2.14.16 - SUBTITLES. Nuketown's only dialogue is Marlton in the bunker,
+    //  played by position and never through the dialogue system the root hook
+    //  in zmqol_subtitles.gsc watches. See zmqol_subs_marlton_vo_inside_bunker()
+    //  at the bottom of this file. The target is a threaded, unqualified
+    //  same-file call, which replaceFunc DOES intercept (STOCK_REFERENCE 7a).
+    replaceFunc (maps\mp\zm_nuked::marlton_vo_inside_bunker, ::zmqol_subs_marlton_vo_inside_bunker );
 }
 
 
@@ -1219,5 +1225,56 @@ zmqol_perk_machine_spawn_init()
             if ( isdefined( level._custom_perks[perk] ) && isdefined( level._custom_perks[perk].perk_machine_set_kvps ) )
                 [[ level._custom_perks[perk].perk_machine_set_kvps ]]( use_trigger, perk_machine, bump_trigger, collision );
         }
+    }
+}
+
+
+// ============================================================================
+//  zmqol_subs_marlton_vo_inside_bunker  -  SUBTITLES for the bunker  (v2.14.16)
+//
+//  Nuketown's players are the CIA/CDC pair, who never get a voice id (this
+//  map's character switch calls no zmbvoxinitspeaker), so the dialogue system
+//  - and the root subtitle hook in scripts/zm/zmqol_subtitles.gsc - never
+//  fires here. The map's only spoken lines are Marlton's from inside the
+//  bunker: zm_nuked::marlton_vo_inside_bunker() picks one of fourteen aliases
+//  when the bunker trigger fires, plays it by position, and waits for the
+//  next round. This is that function verbatim plus one call after the play.
+//
+//  The list is stock's own, typos included: vox_plr_3_cough_0 and
+//  vox_plr_3_oh_shit_0_alt01 exist in NO loaded bank (measured 2026-09-08 in
+//  the zmb_nuked_real.english and zmb_common.english alias tables - the bank
+//  has vox_plr_3_exert_cough_0 and vox_plr_3_oh_shit_0 instead), so those two
+//  picks are silent in stock, stay silent here, and get no text, because the
+//  duration read fails before the lookup. Correcting stock's names would be a
+//  gameplay change, not a subtitle. 1750 is the aliases' DistMaxDry, from the
+//  same table.
+// ============================================================================
+zmqol_subs_marlton_vo_inside_bunker()
+{
+    marlton_bunker_trig = getent( "marlton_bunker_trig", "targetname" );
+    marlton_sound_pos = marlton_bunker_trig.origin;
+    marlton_vo = [];
+    marlton_vo[marlton_vo.size] = "vox_plr_3_pap_wait_0";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_pap_wait2_0";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_pap_wait2_2";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_avogadro_attack_1";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_avogadro_attack_2";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_build_add_1";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_build_pck_bjetgun_0";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_bus_zom_chase_1";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_bus_zom_roof_4";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_cough_0";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_map_in_fog_0";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_map_in_fog_1";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_map_in_fog_2";
+    marlton_vo[marlton_vo.size] = "vox_plr_3_oh_shit_0_alt01";
+
+    while ( true )
+    {
+        marlton_bunker_trig waittill( "trigger" );
+        str_alias = marlton_vo[randomintrange( 0, marlton_vo.size )];
+        playsoundatposition( str_alias, marlton_sound_pos );
+        scripts\zm\zmqol_subtitles::zmqol_subs_from_position( str_alias, "Marlton", marlton_sound_pos, 1750 );
+        maps\mp\zm_nuked::wait_for_next_round( level.round_number );
     }
 }

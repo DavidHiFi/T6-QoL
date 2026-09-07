@@ -1628,7 +1628,7 @@ end
 --  prompt below. That is the whole of the reported "scuffed-ness".
 --
 --  The mod's own tabs, as of v2.14.13: GAME 1 15.0, GAME 2 15.0, GAME 3 2.0,
---  HUD 14.0 (v2.14.7), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
+--  HUD 15.0 (v2.14.16, full), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
 --  PATCHES before v2.12.5; both were already at the ceiling, which is why
 --  GAME 3 exists.) The stock tabs this file also builds: ADVANCED 15.0 (full).
 --  🛑 PATCHES IS NOW AT THE 15.0 CEILING - the next row has to displace one.
@@ -1929,7 +1929,7 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	local T = CoD.OptionsSettings.QolToggle
 	local C = CoD.OptionsSettings.QolChoice
 
-	-- HUD elements, and nothing else.                                14 rows
+	-- HUD elements, and nothing else.                                15 rows
 	T(QolHudButtons, LocalClientIndex, "HUD",               "hud_master",     "Master switch for the whole HUD.")
 	-- v2.14.7, user request (queued as B-CROSSHAIR, asked again 2026-09-06).
 	-- Sits next to HITMARKERS because that row's own description is about the
@@ -2005,6 +2005,11 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- v1.99.26, user request 2026-08-17. 13 pitches, inside the proven 14.5.
 	T(QolHudButtons, LocalClientIndex, "COMPASS",           "hud_compass",    "Heading you are facing, top of the screen.")
 	T(QolHudButtons, LocalClientIndex, "VELOCITY METER",    "velocity",       "Your speed. Green, yellow, red.")
+	-- v2.14.16, user request 2026-09-08. 15 rows = 15.0 pitches, the measured
+	-- ceiling (see the note above CreateQolHudTab) - this tab is now FULL. The
+	-- GSC half is scripts/zm/zmqol_subtitles.gsc; the text is one stringtable
+	-- per map inside mod.ff. Default OFF, like every row added after launch.
+	T(QolHudButtons, LocalClientIndex, "SUBTITLES",         "hud_subtitles",  "Your character's spoken lines as text at the bottom of the screen.")
 
 	-- ========================================================================
 	--  v1.99.61 - THE TWO MATCH-START FLASH LINES, user request 2026-08-18.
@@ -2063,7 +2068,7 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- v2.14.7 - CROSSHAIR spends one of those two: 14 rows = 14.0 pitches, hint
 	-- line at 234 + 14*50 = 934 px, still 102 px clear of the ESC prompt and a
 	-- row under the 15.0 ceiling this file measured on the SOUND tab.
-	return QolHudContainer                                          -- 14 total
+	return QolHudContainer                                          -- 15 total (v2.14.16: at the 15.0 ceiling)
 end
 
 -- ============================================================================

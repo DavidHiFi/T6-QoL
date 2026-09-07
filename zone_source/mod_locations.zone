@@ -1448,6 +1448,19 @@ attachment,steadyaim_smg
 stringtable,zm/pap_attach_qol.csv
 
 // ============================================================================
+//  v2.14.16 - SUBTITLES: one table per map, alias -> explicit text, clean text.
+//  Built by `zm_qol - dev\subtitles\build_tables.py` from Whisper large-v3
+//  transcripts of the 10,722 character clips; read by tablelookup() in
+//  scripts/zm/zmqol_subtitles.gsc. Text only - no stock asset is touched.
+// ============================================================================
+stringtable,zm/zmqol_subs_zm_transit.csv
+stringtable,zm/zmqol_subs_zm_highrise.csv
+stringtable,zm/zmqol_subs_zm_buried.csv
+stringtable,zm/zmqol_subs_zm_nuked.csv
+stringtable,zm/zmqol_subs_zm_prison.csv
+stringtable,zm/zmqol_subs_zm_tomb.csv
+
+// ============================================================================
 //  v1.89.5 - THE 13 ATTACHMENTUNIQUES, AS FASTFILE ASSETS THIS TIME
 // ----------------------------------------------------------------------------
 //  🛑 THE ACTUAL CAUSE OF THE PACK-A-PUNCH CRASH, MEASURED IN THE RUNTIME LOG.

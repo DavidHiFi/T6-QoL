@@ -186,6 +186,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Health bar:**
   * A green bar in a grey box, bottom left, that turns yellow once you take damage and red when the next zombie hit would down you, with your health as a number beside it. Carrying a shield adds its own bar above and its remaining health next to yours.
 
+* **Subtitles:**
+  * A **SUBTITLES** switch on the HUD tab puts your character's spoken lines on screen as text, on all six maps, with the speaker's name in front of any line that isn't yours (on Nuketown that is Marlton in the bunker). The text was machine-transcribed from the game's own audio, so the odd word can be off. The few quest lines the maps play outside the normal dialogue system are not covered.
+
 * **Hitmarkers:**
   * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.
 
