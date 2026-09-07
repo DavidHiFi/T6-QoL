@@ -355,6 +355,13 @@ init()
     //  and live in both directions mid-match.
     qol_opt_dvar( "no_denizens", "0" );
 
+    //  v2.14.13 - THIRD PERSON, user request 2026-09-07, the GAME 3 tab. OFF =
+    //  stock first person. Applied per player, once a second, by
+    //  qol_opt_third_person() below - see its banner for why it drives the
+    //  engine method rather than a dvar, and why it has to re-apply after
+    //  every spawn.
+    qol_opt_dvar( "third_person", "0" );
+
     //  v2.7.2 - 3 HIT DOWN, user request 2026-08-28, the PATCHES tab. OFF =
     //  stock. Read on every zombie melee hit by
     //  quality_of_life.gsc::zmqol_three_hit_down_scale(), chained through the
@@ -861,6 +868,7 @@ qol_opt_player_init()
         self thread qol_opt_character();
         self thread qol_opt_hud_watcher();
         self thread qol_opt_crosshair();
+        self thread qol_opt_third_person();
     }
 }
 
@@ -2897,5 +2905,96 @@ qol_opt_crosshair()
         }
 
         wait 1;
+    }
+}
+
+// ============================================================================
+//  qol_opt_third_person  -  the GAME 3 tab's THIRD PERSON row       (v2.14.13)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-07: "put a 3rd person toggle in the GAME 3 tab in the mod".
+//
+//  THE ENGINE HAS A METHOD FOR THIS, AND STOCK ZOMBIES USES IT. Not the
+//  cg_thirdPerson dvar (client-side, and the crosshair row already found this
+//  build's cg_* switches cheat-protected) but the player method
+//  setclientthirdperson(), which stock calls at six places in the zombies
+//  dump: _zm.gsc::onplayerconnect_clientdvars() :1257, onplayerspawned()
+//  :1322, set_third_person() :2131/:2137, _globallogic_spawn.gsc :860/:865,
+//  _zm_gametype.gsc :1928. The angle is stock's own: set_third_person() pairs
+//  it with setclientthirdpersonangle( 354 ), and _globallogic.gsc:1947 makes
+//  cg_thirdPersonAngle 354 serverinfo. BO2-Reimagined ships the same call.
+//
+//  NOT A CALL TO STOCK'S set_third_person(). Its "on" branch also writes
+//  setdepthoffield( 0, 128, 512, 4000, 6, 1.8 ) - a real scripted blur that
+//  overrides the renderer's r_dof_enable, which is exactly what this mod's
+//  DOF fix (quality_of_life.gsc, item 48) exists to keep off. That banner
+//  records set_third_person() as "unreached on this platform"; calling it
+//  from here would make it reached and hand DOF a second owner. So only the
+//  two camera methods are used, plus resetfov() as every stock branch does.
+//
+//  STOCK TURNS IT OFF ON EVERY SPAWN. onplayerspawned() :1322 writes
+//  setclientthirdperson( 0 ) - so a revive-respawn in co-op, or the
+//  spawned_player at match start, silently puts the camera back. The
+//  companion thread below resets the applied state on that notify, and the
+//  next 1 Hz pass re-applies; stock's write is synchronous inside the notify,
+//  ours is up to a second later, so ours always lands last.
+//
+//  Live in both directions, seeded with -1 so the first pass always writes -
+//  same shape as qol_opt_crosshair() above. The first-person weapon model is
+//  not drawn in third person; that is the engine's view, not a missing asset
+//  (stock's game-over camera is this same mode).
+// ============================================================================
+qol_opt_third_person()
+{
+    if ( zmqol_minimal() )
+        return;
+
+    self endon( "disconnect" );
+    level endon( "end_game" );
+
+    flag_wait( "initial_blackscreen_passed" );
+
+    self.zmqol_tp_applied = -1;
+    self thread qol_opt_third_person_respawn();
+
+    for ( ;; )
+    {
+        n_now = getdvarintdefault( "third_person", 0 ) != 0;
+
+        if ( n_now != self.zmqol_tp_applied )
+        {
+            self.zmqol_tp_applied = n_now;
+
+            if ( n_now )
+            {
+                self setclientthirdperson( 1 );
+                self setclientthirdpersonangle( 354 );
+            }
+            else
+            {
+                self setclientthirdperson( 0 );
+                self setclientthirdpersonangle( 0 );
+            }
+
+            self resetfov();
+
+            println( "[zm_qol] third person -> " + n_now );
+        }
+
+        wait 1;
+    }
+}
+
+//  Stock's onplayerspawned() has just written setclientthirdperson( 0 ) on
+//  this same notify; forgetting the applied state makes the watcher's next
+//  pass put the player's choice back.
+qol_opt_third_person_respawn()
+{
+    self endon( "disconnect" );
+    level endon( "end_game" );
+
+    for ( ;; )
+    {
+        self waittill( "spawned_player" );
+        self.zmqol_tp_applied = -1;
     }
 }

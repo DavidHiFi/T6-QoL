@@ -186,6 +186,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **In-game menu:**
   * Mechanics, gameplay rules, HUD and audio options are all toggleable in game — no console commands. That includes a **VOICE LINES** switch for your character's spoken lines.
 
+* **Third person:**
+  * A **THIRD PERSON** switch on the GAME 3 tab puts the camera behind your character. Off is the normal view.
+
 * **Extras:**
   * Native "Tap to Interact" controller support under the standard Gamepad menu, and a tailored *Cinematic Colour Grading* ReShade preset.
 

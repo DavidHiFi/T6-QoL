@@ -1581,7 +1581,7 @@ end
 --  past both ends of its container, over the tab strip above and the ESC
 --  prompt below. That is the whole of the reported "scuffed-ness".
 --
---  The mod's own tabs, as of v2.12.5: GAME 1 15.0, GAME 2 15.0, GAME 3 1.0,
+--  The mod's own tabs, as of v2.14.13: GAME 1 15.0, GAME 2 15.0, GAME 3 2.0,
 --  HUD 14.0 (v2.14.7), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
 --  PATCHES before v2.12.5; both were already at the ceiling, which is why
 --  GAME 3 exists.) The stock tabs this file also builds: ADVANCED 15.0 (full).
@@ -2187,7 +2187,7 @@ end
 --  from the user's own overflow screenshots. A 16th row on either one is the
 --  reported bug, not a risk of it.
 --
---  📝 ROOM LEFT: 14 more rows before this tab reaches the same ceiling. When
+--  📝 ROOM LEFT: 13 more rows before this tab reaches the same ceiling. When
 --  the next option needs a home, it belongs here rather than on GAME 1 or 2.
 --
 --  📝 The label reads NO DENIZENS rather than DENIZENS so that ENABLED is the
@@ -2203,10 +2203,21 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 
 	local T = CoD.OptionsSettings.QolToggle
 
-	--                                                                  1 row
+	--                                                                  2 rows
 	T(QolGame3Buttons, LocalClientIndex, "NO DENIZENS", "no_denizens", "TranZit. No denizens spawn in the fog. Any already out are left alone.")
 
-	return QolGame3Container                          -- 1 row + 0 spacers = 1.0
+	-- ========================================================================
+	--  v2.14.13 - THIRD PERSON. User request 2026-09-07: "put a 3rd person
+	--  toggle in the GAME 3 tab in the mod". Read once a second per player by
+	--  qol_options.gsc::qol_opt_third_person(), which drives the engine's own
+	--  setclientthirdperson() - the method stock zombies uses for its own
+	--  third-person moments (_zm.gsc::set_third_person) - never the
+	--  cheat-protected cg_thirdPerson dvar. Live both ways, and re-applied
+	--  after every spawn because stock's onplayerspawned() switches it off.
+	-- ========================================================================
+	T(QolGame3Buttons, LocalClientIndex, "THIRD PERSON", "third_person", "Play from a camera behind your character. Off is the normal first-person view.")
+
+	return QolGame3Container                          -- 2 rows + 0 spacers = 2.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
