@@ -2783,6 +2783,16 @@ qol_opt_round_timer_hud( b_on )
         //  2026-08-14. Set at creation for the same reason: the watcher no-ops on
         //  its first pass. Console override: hud_color_round_timer "r g b".
         self.qol_hud_roundtimer.color = ( 1, 1, 1 );   //  white, user 2026-08-31 - twin of the game timer's write in quality_of_life.gsc
+        //  v2.14.18 - BLACK OUTLINE. Twin of the write in quality_of_life.gsc::
+        //  timer(); the full reasoning lives there, in the comment above its own
+        //  glowcolor line. Short version: this element is built by
+        //  createfontstring( "small", 1.2 ) and the game timer by a raw
+        //  newclienthudelem() that never assigns .font, so the two rendered in
+        //  different faces and only one carried an outline. Both now set the
+        //  outline explicitly, so it no longer depends on which helper built the
+        //  element. 🛑 Change one without the other and the pair splits again.
+        self.qol_hud_roundtimer.glowcolor = ( 0, 0, 0 );
+        self.qol_hud_roundtimer.glowalpha = 1;
         self.qol_hud_roundtimer.hidewheninmenu = 1;
 
         if ( isdefined( level.qol_round_start_time ) )

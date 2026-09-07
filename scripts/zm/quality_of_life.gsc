@@ -2089,15 +2089,35 @@ qol_health_hud_create()
     //  shields health to the right of it seperate by a |"*.
     //
     //  The layout, 640x480 units off BOTTOM_LEFT, everything on the bar's row
-    //  (y 7, aligny "middle") except the name, which keeps its own row (y 18):
+    //  (y 7, aligny "middle") except the name, which keeps its own row (y 18).
+    //  📝 v2.14.18 moved the fill onto the track's own x and width so a full
+    //  bar has no black showing at either end - see zmqol_hud_bar_width():
     //        -45..59   [0] grey border box     "white" 104x5, sort -2
     //        -44..58   [3] black track         "white" 102x3, alpha 0.5, sort -1
-    //        -43..     [1] the bar             "white" N x 3, N = 100 * health/max
+    //        -44..     [1] the bar             "white" N x 3, N = 102 * health/max
     //           ..80   [4] health number       RIGHT-aligned at 80, so the
     //                                          separator column never moves
     //                                          when the number changes width
     //        84..      [5] "| <shield health>" LEFT-aligned at 84, alpha 0
     //                                          while no shield is carried
+    //
+    //  🛑 v2.14.18 - ALL FOUR TEXT ELEMENTS ARE ONE FONT NOW. User, 2026-09-08:
+    //  *"the text for the players username and the location looks clunky, make
+    //  the area and username text look similar and also be similar in size"*.
+    //  The name and the two numbers were createfontstring( "default", 1 ) while
+    //  the bottom-left area readout has always been ( "small", 1.2 ), so the
+    //  four lines of one corner were drawn in two typefaces. They are all
+    //  ( "small", 1.2 ) now, which is the AREA line's own call - the corner is
+    //  matched to the element the user said was right rather than the other way
+    //  round, so qol_options.gsc's measured y = 29 spacing still holds.
+    //
+    //  📝 The heights barely move: the measurement in qol_options.gsc's ZONE
+    //  NAME banner puts "default" 1 at ~7.7 virtual px and "small" 1.2 at ~8.1,
+    //  so the name's ink grows by ~0.2px top and bottom and the ~3.7px gap under
+    //  it becomes ~3.5px. Nothing else shares either row.
+    //  🌟 "small" IS AN ENGINE FONT NAME, not a guess - the same banner records
+    //  that "hudsmall" is rejected outright and that "small" is the name from
+    //  the engine's own list, already proven here by the zombie counter.
     //
     //  🛑 "white" FOR THE BAR, NOT "progress_bar_fill". Measured off the stock
     //  texture (progress_bar_background.dds, 128x32, dumped from common_zm.ff):
@@ -2158,29 +2178,29 @@ qol_health_hud_create()
     healthbar = newclienthudelem( self );
     healthbar.x = 0;
     healthbar.y = 0;
-    healthbar setshader( "white", 100, 3 );
+    healthbar setshader( "white", zmqol_hud_bar_width(), 3 );
     healthbar.alignx = "left";
     healthbar.aligny = "middle";
     healthbar.horzalign = "left";
     healthbar.vertalign = "bottom";
-    healthbar.x = healthbar.x + -43;
+    healthbar.x = healthbar.x + -44;
     healthbar.y = healthbar.y + 7;
     healthbar.color = ( 0, 1, 0 );
     healthbar.hidewheninmenu = 1;
-    healthbar.width = 100;
+    healthbar.width = zmqol_hud_bar_width();
     healthbar.sort = 0;
 
-    playername = self createfontstring( "default", 1 );
+    playername = self createfontstring( "small", 1.2 );
     playername setpoint( "LEFT", "BOTTOM_LEFT", -45, 18 );
     playername settext( self.name );
     playername.hidewheninmenu = 1;
 
-    healthvalue = self createfontstring( "default", 1 );
+    healthvalue = self createfontstring( "small", 1.2 );
     healthvalue setpoint( "RIGHT", "BOTTOM_LEFT", 80, 7 );
     healthvalue.hidewheninmenu = 1;
     healthvalue.sort = 1;
 
-    shieldvalue = self createfontstring( "default", 1 );
+    shieldvalue = self createfontstring( "small", 1.2 );
     shieldvalue setpoint( "LEFT", "BOTTOM_LEFT", 84, 7 );
     shieldvalue.label = &"| ";
     shieldvalue.alpha = 0;
@@ -2251,6 +2271,161 @@ zmqol_shield_health_left()
         return -1;
 
     return int( n_left );
+}
+
+// ============================================================================
+//  THE EASED BAR  -  one ramp shared by the health bar, the shield bar and the
+//  two numbers beside them.                                        (v2.14.18)
+// ----------------------------------------------------------------------------
+//  zmqol_hud_bar_width() is the fill's width in hud units and the ONE place it
+//  is written. It is the TRACK's full width, not the track minus a unit, and
+//  that is the whole point of it existing:
+//
+//  🛑 THE END GAPS WERE ARITHMETIC, NOT A RENDERING ARTEFACT. User, 2026-09-08:
+//  *"the health bar doesn't cover up the entire bar, there's still a tiny gap
+//  at the beginning and end of the bar"*. The three stacked plates were
+//        frame  x -45  w 104   grey border   ->  spans -45 .. 59
+//        track  x -44  w 102   black backing ->  spans -44 .. 58
+//        fill   x -43  w 100   the bar       ->  spans -43 .. 57
+//  so a bar at FULL health left exactly one unit of black track showing at each
+//  end, permanently, on both the health bar and the shield bar. The fill now
+//  shares the track's x and width, so full reads as full and the only thing
+//  framing it is the one unit of grey the border plate was always there to
+//  provide.
+//
+//  🛑 CHANGING THIS NUMBER ALONE IS SAFE, CHANGING THE TRACK'S IS NOT - the
+//  fill and the track are two separate setshader() calls and they have to agree
+//  or the gap comes back.
+// ============================================================================
+zmqol_hud_bar_width()
+{
+    return 102;
+}
+
+//  One tick of the ramp. `self` is the FILL hudelem (or the number's element),
+//  which is what makes the state survive exactly as long as the thing it
+//  describes: both bars are DESTROYED and re-created - hud_health_bar off, the
+//  afterlife, dropping a shield - and a local or a player field would carry a
+//  stale value onto the fresh element.
+//
+//  Falls INSTANTLY and rises over 8 ticks. The asymmetry is deliberate: a hit
+//  has to read the frame it lands, and regeneration is the only thing the user
+//  asked to be able to watch.
+//
+//  📝 THE STEP IS FIXED ONCE PER GOAL, NOT RECOMPUTED EACH TICK, so the ramp is
+//  linear. Recomputing gap/8 every tick is an exponential decay - it covers
+//  most of the distance in the first two ticks and then creeps the last few
+//  points, which is the opposite of "gradual".
+zmqol_hud_bar_advance( n_target )
+{
+    //  First tick after a create: adopt the value. Animating up from nothing
+    //  would play a fill-up that never happened on every spawn, every revive
+    //  and every shield pickup.
+    if ( !isdefined( self.qol_shown ) )
+    {
+        self.qol_shown = n_target;
+        self.qol_goal = n_target;
+        self.qol_next = n_target;
+        return self.qol_shown;
+    }
+
+    if ( n_target <= self.qol_shown )
+    {
+        self.qol_shown = n_target;
+        self.qol_goal = n_target;
+        self.qol_next = n_target;
+        return self.qol_shown;
+    }
+
+    if ( !isdefined( self.qol_goal ) || self.qol_goal != n_target )
+    {
+        self.qol_goal = n_target;
+        self.qol_step = int( ( n_target - self.qol_shown ) / 8 );
+
+        if ( self.qol_step < 1 )
+            self.qol_step = 1;
+    }
+
+    self.qol_shown = self.qol_shown + self.qol_step;
+
+    if ( self.qol_shown > n_target )
+        self.qol_shown = n_target;
+
+    //  Where the NEXT tick will land. zmqol_hud_bar_draw() hands this to
+    //  scaleovertime() so the client covers the 0.1s between our steps instead
+    //  of the bar jumping from one to the next.
+    self.qol_next = self.qol_shown;
+
+    if ( self.qol_shown < n_target )
+    {
+        self.qol_next = self.qol_shown + self.qol_step;
+
+        if ( self.qol_next > n_target )
+            self.qol_next = n_target;
+    }
+
+    return self.qol_shown;
+}
+
+//  fill width for a value, clamped. One place so the health bar, the shield bar
+//  and the projection all round identically - two of them disagreeing by a unit
+//  is a one-pixel shimmer nobody could ever diagnose.
+zmqol_hud_bar_fill( n_value, n_max )
+{
+    if ( !isdefined( n_max ) || n_max <= 0 )
+        return 1;
+
+    n_fill = int( zmqol_hud_bar_width() * ( n_value / n_max ) );
+
+    if ( n_fill > zmqol_hud_bar_width() )
+        n_fill = zmqol_hud_bar_width();
+
+    if ( n_fill < 1 )
+        n_fill = 1;
+
+    return n_fill;
+}
+
+//  Draw this tick's fill width, and let the client cover the gap to the next.
+//
+//  🌟 THIS IS STOCK'S OWN IDIOM, COPIED IN SHAPE RATHER THAN INVENTED.
+//  _hud_util.gsc::updatebarscale() - the ZM copy, line 293 - is
+//        self.bar setshader( self.bar.shader, barwidth, self.height );
+//        ...
+//        self.bar scaleovertime( <time>, self.width, self.height );
+//  i.e. RE-ISSUE THE SHADER AT THE CURRENT WIDTH FIRST, then animate toward the
+//  destination. _zm_perks.gsc:2276 scaleovertime()s a client perk icon, so the
+//  call is proven on a newclienthudelem() as well as on a bar.
+//
+//  🛑 THE setshader() IS NOT REDUNDANT, AND THAT IS WHY THIS IS NOT A CHAIN OF
+//  BARE scaleovertime() CALLS. An animating element's stored width is still its
+//  START value, not the interpolated one the player is looking at; re-targeting
+//  without first restating where the bar actually IS re-lerps from that stale
+//  start and reads as a stutter. Stock re-issues the shader on every update for
+//  exactly this reason, so this does too. It is a guess I nearly shipped -
+//  writing it down so nobody "optimises" the setshader back out.
+//
+//  📝 ERROR_CATALOGUE §7b, stated rather than glossed: a ramp costs ~16 calls
+//  where the old snap cost 1. That is BOUNDED, not a stream - it stops when the
+//  drawn value reaches the real one and cannot restart without another damage
+//  event, which is the catalogue's own "stop when done" fix rather than the
+//  rate cut it warns against. Steady state - which is most of a match - still
+//  costs exactly ZERO calls, because nothing is written while the value holds.
+zmqol_hud_bar_draw( n_fill, n_next )
+{
+    //  Holding still at a width already on screen: write nothing at all.
+    if ( isdefined( self.qol_last_fill ) && self.qol_last_fill == n_fill && n_next == n_fill )
+        return;
+
+    self setshader( "white", n_fill, 3 );
+    self.qol_last_fill = n_fill;
+
+    //  Still climbing - hand the client the next step to slide into over the
+    //  same 0.1s this loop takes to come back round, so consecutive ticks chain
+    //  into one continuous movement. A fall never animates: a hit has to read
+    //  the frame it lands.
+    if ( n_next > n_fill )
+        self scaleovertime( 0.1, n_next, 3 );
 }
 
 qol_health_hud_destroy()
@@ -2359,6 +2534,17 @@ first_spawn()
             //  the shield readout decides its own alpha below; clearing its
             //  cache makes it re-decide on the way back from afterlife
             shieldvalue.qol_last_shield = undefined;
+
+            //  v2.14.18 - and the ramp is forgotten with it. The elements are
+            //  only faded here, not destroyed, so without this the walk back
+            //  out of the afterlife would play an 0.8s fill-up from whatever
+            //  health was showing when you went down.
+            healthbar.qol_shown = undefined;
+            healthbar.qol_goal = undefined;
+            healthbar.qol_last_fill = undefined;
+            healthvalue.qol_last_value = undefined;
+            shieldvalue.qol_shown = undefined;
+            shieldvalue.qol_goal = undefined;
             wait 0.05;
             continue;
         }
@@ -2370,47 +2556,75 @@ first_spawn()
             playername.alpha = 1;
             healthvalue.alpha = 1;
         }
-        //  🛑 PERF, v1.65.3 - setshader() and setvalue() only when the value
-        //  changed. Health sits at full for most of a match, and the cache
-        //  lives ON THE HUDELEM so a destroy/re-create above starts it fresh
-        //  (a local would survive that and leave the new element at its spawn
-        //  width). setshader() is a reliable command, which is why the guard
-        //  matters; setvalue() is hudelem state, kept under the same guard
-        //  because it changes exactly when the width does.
-        if ( isdefined( self.health ) &&
-             ( !isdefined( healthbar.qol_last_health ) ||
-               healthbar.qol_last_health != self.health ||
-               healthbar.qol_last_maxhealth != self.maxhealth ) )
+        //  🛑 PERF, v1.65.3 - the width and the number are written only when
+        //  what is DRAWN changes, and the caches live ON THE HUDELEM so the
+        //  destroy/re-create above starts them fresh (a local would survive
+        //  that and leave the new element at its spawn width).
+        //
+        //  v2.14.18 - THE BAR AND THE NUMBER EASE NOW, THEY DO NOT SNAP.
+        //  User, 2026-09-08: *"whenever your health is regenerating make it so
+        //  that you see the gradual increase of the health for the health bar
+        //  and shield bar, so it doesn't just jump, same for the health text so
+        //  that rapidly changes and doesn't just jump to like 250 for example
+        //  if you have jug."*
+        //
+        //  🌟 THE JUMP IS THE ENGINE'S, NOT THE HUD'S - MEASURED, NOT ASSUMED.
+        //  Stock _healthoverlay.gsc::playerhealthregen() ends its regen branch
+        //        else if ( usetrueregen )  newhealth = ratio + regenrate;
+        //        else                      newhealth = 1;
+        //  and usetrueregen is set only inside `if ( isdefined( player.regenrate
+        //  ) )`, which NOTHING in zombies ever defines. So self.health goes from
+        //  hurt to full in a single step and no sampling rate could ever have
+        //  shown a ramp - only a script-side eased value can. (The one exception
+        //  is the `veryhurt` branch, below the health-overlay cutoff, which adds
+        //  0.1 of the maximum per 0.05s: a 0.5s ramp that still reads as a jump.)
+        //
+        //  📝 THE RAMP IS ON THE DRAWN VALUE, NOT ON self.health - gameplay is
+        //  untouched. What eases is what the bar and the number show.
+        if ( isdefined( self.health ) && isdefined( self.maxhealth ) && self.maxhealth > 0 )
         {
-            n_fill = int( 100 * ( self.health / self.maxhealth ) );
+            n_shown = healthbar zmqol_hud_bar_advance( int( self.health ) );
 
-            if ( n_fill > 100 )
-                n_fill = 100;
+            healthbar zmqol_hud_bar_draw( zmqol_hud_bar_fill( n_shown, self.maxhealth ),
+                                          zmqol_hud_bar_fill( healthbar.qol_next, self.maxhealth ) );
 
-            if ( n_fill < 1 )
-                n_fill = 1;
-
-            healthbar setshader( "white", n_fill, 3 );
-            healthvalue setvalue( self.health );
-            healthbar.qol_last_health = self.health;
-            healthbar.qol_last_maxhealth = self.maxhealth;
+            if ( !isdefined( healthvalue.qol_last_value ) || healthvalue.qol_last_value != n_shown )
+            {
+                healthvalue setvalue( n_shown );
+                healthvalue.qol_last_value = n_shown;
+            }
         }
         //  The shield number, v2.14.15. Same predicate shield_hud() draws its
         //  bar from; -1 means nothing to show and the element goes dark rather
         //  than reading "| 0".
+        //  v2.14.18 - eased with the same helper as the bars, so the number
+        //  beside the shield bar can never race the bar it belongs to.
         n_shield = self zmqol_shield_health_left();
 
-        if ( !isdefined( shieldvalue.qol_last_shield ) || shieldvalue.qol_last_shield != n_shield )
+        if ( n_shield < 0 )
         {
-            if ( n_shield < 0 )
-                shieldvalue.alpha = 0;
-            else
+            if ( !isdefined( shieldvalue.qol_last_shield ) || shieldvalue.qol_last_shield != n_shield )
             {
-                shieldvalue setvalue( n_shield );
-                shieldvalue.alpha = 1;
+                shieldvalue.alpha = 0;
+                shieldvalue.qol_last_shield = n_shield;
             }
 
-            shieldvalue.qol_last_shield = n_shield;
+            //  Nothing to count toward. Forget the ramp so the NEXT shield
+            //  starts from its own full value instead of animating up out of
+            //  the last one's remains.
+            shieldvalue.qol_shown = undefined;
+            shieldvalue.qol_goal = undefined;
+        }
+        else
+        {
+            n_shield_shown = shieldvalue zmqol_hud_bar_advance( n_shield );
+
+            if ( !isdefined( shieldvalue.qol_last_shield ) || shieldvalue.qol_last_shield != n_shield_shown )
+            {
+                shieldvalue setvalue( n_shield_shown );
+                shieldvalue.alpha = 1;
+                shieldvalue.qol_last_shield = n_shield_shown;
+            }
         }
         //  hud_color_health, handled HERE and nowhere else. This loop repaints
         //  the tier colour every 0.1s, so any other thread tinting these
@@ -2435,11 +2649,32 @@ first_spawn()
             continue;
         }
         //  v2.14.15 - three colours, see zmqol_zombie_swipe_damage().
+        //
+        //  🌟 v2.14.18 - THE TIER FOLLOWS THE DRAWN VALUE, NOT self.health, so
+        //  the bar's colour and its length can never disagree. Off real health
+        //  a regen turned the bar green the instant the engine snapped, leaving
+        //  a quarter-length GREEN bar sliding up for the next 0.8s; off the
+        //  eased value it walks red -> yellow -> green as it fills, which is
+        //  the whole point of showing the climb.
+        //
+        //  🛑 IT ONLY EVER LAGS UPWARDS, and that is why this is safe. Falls are
+        //  instant in zmqol_hud_bar_advance(), so taking a hit still turns the
+        //  bar red the same frame it always did; the only delay is on the way
+        //  back to safety, which errs toward caution rather than away from it.
+        //
+        //  📝 qol_shown is undefined until the block above has run once - on the
+        //  very first tick, and while it is skipped in the afterlife - so real
+        //  health is the fallback rather than a missing colour.
         if ( isdefined( self.health ) )
         {
-            if ( self.health >= self.maxhealth )
+            n_tier = self.health;
+
+            if ( isdefined( healthbar.qol_shown ) )
+                n_tier = healthbar.qol_shown;
+
+            if ( n_tier >= self.maxhealth )
                 healthbar.color = ( 0, 1, 0 );
-            else if ( self.health <= zmqol_zombie_swipe_damage() )
+            else if ( n_tier <= zmqol_zombie_swipe_damage() )
                 healthbar.color = ( 1, 0, 0 );
             else
                 healthbar.color = ( 1, 1, 0 );
@@ -2527,6 +2762,32 @@ timer()
     //  its previous-value to the dvar default and so deliberately does nothing on
     //  its first pass. Console override, live, no rebuild: hud_color_timer "r g b".
     timer.color = ( 1, 1, 1 );
+    //  v2.14.18 - BLACK OUTLINE, SET EXPLICITLY ON BOTH TIMERS. User, 2026-09-08:
+    //  *"only one of the game time counters has a black outline and the other
+    //  doesn't, fix that too"*.
+    //
+    //  🛑 THE CAUSE IS THAT THE TWO ELEMENTS ARE BUILT BY DIFFERENT CONSTRUCTORS,
+    //  which the comment above wrongly called twins. This one is a raw
+    //  newclienthudelem() and never assigns .font at all, so it renders in the
+    //  engine's default face; qol_options.gsc::qol_opt_round_timer_hud() uses
+    //  createfontstring( "small", 1.2 ), which assigns .font = "small". Two
+    //  different faces, so only one drew with an outline.
+    //
+    //  Neither element set glow, and .glowcolor black + .glowalpha 1 is this
+    //  mod's own way of outlining HUD text - zmqol_subtitles.gsc does exactly
+    //  this on its two lines. Setting it on BOTH timers makes the outline
+    //  explicit and identical rather than an accident of which helper built the
+    //  element, so the pair cannot drift apart again the next time one is edited.
+    //  qol_opt_tint() only ever writes .color, so the colour watcher cannot
+    //  undo this.
+    //
+    //  📝 The deeper mismatch is NOT fixed here and is not a defect the user
+    //  reported: the two still use different fonts at different fontscales
+    //  (1.4 here, 1.2 there). Both numbers are pixel-calibrated - see the y
+    //  derivation above and the 14-unit row in qol_options - so matching the
+    //  font or the scale would move the stack the user asked for. Outline only.
+    timer.glowcolor = ( 0, 0, 0 );
+    timer.glowalpha = 1;
     timer.alpha = 0;
     timer.hidewheninmenu = 1;
     flag_wait( "initial_blackscreen_passed" );
@@ -2728,16 +2989,16 @@ qol_shield_hud_create()
     shieldbar = newclienthudelem( self );
     shieldbar.x = 0;
     shieldbar.y = 0;
-    shieldbar setshader( "white", 100, 3 );
+    shieldbar setshader( "white", zmqol_hud_bar_width(), 3 );
     shieldbar.alignx = "left";
     shieldbar.aligny = "middle";
     shieldbar.horzalign = "left";
     shieldbar.vertalign = "bottom";
-    shieldbar.x = shieldbar.x + -43;
+    shieldbar.x = shieldbar.x + -44;
     shieldbar.y = shieldbar.y + 2;
     shieldbar.color = ( 1, 1, 1 );
     shieldbar.hidewheninmenu = 1;
-    shieldbar.width = 100;
+    shieldbar.width = zmqol_hud_bar_width();
     shieldbar.sort = 0;
 
     self.qol_hud_shield = [];
@@ -2816,23 +3077,24 @@ shield_hud()
         self qol_shield_hud_create();
         shieldbar = self.qol_hud_shield[1];
 
-        //  Resized by re-issuing the shader at a new width - the same mechanism
-        //  first_spawn() uses for the player bar, rather than writing .width.
-        n_fill = int( 100 * ( n_left / n_max ) );
+        //  v2.14.18 - the same eased draw the health bar uses, out of the same
+        //  two helpers, so the two bars cannot animate differently. The cache
+        //  still lives on the hudelem and for the same reason: these elements
+        //  are destroyed and re-created whenever the shield is dropped or the
+        //  probe toggles, and a fresh element carries no ramp state, so the
+        //  first iteration after any re-create snaps with setshader().
+        //
+        //  📝 A SHIELD NEVER REGENERATES, so here the ramp is usually a smooth
+        //  FALL. It does rise in one real case, verified in the stock dump:
+        //  _zm_weap_riotshield_prison.gsc:224 (and the zm_tomb twin) sets
+        //  self.shielddamagetaken = 0 on pickup, so buying a fresh shield while
+        //  carrying a damaged one refills this bar.
+        n_fill = zmqol_hud_bar_fill( n_left, n_max );
+        n_draw = shieldbar zmqol_hud_bar_advance( n_fill );
 
-        if ( n_fill < 1 )
-            n_fill = 1;
-
-        //  🌟 CACHE ON THE HUDELEM, not in a local. These elements are destroyed
-        //  and re-created whenever the shield is dropped or the probe toggles; a
-        //  local would survive that and leave the fresh element stuck at its
-        //  default width. A new element carries no .qol_last_fill, so the first
-        //  iteration after any re-create writes the shader again.
-        if ( !isdefined( shieldbar.qol_last_fill ) || shieldbar.qol_last_fill != n_fill )
-        {
-            shieldbar setshader( "white", n_fill, 3 );
-            shieldbar.qol_last_fill = n_fill;
-        }
+        //  The shield eases the FILL itself rather than its hit points, so
+        //  qol_next is already a width and needs no second conversion.
+        shieldbar zmqol_hud_bar_draw( n_draw, shieldbar.qol_next );
 
         //  10Hz, matching the player health bar this now duplicates. The old
         //  implementation ran at 20Hz and was the mod's highest-frequency HUD
@@ -8438,7 +8700,24 @@ zmqol_velocity_set( b_on, b_quiet )
         self.zmqol_vel_hud.horzalign = "center";
         self.zmqol_vel_hud.vertalign = "bottom";
         self.zmqol_vel_hud.x = 0;
-        self.zmqol_vel_hud.y = -62;
+        //  v2.14.18 - y -62 -> -54, user 2026-09-08: *"move the velocity meter
+        //  hud element ever so slightly down so it's just below the origins
+        //  shield progress indicator"* - the two were clipping into one another
+        //  while aiming down sights on Origins.
+        //
+        //  THE 8 UNITS ARE BOUNDED BY THE SUBTITLE ROW, NOT EYEBALLED. This
+        //  element is createfontstring( "default", 1.4 ) with aligny "middle",
+        //  so at _hud.gsc's level.fontheight 12 it spans y-8.4 .. y+8.4. The
+        //  subtitle top row (zmqol_subtitles.gsc: setpoint( "CENTER", "BOTTOM",
+        //  0, -34 ) at scale 1.1) spans -40.6 .. -27.4. At -62 the clearance
+        //  was 13.0 units - the same figure MOD_CATALOGUE 49d arrived at
+        //  independently, which is what confirms the geometry rather than
+        //  assuming it. -54 spends 8 of those 13 and leaves 5.
+        //
+        //  🛑 -41 IS THE HARD FLOOR. Past that this element's box overlaps the
+        //  subtitle row's, and both are bottom-anchored centre text, so they
+        //  would collide for anyone with SUBTITLES on.
+        self.zmqol_vel_hud.y = -54;
         //  v1.90.12 - SPEED-BANDED, user 2026-08-14: green, yellow from 330,
         //  red from 370. Created green because a standing player is band 0;
         //  zmqol_velocity_think() repaints it from there.
@@ -17045,7 +17324,6 @@ zonecheck()
         // ====================================================================
         if ( !getdvarintdefault( "hud_zone", 0 ) )
         {
-            self qol_zone_notifier_clear();
             self.currentzone = self get_zone_name();
             wait 0.2;
             continue;
@@ -17058,11 +17336,29 @@ zonecheck()
             //  Zones with no friendly name still read as e.g. "zone_diner_roof";
             //  those are skipped, and deliberately do NOT update currentzone, so
             //  crossing an unnamed zone and coming back does not re-announce.
+            //  🛑 v2.14.18 - THE CENTRE-SCREEN POP-UP IS GONE. User,
+            //  2026-09-08, with a screenshot: *"it shows the area on the bottom
+            //  left like i requested, however for some reason the notifier
+            //  still shows up when i walk into new areas, remove that one at
+            //  the top middle of the screen so just the one on the bottom left
+            //  under the players name is there."*
+            //
+            //  Only the CALL goes. This loop still tracks currentzone exactly
+            //  as before, because that field is what the permanent bottom-left
+            //  readout reads - qol_options.gsc::qol_opt_zone_hud() takes its
+            //  text straight off it rather than walking the zones itself.
+            //  Deleting the tracking would blank the row the user wants to keep.
+            //
+            //  🌟 NOTHING ELSE USED THAT SLOT - grepped, not assumed. The only
+            //  caller of grief_reset_message() was this line, and its only
+            //  caller of show_grief_hud_msg() is itself, so the whole chain
+            //  (grief_reset_message, show_grief_hud_msg,
+            //  show_grief_hud_msg_cleanup, qol_zone_notifier_clear) is now
+            //  unreferenced. It is LEFT IN PLACE, not deleted: it costs nothing
+            //  unreferenced, and restoring the pop-up is then one line here
+            //  rather than a rewrite.
             if ( !issubstr( str_zone, "_" ) )
-            {
                 self.currentzone = str_zone;
-                self grief_reset_message( str_zone, "" );
-            }
         }
 
         wait 0.2;
