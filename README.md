@@ -128,6 +128,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Thundergun
   * Wunderwaffe DG-2
   * Winter's Howl
+  * All four are in the Mystery Box on every map except Origins and Buried.
 
 * **Bouncing Betties:**
   * The multiplayer proximity mine, in the Mystery Box on every map except Origins and Buried. They sit alongside your Claymores rather than replacing them, and use their own equipment button.
