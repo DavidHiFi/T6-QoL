@@ -1,0 +1,133 @@
+{
+    "$schema": "http://openassettools.dev/schema/material.v1.json",
+    "_game": "t6",
+    "_type": "material",
+    "_version": 1,
+    "cameraRegion": "emissiveFx",
+    "constants": [
+        {
+            "literal": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "name": "colorTint"
+        }
+    ],
+    "contents": 1,
+    "gameFlags": [],
+    "layeredSurfaceTypes": 536870912,
+    "sortKey": 48,
+    "stateBits": [
+        {
+            "alphaTest": "disabled",
+            "blendOpAlpha": "add",
+            "blendOpRgb": "add",
+            "colorWriteAlpha": true,
+            "colorWriteRgb": true,
+            "cullFace": "back",
+            "depthTest": "disabled",
+            "depthWrite": false,
+            "dstBlendAlpha": "one",
+            "dstBlendRgb": "one",
+            "polygonOffset": "offset0",
+            "polymodeLine": false,
+            "srcBlendAlpha": "zero",
+            "srcBlendRgb": "one"
+        },
+        {
+            "alphaTest": "disabled",
+            "blendOpAlpha": "add",
+            "blendOpRgb": "add",
+            "colorWriteAlpha": true,
+            "colorWriteRgb": true,
+            "cullFace": "back",
+            "depthTest": "disabled",
+            "depthWrite": false,
+            "dstBlendAlpha": "one",
+            "dstBlendRgb": "one",
+            "polygonOffset": "offset0",
+            "polymodeLine": false,
+            "srcBlendAlpha": "zero",
+            "srcBlendRgb": "one"
+        },
+        {
+            "alphaTest": "disabled",
+            "blendOpAlpha": "disabled",
+            "blendOpRgb": "disabled",
+            "colorWriteAlpha": false,
+            "colorWriteRgb": true,
+            "cullFace": "back",
+            "depthTest": "less_equal",
+            "depthWrite": false,
+            "dstBlendAlpha": "zero",
+            "dstBlendRgb": "zero",
+            "polygonOffset": "offset2",
+            "polymodeLine": true,
+            "srcBlendAlpha": "one",
+            "srcBlendRgb": "one"
+        }
+    ],
+    "stateBitsEntry": [
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        2
+    ],
+    "stateFlags": 21,
+    "surfaceFlags": 0,
+    "surfaceTypeBits": 0,
+    "techniqueSet": "effect_8f63534j",
+    "textureAtlas": {
+        "columns": 2,
+        "rows": 2
+    },
+    "textures": [
+        {
+            "image": "fxt_zombie_thundergun_view_glow",
+            "isMatureContent": false,
+            "name": "colorMap",
+            "samplerState": {
+                "clampU": true,
+                "clampV": true,
+                "clampW": true,
+                "filter": "linear",
+                "mipMap": "disabled"
+            },
+            "semantic": "colorMap"
+        }
+    ]
+}

@@ -113,3 +113,62 @@ material,gfx_fxt_bio_bloodtrail
 //  header and the pixels are guaranteed to be the same copy. Verified by the
 //  before/after asset audit: 4,829 -> 4,860, 31 added, ZERO removed, nothing
 //  changed owner.
+
+// ---------------------------------------------------------------------------
+//  v2.14.12 (2026-09-07) - THE SECOND SWEEP: every raw .efx the four wonder
+//  weapons can actually REACH, re-measured.
+//
+//  Method: roots = every loadfx() in the 4 server modules + the 3 client
+//  modules (stock common_zm's _zm_weap_thundergun.csc included, since that is
+//  what the client really runs) + every fx field of the 12 weapon defs; then
+//  the nested-effect closure through the .efx text. 42 of the 64 raw files are
+//  reachable; the other 22 are BO1 leftovers nothing references. Every quoted
+//  gfx_* in the 42 was resolved against mod.ff + all 32 zombies fastfiles,
+//  per map. 64 of 71 resolved everywhere. These are the 7 that did not.
+//
+//  🛑 THE ONE THAT IS NOT A DONOR COPY: gfx_fxt_thundergun_view_glow.
+//  It draws the glowing power cells on the Thundergun view model (2 of the 4
+//  elements in each fx_thundergun_power_cell_view1/2/3). It exists in NO
+//  fastfile this project loads and in no stock zombies zone at all - BO1's own
+//  zombie_theater.ff carries it, and the T5 port never brought it over, so
+//  the bulbs have been drawing without their glow sprite since v1.69.0. The
+//  material JSON is an Unlinker dump out of Logo2K's T6 Thundergun module
+//  (T6-Declassified-Public\mods\zm_t6_t6d_module_t5_wpn_zmb_thundergun\mod.ff)
+//  - a T6 asset, not a T5 one - and its techset effect_8f63534j is stock
+//  (common_zm). Pixels: fxt_zombie_thundergun_view_glow.iwi from that same
+//  module's mod.iwd (IWi v27, 256x128, byte-identical to the copy in
+//  Wonder_Weapons-T6ZM\src\images - two independent sources agree).
+//
+//  The other six resolve from fastfiles already on the --load list, with the
+//  usual first-load-wins: gfx_fxt_smk_gen_vm / _z200 are stock names, so a
+//  stock map's copy wins (highrise / prison) and the fx donor only fills in
+//  where no stock zone above it has them. Their image fxt_smk_gen is
+//  common_zm's - pixels in the game's own ipak on every map, so NOT staged
+//  (staging a stock smoke texture into mod.iwd would override it for every
+//  stock effect that uses it - CLAUDE.md, mod.iwd is search-path rank 1).
+//  Same for fxt_bio_bloodburst_c / fxt_bio_bloodgush (common_zm). Only
+//  fxt_bio_blood_cloud is not a stock image; its .iwi comes from the fx
+//  donor's own cmn_all.iwd, the same origin as the header (md5 27201cca... =
+//  zm_t6_t6d_module_t5_wpn_zmb_freezegun, measured).
+// ---------------------------------------------------------------------------
+
+//  Thundergun power cells - the glow sprite (fx_thundergun_power_cell_view1/2/3)
+image,fxt_zombie_thundergun_view_glow
+material,gfx_fxt_thundergun_view_glow
+
+//  Thundergun steam vents on fire (fx_thundergun_steam_view) - was absent on
+//  TranZit, Nuketown and Mob; only Die Rise carried it.
+material,gfx_fxt_smk_gen_vm
+
+//  Thundergun muzzle smoke cloud (fx_thundergun_smoke_cloud) - absent on
+//  Nuketown only.
+material,gfx_fxt_smk_gen_z200
+
+//  Winter's Howl gib burst (fx_flesh_gib_fatal_01, loadfx'd by both halves).
+//  The shatter/crumple path that plays it needs the zm_death_freeze_t5
+//  animstate, which no stock aitype carries (mod_wonderweapons.zone, v2.10.6),
+//  so today this is a loaded-but-unplayed effect; declared so it is complete.
+image,fxt_bio_blood_cloud
+material,gfx_fxt_bio_blood_cloud
+material,gfx_fxt_bio_bloodburst_c
+material,gfx_fxt_bio_bloodgush

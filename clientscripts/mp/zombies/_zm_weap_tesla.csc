@@ -9,7 +9,7 @@ init()
         return;
     }
     
-    if ( clientscripts\mp\zombies\_zm_weapons::is_weapon_included( "tesla_gun_zm" ) && (isdefined( level.uses_tesla_powerup ) && level.uses_tesla_powerup) )
+    if ( !clientscripts\mp\zombies\_zm_weapons::is_weapon_included( "tesla_gun_zm" ) && !(isdefined( level.uses_tesla_powerup ) && level.uses_tesla_powerup) )
     {
         return;
     }

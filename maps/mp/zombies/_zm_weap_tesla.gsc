@@ -5,7 +5,7 @@
 
 init()
 {
-    if ( maps\mp\zombies\_zm_weapons::is_weapon_included( "tesla_gun_zm" ) && is_true( level.uses_tesla_powerup ) )
+    if ( !maps\mp\zombies\_zm_weapons::is_weapon_included( "tesla_gun_zm" ) && !is_true( level.uses_tesla_powerup ) )
     {
         return;
     }
