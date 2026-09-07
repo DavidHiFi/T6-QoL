@@ -927,6 +927,9 @@ qol_opt_player_init()
         self thread qol_opt_hud_watcher();
         self thread qol_opt_crosshair();
         self thread qol_opt_third_person();
+        //  v2.14.15 - BETTER SPEED COLA, part two: the perk-bottle drink watcher.
+        //  Lives with the rest of that feature in quality_of_life.gsc.
+        self thread scripts\zm\quality_of_life::zmqol_speed_cola_drink_watch();
     }
 }
 

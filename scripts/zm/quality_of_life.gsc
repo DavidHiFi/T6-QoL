@@ -148,6 +148,10 @@ main()
     //  pause between boards. See the banner over zmqol_replace_chunk().
     replaceFunc( maps\mp\zombies\_zm_blockers::replace_chunk, ::zmqol_replace_chunk );
     replaceFunc( maps\mp\zombies\_zm_blockers::do_post_chunk_repair_delay, ::zmqol_do_post_chunk_repair_delay );
+    //  v2.14.15 - part two, the perk bottles: stock's post-purchase drink with
+    //  the fast-switch perk set around it. Threaded call site; it prints when it
+    //  runs, and a per-player watcher covers the drink whether or not it does.
+    replaceFunc( maps\mp\zombies\_zm_perks::vending_trigger_post_think, ::zmqol_vending_trigger_post_think );
 
     perks();
     zmqol_enable_fire_sale();
@@ -2077,45 +2081,176 @@ counters_onplayerspawned()
 // ============================================================================
 qol_health_hud_create()
 {
-    if ( isdefined( self.qol_hud_health ) && self.qol_hud_health.size == 3 )
+    //  v2.14.15 - SIX ELEMENTS, NOT THREE. User, 2026-09-08: *"make it so the
+    //  health bar in my mod is green with a grey border box, the shield health
+    //  bar stays as is above with the same border, 2 different health bars
+    //  that stack cleanly and minimally ... display the number of the players'
+    //  health to the right of the health bar(s) and the number of the zombie
+    //  shields health to the right of it seperate by a |"*.
+    //
+    //  The layout, 640x480 units off BOTTOM_LEFT, everything on the bar's row
+    //  (y 7, aligny "middle") except the name, which keeps its own row (y 18):
+    //        -45..59   [0] grey border box     "white" 104x5, sort -2
+    //        -44..58   [3] black track         "white" 102x3, alpha 0.5, sort -1
+    //        -43..     [1] the bar             "white" N x 3, N = 100 * health/max
+    //           ..80   [4] health number       RIGHT-aligned at 80, so the
+    //                                          separator column never moves
+    //                                          when the number changes width
+    //        84..      [5] "| <shield health>" LEFT-aligned at 84, alpha 0
+    //                                          while no shield is carried
+    //
+    //  🛑 "white" FOR THE BAR, NOT "progress_bar_fill". Measured off the stock
+    //  texture (progress_bar_background.dds, 128x32, dumped from common_zm.ff):
+    //  its top and bottom four rows are TRANSPARENT, so a 3-unit-tall bar drawn
+    //  with it is ~2.25 units of ink and the black track would show through
+    //  above and below the fill. "white" is opaque edge to edge and tints
+    //  exactly. Stock's own border material, progress_bar_fg
+    //  (progress_bar_frame.dds), was measured too: its ring is ONE TEXEL thick,
+    //  which on a 5-unit-tall element is under a third of a unit - it does not
+    //  survive as a visible border at this size. So the box is a grey plate
+    //  behind a black plate behind the bar, and the border is the one unit of
+    //  grey left showing on every side.
+    //
+    //  🛑 THE NUMBERS ARE setvalue() ELEMENTS, NEVER settext(). Health changes
+    //  every frame while regenerating and settext() is a reliable server
+    //  command per call (ERROR_CATALOGUE §7 / §7b). The "| " is the shield
+    //  element's .label, written once - the same pattern zombiecounter() uses
+    //  for its "Zombies: " prefix.
+    //
+    //  📝 v1.96.0 deleted the old "100 / 100" readout because it sat on the
+    //  NAME'S row (y 18) and a long name ran into it. This readout is on the
+    //  BAR'S row (y 7) and starts at x ~62; a 16-character name at this font
+    //  ends around x 43 (the old "100 / 100" measured under 46 units for nine
+    //  characters), so the two rows never meet.
+    if ( isdefined( self.qol_hud_health ) && self.qol_hud_health.size == 6 )
         return;
 
-    healthbar_bg = newclienthudelem( self );
-    healthbar_bg.x = 0;
-    healthbar_bg.y = 0;
-    healthbar_bg setshader( "white", 104, 5 );
-    healthbar_bg.alignx = "left";
-    healthbar_bg.aligny = "middle";
-    healthbar_bg.horzalign = "left";
-    healthbar_bg.vertalign = "bottom";
-    healthbar_bg.x = healthbar_bg.x + -45;
-    healthbar_bg.y = healthbar_bg.y + 7;
-    healthbar_bg.color = ( 0, 0, 0 );
-    healthbar_bg.alpha = 0.5;
-    healthbar_bg.hidewheninmenu = 1;
-    healthbar_bg.sort = -1;
+    frame = newclienthudelem( self );
+    frame.x = 0;
+    frame.y = 0;
+    frame setshader( "white", 104, 5 );
+    frame.alignx = "left";
+    frame.aligny = "middle";
+    frame.horzalign = "left";
+    frame.vertalign = "bottom";
+    frame.x = frame.x + -45;
+    frame.y = frame.y + 7;
+    frame.color = ( 0.5, 0.5, 0.5 );
+    frame.alpha = 1;
+    frame.hidewheninmenu = 1;
+    frame.sort = -2;
+
+    track = newclienthudelem( self );
+    track.x = 0;
+    track.y = 0;
+    track setshader( "white", 102, 3 );
+    track.alignx = "left";
+    track.aligny = "middle";
+    track.horzalign = "left";
+    track.vertalign = "bottom";
+    track.x = track.x + -44;
+    track.y = track.y + 7;
+    track.color = ( 0, 0, 0 );
+    track.alpha = 0.5;
+    track.hidewheninmenu = 1;
+    track.sort = -1;
+
     healthbar = newclienthudelem( self );
     healthbar.x = 0;
     healthbar.y = 0;
-    healthbar setshader( "progress_bar_fill", 100, 3 );
+    healthbar setshader( "white", 100, 3 );
     healthbar.alignx = "left";
     healthbar.aligny = "middle";
     healthbar.horzalign = "left";
     healthbar.vertalign = "bottom";
     healthbar.x = healthbar.x + -43;
     healthbar.y = healthbar.y + 7;
+    healthbar.color = ( 0, 1, 0 );
     healthbar.hidewheninmenu = 1;
     healthbar.width = 100;
     healthbar.sort = 0;
+
     playername = self createfontstring( "default", 1 );
     playername setpoint( "LEFT", "BOTTOM_LEFT", -45, 18 );
     playername settext( self.name );
     playername.hidewheninmenu = 1;
 
+    healthvalue = self createfontstring( "default", 1 );
+    healthvalue setpoint( "RIGHT", "BOTTOM_LEFT", 80, 7 );
+    healthvalue.hidewheninmenu = 1;
+    healthvalue.sort = 1;
+
+    shieldvalue = self createfontstring( "default", 1 );
+    shieldvalue setpoint( "LEFT", "BOTTOM_LEFT", 84, 7 );
+    shieldvalue.label = &"| ";
+    shieldvalue.alpha = 0;
+    shieldvalue.hidewheninmenu = 1;
+    shieldvalue.sort = 1;
+
     self.qol_hud_health = [];
-    self.qol_hud_health[0] = healthbar_bg;
+    self.qol_hud_health[0] = frame;
     self.qol_hud_health[1] = healthbar;
     self.qol_hud_health[2] = playername;
+    self.qol_hud_health[3] = track;
+    self.qol_hud_health[4] = healthvalue;
+    self.qol_hud_health[5] = shieldvalue;
+}
+
+//  The bar's three colours, v2.14.15. User: *"goes yellow once you take a tiny
+//  bit of damage, then red once the player is about to die (1 or 2 more hits
+//  from a zombie till getting downed/killed)"*.
+//
+//  🌟 THE RED LINE IS THE ZOMBIE'S OWN SWIPE, MEASURED, NOT A PERCENTAGE.
+//  _zm_spawner.gsc:257 sets `self.meleedamage = 60` on every zombie; base
+//  player health is 100 and Juggernog is 160 (_zm_perks.gsc:69). So:
+//        no Jugg   100 (green) -> 40 (red)          -> down
+//        Jugg      160 (green) -> 100 (yellow) -> 40 (red) -> down
+//  and regeneration walks it back up through yellow to green. RED means the
+//  next swipe downs you; the user's "1 or 2" is read as "1", because "2" would
+//  make a full-health player without Jugg red before anything touched them.
+//  One number to change if that reading is wrong.
+zmqol_zombie_swipe_damage()
+{
+    return 60;
+}
+
+//  The shield's real maximum, v2.14.15. Stock sets it per map with
+//  set_zombie_var( "riotshield_hit_points", N ): 2250 on TranZit / Nuketown /
+//  Die Rise / Buried (_zm_weap_riotshield.gsc:26) and 1500 on Mob and Origins
+//  (_zm_weap_riotshield_prison.gsc:26, _zm_weap_riotshield_tomb.gsc:27).
+//  🛑 The bar used a hard-coded 2300 from v1.75.0 to v2.14.14 - "carried over
+//  verbatim, not re-tuned" - which put a broken Mob/Origins shield at 35% and
+//  a fresh TranZit one at 98%. Both bars and the number now read the map's
+//  own value.
+zmqol_shield_hit_points()
+{
+    if ( isdefined( level.zombie_vars ) && isdefined( level.zombie_vars["riotshield_hit_points"] ) )
+        return level.zombie_vars["riotshield_hit_points"];
+
+    return 2250;
+}
+
+//  Hit points left on the carried shield, or -1 when there is no shield to
+//  report (none carried, or broken). One predicate for both the bar and the
+//  number so they can never disagree.
+zmqol_shield_health_left()
+{
+    if ( !( self hasweapon( "riotshield_zm" ) || self hasweapon( "alcatraz_shield_zm" ) || self hasweapon( "tomb_shield_zm" ) ) )
+        return -1;
+
+    //  shielddamagetaken is undefined until a shield has been carried once,
+    //  and arithmetic on undefined is fatal in GSC.
+    n_taken = 0;
+
+    if ( isdefined( self.shielddamagetaken ) )
+        n_taken = self.shielddamagetaken;
+
+    n_left = zmqol_shield_hit_points() - n_taken;
+
+    if ( n_left <= 0 )
+        return -1;
+
+    return int( n_left );
 }
 
 qol_health_hud_destroy()
@@ -2190,17 +2325,11 @@ first_spawn()
         //  watcher. The restore-alpha block below would undo a console toggle
         //  within a frame, which is why there is exactly one owner.
         //
-        //  The difference from every version before v1.53.0: when the bar is
-        //  off the three elements are DESTROYED, not merely faded, so the slots
-        //  go back to the pool for things like Origins' generator ring.
-        //  zmqol_perf_probe() takes the same path as hud_all 0 - the five
-        //  elements are DESTROYED, not just faded, so the loop costs nothing.
+        //  When the bar is off the elements are DESTROYED, not merely faded,
+        //  so the slots go back to the pool for things like Origins' generator
+        //  ring. zmqol_perf_probe() takes the same path as hud_all 0.
         //  v1.85.0 - hud_master (".hud off") is checked here too, and FIRST,
-        //  because it must beat hud_all. Same reason the rest of this block
-        //  lives here rather than in qol_options' watcher: this loop rewrites
-        //  the alpha every 0.1s and would undo an external hide within a frame.
-        //  Taking the destroy path also hands the five slots back to the pool,
-        //  which is the right thing to do while the HUD is switched off anyway.
+        //  because it must beat hud_all.
         if ( zmqol_perf_probe() ||
              !getdvarintdefault( "hud_master", 1 ) ||
              !( getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_health_bar", 1 ) ) )
@@ -2212,61 +2341,84 @@ first_spawn()
 
         self qol_health_hud_create();
 
-        healthbar_bg  = self.qol_hud_health[0];
-        healthbar     = self.qol_hud_health[1];
-        playername    = self.qol_hud_health[2];
+        frame       = self.qol_hud_health[0];
+        healthbar   = self.qol_hud_health[1];
+        playername  = self.qol_hud_health[2];
+        track       = self.qol_hud_health[3];
+        healthvalue = self.qol_hud_health[4];
+        shieldvalue = self.qol_hud_health[5];
 
         if ( isdefined( self.e_afterlife_corpse ) )
         {
+            frame.alpha = 0;
+            track.alpha = 0;
             healthbar.alpha = 0;
             playername.alpha = 0;
-            healthbar_bg.alpha = 0;
+            healthvalue.alpha = 0;
+            shieldvalue.alpha = 0;
+            //  the shield readout decides its own alpha below; clearing its
+            //  cache makes it re-decide on the way back from afterlife
+            shieldvalue.qol_last_shield = undefined;
             wait 0.05;
             continue;
         }
-        if ( healthbar_bg.alpha == 0 || playername.alpha == 0 || healthbar.alpha == 0 )
+        if ( frame.alpha == 0 || track.alpha == 0 || healthbar.alpha == 0 || playername.alpha == 0 || healthvalue.alpha == 0 )
         {
+            frame.alpha = 1;
+            track.alpha = 0.5;
             healthbar.alpha = 1;
             playername.alpha = 1;
-            healthbar_bg.alpha = 0.5;
+            healthvalue.alpha = 1;
         }
-        //  🛑 PERF, v1.65.3 - THESE TWO USED TO RUN EVERY 100ms, UNCONDITIONALLY,
-        //  FOR THE WHOLE MATCH.
-        //
-        //  settext() is a RELIABLE SERVER COMMAND per call. ERROR_CATALOGUE §7
-        //  names this exact pattern as the cause of EXE_SERVERCOMMANDOVERFLOW:
-        //  *"settext() every tick floods reliable commands. Use settimer /
-        //  setvalue for changing numeric HUD values instead of re-settext-ing."*
-        //  Health sits at 100/100 for the overwhelming majority of a match, so
-        //  this was sending ~10 identical reliable commands per second per
-        //  player to report that nothing had changed.
-        //
-        //  🌟 THE CACHE LIVES ON THE HUDELEM, NOT IN A LOCAL, and that is what
-        //  makes it safe. The block at the top of this loop DESTROYS and later
-        //  re-CREATES these elements whenever hud_health_bar is toggled; a
-        //  local would survive that and leave the fresh element permanently
-        //  stuck at its spawn width. A new element carries no .qol_last_health,
-        //  so the very first iteration after any re-create resizes it again.
-        //
-        //  v1.96.0 - the cache moved from healthvalue (deleted) onto healthbar,
-        //  the element the guarded call now writes. setshader() is a reliable
-        //  command too, so keeping the guard still matters.
+        //  🛑 PERF, v1.65.3 - setshader() and setvalue() only when the value
+        //  changed. Health sits at full for most of a match, and the cache
+        //  lives ON THE HUDELEM so a destroy/re-create above starts it fresh
+        //  (a local would survive that and leave the new element at its spawn
+        //  width). setshader() is a reliable command, which is why the guard
+        //  matters; setvalue() is hudelem state, kept under the same guard
+        //  because it changes exactly when the width does.
         if ( isdefined( self.health ) &&
              ( !isdefined( healthbar.qol_last_health ) ||
                healthbar.qol_last_health != self.health ||
                healthbar.qol_last_maxhealth != self.maxhealth ) )
         {
-            healthbar setshader( "progress_bar_fill", int( 100 * ( self.health / self.maxhealth ) ), 3 );
+            n_fill = int( 100 * ( self.health / self.maxhealth ) );
+
+            if ( n_fill > 100 )
+                n_fill = 100;
+
+            if ( n_fill < 1 )
+                n_fill = 1;
+
+            healthbar setshader( "white", n_fill, 3 );
+            healthvalue setvalue( self.health );
             healthbar.qol_last_health = self.health;
             healthbar.qol_last_maxhealth = self.maxhealth;
+        }
+        //  The shield number, v2.14.15. Same predicate shield_hud() draws its
+        //  bar from; -1 means nothing to show and the element goes dark rather
+        //  than reading "| 0".
+        n_shield = self zmqol_shield_health_left();
+
+        if ( !isdefined( shieldvalue.qol_last_shield ) || shieldvalue.qol_last_shield != n_shield )
+        {
+            if ( n_shield < 0 )
+                shieldvalue.alpha = 0;
+            else
+            {
+                shieldvalue setvalue( n_shield );
+                shieldvalue.alpha = 1;
+            }
+
+            shieldvalue.qol_last_shield = n_shield;
         }
         //  hud_color_health, handled HERE and nowhere else. This loop repaints
         //  the tier colour every 0.1s, so any other thread tinting these
         //  elements loses the race - which is exactly what put a white border on
         //  the bar in v1.37.0.
         //
-        //  🛑 healthbar_bg is never recoloured either way. It is the dark
-        //  backing plate behind the bar, not a readout.
+        //  🛑 frame and track are never recoloured either way. They are the
+        //  border and the backing plate, not a readout.
         str_hc = getdvar( "hud_color_health" );
 
         if ( str_hc != "1 1 1" && str_hc != "" )
@@ -2282,14 +2434,16 @@ first_spawn()
             wait 0.1;
             continue;
         }
-        if ( self.health >= 71 && self.health <= self.maxhealth )
-            healthbar.color = ( 0, 1, 0.5 );
-        else if ( self.health >= 50 && self.health <= 70 )
-            healthbar.color = ( 1, 1, 0 );
-        else if ( self.health >= 25 && self.health <= 49 )
-            healthbar.color = ( 1, 0.5, 0 );
-        else if ( self.health >= 0 && self.health <= 24 )
-            healthbar.color = ( 0.5, 0, 0 );
+        //  v2.14.15 - three colours, see zmqol_zombie_swipe_damage().
+        if ( isdefined( self.health ) )
+        {
+            if ( self.health >= self.maxhealth )
+                healthbar.color = ( 0, 1, 0 );
+            else if ( self.health <= zmqol_zombie_swipe_damage() )
+                healthbar.color = ( 1, 0, 0 );
+            else
+                healthbar.color = ( 1, 1, 0 );
+        }
         wait 0.1;
     }
 }
@@ -2523,36 +2677,58 @@ zombiecounter()
 //  so this is a NET REDUCTION in held elements for most of a game, not an
 //  increase - which matters while the frametime complaint is still open.
 //
-//  📝 2300 is carried over verbatim from the previous implementation, as is the
-//  three-weapon check. Neither is re-tuned here.
+//  📝 v2.14.15 - the maximum is no longer the hard-coded 2300 that was
+//  "carried over verbatim" here: it is the map's own riotshield_hit_points
+//  (2250, or 1500 on Mob and Origins) via zmqol_shield_hit_points(), and the
+//  bar's predicate is shared with the health row's shield number. The
+//  three-weapon check is unchanged.
 //  📝 The two zm_riotshield_* precacheshader calls are left in place: they cost
 //  one asset slot each and removing a precache is a bigger change than leaving
 //  a dormant one.
 // ============================================================================
 qol_shield_hud_create()
 {
-    if ( isdefined( self.qol_hud_shield ) && self.qol_hud_shield.size == 2 )
+    //  v2.14.15 - the same grey border box as the health bar directly below
+    //  it (qol_health_hud_create(): grey plate, black track, "white" fill), one
+    //  row up at y 2 so the two boxes sit flush. The fill stays white - the
+    //  user asked for the shield bar to stay as it was, border aside.
+    if ( isdefined( self.qol_hud_shield ) && self.qol_hud_shield.size == 3 )
         return;
 
-    shieldbar_bg = newclienthudelem( self );
-    shieldbar_bg.x = 0;
-    shieldbar_bg.y = 0;
-    shieldbar_bg setshader( "white", 104, 5 );
-    shieldbar_bg.alignx = "left";
-    shieldbar_bg.aligny = "middle";
-    shieldbar_bg.horzalign = "left";
-    shieldbar_bg.vertalign = "bottom";
-    shieldbar_bg.x = shieldbar_bg.x + -45;
-    shieldbar_bg.y = shieldbar_bg.y + 2;
-    shieldbar_bg.color = ( 0, 0, 0 );
-    shieldbar_bg.alpha = 0.5;
-    shieldbar_bg.hidewheninmenu = 1;
-    shieldbar_bg.sort = -1;
+    frame = newclienthudelem( self );
+    frame.x = 0;
+    frame.y = 0;
+    frame setshader( "white", 104, 5 );
+    frame.alignx = "left";
+    frame.aligny = "middle";
+    frame.horzalign = "left";
+    frame.vertalign = "bottom";
+    frame.x = frame.x + -45;
+    frame.y = frame.y + 2;
+    frame.color = ( 0.5, 0.5, 0.5 );
+    frame.alpha = 1;
+    frame.hidewheninmenu = 1;
+    frame.sort = -2;
+
+    track = newclienthudelem( self );
+    track.x = 0;
+    track.y = 0;
+    track setshader( "white", 102, 3 );
+    track.alignx = "left";
+    track.aligny = "middle";
+    track.horzalign = "left";
+    track.vertalign = "bottom";
+    track.x = track.x + -44;
+    track.y = track.y + 2;
+    track.color = ( 0, 0, 0 );
+    track.alpha = 0.5;
+    track.hidewheninmenu = 1;
+    track.sort = -1;
 
     shieldbar = newclienthudelem( self );
     shieldbar.x = 0;
     shieldbar.y = 0;
-    shieldbar setshader( "progress_bar_fill", 100, 3 );
+    shieldbar setshader( "white", 100, 3 );
     shieldbar.alignx = "left";
     shieldbar.aligny = "middle";
     shieldbar.horzalign = "left";
@@ -2565,8 +2741,9 @@ qol_shield_hud_create()
     shieldbar.sort = 0;
 
     self.qol_hud_shield = [];
-    self.qol_hud_shield[0] = shieldbar_bg;
+    self.qol_hud_shield[0] = frame;
     self.qol_hud_shield[1] = shieldbar;
+    self.qol_hud_shield[2] = track;
 }
 
 qol_shield_hud_destroy()
@@ -2587,8 +2764,6 @@ shield_hud()
 {
     self endon( "disconnect" );
     flag_wait( "initial_blackscreen_passed" );
-
-    n_max = 2300;
 
     for (;;)
     {
@@ -2627,6 +2802,7 @@ shield_hud()
         if ( isdefined( self.shielddamagetaken ) )
             n_taken = self.shielddamagetaken;
 
+        n_max = zmqol_shield_hit_points();
         n_left = n_max - n_taken;
 
         //  A broken shield hid the old counter, so hiding the bar keeps parity.
@@ -2654,7 +2830,7 @@ shield_hud()
         //  iteration after any re-create writes the shader again.
         if ( !isdefined( shieldbar.qol_last_fill ) || shieldbar.qol_last_fill != n_fill )
         {
-            shieldbar setshader( "progress_bar_fill", n_fill, 3 );
+            shieldbar setshader( "white", n_fill, 3 );
             shieldbar.qol_last_fill = n_fill;
         }
 
@@ -20464,6 +20640,176 @@ zmqol_do_post_chunk_repair_delay( has_perk )
     }
 
     wait 1;
+}
+
+// ============================================================================
+//  BETTER SPEED COLA, part two  -  perk bottles go down faster     (v2.14.15)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-08: *"make it so that having speed cola also makes players
+//  drink perk bottles faster."*  Same row, same dvar, same 2x.
+//
+//  🌟 WHAT A DRINK IS, MEASURED. _zm_perks::perk_give_bottle_begin() gives the
+//  bottle weapon and switchtoweapon()s it; the drinking animation IS that
+//  weapon's raise - zombie_perk_bottle_sleight dumped out of zm_transit.ff:
+//  raiseAnim viewmodel_zombie_perksacola_drink, raiseTime 2.1, firstRaiseTime
+//  2.8, dropTime 0.9. The perk lands on "weapon_change_complete", then
+//  perk_give_bottle_end() switches the gun back and waits for ITS raise. So
+//  "drink faster" is "switch weapons faster", for exactly that span.
+//
+//  🌟 THE ENGINE ALREADY HAS THE KNOB. MP's Fast Hands is
+//  specialty_fastweaponswitch, scaled by perk_weapSwitchMultiplier - and that
+//  dvar is in THIS build's zombies boot dump ("0.5"), so the code path is
+//  compiled into t6zm. The perk is set for the drink and cleared after it;
+//  nothing else the player does is touched.
+//
+//  🛑 NOT hooked at increment_is_drinking() or disable_player_move_states():
+//  both are shared with Pack-a-Punch, the Bowie knife, buildables, the gas
+//  mask and the tomahawk (measured over the whole ZM dump). The gate is the
+//  bottle weapon itself - _zm_utility::is_zombie_perk_bottle(), 14 names.
+//
+//  THREE PLACES SET IT, ONE STATE, ONE SETTER:
+//    1. zmqol_vending_trigger_post_think - stock's post-purchase function
+//       verbatim, with the set/clear around the drink. It is THREADED from
+//       vending_trigger_think() (the shape STOCK_REFERENCE 7a measured
+//       hookable), but a _zm_perks hook has failed before (give_perk), so it
+//       PRINTS when it runs: that line in the log is the proof it took.
+//    2. wunderfizz.gsc::givePerk() - the mod's own machine, set directly.
+//    3. zmqol_speed_cola_drink_watch() - per player, 20 Hz: the moment
+//       is_drinking > 0 AND a perk bottle is in the weapon list, set, and
+//       LATCHED until is_drinking returns to 0 so the gun's swap back is
+//       quick too. Needs no hook to take and reaches every drink path.
+//       Cost: two field reads per tick until a drink actually starts.
+//  All three go through zmqol_speed_cola_fast_drink_set(), which is
+//  idempotent, so they can overlap freely.
+//
+//  📝 Buying Speed Cola itself: hasperk() is false until the perk lands
+//  mid-drink, so that first bottle goes down at normal speed and only the
+//  swap back is quick. Correct - you did not have Speed Cola yet.
+//  📝 Residual, settled by the boot: whether the engine reads the multiplier
+//  when the raise STARTS (after the gun's drop) or when the switch begins.
+//  Paths 1 and 2 set the perk before the switch either way; path 3 lands
+//  within 50 ms, during the drop, so it covers the first reading only.
+// ============================================================================
+zmqol_speed_cola_fast_drink_set( b_on )
+{
+    if ( b_on )
+    {
+        if ( is_true( self.zmqol_fast_drink ) )
+            return;
+
+        if ( !getdvarintdefault( "better_speed_cola", 0 ) )
+            return;
+
+        if ( !self hasperk( "specialty_fastreload" ) )
+            return;
+
+        self.zmqol_fast_drink = 1;
+        self setperk( "specialty_fastweaponswitch" );
+        //  printed AFTER setperk() on purpose: if the engine rejects the perk
+        //  name the thread dies there and this line never appears
+        println( "[zm_qol] speed cola: fast drink -> 1" );
+        return;
+    }
+
+    if ( !is_true( self.zmqol_fast_drink ) )
+        return;
+
+    self.zmqol_fast_drink = 0;
+    self unsetperk( "specialty_fastweaponswitch" );
+    println( "[zm_qol] speed cola: fast drink -> 0" );
+}
+
+zmqol_holding_perk_bottle()
+{
+    a_weapons = self getweaponslist();
+
+    for ( i = 0; i < a_weapons.size; i++ )
+    {
+        if ( is_zombie_perk_bottle( a_weapons[i] ) )
+            return 1;
+    }
+
+    return 0;
+}
+
+zmqol_speed_cola_drink_watch()
+{
+    if ( zmqol_minimal() )
+        return;
+
+    self endon( "disconnect" );
+    level endon( "end_game" );
+    flag_wait( "initial_blackscreen_passed" );
+    b_latched = 0;
+
+    for ( ;; )
+    {
+        if ( !isdefined( self.is_drinking ) || self.is_drinking <= 0 )
+        {
+            b_latched = 0;
+            self zmqol_speed_cola_fast_drink_set( 0 );
+            wait 0.05;
+            continue;
+        }
+
+        if ( self maps\mp\zombies\_zm_laststand::player_is_in_laststand() )
+        {
+            self zmqol_speed_cola_fast_drink_set( 0 );
+            wait 0.05;
+            continue;
+        }
+
+        if ( !b_latched && self zmqol_holding_perk_bottle() )
+            b_latched = 1;
+
+        if ( b_latched )
+            self zmqol_speed_cola_fast_drink_set( 1 );
+
+        wait 0.05;
+    }
+}
+
+//  Stock's vending_trigger_post_think() (_zm_perks.gsc:1888), verbatim except
+//  the three marked lines. `self` is the machine's trigger, as in stock.
+zmqol_vending_trigger_post_think( player, perk )
+{
+    player endon( "disconnect" );
+    player endon( "end_game" );
+    player endon( "perk_abort_drinking" );
+    println( "[zm_qol] speed cola: machine drink hook fired (" + perk + ")" );      //  <- proof the replaceFunc took
+    player zmqol_speed_cola_fast_drink_set( 1 );                                    //  <- before the bottle comes up
+    gun = player maps\mp\zombies\_zm_perks::perk_give_bottle_begin( perk );
+    evt = player waittill_any_return( "fake_death", "death", "player_downed", "weapon_change_complete" );
+
+    if ( evt == "weapon_change_complete" )
+        player thread maps\mp\zombies\_zm_perks::wait_give_perk( perk, 1 );
+
+    player maps\mp\zombies\_zm_perks::perk_give_bottle_end( gun, perk );
+    player zmqol_speed_cola_fast_drink_set( 0 );                                    //  <- the gun is back up
+
+    if ( player maps\mp\zombies\_zm_laststand::player_is_in_laststand() || isdefined( player.intermission ) && player.intermission )
+        return;
+
+    player notify( "burp" );
+
+    if ( isdefined( level.pers_upgrade_cash_back ) && level.pers_upgrade_cash_back )
+        player maps\mp\zombies\_zm_pers_upgrades_functions::cash_back_player_drinks_perk();
+
+    if ( isdefined( level.pers_upgrade_perk_lose ) && level.pers_upgrade_perk_lose )
+        player thread maps\mp\zombies\_zm_pers_upgrades_functions::pers_upgrade_perk_lose_bought();
+
+    if ( isdefined( level.perk_bought_func ) )
+        player [[ level.perk_bought_func ]]( perk );
+
+    player.perk_purchased = undefined;
+
+    if ( is_false( self.power_on ) )
+    {
+        wait 1;
+        maps\mp\zombies\_zm_perks::perk_pause( self.script_noteworthy );
+    }
+
+    bbprint( "zombie_uses", "playername %s playerscore %d round %d name %s x %f y %f z %f type %s", player.name, player.score, level.round_number, perk, self.origin, "perk" );
 }
 
 // ============================================================================

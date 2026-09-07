@@ -161,6 +161,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **No perk limit:**
   * Carry as many as you like by default, or set a cap of 1–12 from the pre-game lobby.
 
+* **Better Speed Cola:**
+  * A **BETTER SPEED COLA** switch on the GAME tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
+
 * **Solo Easter Eggs:**
   * A **SOLO EASTER EGGS** switch in the pre-game lobby on TranZit, Die Rise, Buried and Origins. Turn it on and the main quest scales to however many players are actually in the lobby, instead of always demanding four. Off by default, and the row is only shown on those four maps in Classic — never on Survival or Grief.
 
@@ -179,6 +182,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 * **Timers and counters:**
   * Game and round timers with configurable colours, plus a Cold War round counter.
+
+* **Health bar:**
+  * A green bar in a grey box, bottom left, that turns yellow once you take damage and red when the next zombie hit would down you, with your health as a number beside it. Carrying a shield adds its own bar above and its remaining health next to yours.
 
 * **Hitmarkers:**
   * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.

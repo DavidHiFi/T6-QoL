@@ -3150,6 +3150,9 @@ givePerk(perk)
 	self.isDrinkingPerk = 1;
 	self thread zmqol_wf_drink_guard();
 
+	//  v2.14.15 - BETTER SPEED COLA, part two: set before the bottle comes up,
+	//  cleared once the gun is back. See quality_of_life.gsc's banner.
+	self scripts\zm\quality_of_life::zmqol_speed_cola_fast_drink_set( 1 );
 	gun = self maps\mp\zombies\_zm_perks::perk_give_bottle_begin(perk);
 	evt = self waittill_any_return("fake_death", "death", "player_downed", "weapon_change_complete");
 
@@ -3157,6 +3160,7 @@ givePerk(perk)
 		self thread maps\mp\zombies\_zm_perks::wait_give_perk(perk, 1);
 
 	self maps\mp\zombies\_zm_perks::perk_give_bottle_end(gun, perk);
+	self scripts\zm\quality_of_life::zmqol_speed_cola_fast_drink_set( 0 );
 
 	//  Cleared here for the normal path; the watchdog covers the paths that
 	//  never reach this line.
