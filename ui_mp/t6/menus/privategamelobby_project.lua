@@ -451,20 +451,54 @@ local QolCrewRow = function (Index, Maps, ModeGroups, Names)
 	CoD.PrivateGameLobby.QolCharacter[Index] = Row
 end
 
--- Victus, on the three maps that use the crew. Classic only.
+--  🛑 v2.14.23 - THE SURVIVAL ROW FOLLOWS THE MAP, NOT THE MODE. User,
+--  2026-09-08: *"in the pre game lobby screen the character selection for
+--  crazy place said CIA or CDC, i left it at default and i spawned as nikolai
+--  ... same problem i had with mob and maybe buried."* The old row 4 was
+--  "survival, every map: CIA/CDC", written when TranZit's stock locations
+--  were the only survival games. The mod's own survival locations do not all
+--  use the teams - measured from what each map actually installs as
+--  level.givecustomcharacters for a zstandard game:
+--
+--    The Crazy Place (zm_tomb)   give_personality_characters - stock zm_tomb.gsc
+--                                :156, and scripts/zm/replaced/zm_tomb_gamemodes
+--                                .gsc leaves it (its banner: "Origins survival
+--                                keeps the four heroes"). Ultimis.
+--    Cell Block (zm_prison)      give_personality_characters - scripts/zm/
+--                                replaced/zm_alcatraz_gamemodes.gsc routes
+--                                zstandard through zm_prison::init_characters
+--                                (the grief guard/inmate models are not in any
+--                                fastfile a zstandard game loads). Mob crew.
+--    Borough (zm_buried)         give_team_characters - replaced/zm_buried_
+--                                gamemodes.gsc:380. CIA/CDC.
+--    Die Rise's three            give_team_characters - replaced/zm_highrise_
+--                                gamemodes.gsc:53. CIA/CDC.
+--    TranZit's and Nuketown's    stock survival_init(): give_team_characters.
+--                                CIA/CDC.
+--
+--  So Origins and Mob show their crews in survival too, and the CIA/CDC row is
+--  pinned to the four maps whose survival games use the teams. Nothing else
+--  changes: the values are the same 1-4 (1-2 for the teams), and
+--  qol_options.gsc::qol_opt_character() already runs on every map and mode
+--  and writes characterindex, which is exactly what both
+--  give_personality_characters() implementations switch on.
+
+-- Victus, on the three maps that use the crew. Classic only - those maps'
+-- survival games (Borough, the Die Rise locations, TranZit's) use the teams.
 QolCrewRow(1, { "zm_transit", "zm_highrise", "zm_buried" }, { "zclassic" },
 	{ "RUSSMAN", "STUHLINGER", "MISTY", "MARLTON" })
 
--- Ultimis, Origins.
-QolCrewRow(2, { "zm_tomb" }, { "zclassic" },
+-- Ultimis, Origins: classic and The Crazy Place alike.
+QolCrewRow(2, { "zm_tomb" }, { "zclassic", "zsurvival" },
 	{ "DEMPSEY", "NIKOLAI", "RICHTOFEN", "TAKEO" })
 
--- Mob of the Dead.
-QolCrewRow(3, { "zm_prison" }, { "zclassic" },
+-- Mob of the Dead: classic and Cell Block alike.
+QolCrewRow(3, { "zm_prison" }, { "zclassic", "zsurvival" },
 	{ "FINN", "SAL", "BILLY", "ARLINGTON" })
 
--- Survival, every map: the CDC and CIA teams, and nothing else exists.
-QolCrewRow(4, nil, { "zsurvival" }, { "CIA", "CDC" })
+-- Survival on the maps whose survival games use the CDC and CIA teams.
+QolCrewRow(4, { "zm_transit", "zm_nuked", "zm_highrise", "zm_buried" }, { "zsurvival" },
+	{ "CIA", "CDC" })
 
 --  v1.99.60 - the little red cross next to a row that is no longer on its
 --  default, which every other lobby row shows. User, 2026-08-18: *"there should
