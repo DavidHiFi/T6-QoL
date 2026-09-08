@@ -107,6 +107,37 @@ zmqol_cp_pap_client_model_for( localclientnum )
     level.zmqol_cp_pap_client_models[localclientnum] = m_pap;
 
     println( "[zm_qol] CLIENT crazy place pap: built pose - own p6_zm_tm_packapunch spawned at (10340,-7906,-412) for local client " + localclientnum + ", 6 assembly anims snapped to their last frame (rate 0, time 1.0)" );
+
+    //  v2.14.26 - MEASUREMENT for the machine's collision (server side,
+    //  zm_tomb_loc_crazy_place.gsc::zmqol_cp_pap_collision): where each of the
+    //  six moved pieces ends up in the built pose, relative to the machine.
+    //  The bone names are the model's own (p6_zm_tm_packapunch dump: part1_jnt
+    //  .. part6_jnt, roller_01..06_jnt). A frame later so the snap has applied.
+    wait 0.1;
+
+    a_tags = [];
+    a_tags[0] = "part1_jnt";
+    a_tags[1] = "part2_jnt";
+    a_tags[2] = "part3_jnt";
+    a_tags[3] = "part4_jnt";
+    a_tags[4] = "part5_jnt";
+    a_tags[5] = "part6_jnt";
+
+    for ( i = 0; i < a_tags.size; i++ )
+    {
+        v_o = m_pap gettagorigin( a_tags[i] );
+        v_a = m_pap gettagangles( a_tags[i] );
+
+        if ( !isdefined( v_o ) || !isdefined( v_a ) )
+        {
+            println( "[zm_qol] CLIENT crazy place pap: piece " + a_tags[i] + " - tag not found" );
+            continue;
+        }
+
+        v_rel = v_o - m_pap.origin;
+
+        println( "[zm_qol] CLIENT crazy place pap: piece " + a_tags[i] + " built at rel (" + int( v_rel[0] ) + "," + int( v_rel[1] ) + "," + int( v_rel[2] ) + ") angles (" + int( v_a[0] ) + "," + int( v_a[1] ) + "," + int( v_a[2] ) + ")" );
+    }
 }
 
 // ============================================================================

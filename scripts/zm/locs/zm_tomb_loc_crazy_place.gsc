@@ -349,7 +349,73 @@ zmqol_cp_pap_built_pose()
 
 	m_pap ghost();
 
-	println( "[zm_qol] crazy place pap: server machine at (" + int( m_pap.origin[0] ) + "," + int( m_pap.origin[1] ) + "," + int( m_pap.origin[2] ) + ") ghosted after " + ( n_wait * 0.05 ) + "s, collision kept - the built pose is the client's own model (zm_tomb.csc)" );
+	println( "[zm_qol] crazy place pap: server machine at (" + int( m_pap.origin[0] ) + "," + int( m_pap.origin[1] ) + "," + int( m_pap.origin[2] ) + ") ghosted after " + ( n_wait * 0.05 ) + "s - the built pose is the client's own model (zm_tomb.csc), collision is zmqol_cp_pap_collision's" );
+}
+
+// ============================================================================
+//  zmqol_cp_pap_collision  -  the machine blocks players.               (v2.14.26)
+//
+//  User, 2026-09-08 (v2.14.25 boot): *"the pack machine in the middle had no
+//  collisions, so i could walk straight through it"*. Why there was none:
+//    * a script_model spawned by script does not collide by its xmodel (the
+//      model does carry a collision LOD - collLod 1 in the dump - and the
+//      player still walked through, same as every perk machine, which is why
+//      _zm_perks spawns a separate zm_collision_perks1 for each one);
+//    * that perk-shaped clip IS spawned for this machine by
+//      perk_machine_spawn_init, and perk_fx() below deletes it (ported from
+//      Reimagined - a vending-machine clip is the wrong shape for a stone
+//      monolith and sat inside its heap);
+//    * on classic the Excavation Site machine is stopped by a clip brush baked
+//      into the map (no clip entity near it in the mapents), which cannot move.
+//
+//  MEASURED, not guessed - p6_zm_tm_packapunch dumped from zm_tomb.ff and its
+//  vertices split by bone: the part that never moves (tag_origin, the stone
+//  base with the roller console on top) is local x -51..+51, y -34.5..+32.7,
+//  0..35 tall. The six pc*_jnt pieces are the ones the assembly anims move,
+//  and their built positions cannot be read offline (T6 xanim is a packed
+//  binary; OAT dumps it raw) - the client prints them this boot, see
+//  zm_tomb.csc::zmqol_cp_pap_client_model_for(), and their clips get baked
+//  from that print.
+//
+//  So for now: the BASE, as two collision_geo_64x64x64_standard (centred
+//  boxes, same family and spawn shape as the mystery box's clips above) at
+//  local x +-26, y +8, z +32 - together x -58..+58, y -24..+40, 0..64 tall.
+//  y is deliberately shifted 8 towards the back: the use side is local -y
+//  (stock's pack_a_punch_intro_trigger sits 95 to the machine's RIGHT, and
+//  the base's front face is at -34.5), and a player whose origin sits against
+//  a clip face at -24 is 39 from the machine origin - inside the mod's
+//  INSTANT PAP trigger_radius (60, quality_of_life.gsc::new_pap_trigger) and,
+//  by one unit, inside stock's trigger_radius_use 40 (_zm_perks.gsc:2877) for
+//  when INSTANT PAP is off. Full-depth coverage of the base front would put
+//  that player at 49.5 and break stock-mode use. The machine's struct angles
+//  are (0,0,0) so local axes are world axes.
+//
+//  🛑 What this does NOT yet cover: any built piece that stands on the floor
+//  outside that footprint. The boot log's "CLIENT crazy place pap: piece ..."
+//  lines are the measurement for that.
+// ============================================================================
+zmqol_cp_pap_collision()
+{
+	v_org = ( 10340, -7906, -412 );
+
+	a_at = [];
+	a_at[0] = v_org + ( 26, 8, 32 );
+	a_at[1] = v_org + ( -26, 8, 32 );
+
+	level.zmqol_cp_pap_clips = [];
+
+	for ( i = 0; i < a_at.size; i++ )
+	{
+		clip = spawn( "script_model", a_at[i], 1 );
+		clip.angles = ( 0, 0, 0 );
+		clip setmodel( "collision_geo_64x64x64_standard" );
+		clip.script_noteworthy = "zmqol_cp_pap_clip";
+		clip ghost();
+		clip disconnectpaths();
+		level.zmqol_cp_pap_clips[i] = clip;
+	}
+
+	println( "[zm_qol] crazy place pap: 2 base collision clips spawned at (" + int( a_at[0][0] ) + "," + int( a_at[0][1] ) + "," + int( a_at[0][2] ) + ") and (" + int( a_at[1][0] ) + "," + int( a_at[1][1] ) + "," + int( a_at[1][2] ) + ") - x +-58, y -24..+40, 64 tall about the machine (base measured x +-51, y -34.5..+32.7, 35 tall)" );
 }
 
 precache()
@@ -383,6 +449,7 @@ main()
 	level thread perk_fx();
 	level thread pap_probe();
 	level thread zmqol_cp_pap_built_pose();
+	level thread zmqol_cp_pap_collision();
 	level thread zmqol_cp_box_power_look();
 
 	//  `.boxhere` (quality_of_life.gsc's chat commands) reaches this location
@@ -1023,6 +1090,8 @@ perk_fx()
 
 		if ( trig.script_noteworthy == "specialty_weapupgrade" )
 		{
+			//  The perk-shaped zm_collision_perks1 _zm_perks gave the monolith.
+			//  Its replacement is zmqol_cp_pap_collision() (v2.14.26).
 			if ( isdefined( trig.clip ) )
 				trig.clip delete();
 		}
