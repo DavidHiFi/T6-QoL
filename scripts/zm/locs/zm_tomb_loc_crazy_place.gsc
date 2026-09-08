@@ -54,17 +54,29 @@
 //      on Origins for CLASSIC play too, to spare the player having to look at a
 //      floating perk bottle they are standing inside of. Not worth that trade;
 //      see the hand-off notes.
-//    * There is no mystery box inside the arena. Origins' six chests are all
-//      outside the chamber and a chest cannot be created from script (its
-//      zbarrier is a map entity). Reimagined's version has the same gap - its
-//      treasure_chest_init() call, ported verbatim below, hands the box the
-//      same six unreachable positions. The arena's weapon economy is the four
-//      wall-buys, the two stock chamber wall-buys (mp44_zm at
-//      (9450, -7284, -330) and ak74u_zm at (11188, -8379, -358), both untagged
-//      in the stock mapents so they spawn here already) and Pack-a-Punch.
-//    * The mod's Der Wunderfizz mirrors Origins' six native machine positions,
-//      one per generator - all outside the chamber. So this arena has the four
-//      perks below and no Wunderfizz.
+//    * (v2.14.22 - NO LONGER TRUE) There used to be no mystery box inside the
+//      arena: Origins' six chests are all outside the chamber, and Reimagined's
+//      treasure_chest_init(), ported verbatim, handed the box those six
+//      unreachable positions. User, 2026-09-08: *"add a mystery box to this
+//      survival map ... make sure it's the origins mystery box ... not too far
+//      away from these pillars, not too close/clipping into them"*. One of
+//      Treyarch's own chests is now MOVED into the chamber - see
+//      zmqol_cp_bring_chest_into_arena() - and it is the only chest the box
+//      logic knows about, so it never leaves. The two stock chamber wall-buys
+//      (mp44_zm at (9450, -7284, -330) and ak74u_zm at (11188, -8379, -358),
+//      both untagged in the stock mapents) still spawn here as before.
+//    * (v2.14.22 - NO LONGER TRUE) The mod's Der Wunderfizz used to mirror
+//      Origins' six native machine positions, all outside the chamber. On this
+//      location scripts\zm\wunderfizz.gsc now places ONE machine inside the
+//      arena instead (v2.14.23) - see the crazy_place branch inside its
+//      zm_tomb block, and zmqol_wf_place() for the adjusters it now runs.
+//    * (v2.14.23) The Pack-a-Punch machine stands BUILT - the six stone pieces
+//      up, as on classic Origins once every generator is captured - see
+//      zmqol_cp_pap_built_pose() below. And it is the ONLY Pack-a-Punch on the
+//      location: the map's own struct is dropped from the struct index in
+//      struct_init() (zmqol_cp_drop_map_pap_structs), which is what makes the
+//      INSTANT PAP switch land on this machine instead of the one at the
+//      Excavation Site.
 //
 //  Panzer Soldat: nothing to do. Reimagined has to return early from
 //  mechz_round_tracker() on this location because their copy skips the
@@ -119,7 +131,31 @@ struct_init()
 	//  setmodel()s zombie_sign_please_wait. Origins' own Pack-a-Punch has no
 	//  such flag and nothing on this map precaches that model. With no .target
 	//  the stock branch's isdefined( flag_pos ) guard simply skips it.
+	//
+	//  🛑 v2.14.23 - ORIGINS' OWN PACK-A-PUNCH STRUCT IS DROPPED FIRST, so this
+	//  machine is the ONLY Pack-a-Punch on the location. User, 2026-09-08:
+	//  *"instant pap doesn't work with this machine ... make sure the instant
+	//  pap toggle works as well"*. Measured from the 8:14 AM and 9:02 AM logs:
+	//  "crazy place pap: trigger 1 machine at (-5,-8,335)" - the map's own
+	//  machine at the Excavation Site was being spawned alongside this one, and
+	//  every stock lookup is written for a map with ONE machine:
+	//    * quality_of_life.gsc::new_pap_trigger() takes trigger [0] and
+	//      getent( "vending_packapunch", "targetname" ) and builds the instant
+	//      radius trigger there - i.e. at the Excavation Site, outside the arena.
+	//    * _zm_perks::vending_weapon_upgrade() (stock mode) does
+	//      getent( self.target ) = getent( "vending_packapunch" ) on EACH
+	//      trigger, so both triggers' threads bind whichever of the two models
+	//      the engine hands back.
+	//  The map's struct is not needed here - nothing on a survival arena can
+	//  reach the Excavation Site - so it is taken out of the struct index before
+	//  _zm_perks::perk_machine_spawn_init() reads it (zm_tomb.gsc main():
+	//  _load::main() at :141 runs struct_class_init and this hook; _zm::init()
+	//  at :218 spawns the machines). The client-side "pap_cs" model the map
+	//  places at the same spot is a static client entity and stays; it is
+	//  outside the arena. See zmqol_cp_drop_map_pap_structs().
 	// ========================================================================
+	zmqol_cp_drop_map_pap_structs();
+
 	s_pap = spawnstruct();
 	s_pap.targetname = "zm_perk_machine";
 	s_pap.script_noteworthy = "specialty_weapupgrade";
@@ -127,6 +163,7 @@ struct_init()
 	s_pap.origin = (10340, -7906, -412);
 	s_pap.angles = (0, 0, 0);
 	scripts\zm\replaced\utility::add_struct( s_pap );
+
 
 	// --- the four pillar wall-buys ------------------------------------------
 	//  🛑 EVERY ORIGIN AND ANGLE HERE HAS AN EXACT TWIN in
@@ -173,6 +210,152 @@ zmqol_add_wallbuy( str_weapon, str_model, v_origin, v_angles )
 	println( "[zm_qol] crazy place wallbuy: " + str_weapon + " at (" + int( v_origin[0] ) + "," + int( v_origin[1] ) + "," + int( v_origin[2] ) + ") yaw " + int( v_angles[1] ) );
 }
 
+// ============================================================================
+//  zmqol_cp_drop_map_pap_structs  -  Origins' own Pack-a-Punch struct leaves
+//  the struct index, so only the chamber machine is ever spawned.  (v2.14.23)
+//
+//  The index is level.struct_class_names[key][name], built by struct_class_init
+//  (the mod's scripts\zm\replaced\utility.gsc copy of stock's, which then calls
+//  this location's struct_init). getstructarray() / getstruct() read nothing
+//  else, so rebuilding the two arrays the Pack-a-Punch struct sits in - the
+//  "zm_perk_machine" targetname list perk_machine_spawn_init() walks, and the
+//  "specialty_weapupgrade" noteworthy list - removes it from every consumer at
+//  once. Runs BEFORE the chamber's own struct is add_struct()ed, so "every
+//  specialty_weapupgrade struct" here means the map's, and the map has one
+//  (mapents dump: script_struct at (-5.5, -8.5, 335.5), target "pap_cs").
+//  Nothing in the Origins dump or this mod looks the struct up by any other
+//  key (grep'd for specialty_weapupgrade / zm_perk_machine / pap_cs).
+// ============================================================================
+zmqol_cp_drop_map_pap_structs()
+{
+	n_dropped = 0;
+
+	a_keys = [];
+	a_keys[0] = "targetname";
+	a_keys[1] = "script_noteworthy";
+	a_names = [];
+	a_names[0] = "zm_perk_machine";
+	a_names[1] = "specialty_weapupgrade";
+
+	for ( k = 0; k < a_keys.size; k++ )
+	{
+		if ( !isdefined( level.struct_class_names[a_keys[k]] ) || !isdefined( level.struct_class_names[a_keys[k]][a_names[k]] ) )
+			continue;
+
+		a_old = level.struct_class_names[a_keys[k]][a_names[k]];
+		a_new = [];
+
+		for ( i = 0; i < a_old.size; i++ )
+		{
+			if ( isdefined( a_old[i].script_noteworthy ) && a_old[i].script_noteworthy == "specialty_weapupgrade" )
+			{
+				if ( k == 0 )
+				{
+					n_dropped++;
+					println( "[zm_qol] crazy place pap: dropped the map's own pack-a-punch struct at (" + int( a_old[i].origin[0] ) + "," + int( a_old[i].origin[1] ) + "," + int( a_old[i].origin[2] ) + ") from the struct index" );
+				}
+
+				continue;
+			}
+
+			a_new[a_new.size] = a_old[i];
+		}
+
+		level.struct_class_names[a_keys[k]][a_names[k]] = a_new;
+	}
+
+	println( "[zm_qol] crazy place pap: " + n_dropped + " map pack-a-punch struct(s) dropped (expect 1)" );
+}
+
+// ============================================================================
+//  zmqol_cp_pap_built_pose  -  the chamber's Pack-a-Punch stands ASSEMBLED.
+//                                                                   (v2.14.23)
+// ----------------------------------------------------------------------------
+//  On classic Origins the machine starts as a heap of stone and its pieces
+//  rise one per captured generator. That is a CLIENT animation on a client-only
+//  map model: zm_tomb_capture_zones.csc::play_pap_anim() drives the entity
+//  "pap_cs" (mapents: script_model, spawnflags 2, at the Excavation Site) from
+//  the "packapunch_anim" clientfield, playing
+//  fxanim_zom_tomb_packapunch_pc1..pc6_anim and snapping each to its end. None
+//  of that can reach the chamber's machine, which is a SERVER script_model
+//  _zm_perks spawned from this location's struct.
+//
+//  So the same six anims are played on the server, on that model, the way the
+//  stock scripts animate any fxanim prop on Origins: zm_tomb_challenges.gsc:63
+//  /:73 (#using_animtree "fxanim_props_dlc4" + self useanimtree(#animtree) on a
+//  script_model, then setanim) and zm_tomb_ambient_scripts.gsc:111. The tree is
+//  registered on the server by zm_tomb.gsc:110 (init_pap_animtree ->
+//  scriptmodelsuseanimtree) on every gametype, so there is NO new
+//  scriptmodelsuseanimtree() here - adding one would break the server/client
+//  registration order (ERROR_CATALOGUE §4).
+//
+//  The server has setanim() but no setanimtime(), so the pieces are PLAYED, at
+//  rate 1, as soon as the machine exists - _zm_perks::init() spawns it during
+//  level init, long before the blackscreen lifts - and a non-looping xanim holds
+//  its last frame (the challenge box above stays open the same way). The log
+//  prints each anim's length and the moment they started.
+// ============================================================================
+#using_animtree( "fxanim_props_dlc4" );
+
+zmqol_cp_pap_built_pose()
+{
+	level endon( "intermission" );
+
+	m_pap = undefined;
+	n_wait = 0;
+
+	while ( !isdefined( m_pap ) && n_wait < 600 )
+	{
+		a_pap = getentarray( "specialty_weapupgrade", "script_noteworthy" );
+
+		for ( i = 0; i < a_pap.size; i++ )
+		{
+			if ( isdefined( a_pap[i] ) && isdefined( a_pap[i].machine ) )
+			{
+				m_pap = a_pap[i].machine;
+				break;
+			}
+		}
+
+		if ( !isdefined( m_pap ) )
+		{
+			wait 0.05;
+			n_wait++;
+		}
+	}
+
+	if ( !isdefined( m_pap ) )
+	{
+		println( "[zm_qol] crazy place pap: no machine after 30s - built pose NOT applied" );
+		return;
+	}
+
+	a_anims = [];
+	a_anims[0] = %fxanim_zom_tomb_packapunch_pc1_anim;
+	a_anims[1] = %fxanim_zom_tomb_packapunch_pc2_anim;
+	a_anims[2] = %fxanim_zom_tomb_packapunch_pc3_anim;
+	a_anims[3] = %fxanim_zom_tomb_packapunch_pc4_anim;
+	a_anims[4] = %fxanim_zom_tomb_packapunch_pc5_anim;
+	a_anims[5] = %fxanim_zom_tomb_packapunch_pc6_anim;
+
+	m_pap useanimtree( #animtree );
+
+	str_len = "";
+
+	for ( i = 0; i < a_anims.size; i++ )
+	{
+		m_pap setanim( a_anims[i], 1.0, 0.0, 1.0 );
+		str_len += " pc" + ( i + 1 ) + "=" + getanimlength( a_anims[i] );
+	}
+
+	b_black = 0;
+
+	if ( level flag_exists( "initial_blackscreen_passed" ) )
+		b_black = flag( "initial_blackscreen_passed" );
+
+	println( "[zm_qol] crazy place pap: built pose - 6 assembly anims playing on the machine at (" + int( m_pap.origin[0] ) + "," + int( m_pap.origin[1] ) + "," + int( m_pap.origin[2] ) + ") after " + ( n_wait * 0.05 ) + "s, lengths(s):" + str_len + " blackscreen_passed=" + b_black );
+}
+
 precache()
 {
 	//  pap_fx() setmodel()s two script_models with it.
@@ -198,6 +381,7 @@ main()
 
 	level thread perk_fx();
 	level thread pap_probe();
+	level thread zmqol_cp_pap_built_pose();
 	level thread pap_fx();
 	level thread set_ee_ending();
 	level thread scripts\zm\locs\loc_common::init();
@@ -298,20 +482,201 @@ disable_zones()
 }
 
 // ============================================================================
-//  treasure_chest_init  -  Reimagined's, verbatim.
+//  treasure_chest_init  -  ONE of Origins' chests, moved into the arena.
+//                                                                   (v2.14.22)
+// ----------------------------------------------------------------------------
+//  Was Reimagined's verbatim: all six chests, every one outside the chamber,
+//  so the box was never reachable here. User, 2026-09-08: *"add a mystery box
+//  to this survival map ... make sure it's the origins mystery box, and it
+//  doesn't have to be pixel perfect just not too far away from these pillars,
+//  not too close/clipping into them, make sure it's aligned well"*.
 //
-//  ⚠️ All six of Origins' chests are outside the chamber, so the magic box is
-//  not reachable on this arena. That is Reimagined's behaviour too, kept rather
-//  than quietly "fixed": a chest cannot be created from script (each one owns a
-//  zbarrier map entity) and moving one of Treyarch's in would be a change to
-//  the location, not a port of it.
+//  HOW A CHEST IS BUILT, measured from the zm_tomb mapents dump and
+//  _zm_magicbox.gsc, not assumed:
+//    * a script_struct "treasure_chest_use" (origin, angles, zombie_cost 950,
+//      script_noteworthy "<name>") - the thing level.chests holds;
+//    * a "zbarrier_zmtomb_magicbox" ENTITY at the SAME origin with
+//      script_noteworthy "<name>_zbarrier" and yaw = struct yaw +/- 180 (every
+//      one of the six pairs: struct 180 / zbarrier 0, 270 / 90, 105 / 285).
+//      _zm_magicbox::get_chest_pieces() finds it by that name (line 173) and
+//      it IS the box - model, lid, gun rise, teddy, glow all hang off it;
+//    * the use prompt is a unitrigger _zm_magicbox builds at
+//      origin + anglestoright( struct.angles ) * -22.5 (line 182), i.e. on
+//      the struct's LEFT-hand side. That fixes the facing convention: the side
+//      players use is the -right vector, so a box with its back to a wall
+//      whose inward normal points along yaw N takes struct yaw N - 90 and
+//      zbarrier yaw N + 90.
+//
+//  So the move is two writes - the struct and its zbarrier - done BEFORE
+//  _zm_magicbox::treasure_chest_init() reads either. Nothing else in the
+//  stock mapents shares a chest's origin (grep'd: only the pair itself), so
+//  there is no collision brush left behind. With ONE chest in level.chests,
+//  treasure_chest_init() takes its size == 1 branch: chest_index 0,
+//  no_fly_away = 1, no teddy, no "moving_chest_enabled" - the box stays put.
+//  Same single-chest shape as the mod's Dragon Rooftop / Reimagined's Church.
+//
+//  WHERE. The user's screenshot carried the mod's own ".where" line:
+//  x 10536 y -8383 z -463 yaw 259, arrow on the floor at the foot of the
+//  pillars straight ahead. Rather than guess the distance to that wall from
+//  a screenshot, the placement TRACES it: a bullettrace from that standing
+//  point along yaw 259 at chest height finds the pillar face, the box goes
+//  80 units back from it (the box is ~40 deep; the use volume adds 22.5 in
+//  front), and a second trace drops it onto the floor. The wall normal sets
+//  the facing, axis-snapped the way the Wunderfizz wall snap does it. If the
+//  trace finds nothing plausible (< 150 or no hit within 1200) a fixed point
+//  320 units out along the same line is used and the log says so.
+//
+//  🛑 RESIDUAL RISK, stated: a zbarrier is a map entity and nothing in the
+//  workspace moves one by assigning .origin/.angles (Reimagined only ever
+//  picks WHICH chest is live). The write is standard entity-field access and
+//  the log prints the entity's origin read back after it; if the box still
+//  draws at (2900, 5520, -368) in the bunker, that line is the evidence.
 // ============================================================================
 treasure_chest_init()
 {
 	level.chests = getstructarray( "treasure_chest_use", "targetname" );
+
+	s_chest = zmqol_cp_bring_chest_into_arena();
+
+	if ( isdefined( s_chest ) )
+	{
+		level.chests = [];
+		level.chests[0] = s_chest;
+	}
+
 	maps\mp\zombies\_zm_magicbox::treasure_chest_init( "start_chest" );
 
-	println( "[zm_qol] crazy place: magic box list = " + level.chests.size + " chest(s), all outside the arena" );
+	if ( isdefined( s_chest ) )
+		println( "[zm_qol] crazy place: magic box list = " + level.chests.size + " chest(s) - " + s_chest.script_noteworthy + " moved into the arena" );
+	else
+		println( "[zm_qol] crazy place: magic box list = " + level.chests.size + " chest(s), all outside the arena - the move FAILED, see above" );
+}
+
+zmqol_cp_bring_chest_into_arena()
+{
+	//  The user's standing point and facing, from the ".where" line in their
+	//  screenshot (2026-09-08).
+	v_stand = ( 10536, -8383, -463 );
+	n_yaw   = 259;
+	n_gap   = 80;
+
+	v_dir  = anglestoforward( ( 0, n_yaw, 0 ) );
+	v_from = v_stand + ( 0, 0, 40 );
+	v_to   = v_from + ( v_dir[0] * 1200, v_dir[1] * 1200, 0 );
+
+	trace = bullettrace( v_from, v_to, 0, undefined );
+
+	n_out = n_yaw + 180;
+	v_box = undefined;
+
+	if ( trace["fraction"] < 1 && distance( v_from, trace["position"] ) >= 150 )
+	{
+		v_hit = trace["position"];
+
+		if ( isdefined( trace["normal"] ) )
+		{
+			v_flat = ( trace["normal"][0], trace["normal"][1], 0 );
+
+			if ( length( v_flat ) > 0.1 )
+				n_out = vectortoangles( vectornormalize( v_flat ) )[1];
+		}
+
+		while ( n_out < 0 )
+			n_out += 360;
+		while ( n_out >= 360 )
+			n_out -= 360;
+
+		//  Axis snap, 8 degrees, as the Wunderfizz wall snap does: a pillar
+		//  edge or a carved face can return a normal a few degrees off the
+		//  wall's true line, and a box that is 5 degrees skewed reads as sloppy.
+		n_axis = int( ( n_out + 45 ) / 90 ) * 90;
+
+		if ( n_axis >= 360 )
+			n_axis -= 360;
+
+		n_off = abs( n_out - n_axis );
+
+		if ( n_off > 180 )
+			n_off = 360 - n_off;
+
+		if ( n_off <= 8 )
+			n_out = n_axis;
+
+		v_out = anglestoforward( ( 0, n_out, 0 ) );
+		v_box = ( v_hit[0] + v_out[0] * n_gap, v_hit[1] + v_out[1] * n_gap, v_stand[2] );
+
+		println( "[zm_qol] crazy place box: wall hit at (" + int( v_hit[0] ) + "," + int( v_hit[1] ) + "," + int( v_hit[2] ) + "), " + int( distance( v_from, v_hit ) ) + " out along yaw " + n_yaw + ", wall normal yaw " + int( n_out ) );
+	}
+	else
+	{
+		v_box = ( v_stand[0] + v_dir[0] * 320, v_stand[1] + v_dir[1] * 320, v_stand[2] );
+
+		while ( n_out >= 360 )
+			n_out -= 360;
+
+		println( "[zm_qol] crazy place box: no usable wall along yaw " + n_yaw + " (fraction " + trace["fraction"] + ") - using the fixed fallback 320 out" );
+	}
+
+	//  Onto the floor. Same trace the Wunderfizz uses.
+	trace_floor = bullettrace( v_box + ( 0, 0, 72 ), v_box - ( 0, 0, 160 ), 0, undefined );
+
+	if ( trace_floor["fraction"] < 1 )
+		v_box = ( v_box[0], v_box[1], trace_floor["position"][2] );
+
+	//  The side players use is the struct's -right, which is yaw + 90. It has
+	//  to point INTO the room, along the wall normal: struct yaw = normal - 90.
+	n_struct_yaw = n_out - 90;
+
+	while ( n_struct_yaw < 0 )
+		n_struct_yaw += 360;
+
+	n_zb_yaw = n_struct_yaw + 180;
+
+	while ( n_zb_yaw >= 360 )
+		n_zb_yaw -= 360;
+
+	//  Which chest: the bunker start chest by preference (it is the one classic
+	//  Origins opens with), else whichever is first.
+	s_chest = undefined;
+
+	for ( i = 0; i < level.chests.size; i++ )
+	{
+		if ( isdefined( level.chests[i].script_noteworthy ) && level.chests[i].script_noteworthy == "bunker_start_chest" )
+		{
+			s_chest = level.chests[i];
+			break;
+		}
+	}
+
+	if ( !isdefined( s_chest ) && level.chests.size > 0 )
+		s_chest = level.chests[0];
+
+	if ( !isdefined( s_chest ) || !isdefined( s_chest.script_noteworthy ) )
+	{
+		println( "[zm_qol] crazy place box: no treasure_chest_use struct to move" );
+		return undefined;
+	}
+
+	e_zb = getent( s_chest.script_noteworthy + "_zbarrier", "script_noteworthy" );
+
+	if ( !isdefined( e_zb ) )
+	{
+		println( "[zm_qol] crazy place box: " + s_chest.script_noteworthy + " has no _zbarrier entity - not moved" );
+		return undefined;
+	}
+
+	v_was = s_chest.origin;
+
+	s_chest.origin = v_box;
+	s_chest.angles = ( 0, n_struct_yaw, 0 );
+	s_chest.start_exclude = undefined;
+
+	e_zb.origin = v_box;
+	e_zb.angles = ( 0, n_zb_yaw, 0 );
+
+	println( "[zm_qol] crazy place box: " + s_chest.script_noteworthy + " moved from (" + int( v_was[0] ) + "," + int( v_was[1] ) + "," + int( v_was[2] ) + ") to (" + int( v_box[0] ) + "," + int( v_box[1] ) + "," + int( v_box[2] ) + ") struct yaw " + int( n_struct_yaw ) + " zbarrier yaw " + int( n_zb_yaw ) + " - zbarrier reads back at (" + int( e_zb.origin[0] ) + "," + int( e_zb.origin[1] ) + "," + int( e_zb.origin[2] ) + ")" );
+
+	return s_chest;
 }
 
 // ============================================================================
@@ -430,7 +795,7 @@ pap_probe()
 		println( "[zm_qol] crazy place pap: trigger " + ( i + 1 ) + " machine at (" + int( a_pap[i].machine.origin[0] ) + "," + int( a_pap[i].machine.origin[1] ) + "," + int( a_pap[i].machine.origin[2] ) + ") - show() re-asserted" );
 	}
 
-	println( "[zm_qol] crazy place pap: " + a_pap.size + " pack-a-punch trigger(s) on the map (expect 2 - ours in the chamber and Origins' own, which is outside it)" );
+	println( "[zm_qol] crazy place pap: " + a_pap.size + " pack-a-punch trigger(s) on the map (expect 1 - ours in the chamber; Origins' own struct was dropped from the index in struct_init, v2.14.23)" );
 }
 
 // ============================================================================

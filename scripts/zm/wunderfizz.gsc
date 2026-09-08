@@ -554,17 +554,70 @@ setupWunderfizz()
 		//  stay alive to receive .is_locked from Origins' own capture-zone code,
 		//  which is how the generator gating survives this swap.
 		//  ====================================================================
-		a_native = getentarray( "random_perk_machine", "targetname" );
-
-		for( i = 0; i < a_native.size; i++ )
+		if( !is_classic() && getdvar( "ui_zm_mapstartlocation" ) == "crazy_place" )
 		{
-			if( !isdefined( a_native[i] ) )
-				continue;
+			//  ================================================================
+			//  v2.14.23 - THE CRAZY PLACE GETS ONE MACHINE, INSIDE THE ARENA.
+			//
+			//  User, 2026-09-08, on the Origins survival location: one
+			//  Wunderfizz in the arena. All six native positions are outside
+			//  the sealed chamber (measured 9:02 AM log: "placed 6 of 6", every
+			//  one at a generator the arena cannot reach), so the mirror below
+			//  shipped a survival map whose only Wunderfizz was unreachable.
+			//
+			//  WHERE. The mystery box (scripts\zm\locs\zm_tomb_loc_crazy_place
+			//  .gsc::zmqol_cp_bring_chest_into_arena) is placed by TRACING from
+			//  the user's own standing point (10536, -8383, -463) along yaw 259
+			//  to the chamber's south wall, and the 9:02 AM log has the result:
+			//  wall hit at (10499, -8568), normal yaw 30, box at (10569, -8528,
+			//  -463). This seed is that standing point MIRRORED through the
+			//  arena's centre - the Pack-a-Punch struct at (10340, -7906), which
+			//  is also the centre of the four pillar wall-buys - so the machine
+			//  ends up against the opposite (north) wall, the same distance
+			//  from the centre as the box, on the far side of the pillars from
+			//  it: (10144, -7429), seed yaw 79. The chamber's four wall-buys
+			//  and two spawn rings are exactly 4-fold symmetric about that
+			//  point; the perks are within ~250 units of symmetric.
+			//
+			//  The seed is a SEED, not the final spot: unlike classic Origins
+			//  (whose six are Treyarch's own coordinates and skip every
+			//  adjuster) this one goes through zmqol_wf_wall_snap (traces the
+			//  wall along the seed yaw, faces the machine off its normal, backs
+			//  it off by zmqol_wf_wall_gap) and zmqol_wf_unclip, exactly as the
+			//  hand-placed maps do - level.zmqol_wf_tomb_arena is what lets
+			//  zmqol_wf_place() run them here. The seed z is -400, between the
+			//  centre floor (-420, the spawns) and the outer ring (-463, the
+			//  box's floor trace), so the snap's own floor trace (+72 / -160)
+			//  finds either. Every step logs its coordinates; the boot log says
+			//  where it landed and the wall it found.
+			//
+			//  🛑 RESIDUAL RISK, stated: the north wall has not been traced yet
+			//  - the box's south-wall trace is the measurement, the mirror is
+			//  the assumption. If the snap logs "found no wall along yaw 79"
+			//  the machine stands at the seed, facing the centre (front = yaw
+			//  270 = placement yaw 0), which is inside the arena either way.
+			//  ================================================================
+			level.zmqol_wf_tomb_arena = 1;
 
-			zmqol_wf_add( a_native[i].origin, a_native[i].angles, zmqol_wf_machine_model() );
+			zmqol_wf_add( (10144, -7429, -400), (0, 0, 0), zmqol_wf_machine_model() );
+			level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_yaw = 79;
+
+			println( "[zm_qol] wunderfizz: origins crazy place - one arena candidate, seed (10144,-7429,-400) yaw 79 (mirror of the box's standing point)" );
 		}
+		else
+		{
+			a_native = getentarray( "random_perk_machine", "targetname" );
 
-		println( "[zm_qol] wunderfizz: origins - mirrored " + a_native.size + " native machine location(s)" );
+			for( i = 0; i < a_native.size; i++ )
+			{
+				if( !isdefined( a_native[i] ) )
+					continue;
+
+				zmqol_wf_add( a_native[i].origin, a_native[i].angles, zmqol_wf_machine_model() );
+			}
+
+			println( "[zm_qol] wunderfizz: origins - mirrored " + a_native.size + " native machine location(s)" );
+		}
     }
     else if(level.script == "zm_nuked")
     {
@@ -1014,7 +1067,11 @@ zmqol_wf_place()
 	//  means a generator with no machine at all, which reads in game as "the
 	//  replacement is broken". zmqol_wf_unclip would also nudge a machine that
 	//  is already sitting exactly where it belongs.
-	if( level.script != "zm_tomb" )
+	//
+	//  v2.14.23 - EXCEPT THE CRAZY PLACE. Its one candidate is this mod's own
+	//  seed, not a Treyarch position (see the zm_tomb branch above), so it takes
+	//  the same vetting as every hand-placed map.
+	if( level.script != "zm_tomb" || is_true( level.zmqol_wf_tomb_arena ) )
 	{
 		a_place = zmqol_wf_clear_of_perk_machines( a_place );
 
