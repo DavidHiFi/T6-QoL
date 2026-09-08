@@ -144,14 +144,16 @@ ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit", "town",    "TOWN")
 -- location the server does not register would hang the lobby at launch.
 if ZmQolDinerAllowed then
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit",  "power",          "POWER STATION")   -- added by this mod
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit",  "tunnel",         "TUNNEL")          -- added by this mod (back in v2.14.30)
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_highrise", "shopping_mall",  "SHOPPING MALL")   -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_highrise", "dragon_rooftop", "DRAGON ROOFTOP")  -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_highrise", "sweatshop",      "SWEATSHOP")       -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_buried",   "street",         "BOROUGH")         -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_prison",   "cellblock",      "CELL BLOCK")      -- added by this mod
-	-- v2.14.0: Origins survival. TUNNEL was removed in the same change - both at
-	-- the user's request. The server half is scripts/zm/replaced/zm_tomb_gamemodes.gsc,
-	-- which registers crazy_place on zstandard and zgrief.
+	-- v2.14.0: Origins survival (Tunnel went out in the same change and came
+	-- back in v2.14.30, both at the user's request). The server half is
+	-- scripts/zm/replaced/zm_tomb_gamemodes.gsc, which registers crazy_place on
+	-- zstandard and zgrief.
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_tomb",     "crazy_place",    "THE CRAZY PLACE") -- added by this mod
 end
 

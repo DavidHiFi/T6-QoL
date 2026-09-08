@@ -745,10 +745,13 @@ zmqol_enable_wallbuys()
 		a_origins[a_origins.size] = ( -5489, -7982.7, 62 );        // mp5k_zm
 		a_origins[a_origins.size] = ( -6399.2, -7938.5, 207.25 );  // tazer_knuckles_zm
 	}
-	// 📝 v2.14.0 - the Tunnel branch is gone with the location (user: "remove
-	// tunnel survival"). It re-tagged one wall-buy, the M16 at
-	// (-11839, -1695.1, 287). Server twin removed in the same change, so the
-	// two sides still tag the same set.
+	else if ( str_map == "zm_transit" && str_location == "tunnel" )
+	{
+		// zm_transit_loc_tunnel.gsc - registered for zstandard AND zgrief.
+		// Out in v2.14.0 with the location, back in v2.14.30 with it; the
+		// server twin is in that file's struct_init().
+		a_origins[a_origins.size] = ( -11839, -1695.1, 287 );      // m16_zm
+	}
 	else if ( str_map == "zm_buried" && str_location == "street" && str_gametype == "zstandard" )
 	{
 		// zm_buried_gamemodes.gsc - street_struct_init is registered for

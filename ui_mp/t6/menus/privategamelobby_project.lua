@@ -187,6 +187,7 @@ if CoD.MapInfoImage ~= nil and CoD.MapInfoImage.ZombieUpdate ~= nil and CoD.MapI
 	-- ALL CAPS, because stock's column-4 keys are the _CAPS strings.
 	local ZmQolLocationCaptions = {
 		power          = "POWER STATION",
+		tunnel         = "TUNNEL",
 		shopping_mall  = "SHOPPING MALL",
 		dragon_rooftop = "DRAGON ROOFTOP",
 		sweatshop      = "SWEATSHOP",

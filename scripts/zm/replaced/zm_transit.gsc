@@ -151,12 +151,16 @@ transit_zone_init()
     // future stock path starts creating them.
     if ( !is_classic() )
     {
-        // 📝 v2.14.0 - the Tunnel block that stood here (zone_init +
-        // enable_zone on zone_amb_tunnel, gated on ui_zm_mapstartlocation ==
-        // "tunnel") is gone with the location itself, removed at the user's
-        // request. Power's half below is untouched, and the WHY section at the
-        // top of this file still explains the mechanism through the Tunnel case
-        // because that is where it was first measured.
+        // 🛑 Tunnel survival: zone_amb_tunnel is an island with no adjacency
+        // edge and is only put in init_zones under is_classic(), so nothing
+        // ever creates or enables it here - the WHY section at the top of this
+        // file is the full chain. Removed with the location in v2.14.0, back
+        // with it in v2.14.30 (user, 2026-09-08: "add back tunnel survival").
+        if ( getdvar( "ui_zm_mapstartlocation" ) == "tunnel" )
+        {
+            zone_init( "zone_amb_tunnel" );
+            enable_zone( "zone_amb_tunnel" );
+        }
 
         // 🛑 Power Station survival: instant death on spawn.
         //

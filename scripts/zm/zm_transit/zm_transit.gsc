@@ -44,16 +44,15 @@ main()
     //  OTHER weapon. See the banner above zmqol_weapon_give().
     replaceFunc( maps\mp\zombies\_zm_weapons::weapon_give, ::zmqol_weapon_give );
 
-    // --- custom survival start locations: adds Diner and Power Station ---
+    // --- custom survival start locations: adds Diner, Power Station, Tunnel ---
     // Map-specific, so it lives here and not in quality_of_life.gsc (AI_CONTEXT rule 2).
     replaceFunc( maps\mp\zm_transit_gamemodes::init, scripts\zm\replaced\zm_transit_gamemodes::init );
 
-    // Creates + enables the five power-station zones (Power), gated on that start
-    // location. Without it every Power respawn point stays locked and the player is
-    // dumped at the Bus Depot default spawn and killed instantly - see the header
-    // comment in scripts\zm\replaced\zm_transit.gsc for the full chain.
-    // (Tunnel needed the same block for zone_amb_tunnel; the location was removed
-    //  in v2.14.0 at the user's request, so only Power's half is left.)
+    // Creates + enables zone_amb_tunnel (Tunnel) and the five power-station zones
+    // (Power), each gated on its own start location. Without it every Tunnel/Power
+    // respawn point stays locked and the player is dumped at the Bus Depot default
+    // spawn and killed instantly - see the header comment in
+    // scripts\zm\replaced\zm_transit.gsc for the full chain.
     replaceFunc( maps\mp\zm_transit::transit_zone_init, scripts\zm\replaced\zm_transit::transit_zone_init );
 
     // --- Diner buildable riot shield (server half; client twin in zm_transit.csc) ---

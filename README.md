@@ -148,6 +148,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **TranZit**
   * Diner
   * Power Station
+  * Tunnel
 * **Die Rise**
   * Shopping Mall
   * Dragon Rooftop

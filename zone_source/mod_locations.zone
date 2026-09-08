@@ -1574,22 +1574,24 @@ attachmentunique,au_peacekeeper_reflex
 //  Borough frozen-zombie failure. Cornfield, Maze, Docks and Origins' other
 //  three arenas stay out.
 //
-//  TUNNEL'S TWO MATERIALS WERE REMOVED IN v2.14.0 with the location itself.
-//  Their .json sources are still in zone_assets\materials\ and are inert - an
-//  undeclared material is never linked - so restoring Tunnel would need only
-//  those two lines back.
+//  TUNNEL'S TWO MATERIALS WERE REMOVED IN v2.14.0 with the location and PUT
+//  BACK IN v2.14.30 (2026-09-08, user: "add back tunnel survival"). Both
+//  point at stock art (menu_zm_transit_zclassic_transit /
+//  loadscreen_transit_classic) supplied by the --load'ed retail zones.
 // ============================================================================
 
 // --- lobby previews + loading screens for the restored locations.
 //     JSON sources in zone_assets\materials\; the images they reference are in
 //     zone_assets\images\ (and build.bat syncs them into images\ for mod.iwd).
 material,menu_zm_transit_zsurvival_power
+material,menu_zm_transit_zsurvival_tunnel
 material,menu_zm_highrise_zsurvival_shopping_mall
 material,menu_zm_highrise_zsurvival_dragon_rooftop
 material,menu_zm_highrise_zsurvival_sweatshop
 material,menu_zm_buried_zsurvival_street
 material,menu_zm_prison_zsurvival_cellblock
 material,loadscreen_zm_transit_zstandard_power
+material,loadscreen_zm_transit_zstandard_tunnel
 material,loadscreen_zm_highrise_zstandard_shopping_mall
 material,loadscreen_zm_highrise_zstandard_dragon_rooftop
 material,loadscreen_zm_highrise_zstandard_sweatshop

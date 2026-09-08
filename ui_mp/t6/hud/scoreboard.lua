@@ -172,12 +172,13 @@ end
 -- The fallback is zm_qol's own: if a location has no row, or its row has no
 -- string, the title falls back to the stock map name instead of going blank.
 -- zm_qol: display names for the survival locations that have NO row in stock
--- zm\gametypestable.csv (dumped and read 2026-09-02: power and the three Die
--- Rise locations are absent; diner/cellblock/street have stock rows and keep
+-- zm\gametypestable.csv (dumped and read 2026-09-02: power, tunnel and the three
+-- Die Rise locations are absent; diner/cellblock/street have stock rows and keep
 -- resolving through the table below). crazy_place is absent too - Origins has
 -- no survival row of any kind in the stock table.
 local ZmQolLocationNames = {
 	power          = "Power Station",
+	tunnel         = "Tunnel",
 	shopping_mall  = "Shopping Mall",
 	dragon_rooftop = "Dragon Rooftop",
 	sweatshop      = "Sweatshop",
