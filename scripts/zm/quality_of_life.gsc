@@ -20227,7 +20227,23 @@ zmqol_nb_death_watch()
     //  2026-09-08 6:47 AM Origins log had 127 VANISHED lines in round 1, 24 of
     //  them requeued on top of stock's own 24, and the round never ended. So the
     //  notify ends this thread, and zmqol_nb_stock_delete_watch() owns that case.
+    //
+    //  🌟 v2.14.22 - MEASURED WORKING. The 8:14 AM Origins log (v2.14.19, Crazy
+    //  Place, rounds 1-5): five stock deletions, ZERO VANISHED lines, ZERO
+    //  "(deleted)" put-backs. The endon does its job. What that log also proved
+    //  is that T6 does NOT run a notify's waiting threads inline - every one of
+    //  the five woke zmqol_nb_stock_delete_watch() AFTER `self delete()` had run
+    //  (its old "seen AFTER" line, five for five). The endon still protects
+    //  because a pending kill is honoured the moment this thread is next
+    //  scheduled, before its poll body runs. So the snapshot this loop keeps is
+    //  ALSO written to level.zmqol_nb_last[entnum] each tick: the delete watcher
+    //  cannot read a gone entity, but it can read that.
     self endon( "zombie_delete" );
+
+    n_ent = self getentitynumber();
+
+    if ( !isdefined( level.zmqol_nb_last ) )
+        level.zmqol_nb_last = [];
 
     str_zone  = "?";
     n_x = 0;
@@ -20250,12 +20266,16 @@ zmqol_nb_death_watch()
                     zmqol_nb_requeue( "deleted" );
             }
 
+            level.zmqol_nb_last[n_ent] = undefined;
             return;
         }
 
         //  Killed - zmqol_nb_death_notify() owns that, with the real attacker.
         if ( !isalive( self ) )
+        {
+            level.zmqol_nb_last[n_ent] = undefined;
             return;
+        }
 
         if ( isdefined( self.zone_name ) )
             str_zone = self.zone_name;
@@ -20267,6 +20287,23 @@ zmqol_nb_death_watch()
         b_dmg = is_true( self.has_been_damaged_by_player );
         b_emerged = is_true( self.completed_emerging_into_playable_area );
         b_recycle = is_true( self.marked_for_recycle );
+
+        //  v2.14.22 - the same snapshot, readable after the entity is gone.
+        //  One struct per zombie, fields overwritten in place, cleared on every
+        //  exit of this thread and by the delete watcher; an entity number that
+        //  is reused simply gets overwritten by its next watcher.
+        s_last = level.zmqol_nb_last[n_ent];
+
+        if ( !isdefined( s_last ) )
+        {
+            s_last = spawnstruct();
+            level.zmqol_nb_last[n_ent] = s_last;
+        }
+
+        s_last.zone = str_zone;
+        s_last.hp = n_hp;
+        s_last.maxhp = self.maxhealth;
+        s_last.dmg = b_dmg;
 
         //  0.25s, and the number is load-bearing: _zm.gsc:3724's round-end test
         //  polls once a SECOND, so a quarter-second detection window means the
@@ -20292,44 +20329,71 @@ zmqol_nb_death_watch()
 //  fewer remain (`zombies.size + level.zombie_total <= 24 && health < maxhealth`)
 //  - that endgame trim is vanilla on every map and is left exactly as vanilla.
 //
-//  🛑 The one assumption, and the line that tests it: a GSC notify runs its
-//  waiting threads before returning to the notifier. If that were false the
-//  entity would already be gone here, and the "seen AFTER" line below would
-//  print instead of the "REMOVED BY STOCK" one. Neither is silent.
+//  🛑 v2.14.22 - THE v2.14.19 ASSUMPTION WAS WRONG, AND THE GUARD STILL HELD.
+//  v2.14.19 assumed a GSC notify runs its waiting threads before returning to
+//  the notifier, and printed a "seen AFTER ... NOT protecting" line if not.
+//  The 8:14 AM Origins log printed that line five times out of five - T6 wakes
+//  waiting threads only when the notifier next yields, by which time
+//  `self delete()` has run - and the SAME log has zero VANISHED lines and zero
+//  "(deleted)" put-backs across those five deletions. So the wording was wrong
+//  on both counts: the wake-up is deferred BY DESIGN, and the endon on the
+//  polling thread protects regardless, because a pending kill is honoured when
+//  that thread is next scheduled, before its poll body. This function's job
+//  is therefore the log line and the Die Rise flag, not the guard itself.
 //
-//  Die Rise's zombies_off_building() notifies the same thing and then KILLS the
-//  zombie with dodamage instead of deleting it (zm_highrise_distance_tracking
-//  .gsc:383) - so the notify thread's "counted" flag is set here too, and the
-//  kill path above returns on it without a second put-back.
+//  What it reads: the entity if it still exists (Die Rise's off-building path
+//  KILLS with dodamage after the notify, zm_highrise_distance_tracking.gsc:383,
+//  and Origins' mechz path waits a network frame before deleting - both leave
+//  the entity whole at wake-up), otherwise the snapshot the polling thread
+//  keeps in level.zmqol_nb_last[entnum] - captured BEFORE the wait, since
+//  getentitynumber() cannot be asked of a gone entity.
+//
+//  Die Rise: the notify is followed by dodamage, so both this thread and
+//  zmqol_nb_death_notify() have a pending wake-up in that order. This one sets
+//  zmqol_nb_counted first; and since v2.14.22 the kill watcher ALSO carries
+//  endon( "zombie_delete" ), so whichever the VM services first, stock's own
+//  put-back (zombie_total++ before the notify, same rule as the deleters) is
+//  never doubled. The ≤24-and-damaged trim stays vanilla, as everywhere.
 //  ----------------------------------------------------------------------------
 zmqol_nb_stock_delete_watch()
 {
+    n_ent = self getentitynumber();
+
     self waittill( "zombie_delete" );
 
-    if ( !isdefined( self ) )
+    str_zone = "?";
+    str_hp = "?";
+    str_dmg = "?";
+    str_how = "entity gone at wake-up (deleted inline, as T6 does)";
+
+    if ( isdefined( self ) )
     {
-        println( "[zm_qol] no_bleedout: stock zombie_delete seen AFTER the entity was gone - notify did not run inline, the double-count guard is NOT protecting this zombie" );
-        return;
+        self.zmqol_nb_counted = 1;
+        str_how = "entity still whole at wake-up (dodamage / mechz path)";
+
+        if ( isdefined( self.zone_name ) )
+            str_zone = self.zone_name;
+
+        str_hp = self.health + "/" + self.maxhealth;
+        str_dmg = "" + is_true( self.has_been_damaged_by_player );
+    }
+    else if ( isdefined( level.zmqol_nb_last ) && isdefined( level.zmqol_nb_last[n_ent] ) )
+    {
+        s_last = level.zmqol_nb_last[n_ent];
+        str_zone = s_last.zone;
+        str_hp = s_last.hp + "/" + s_last.maxhp;
+        str_dmg = "" + s_last.dmg;
     }
 
-    self.zmqol_nb_counted = 1;
+    if ( isdefined( level.zmqol_nb_last ) )
+        level.zmqol_nb_last[n_ent] = undefined;
 
     if ( !getdvarintdefault( "no_bleedout", 0 ) )
         return;
 
-    str_zone = "?";
-
-    if ( isdefined( self.zone_name ) )
-        str_zone = self.zone_name;
-
-    str_mod = "?";
-
-    if ( isdefined( self.damagemod ) )
-        str_mod = self.damagemod;
-
     a_ai = getaiarray( "axis" );
 
-    println( "[zm_qol] no_bleedout: REMOVED BY STOCK distance cleanup - stock keeps its own count, nothing owed - zone=" + str_zone + " hp=" + self.health + "/" + self.maxhealth + " mod=" + str_mod + " player_damaged=" + is_true( self.has_been_damaged_by_player ) + " ai=" + a_ai.size + " zombie_total=" + level.zombie_total + " round=" + level.round_number );
+    println( "[zm_qol] no_bleedout: REMOVED BY STOCK distance cleanup - stock counted it back itself, nothing owed - " + str_how + " - zone=" + str_zone + " hp=" + str_hp + " player_damaged=" + str_dmg + " ai=" + a_ai.size + " zombie_total=" + level.zombie_total + " round=" + level.round_number );
 }
 
 //  The KILL path, unchanged from v2.14.6 except for the requeue at the end: the
@@ -20338,6 +20402,12 @@ zmqol_nb_stock_delete_watch()
 //  attacker-less deaths printed).
 zmqol_nb_death_notify()
 {
+    //  v2.14.22 - a zombie stock has just announced it is removing is stock's
+    //  to account for, whether it deletes it (every distance tracker) or kills
+    //  it a line later (Die Rise's off-building trigger). See the note above
+    //  zmqol_nb_stock_delete_watch().
+    self endon( "zombie_delete" );
+
     self waittill( "death", e_attacker );
 
     //  Deleted rather than killed - the polled watcher owns that case and is the
