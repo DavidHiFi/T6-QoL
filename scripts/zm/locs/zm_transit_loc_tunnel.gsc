@@ -87,6 +87,13 @@ precache()
 	//  common_zm.ff carries the model (parsed\retail_lists\common_zm.list.txt,
 	//  Unlinker --list), so it is loaded on every zombies map.
 	precachemodel( "collision_geo_32x32x32_standard" );
+
+	//  v2.14.32 - what the box STANDS on (zmqol_tunnel_box_bricks). zm_transit.ff
+	//  OWNS this model - parsed\retail_lists\zm_transit.list.txt line 3792,
+	//  "xmodel, p_glo_cinder_block" with no leading comma, the same form as
+	//  veh_t6_civ_60s_coupe_dead two lines below it, which this precache has
+	//  been asking for since the location shipped. Nothing added to mod.ff.
+	precachemodel( "p_glo_cinder_block" );
 }
 
 main()
@@ -205,7 +212,13 @@ zmqol_tunnel_bring_chest_in()
 }
 
 //  Struct and zbarrier at the same origin and the same yaw - this map's own
-//  convention (see the banner). Then the collision.
+//  convention (see the banner). Then what it stands on, then the collision.
+//
+//  🛑 BRICKS BEFORE CLIPS, and it matters: zmqol_tunnel_box_bricks() traces
+//  DOWN for the floor, and the clips zmqol_tunnel_box_collision() spawns are
+//  solid script_models filling box z .. box z + 32. The trace starts 2 units
+//  UNDER the box origin, below them either way, but running the bricks first
+//  keeps the first placement clear of them entirely.
 zmqol_tunnel_place_box( s_chest, e_zb, v_box, n_yaw )
 {
 	while ( n_yaw < 0 )
@@ -220,6 +233,7 @@ zmqol_tunnel_place_box( s_chest, e_zb, v_box, n_yaw )
 	e_zb.origin = v_box;
 	e_zb.angles = ( 0, n_yaw, 0 );
 
+	zmqol_tunnel_box_bricks( v_box, n_yaw );
 	zmqol_tunnel_box_collision( v_box, n_yaw );
 }
 
@@ -282,6 +296,133 @@ zmqol_tunnel_box_collision( v_box, n_yaw )
 		clip.angles = ( 0, n_yaw, 0 );
 		clip disconnectpaths();
 	}
+}
+
+// ============================================================================
+//  zmqol_tunnel_box_bricks  -  the box stands on cinder blocks, not on air.
+//                                                                    (v2.14.32)
+//  User, 2026-09-09, with a screenshot: *"i like the location for the box,
+//  however the bricks underneath box itself are missing so it's just floating
+//  right now"*. The box's stock spot had map geometry under it; the tunnel spot
+//  is bare road, and a zbarrier brings nothing of its own with it.
+//
+//  PRECEDENT: Reimagined hit this first. Their tunnel_chest and cornfield_chest
+//  float in their own map too, so _zm_reimagined::spawn_mystery_box_blocks_and_
+//  collision() spawns four p_glo_cinder_block_big under each - block yaw = box
+//  yaw + 90 (the block's long axis lies ACROSS the box's width), four columns
+//  25 apart along its length, 5 to the box's -right and 6 DOWN, which is exactly
+//  half that model's height: the blocks' top face flush with the box's underside.
+//
+//  This mod cannot use their block. p_glo_cinder_block_big is THEIR asset - a
+//  1.5x rescale of the stock one, shipped raw in their model_export\ + xmodel\ -
+//  and it is in NO retail fastfile: measured 2026-09-09 with Unlinker --list over
+//  zm_transit, zm_transit_patch, all three transit gumps, zm_buried, zm_buried_
+//  patch, so_zclassic/so_zencounter_zm_buried, the so_z* transit zones, zm_prison,
+//  zm_tomb, zm_highrise and common_zm. The STOCK p_glo_cinder_block is owned by
+//  zm_transit.ff (zm_transit.list.txt line 3792), so it costs mod.ff nothing.
+//
+//  MEASURED, Unlinker GLB dump, lod0 accessor bounds, 2026-09-09. Those GLBs are
+//  Y-UP, not game axes - checked against com_trafficcone01 in the same dump,
+//  which reads y 0..27.6, i.e. a cone standing on its origin:
+//      p_glo_cinder_block       16 long x 8 HIGH x 8 deep, centred on its origin
+//      p_glo_cinder_block_big   24 x 12 x 12 - the same mesh at 1.5x
+//      p6_anim_zm_magic_box     +-47.8 along forward, -12.3..+14.3 along right,
+//                               0..19.2 up - so the box's UNDERSIDE is its
+//                               origin's z exactly, and everything below is air.
+//
+//  So a course of stock blocks is 8 high where theirs is 12, and the drop to the
+//  floor is not a number this mod may assume: the box origin came from THEIR map,
+//  the floor under it is stock geometry. Each column therefore bullettraces its
+//  OWN floor and stacks as many 8-high courses as that column needs - the bottom
+//  course beds INTO the ground instead of hovering over it, and a sloped or
+//  rubble-strewn floor gets a stepped stack instead of a flat one. The trace is
+//  the Crazy Place's, which booted 2026-09-08: bullettrace(from, to, 0, undefined)
+//  and read ["fraction"] < 1 before ["position"].
+//
+//  Six columns 16 apart: a block is 8 thick along the box's length, so that is
+//  block-gap-block, the same half-covered look Reimagined's four 12-thick blocks
+//  give at 25. The yaw jitter is small and deterministic (no randomness - the
+//  same stack every boot, so a screenshot can be compared against the next one),
+//  and it is BOUNDED: at 17 degrees, the worst case here, a 16-long block turned
+//  across a 26.6-wide box reaches -7.8..+9.8 of its -12.3..+14.3, and 12.3 of the
+//  16 a column has along the length. Nothing can poke out past the box's edge.
+//
+//  Decorative only - spawn() with no collision flag, exactly as Reimagined spawns
+//  theirs. The box's own clips sit ABOVE the origin and are not touched.
+// ============================================================================
+zmqol_tunnel_box_bricks( v_box, n_yaw )
+{
+	v_fwd = anglestoforward( ( 0, n_yaw, 0 ) );
+	v_rgt = anglestoright( ( 0, n_yaw, 0 ) );
+
+	//  Along the box's length, and the yaw each column is turned by.
+	a_along = array( 40, 24, 8, -8, -24, -40 );
+	a_jitter = array( -7, 5, -3, 8, -6, 4 );
+
+	//  `.boxhere` can call this again at a new spot with a different floor under
+	//  it, so the stack is rebuilt rather than nudged - the course count changes.
+	if ( isdefined( level.zmqol_tunnel_bricks ) )
+	{
+		for ( i = 0; i < level.zmqol_tunnel_bricks.size; i++ )
+		{
+			if ( isdefined( level.zmqol_tunnel_bricks[i] ) )
+				level.zmqol_tunnel_bricks[i] delete();
+		}
+	}
+
+	level.zmqol_tunnel_bricks = [];
+
+	s_floors = "";
+	n_blind = 0;
+
+	for ( i = 0; i < a_along.size; i++ )
+	{
+		//  +1 along right is the box's own width centre (-12.3..+14.3), the same
+		//  offset its collision clips use.
+		v_col = v_box + ( v_fwd[0] * a_along[i], v_fwd[1] * a_along[i], 0 ) + ( v_rgt[0], v_rgt[1], 0 );
+
+		trace = bullettrace( v_col - ( 0, 0, 2 ), v_col - ( 0, 0, 160 ), 0, undefined );
+
+		if ( trace["fraction"] < 1 )
+		{
+			n_floor = trace["position"][2];
+			s_floors = s_floors + " " + int( n_floor );
+		}
+		else
+		{
+			//  No floor within 160 units. Do not build a tower into a hole: one
+			//  course, so the box is not bare, and say so in the log.
+			n_floor = v_box[2] - 8;
+			n_blind++;
+			s_floors = s_floors + " none";
+		}
+
+		//  Courses, rounded UP so the bottom one beds into the ground. int()
+		//  truncates and T6 has no integer ceil worth trusting here, hence +7.99.
+		n_courses = int( ( ( v_box[2] - n_floor ) + 7.99 ) / 8 );
+
+		if ( n_courses < 1 )
+			n_courses = 1;
+
+		if ( n_courses > 4 )
+			n_courses = 4;
+
+		for ( c = 0; c < n_courses; c++ )
+		{
+			brick = spawn( "script_model", v_col - ( 0, 0, 4 + c * 8 ) );
+			brick.angles = ( 0, n_yaw + 90 + a_jitter[i] + c * 3, 0 );
+			brick setmodel( "p_glo_cinder_block" );
+			brick.script_noteworthy = "zmqol_tunnel_box_brick";
+			level.zmqol_tunnel_bricks[ level.zmqol_tunnel_bricks.size ] = brick;
+		}
+	}
+
+	s_blind = "";
+
+	if ( n_blind > 0 )
+		s_blind = "  (" + n_blind + " column(s) found NO floor within 160)";
+
+	println( "[zm_qol] tunnel box bricks: " + level.zmqol_tunnel_bricks.size + " cinder blocks under a box at z " + int( v_box[2] ) + " - floor per column:" + s_floors + s_blind );
 }
 
 // ============================================================================
