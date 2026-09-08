@@ -175,7 +175,21 @@ zmqol_mp_weapons_init()
 	//  server-side with in_box 0 and are never a box result, and this list is
 	//  what the client draws over the box - so they do not belong here.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "metalstorm_mms_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "bouncingbetty_zm" );
+
+	//  🛑 v2.14.27 - THE BOUNCING BETTY IS NOT A BOX WEAPON, AND SAYING IT WAS
+	//  CRASHED THE GAME. v2.9.9 added this line with no in_box flag (default 1)
+	//  and NO server twin - the server never registered bouncingbetty_zm in the
+	//  box at all (only its .give rows). include_weapon()'s last line hands
+	//  every in_box weapon to addzombieboxweapon(), the native table the box's
+	//  zbarrier "rise logic" piece draws its random models from. Two crash
+	//  dumps on 2026-09-08 (9:02 AM and 3:09 PM, both Origins Crazy Place, both
+	//  right after "[zm_qol] box open:") died at the SAME instruction reading a
+	//  NULL pointer out of the SAME table entry - index 13 - and index 13 of
+	//  this list on Origins (as50 skipped) is this line. Stock never displays
+	//  equipment in the box: every stock include of claymore_zm / emp_grenade_zm
+	//  is in_box 0. So: 0, exactly as stock does, and the weapon stays known to
+	//  the client for .give. See ERROR_CATALOGUE.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "bouncingbetty_zm", 0 );
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
