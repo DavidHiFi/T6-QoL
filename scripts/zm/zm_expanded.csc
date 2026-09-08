@@ -188,19 +188,45 @@ zmqol_mp_weapons_init()
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
 
-	//  🛑 v2.14.27 - THE BOUNCING BETTY IS NOT A BOX WEAPON, AND SAYING IT WAS
-	//  CRASHED THE GAME. v2.9.9 added this line with no in_box flag (default 1)
-	//  and NO server twin - the server never registered bouncingbetty_zm in the
-	//  box at all (only its .give rows). include_weapon()'s last line hands
-	//  every in_box weapon to addzombieboxweapon(), the native table the box's
-	//  zbarrier "rise logic" piece draws its random models from. Two crash
-	//  dumps on 2026-09-08 (9:02 AM and 3:09 PM, both Origins Crazy Place, both
-	//  right after "[zm_qol] box open:") died at the SAME instruction reading a
-	//  NULL pointer out of the SAME table entry - index 13 - and index 13 of
-	//  this list on Origins (as50 skipped) is this line. Stock never displays
-	//  equipment in the box: every stock include of claymore_zm / emp_grenade_zm
-	//  is in_box 0. So: 0, exactly as stock does, and the weapon stays known to
+	//  🛑 v2.14.27 - THE BETTY IS NOT IN THE BOX'S *DISPLAY* TABLE, AND
+	//  SAYING IT WAS CRASHED THE GAME. v2.9.9 added this line with no in_box flag
+	//  (default 1). include_weapon()'s last line hands every display_in_box weapon
+	//  to addzombieboxweapon(), the native table the box's zbarrier "rise logic"
+	//  piece draws its RANDOM SPIN models from. Two crash dumps on 2026-09-08
+	//  (9:02 AM and 3:09 PM, both Origins Crazy Place, both right after
+	//  "[zm_qol] box open:") died at the SAME instruction reading a NULL pointer
+	//  out of the SAME table entry - index 13 - and index 13 of this list on
+	//  Origins (as50 skipped) is this line. So: 0, and the weapon stays known to
 	//  the client for .give. See ERROR_CATALOGUE.
+	//
+	//  🛑 CORRECTED 2026-09-09 (queue re-walk) - THE ORIGINAL NOTE HERE SAID
+	//  "NO server twin - the server never registered bouncingbetty_zm in the box
+	//  at all (only its .give rows)". THAT IS FALSE, and acting on it would undo
+	//  this fix. bouncingbetty.gsc:278 calls include_weapon("bouncingbetty_zm")
+	//  with no in_box argument; maps\mp\zombies\_zm_utility::include_weapon
+	//  defaults in_box to 1 and forwards to include_zombie_weapon, so
+	//  add_zombie_weapon sets struct.is_in_box = 1 and _zm_magicbox.gsc:887's
+	//  treasure_chest_canplayerreceiveweapon() lets the box AWARD a Betty. That
+	//  is deliberate - the README promises Betties from the box - and it is why
+	//  the server half must NOT be "fixed" to match this 0.
+	//
+	//  🌟 THE ASYMMETRY IS STOCK'S OWN PATTERN, NOT AN ERROR. TranZit ships
+	//  exactly it for the EMP grenade: zm_transit.gsc:1926 include_weapon(
+	//  "emp_grenade_zm", 1, undefined, ::less_than_normal ) on the server, and
+	//  zm_transit.csc:314 include_weapon( "emp_grenade_zm", 0 ) on the client.
+	//  Equipment is awardable from the box and excluded from the spin models.
+	//  (claymore_zm is 0 on BOTH halves on all six maps - it is never awarded,
+	//  which is why it is not the precedent to copy here.)
+	//
+	//  🌟 AND THE CONCRETE NULL, read out of the shipped defs 2026-09-09:
+	//  addzombieboxweapon() stores getweaponmodel(weapon), and this mod's
+	//  weapons\zmouncingbetty_zm carries worldModel	6_wpn_none_world - the
+	//  placeholder, not a mesh. Stock's own claymore_zm (dumped from retail
+	//  zm_transit.ff) carries a REAL t6_wpn_claymore_stow and is still display 0
+	//  everywhere, so the stock rule is "no equipment in the spin table" outright;
+	//  the Betty just also supplied the null pointer that made it fatal instead
+	//  of merely wrong. Give the Betty a real world model before ever
+	//  reconsidering this 0.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "bouncingbetty_zm", 0 );
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
