@@ -20382,6 +20382,38 @@ zmqol_nb_death_notify()
     if ( is_true( self.marked_for_recycle ) || is_true( self.zmqol_nb_counted ) )
         return;
 
+    //  🛑 v2.14.20 - A NUKED ZOMBIE IS A KILL, NOT A VANISHING. User, 2026-09-08,
+    //  Crazy Place survival: *"just got a nuke ... and it didn't kill the last
+    //  zombie so i think the no bleedout patch is interferring with the nuke
+    //  power up"*. The 8:14 AM log shows exactly that: a Nuke at round 4 with
+    //  one zombie left printed
+    //      DEATH WITH NO PLAYER ATTACKER - by=worldspawn/ mod=MOD_UNKNOWN
+    //          weapon=none robot_marked=1 ... round=4 left=0
+    //      one owed back to the round (killed by worldspawn/) - zombie_total now 1
+    //  and a .nuke at round 5 did it four times (zombie_total 20 -> 23). So the
+    //  Nuke DID kill the last zombie; this file then handed the round a
+    //  replacement, which is the zombie the user saw.
+    //
+    //  Stock's Nuke (_zm_powerups.gsc:1445-1500, nuke_powerup) sets
+    //  `marked_for_death = 1` and `nuked = 1` on every zombie it claims, then
+    //  kills each with a bare `dodamage( health + 666, origin )` - no attacker,
+    //  so the "death" notify carries worldspawn and zmqol_nb_no_killer() below
+    //  reads it as "nothing killed it". `marked_for_death` is stock's own
+    //  "a killer has claimed this zombie" flag: the Nuke, _zm_traps.gsc:576's
+    //  zombie_trap_death and Mob's trap kills all set it before their equally
+    //  attacker-less dodamage, and the robot stomp sets it too (suppressed
+    //  elsewhere). None of those is a free zombie - the player earned every one.
+    //
+    //  📝 Not covered, on purpose: TranZit's diner hatch (zm_transit_classic
+    //  .gsc:380-383) sets the flag AFTER its dodamage and then does its own
+    //  `level.zombie_total++`, so whether this gate catches it depends on notify
+    //  timing. It is a one-zombie case and stock pays it back itself either way.
+    if ( is_true( self.nuked ) || is_true( self.marked_for_death ) )
+    {
+        println( "[zm_qol] no_bleedout: claimed by a stock killer (nuked=" + is_true( self.nuked ) + " marked_for_death=" + is_true( self.marked_for_death ) + ") - a kill, nothing owed" );
+        return;
+    }
+
     //  ========================================================================
     //  🛑 v2.14.10 - A NAMED ATTACKER IS NOT A FREE ZOMBIE, and putting one
     //  back for every attacker-less-looking kill was going to break traps.
