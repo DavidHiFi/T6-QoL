@@ -176,6 +176,18 @@ zmqol_mp_weapons_init()
 	//  what the client draws over the box - so they do not belong here.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "metalstorm_mms_zm" );
 
+	//  v2.15.0 - the four Black Ops 1 guns. Server twin: the four
+	//  zmqol_add_mp_weapon() calls at the end of that list in quality_of_life.gsc.
+	//  📝 No map gate on any of the four: unlike the XPR-50 (which Origins swaps
+	//  for a private copy, so as50_zm exists on no map there and crashed this
+	//  list), these four have ONE name each, their defs are raw files in
+	//  weapons\zm\ that load on every map, and zmqol_tomb_weapon() does not
+	//  touch them - so addzombieboxweapon() can always find the model.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
+
 	//  🛑 v2.14.27 - THE BOUNCING BETTY IS NOT A BOX WEAPON, AND SAYING IT WAS
 	//  CRASHED THE GAME. v2.9.9 added this line with no in_box flag (default 1)
 	//  and NO server twin - the server never registered bouncingbetty_zm in the

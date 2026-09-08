@@ -267,4 +267,36 @@ LANG_ENGLISH        "PLACEABLE MINE"
 REFERENCE           ZMWEAPON_METALSTORM_UPGRADED
 LANG_ENGLISH        "Tempest PTR"
 
+// ============================================================================
+//  v2.15.0 - THE FOUR BLACK OPS 1 GUNS (user request 2026-09-09).
+//
+//  Only four keys are here because the other four already resolve on every
+//  zombies map and shipping them would be a pointless override - dumped from
+//  the retail english zones to check, not assumed:
+//      WEAPON_M60         "M60"        en_code_post_gfx_zm.ff
+//      WEAPON_BROWNINGHP  "Browning HP"  en_code_post_gfx_zm.ff
+//      WEAPON_RPG         "RPG-7"      en_code_post_gfx_zm.ff
+//      ZMWEAPON_USRPG_UPGRADED  "Rocket Propelled Grievance"  en_patch_zm.ff
+//  The last one is Treyarch's own Pack-a-Punch name for an RPG in zombies and
+//  is what rpg_upgraded_zm already asks for, so the RPG-7 ships no string at all.
+//
+//  "The Pig" and "L115 Isolator" are BLACK OPS 1's real Pack-a-Punch names for
+//  these two guns - the same class of source as the Dragunov's "D115
+//  Disassembler". "Bap" is zm_refreshed's own name for the packed Browning HP;
+//  the Browning Hi-Power was never a BO1 zombies weapon, so no Treyarch name
+//  exists for it - the same situation as the Storm PSR's "Tempest PTR" above.
+// ============================================================================
+
+REFERENCE           WEAPON_T5_L96A1
+LANG_ENGLISH        "L96A1"
+
+REFERENCE           WEAPON_T5_L96A1_UPGRADED
+LANG_ENGLISH        "L115 Isolator"
+
+REFERENCE           WEAPON_M60_UPGRADED
+LANG_ENGLISH        "The Pig"
+
+REFERENCE           WEAPON_BROWNINGHP_UPGRADED
+LANG_ENGLISH        "Bap"
+
 ENDMARKER

@@ -130,6 +130,17 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Winter's Howl
   * All four are in the Mystery Box on every map except Origins and Buried.
 
+* **Black Ops 1 guns in the box:**
+  * M60 — Pack-a-Punches into **The Pig**
+  * L96A1 — Pack-a-Punches into the **L115 Isolator**
+  * Browning HP — Pack-a-Punches into **Bap**
+  * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
+  * All four are in the Mystery Box on every map.
+
+* **Reloads that don't waste your time:**
+  * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
+  * The Python loads all six rounds at once, the way its Pack-a-Punched version always has.
+
 * **Bouncing Betties:**
   * The multiplayer proximity mine, in the Mystery Box on every map. You can only carry one kind of mine at a time: pulling Betties from the box replaces your Claymores, buying Claymores replaces your Betties, and both use the same equipment button.
 

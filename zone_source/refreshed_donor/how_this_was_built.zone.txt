@@ -1,0 +1,56 @@
+refreshed_donor\mod.ff - HOW IT WAS BUILT (2026-09-09, v2.15.0)
+
+Source:   zm_refreshed (the build the user supplied at
+          D:\Custom Downloads\Browser Downloads\zm_refreshed_2\zm_refreshed), files mod.ff and
+          mod.iwd. User directive, 2026-09-09: "this mod has a bunch of weapon ports from bo1 that
+          i want you to port into my mod ... the m60 lmg, the l96, the browning pistol, the rpg-7".
+          🛑 This is an explicit, named exception to CLAUDE.md hard rule 7 (no importing from other
+          mods, zm_refreshed included). It was given by the rule's own author and covers these four
+          weapons only.
+
+Contents: the 121 assets the four guns' eight weapon defs reference and that BO2 itself does not
+          have - 11 xmodels, 101 xanims, 5 materials, 4 camos - plus everything those pull in
+          (203 images, 73 materials, 9 techniquesets, 1 physpreset; 410 assets in all, 0 references).
+          The list was DERIVED, not typed: every \key\value\ pair of m60_zm, m60_upgraded_zm,
+          t5_l96a1_zm, t5_l96a1_upgraded_zm, browninghp_zm, browninghp_upgraded_zm, rpg_zm and
+          rpg_upgraded_zm was parsed, each referenced name classified by its key, and each name
+          checked against the six map fastfiles plus common_zm / patch_zm / code_post_gfx_zm /
+          ui_zm and against mod_base.zone. Only names that no retail zombies zone and no existing
+          mod.ff asset provides are in here.
+
+🌟 THE L96's 26 ANIMATIONS ARE NOT IN zm_refreshed's mod.ff AT ALL. They ship as RAW compiled
+   xanim files inside its mod.iwd (xanim\vm_t5_l96a1_*), and the first link failed on
+   "Missing asset vm_t5_l96a1_ads_down of type xanim" because of it. They are extracted to a
+   folder and handed to the Linker with --add-asset-search-path, and it reads them:
+       Loaded xanim "vm_t5_l96a1_sprint_out" (src: disk)
+   📝 So a RAW XANIM IS LINKABLE. That is new for this project - CLAUDE.md records the raw route
+   as closed for xmodel (measured 2026-08-31) and says nothing about xanim; xanim is OPEN.
+
+Tool:     H:\Claude\Resources\oat-windows\Linker.exe (stock OAT - this is a retail-format zone, the
+          patched oat-dlc5 build is not needed).
+Command (Git Bash):
+          export MSYS2_ARG_CONV_EXCL='*'
+          B="F:/SteamLibrary/steamapps/common/Call of Duty Black Ops II/zone/all"
+          /h/Claude/Resources/oat-windows/Linker.exe \
+            --load "$B/zm_transit.ff" --load "$B/zm_buried.ff" --load "$B/zm_highrise.ff" \
+            --load "$B/zm_prison.ff" --load "$B/zm_tomb.ff" --load "$B/common_zm.ff" \
+            --load "$B/patch_zm.ff" --load "$B/common_mp.ff" --load "$B/patch_mp.ff" \
+            --load "$B/code_post_gfx_zm.ff" \
+            --load "<zm_refreshed>/mod.ff" \
+            --base-folder "H:/Claude/Resources/oat-windows" \
+            --add-asset-search-path "<folder holding xanim\vm_t5_l96a1_*>" \
+            --add-source-search-path "<this folder>" \
+            --output-folder "<this folder>/out" mod
+          then move out\mod.ff here.  (mod.zone beside this file is the asset list it was built from;
+          mod.ff.list.txt is the Unlinker --list of the result.)
+Result:   1,579,008 bytes, 410 assets, 0 warnings / 0 errors.
+
+Why a donor and not a --load of zm_refreshed's whole mod.ff in build_ff.bat: that file is 23 MB and
+   owns ~5,000 assets, hundreds of which are retail names (every stock zombies gun, the perk
+   bottles, the Ray Gun). Loading it would put 23 MB of someone else's mod into every build for 121
+   assets, and any ordering mistake would hand a stock weapon's contents to their copy - exactly the
+   ERROR_CATALOGUE §38 trap. The donor carries only what the four guns need.
+
+🛑 It is --load'ed LAST in build_ff.bat, so first-load-wins means it can only ever SUPPLY names that
+   nothing above it offers. The 55 shared camo materials it happens to own (mc/mtl_weapon_camo_*,
+   pulled in as camo dependencies) therefore resolve from the retail zones, not from here.

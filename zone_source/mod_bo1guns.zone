@@ -1,0 +1,180 @@
+// ============================================================================
+//  mod_bo1guns.zone  -  the four Black Ops 1 guns, v2.15.0
+// ----------------------------------------------------------------------------
+//  User directive 2026-09-09: *"this mod has a bunch of weapon ports from bo1
+//  that i want you to port into my mod ... the m60 lmg, the l96, the browning
+//  pistol, the rpg-7"*, from the zm_refreshed build they supplied.
+//
+//  NAMED EXCEPTION TO HARD RULE 7 (no importing from other mods, zm_refreshed
+//  named explicitly). Given by the rule's author, for these four guns only.
+//
+//  SOURCE: zone_source\refreshed_donor\mod.ff - see how_this_was_built.zone.txt
+//  beside it for the exact Linker command and why the whole 23 MB mod.ff is not
+//  --load'ed instead. The donor is --load'ed LAST in build_ff.bat, so first-load-
+//  wins means it can only supply names nothing above it offers; the ERROR_CATALOGUE
+//  section 38 contents-swap trap is impossible from the last slot.
+//
+//  HOW THIS LIST WAS DERIVED - not typed. Every \key\value\ pair of the eight
+//  defs (m60, t5_l96a1, browninghp, rpg - base and upgraded) was parsed, each
+//  referenced name classified by its key, and each name checked against all six
+//  map fastfiles, the four always-loaded zones (common_zm, patch_zm,
+//  code_post_gfx_zm, ui_zm) and mod_base.zone. What that answered:
+//
+//    121 names exist ONLY in the donor            -> declared below
+//      3 fx exist in retail but NOT on every map  -> declared below, so every
+//                                                    map has them (they resolve
+//                                                    from the retail --loads by
+//                                                    first-load-wins, and mod.ff
+//                                                    then carries them everywhere)
+//     20 need nothing: already in mod.ff (t6_wpn_projectile_rpg7, the two
+//        tracers, reticle_side_small, hud_mp_firerate_bolt, reticle_flechette)
+//        or in an always-loaded zone or in every map's own ff (the 12 muzzle
+//        flashes and the pistol/rifle shell ejects).
+//
+//  NOTE: `adsOverlayReticle crosshair` on both L96 defs is an ENUM, not a material -
+//  stock's own dsr50_zm carries the same value. Nothing to ship for it.
+//
+//  THE WEAPON DEFS ARE NOT DECLARED HERE. The Linker never reads a raw weapon
+//  file, and a declared one would be copied verbatim out of the donor with the
+//  refreshed mod's own balance. They ship RAW in weapons\zm\ (trimmed under the
+//  20,480 B loader ceiling), which is the mechanism all 14 ported guns use.
+// ============================================================================
+
+// --- view / world / projectile models -------------------------------------
+xmodel,t6_wpn_launch_rpg7_stow
+xmodel,t6_wpn_launch_rpg7_view
+xmodel,t6_wpn_launch_rpg7_view_rocket
+xmodel,t6_wpn_launch_rpg7_world
+xmodel,t6_wpn_lmg_m60_view
+xmodel,t6_wpn_lmg_m60_world
+xmodel,t6_wpn_pistol_browninghp_view
+xmodel,t6_wpn_pistol_browninghp_world
+xmodel,vm_t5_l96a1
+xmodel,wm_t5_l96a1
+xmodel,wm_t5_l96a1_mag
+
+// --- HUD icons and the L96 scope overlay ----------------------------------
+material,hud_icon_rpg
+material,hud_t5_l96a1
+material,menu_mp_weapons_browning
+material,menu_mp_weapons_m60
+material,mtl_t5_l96a1_scope_overlay
+
+// --- Pack-a-Punch camo, one per gun ---------------------------------------
+camo,camo_browninghp
+camo,camo_m60
+camo,camo_rpg
+camo,camo_t5_l96a1
+
+// --- every view-model animation the eight defs name (101) -----------------
+// The 26 vm_t5_l96a1_* are RAW xanims out of zm_refreshed's mod.iwd - they are
+// in no fastfile anywhere. The Linker reads a raw xanim from disk; see the donor
+// note. (A raw XMODEL is still impossible - measured 2026-08-31.)
+xanim,viewmodel_browning_hp_ads_down
+xanim,viewmodel_browning_hp_ads_fire
+xanim,viewmodel_browning_hp_ads_up
+xanim,viewmodel_browning_hp_crawl_back
+xanim,viewmodel_browning_hp_crawl_back_empty
+xanim,viewmodel_browning_hp_crawl_forward
+xanim,viewmodel_browning_hp_crawl_forward_empty
+xanim,viewmodel_browning_hp_crawl_in
+xanim,viewmodel_browning_hp_crawl_in_empty
+xanim,viewmodel_browning_hp_crawl_left
+xanim,viewmodel_browning_hp_crawl_left_empty
+xanim,viewmodel_browning_hp_crawl_out
+xanim,viewmodel_browning_hp_crawl_out_empty
+xanim,viewmodel_browning_hp_crawl_right
+xanim,viewmodel_browning_hp_crawl_right_empty
+xanim,viewmodel_browning_hp_fire
+xanim,viewmodel_browning_hp_first_raise
+xanim,viewmodel_browning_hp_idle
+xanim,viewmodel_browning_hp_idle_empty
+xanim,viewmodel_browning_hp_lastshot
+xanim,viewmodel_browning_hp_pullout
+xanim,viewmodel_browning_hp_pullout_empty
+xanim,viewmodel_browning_hp_putaway
+xanim,viewmodel_browning_hp_putaway_empty
+xanim,viewmodel_browning_hp_reload
+xanim,viewmodel_browning_hp_reload_empty
+xanim,viewmodel_browning_hp_sprint_in
+xanim,viewmodel_browning_hp_sprint_in_empty
+xanim,viewmodel_browning_hp_sprint_loop
+xanim,viewmodel_browning_hp_sprint_loop_empty
+xanim,viewmodel_browning_hp_sprint_out
+xanim,viewmodel_browning_hp_sprint_out_empty
+xanim,viewmodel_m60_t6_ads_down
+xanim,viewmodel_m60_t6_ads_fire
+xanim,viewmodel_m60_t6_ads_up
+xanim,viewmodel_m60_t6_crawl_back
+xanim,viewmodel_m60_t6_crawl_forward
+xanim,viewmodel_m60_t6_crawl_in
+xanim,viewmodel_m60_t6_crawl_left
+xanim,viewmodel_m60_t6_crawl_out
+xanim,viewmodel_m60_t6_crawl_right
+xanim,viewmodel_m60_t6_fire
+xanim,viewmodel_m60_t6_first_raise
+xanim,viewmodel_m60_t6_idle
+xanim,viewmodel_m60_t6_pullout
+xanim,viewmodel_m60_t6_putaway
+xanim,viewmodel_m60_t6_reload
+xanim,viewmodel_m60_t6_sprint_in
+xanim,viewmodel_m60_t6_sprint_loop
+xanim,viewmodel_m60_t6_sprint_out
+xanim,viewmodel_rpg7_t6_ads_down
+xanim,viewmodel_rpg7_t6_ads_fire
+xanim,viewmodel_rpg7_t6_ads_up
+xanim,viewmodel_rpg7_t6_crawl_back
+xanim,viewmodel_rpg7_t6_crawl_back_empty
+xanim,viewmodel_rpg7_t6_crawl_forward
+xanim,viewmodel_rpg7_t6_crawl_forward_empty
+xanim,viewmodel_rpg7_t6_crawl_in
+xanim,viewmodel_rpg7_t6_crawl_in_empty
+xanim,viewmodel_rpg7_t6_crawl_left
+xanim,viewmodel_rpg7_t6_crawl_left_empty
+xanim,viewmodel_rpg7_t6_crawl_out
+xanim,viewmodel_rpg7_t6_crawl_out_empty
+xanim,viewmodel_rpg7_t6_crawl_right
+xanim,viewmodel_rpg7_t6_crawl_right_empty
+xanim,viewmodel_rpg7_t6_idle
+xanim,viewmodel_rpg7_t6_idle_empty
+xanim,viewmodel_rpg7_t6_pullout
+xanim,viewmodel_rpg7_t6_pullout_empty
+xanim,viewmodel_rpg7_t6_putaway
+xanim,viewmodel_rpg7_t6_putaway_empty
+xanim,viewmodel_rpg7_t6_reload_empty
+xanim,viewmodel_rpg7_t6_sprint_in
+xanim,viewmodel_rpg7_t6_sprint_in_empty
+xanim,viewmodel_rpg7_t6_sprint_loop
+xanim,viewmodel_rpg7_t6_sprint_loop_empty
+xanim,viewmodel_rpg7_t6_sprint_out
+xanim,viewmodel_rpg7_t6_sprint_out_empty
+xanim,vm_t5_l96a1_ads_down
+xanim,vm_t5_l96a1_ads_fire
+xanim,vm_t5_l96a1_ads_rechamber
+xanim,vm_t5_l96a1_ads_up
+xanim,vm_t5_l96a1_drop
+xanim,vm_t5_l96a1_drop_quick
+xanim,vm_t5_l96a1_fire
+xanim,vm_t5_l96a1_idle
+xanim,vm_t5_l96a1_prone_crawl_b
+xanim,vm_t5_l96a1_prone_crawl_f
+xanim,vm_t5_l96a1_prone_crawl_in
+xanim,vm_t5_l96a1_prone_crawl_l
+xanim,vm_t5_l96a1_prone_crawl_out
+xanim,vm_t5_l96a1_prone_crawl_r
+xanim,vm_t5_l96a1_raise
+xanim,vm_t5_l96a1_raise_first
+xanim,vm_t5_l96a1_raise_quick
+xanim,vm_t5_l96a1_rechamber
+xanim,vm_t5_l96a1_reload
+xanim,vm_t5_l96a1_reload_empty
+xanim,vm_t5_l96a1_sprint_in
+xanim,vm_t5_l96a1_sprint_loop
+xanim,vm_t5_l96a1_sprint_out
+
+// --- retail fx that are NOT on every map ----------------------------------
+// fx_trail_rpg and fx_at4_flash_world are missing from zm_tomb, fx_saw from
+// zm_prison. Declared so the guns look the same on all six.
+fx,weapon/grenade/fx_trail_rpg
+fx,weapon/muzzleflashes/fx_at4_flash_world
+fx,weapon/shellejects/fx_saw

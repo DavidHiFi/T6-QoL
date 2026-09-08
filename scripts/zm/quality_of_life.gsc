@@ -9782,6 +9782,15 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "xm8_zm",           "m8a1",        "m8 xm8" );
 
     // ------------------------------------------------------------------
+    //  v2.15.0 - the four Black Ops 1 guns. `rpg` is already taken by
+    //  stock's own usrpg_zm two rows up, so the RPG-7 answers to `rpg7`.
+    // ------------------------------------------------------------------
+    a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig" );
+    a[a.size] = zmqol_give_name_row( "t5_l96a1_zm",      "l96",         "l96a1 l115 isolator" );
+    a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap" );
+    a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg" );
+
+    // ------------------------------------------------------------------
     //  v2.9.1 - THE NINE ORIGINS COPIES. Same friendly names as the guns
     //  they copy, so .give mp5 / olympia / m16 keeps working on Origins.
     //  Only one of each pair is ever registered on a given map, so the
@@ -10574,6 +10583,59 @@ zmqol_mp_weapons_init()
     //  be missing a piece of it.
     zmqol_add_mp_weapon( "metalstorm_mms_zm", "metalstorm_mms_upgraded_zm", &"WEAPON_METALSTORM", 1000, "sniper" );
 
+    // ========================================================================
+    //  v2.15.0 - THE FOUR BLACK OPS 1 GUNS, weapons 16-19. User request
+    //  2026-09-09: *"this mod has a bunch of weapon ports from bo1 that i want
+    //  you to port into my mod ... the m60 lmg, the l96, the browning pistol,
+    //  the rpg-7"*, from the zm_refreshed build they supplied.
+    //
+    //  🛑 NAMED EXCEPTION TO HARD RULE 7 (no importing from other mods,
+    //  zm_refreshed named explicitly), given by the rule's own author.
+    //
+    //  Art: zone_source\mod_bo1guns.zone out of zone_source\refreshed_donor\
+    //  mod.ff - 121 assets, and the L96's 26 animations are RAW xanims the
+    //  Linker reads off disk (they are in no fastfile anywhere). Defs: raw in
+    //  weapons\zm\, trimmed 17,392-19,346 B, all under the 20,480 ceiling.
+    //
+    //  🛑 NO pap_attach_qol.csv ROW FOR ANY OF THE FOUR, and that is deliberate,
+    //  not an omission. The v1.89.3 crash was a packed weapon whose def
+    //  DECLARES attachments while the table supplies none. m60_upgraded_zm and
+    //  browninghp_upgraded_zm arrived with an `attachments` list, so this mod's
+    //  copies ship with that field CLEARED - which puts all four in the
+    //  mk48 / insas / crossbow class, the one that needs no row at all.
+    //
+    //  Sounds: the four guns' fire chains are 42 mod-private aliases in
+    //  mod.all (wpn_m60_*, t5_l96a1_*, wpn_browninghp_*, wpn_rpg7_*), every one
+    //  a name no retail zombies bank carries, so the user's sound pack keeps
+    //  authority over everything it owns. 🛑 The RPG's are renamed rpg -> rpg7
+    //  for exactly that reason: wpn_rpg_fire_plr IS in five of the six map
+    //  banks (all but Origins), so declaring it would shadow the pack there.
+    //
+    //  Costs and vox packs, each from a source and not chosen:
+    //    M60         1100 / "wpck_mg"  - zm_refreshed's own row for this gun,
+    //                and stock maps class "mg" -> wpck_mg (_zm_audio.gsc:130).
+    //    L96A1       1000 / "sniper"   - the mod's own value for every ported
+    //                sniper (XPR-50, Dragunov); "sniper" is stock's class key.
+    //    Browning HP  500 / ""         - the Tac-45's reasoning exactly: the
+    //                pistol class maps to wpck_crappy, which is in NO zombies
+    //                sound bank, so naming it would be silently nothing.
+    //    RPG-7         50 / "launcher" - 50 is TREYARCH's own cost for an RPG
+    //                in the box (stock zm_buried.gsc:1147, usrpg_zm), and
+    //                stock maps class "launcher" -> wpck_launcher, the pack
+    //                this mod's crossbow already uses on every map.
+    //
+    //  📝 Display names: only WEAPON_T5_L96A1 and the three _UPGRADED keys are
+    //  shipped in mod.str. WEAPON_M60, WEAPON_BROWNINGHP and WEAPON_RPG already
+    //  resolve from en_code_post_gfx_zm.ff, and the packed RPG-7 asks for
+    //  ZMWEAPON_USRPG_UPGRADED - "Rocket Propelled Grievance", Treyarch's own
+    //  Pack-a-Punch name for an RPG - out of en_patch_zm.ff. Both were dumped
+    //  and read, not assumed.
+    // ========================================================================
+    zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
+    zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
+    zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+    zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
+
 
     // Reachable only via a PaP attachment or as a projectile - never a box
     // result, but they must be included or their owner cannot resolve them.
@@ -10611,7 +10673,7 @@ zmqol_mp_weapons_init()
     zmqol_include_variant( "metalstorm4_mms_upgraded_zm" );
     zmqol_include_variant( "metalstorm5_mms_upgraded_zm" );
 
-    println( "[zm_qol] mp_weapons: 13 registered for the box on " + getdvar( "mapname" ) );
+    println( "[zm_qol] mp_weapons: 19 registered for the box on " + getdvar( "mapname" ) );
 }
 
 // ============================================================================

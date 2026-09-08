@@ -468,6 +468,7 @@ REM  target "REM".
   --load "%BO2_DIR%\zone\all\patch_ui_zm.ff" ^
   --load "%BO2_DIR%\zone\all\code_post_gfx_zm.ff" ^
   --load "%BO2_DIR%\zone\all\dlc1_load_zm.ff" ^
+  --load "%PROJ%\zone_source\refreshed_donor\mod.ff" ^
   --base-folder "%PROJ%" ^
   --add-asset-search-path "%PROJ%\zone_assets" ^
   --add-source-search-path "%PROJ%\zone_source" ^
