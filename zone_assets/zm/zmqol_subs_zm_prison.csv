@@ -1835,3 +1835,19 @@ vox_zmba_powerup_firesale,Fire Sale!,Fire Sale!,5000
 vox_zmba_powerup_instakill,Insta-Kill.,Insta-Kill.,5000
 vox_zmba_powerup_maxammo,Max Ammo.,Max Ammo.,5000
 vox_zmba_powerup_nuke,Kaboom.,Kaboom.,5000
+vox_zmba_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000

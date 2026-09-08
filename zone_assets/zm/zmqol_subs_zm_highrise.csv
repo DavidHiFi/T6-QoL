@@ -1530,3 +1530,19 @@ vox_zombie_sidequest_zombie_plea_2,"Oh, oh, oh.","Oh, oh, oh.",5000
 vox_zombie_sidequest_zombie_plea_3,Oh. Oh. Oh. Oh. Oh. Oh.,Oh. Oh. Oh. Oh. Oh. Oh.,5000
 vox_zombie_sidequest_zombie_plea_4,Oh.,Oh.,5000
 vox_zombie_sidequest_zombie_plea_5,Who's Who.,Who's Who.,5000
+vox_zmba_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000

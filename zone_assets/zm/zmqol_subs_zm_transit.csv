@@ -2207,3 +2207,19 @@ vox_zmba_zombie_drop_2,"Pick up the zombie, put down the zombie. It's hard!","Pi
 vox_zmba_zombie_drop_3,"Here's Zombie, let me help you.","Here's Zombie, let me help you.",5000
 vox_zmba_zombie_easy_0,"Okay, you seem no to this, or at least you seem a bit~nervous, no? Okay, tell you what, I will keep my gritties|from overwhelming you too much. So, relax!","Okay, you seem no to this, or at least you seem a bit~nervous, no? Okay, tell you what, I will keep my gritties|from overwhelming you too much. So, relax!",5000
 vox_zmba_zombie_help_0,"Hmm, let's see. Ah, I can help you up and over, pretty~bun. This is how she did it. I always knew she was|cheating.","Hmm, let's see. Ah, I can help you up and over, pretty~bun. This is how she did it. I always knew she was|cheating.",5000
+vox_zmba_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000

@@ -2088,7 +2088,7 @@ vox_sam_wind_puz_solve_0,You solved the riddle. Something's happening. I can fee
 vox_sam_wind_puz_solve_1,You solved the chamber puzzle! How did you know what to~do?,You solved the chamber puzzle! How did you know what to~do?,5000
 vox_sam_wind_puz_solve_2,"Power of the wind is yours. Soon, I will be free. I know I~will.","Power of the wind is yours. Soon, I will be free. I know I~will.",5000
 vox_sam_wind_staff_clue_0,The Giants hold many secrets.,The Giants hold many secrets.,5000
-vox_zmba_powerup_blood_money_0,Lud Money.,Lud Money.,5000
+vox_zmba_powerup_blood_money_0,Blood Money.,Blood Money.,5000
 vox_zmba_powerup_carpenter_0,Carpenter.,Carpenter.,5000
 vox_zmba_powerup_doublepoints_0,DOUBLE POINTS,DOUBLE POINTS,5000
 vox_zmba_powerup_firesale_0,Fire Sale.,Fire Sale.,5000
@@ -2098,3 +2098,19 @@ vox_zmba_powerup_mystery_0,Mystery.,Mystery.,5000
 vox_zmba_powerup_nuke_0,Kaboom!,Kaboom!,5000
 vox_zmba_powerup_zombie_blood_0,Zombie blood.,Zombie blood.,5000
 vox_zmba_powerup_zombie_cash_0,Zombie Cash.,Zombie Cash.,5000
+vox_zmba_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_sam_qol_powerup_zombie_blood_0,Zombie Blood.,Zombie Blood.,5000
+vox_zmba_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money,Blood Money.,Blood Money.,5000
+vox_zmba_sam_qol_powerup_blood_money_0,Blood Money.,Blood Money.,5000
+vox_zmba_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine,Death Machine.,Death Machine.,5000
+vox_zmba_sam_qol_powerup_death_machine_0,Death Machine.,Death Machine.,5000
+vox_zmba_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale,Bonfire Sale!,Bonfire Sale!,5000
+vox_zmba_sam_qol_powerup_bonfire_sale_0,Bonfire Sale!,Bonfire Sale!,5000

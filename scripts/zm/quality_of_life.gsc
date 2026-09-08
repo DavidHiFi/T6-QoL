@@ -12756,6 +12756,28 @@ zmqol_play_announcer_line( str_suffix )
     else if ( !soundexists( str_alias ) )
         return;
 
+    //  SUBTITLE (v2.14.33). User, 2026-09-09: *"i was getting zombie bloods, blood
+    //  moneys, other power ups and i wasnt seeing any subtitles ... make sure all
+    //  power ups get subtitles when the announcer speaks"*.
+    //
+    //  🛑 THIS FUNCTION IS THE REASON THREE OF THE FOUR WERE SILENT ON SCREEN. The
+    //  subtitle hook is a replaceFunc on _zm_audio_announcer::playleaderdialogonplayer
+    //  (zmqol_subs_npc_common.gsc), and this function deliberately does NOT go through
+    //  it - that is the whole point of it, stock's drop-if-busy. Death Machine
+    //  (:3626), Blood Money (:12713) and Bonfire Sale (:13323) all announce down this
+    //  road, so nothing ever asked for their caption. Zombie Blood failed for the
+    //  other reason - it DOES take the stock road (createvox re-points the key) but
+    //  had no row in the six tables. Both halves are fixed; the tables now carry all
+    //  four lines under all four spellings the engine can build.
+    //
+    //  Called once, with no listener: the alias's DistMaxDry is 5000 (measured, every
+    //  *_qol_powerup_* row in soundbank\mod.all.aliases.additions.csv), so
+    //  zmqol_subs_npc() takes its >= 4000 branch and shows the line to everyone -
+    //  which is what playlocalsound() to every player below means. It returns on its
+    //  own if subtitles are off, the map has no table, or the alias has no playback
+    //  time, and it prints the reason either way.
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_alias, undefined, undefined, undefined );
+
     a_players = get_players();
 
     for ( i = 0; i < a_players.size; i++ )
