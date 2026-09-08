@@ -2191,7 +2191,16 @@ qol_health_hud_create()
     healthbar.sort = 0;
 
     playername = self createfontstring( "small", 1.2 );
-    playername setpoint( "LEFT", "BOTTOM_LEFT", -45, 18 );
+    //  v2.14.21 - y 18 -> 16, user 2026-09-08 with a screenshot: *"move the text
+    //  for the name and current area up just a tiny little bit, it's just too
+    //  close to the bottom of the screen ... make sure you don't move them up
+    //  too much so that they clip into the healthbar"*. Measured off that
+    //  screenshot (2000x1125, 2.34 px/unit): the name's ink sat 12 px under the
+    //  bar's grey frame and the area line's ink ended 6 px above the screen
+    //  edge. Two units (~5 px) up leaves ~7 px of clear space under the frame.
+    //  🛑 qol_options.gsc's area line moves by the SAME two units (29 -> 27) so
+    //  the pair stays one 11-unit row apart - change one, change both.
+    playername setpoint( "LEFT", "BOTTOM_LEFT", -45, 16 );
     playername settext( self.name );
     playername.hidewheninmenu = 1;
 
@@ -2762,32 +2771,19 @@ timer()
     //  its previous-value to the dvar default and so deliberately does nothing on
     //  its first pass. Console override, live, no rebuild: hud_color_timer "r g b".
     timer.color = ( 1, 1, 1 );
-    //  v2.14.18 - BLACK OUTLINE, SET EXPLICITLY ON BOTH TIMERS. User, 2026-09-08:
-    //  *"only one of the game time counters has a black outline and the other
-    //  doesn't, fix that too"*.
-    //
-    //  🛑 THE CAUSE IS THAT THE TWO ELEMENTS ARE BUILT BY DIFFERENT CONSTRUCTORS,
-    //  which the comment above wrongly called twins. This one is a raw
-    //  newclienthudelem() and never assigns .font at all, so it renders in the
-    //  engine's default face; qol_options.gsc::qol_opt_round_timer_hud() uses
-    //  createfontstring( "small", 1.2 ), which assigns .font = "small". Two
-    //  different faces, so only one drew with an outline.
-    //
-    //  Neither element set glow, and .glowcolor black + .glowalpha 1 is this
-    //  mod's own way of outlining HUD text - zmqol_subtitles.gsc does exactly
-    //  this on its two lines. Setting it on BOTH timers makes the outline
-    //  explicit and identical rather than an accident of which helper built the
-    //  element, so the pair cannot drift apart again the next time one is edited.
-    //  qol_opt_tint() only ever writes .color, so the colour watcher cannot
-    //  undo this.
-    //
-    //  📝 The deeper mismatch is NOT fixed here and is not a defect the user
-    //  reported: the two still use different fonts at different fontscales
-    //  (1.4 here, 1.2 there). Both numbers are pixel-calibrated - see the y
-    //  derivation above and the 14-unit row in qol_options - so matching the
-    //  font or the scale would move the stack the user asked for. Outline only.
-    timer.glowcolor = ( 0, 0, 0 );
-    timer.glowalpha = 1;
+    //  🛑 v2.14.21 - NO GLOW, AND THE ROUND TIMER IS NOW THIS ELEMENT'S TWIN.
+    //  v2.14.18 set .glowcolor black + .glowalpha 1 on both timers to give the
+    //  pair one outline; the user's 2026-09-08 screenshot proved it did nothing
+    //  here - this element still drew flat, and the round timer still drew
+    //  outlined: *"the round timer below the global timer still has the black
+    //  outline and doesn't match the global timer, so fix that"*. The outline
+    //  was never glow: it comes with the "small" face that createfontstring(
+    //  "small", 1.2 ) assigned to the round timer (the zombie counter, name and
+    //  area rows are the same face and carry the same outline). So the fix is
+    //  the construction, not a field: qol_options.gsc::qol_opt_round_timer_hud()
+    //  now builds its element exactly as this one is built - a raw
+    //  newclienthudelem() with no .font, fontscale 1.4 - and neither sets glow.
+    //  🛑 Keep the two constructions identical; the pair splits again otherwise.
     timer.alpha = 0;
     timer.hidewheninmenu = 1;
     flag_wait( "initial_blackscreen_passed" );
@@ -8717,7 +8713,21 @@ zmqol_velocity_set( b_on, b_quiet )
         //  🛑 -41 IS THE HARD FLOOR. Past that this element's box overlaps the
         //  subtitle row's, and both are bottom-anchored centre text, so they
         //  would collide for anyone with SUBTITLES on.
-        self.zmqol_vel_hud.y = -54;
+        //  v2.14.21 - y -54 -> -45, user 2026-09-08 with a screenshot: *"the
+        //  velocity meter is still clipping into the origins generator progress
+        //  hud icon, so push it down further so that it rests below it but also
+        //  make sure that it doesn't intercept/collide with any other hud
+        //  elements"*. MEASURED off that screenshot this time (2000x1125, so
+        //  2.34 px per unit, and this anchor's origin at row 1041 - fixed by the
+        //  name row and by this very element): at -54 the meter's ink spanned
+        //  rows 902-926 and the dial hid every row above 918, so the dial's
+        //  bottom edge sits at about -53 in this frame. The ink is ~24 px, 10.3
+        //  units, tall. -45 puts it at -50.2 .. -39.8: ~2.9 units (7 px) under
+        //  the dial. The subtitle TOP row moved to -30 in the same change (ink
+        //  ~-34 .. -26 at "default" 1.1), leaving ~5.9 units above it; a one-line
+        //  subtitle uses the lower row, further away still. Nothing else is
+        //  bottom-centre: bleedout_bar.gsc's text is fullscreen y 345.
+        self.zmqol_vel_hud.y = -45;
         //  v1.90.12 - SPEED-BANDED, user 2026-08-14: green, yellow from 330,
         //  red from 370. Created green because a standing player is band 0;
         //  zmqol_velocity_think() repaints it from there.

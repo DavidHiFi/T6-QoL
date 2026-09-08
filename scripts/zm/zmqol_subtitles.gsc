@@ -49,13 +49,17 @@
 //  tables is vox_plr_N_hr_resp_* / vox_plr_N_riv_resp_*. So it is rebuilt
 //  from the alias itself.
 //
-//  WHAT IS NOT COVERED, so nobody has to rediscover it: a handful of quest
-//  lines that map scripts play straight through playsoundwithnotify() /
-//  playsoundontag() instead of the dialogue system - 3 on Buried
-//  (zm_buried_sq_bt), 12 on Mob (zm_alcatraz_sq), 3 on Origins. Those are
-//  builtins on the speaker entity; there is no generic hook, and rewriting
-//  three quest functions to add one is a separate decision. Grunts and exerts
-//  (playerexert()) are not dialogue and have no text.
+//  THE OTHER ROAD (v2.14.21): the quest lines that map scripts play straight
+//  through playsoundwithnotify() / playsoundontag() / playsoundtoplayer() on
+//  the player, never touching the dialogue system. Those are builtins on the
+//  speaker entity with no generic hook, so the stock functions that make the
+//  calls are replaced verbatim in scripts/zm/<map>/qol_subs_<map>.gsc with one
+//  zmqol_subs_raw_line() beside each line - Origins (zm_tomb_vo, zm_tomb_giant_
+//  robot), Mob (zm_alcatraz_sq, zm_alcatraz_sq_vo, zm_prison_sq_final) and
+//  Buried (zm_buried_sq_bt). The old note here counted "3 on Origins"; the real
+//  count is the whole round 5-7 Samantha intro plus the soul-box, beacon, drone
+//  and robot-crush lines. Grunts and exerts (playerexert()) are not dialogue
+//  and have no text.
 //
 //  WHO SEES IT. The speaker's own screen, and any team-mate close enough to
 //  hear it - the alias tables put DistMaxDry at 1250 on five maps and 1600 on
@@ -73,7 +77,7 @@
 //  replaces that function and feeds zmqol_subs_from_position() below.
 //
 //  THE HUD. Two lines, centred, anchored to the bottom of the safe area at
-//  y -34 and -21: under the velocity meter (-62), above the safe line that
+//  y -30 and -17 (v2.14.21; were -34/-21): under the velocity meter (-45), above the safe line that
 //  the bottom-left bars and name row sit below (+2..+29), and between the
 //  stock points/perks column on the left and the ammo block on the right -
 //  a 58-character line at this font is ~330 units wide, x 155..485. Long
@@ -166,20 +170,49 @@ zmqol_subs_playvox( prefix, index, sound_to_play, waittime, category, type, over
     if ( !isplayer( self ) )
         return;
 
+    //  v2.14.21 - EVERY EXIT IS LOGGED, with the reason. User, 2026-09-08:
+    //  *"the subtitles kinda worked, but not all the time"*. The two "stock
+    //  declined" exits below mean the AUDIO did not play either, so a line that
+    //  was heard but never captioned cannot have left through them - if the log
+    //  shows a heard line under one of these, the compare itself is wrong. A
+    //  heard line with no log line at all took a road that never reaches this
+    //  function; the per-map qol_subs_<map>.gsc files cover the ones the stock
+    //  scripts play straight through playsoundwithnotify() / playsoundontag() /
+    //  playsoundtoplayer().
     if ( b_was_speaking )
-        return;     //  stock declined it - this player was already talking
+    {
+        println( "[zm_qol] subtitles: skipped " + prefix + sound_to_play + " - speaker already talking (stock refused the audio too)" );
+        return;
+    }
 
     if ( !is_true( self.isspeaking ) || !isdefined( self.speakingline ) || self.speakingline != sound_to_play )
-        return;     //  stock declined to play it - a nearby speaker, or the skit override
+    {
+        println( "[zm_qol] subtitles: skipped " + prefix + sound_to_play + " - stock did not start it (nearby speaker, skit override, or no playback time)" );
+        return;
+    }
 
     if ( !zmqol_subs_enabled() )
         return;
 
     str_alias = prefix + sound_to_play;
+    self zmqol_subs_caption( str_alias, zmqol_subs_speaker_name( index ), undefined );
+}
+
+//  THE ONE PLACE A CAPTION IS ISSUED, for both roads.             (v2.14.21)
+//  self is the speaking player. str_name is what a team-mate sees in front of
+//  the line. e_listener, when given, is the ONE player who hears it (a
+//  playsoundtoplayer() line - Mob's free-fall screams are played to each
+//  player's own ears); otherwise it goes to the speaker and everyone within
+//  the alias's DistMaxDry, as before.
+zmqol_subs_caption( str_alias, str_name, e_listener )
+{
     n_ms = soundgetplaybacktime( str_alias );
 
     if ( !isdefined( n_ms ) || n_ms <= 0 )
+    {
+        println( "[zm_qol] subtitles: skipped " + str_alias + " - no playback time (alias not in any loaded bank)" );
         return;
+    }
 
     str_text = zmqol_subs_lookup( str_alias );
 
@@ -190,7 +223,74 @@ zmqol_subs_playvox( prefix, index, sound_to_play, waittime, category, type, over
         return;
     }
 
-    level thread zmqol_subs_broadcast( self, zmqol_subs_speaker_name( index ), str_text, n_ms * 0.001, self.origin, level.zmqol_subs_range_sq );
+    println( "[zm_qol] subtitles: " + str_alias + " -> shown for " + ( n_ms * 0.001 ) + "s" );
+
+    if ( isdefined( e_listener ) )
+    {
+        str_prefix = "";
+
+        if ( e_listener != self && str_name != "" )
+            str_prefix = str_name + ": ";
+
+        e_listener thread zmqol_subs_show( str_text, str_prefix, n_ms * 0.001 );
+        return;
+    }
+
+    level thread zmqol_subs_broadcast( self, str_name, str_text, n_ms * 0.001, self.origin, level.zmqol_subs_range_sq );
+}
+
+//  THE RAW ROAD. A character line the map script plays straight through a
+//  sound builtin on the player - playsoundwithnotify(), playsoundontag(),
+//  playsoundtoplayer() - never touching _zm_audio's dialogue system, so the
+//  hook above never sees it. The per-map files scripts/zm/<map>/qol_subs_<map>.gsc
+//  replace those stock functions verbatim and add one call to this beside each
+//  such line. self is the speaking player; the alias itself says who
+//  ("vox_plr_N_..."). e_listener as in zmqol_subs_caption().
+//  Origins: the round 5-7 Samantha intro, the soul-box and beacon exchanges
+//  with Richtofen, the drone's first build, the robot-crush line. Mob: the
+//  electric-chair lines, the free-fall screams, the showdown exchange. Buried:
+//  Stuhlinger's three answers to Richtofen. Measured 2026-09-08 by grepping the
+//  six maps' scripts for every sound builtin fed a vox_plr alias; Maxis,
+//  Samantha and Richtofen-in-your-head lines are NPC voices with no table row
+//  and are not the character's own, so they stay uncaptioned.
+zmqol_subs_raw_line( str_alias, e_listener )
+{
+    if ( !isdefined( level.zmqol_subs_table ) )
+        return;
+
+    if ( !isdefined( self ) || !isplayer( self ) )
+        return;
+
+    if ( !zmqol_subs_enabled() )
+        return;
+
+    self zmqol_subs_caption( str_alias, zmqol_subs_speaker_name( zmqol_subs_index_from_alias( str_alias ) ), e_listener );
+}
+
+//  "vox_plr_N_..." -> N; anything else -> undefined (no name shown).
+zmqol_subs_index_from_alias( str_alias )
+{
+    if ( !isdefined( str_alias ) || str_alias.size < 10 )
+        return undefined;
+
+    if ( getsubstr( str_alias, 0, 8 ) != "vox_plr_" )
+        return undefined;
+
+    //  a switch rather than int() on a one-character string, so nothing here
+    //  depends on how the engine casts text
+    switch ( getsubstr( str_alias, 8, 9 ) )
+    {
+        case "0":
+            return 0;
+        case "1":
+            return 1;
+        case "2":
+            return 2;
+        case "3":
+            return 3;
+    }
+
+    return undefined;
 }
 
 //  The host's HUD switches: the master, then ALL or this row. Read per line,
@@ -218,7 +318,10 @@ zmqol_subs_from_position( str_alias, str_name, v_pos, n_range )
     n_ms = soundgetplaybacktime( str_alias );
 
     if ( !isdefined( n_ms ) || n_ms <= 0 )
+    {
+        println( "[zm_qol] subtitles: skipped " + str_alias + " - no playback time (alias not in any loaded bank)" );
         return;     //  no such alias in any loaded bank - nothing played either
+    }
 
     str_text = zmqol_subs_lookup( str_alias );
 
@@ -228,6 +331,7 @@ zmqol_subs_from_position( str_alias, str_name, v_pos, n_range )
         return;
     }
 
+    println( "[zm_qol] subtitles: " + str_alias + " -> shown for " + ( n_ms * 0.001 ) + "s (by position)" );
     level thread zmqol_subs_broadcast( undefined, str_name, str_text, n_ms * 0.001, v_pos, n_range * n_range );
 }
 
@@ -333,7 +437,12 @@ zmqol_subs_ensure_hud()
     for ( i = 0; i < 2; i++ )
     {
         e_line = self createfontstring( "default", 1.1 );
-        e_line setpoint( "CENTER", "BOTTOM", 0, -34 + i * 13 );
+        //  v2.14.21 - rows -34/-21 -> -30/-17, four units lower, to open the
+        //  bottom-centre column for the velocity meter (quality_of_life.gsc::
+        //  zmqol_velocity_set, now -45 - its comment has the measurement). The
+        //  lower row's ink still ends ~4 units above the safe line, and nothing
+        //  else draws bottom-centre.
+        e_line setpoint( "CENTER", "BOTTOM", 0, -30 + i * 13 );
         e_line.color = ( 1, 1, 1 );
         e_line.glowcolor = ( 0, 0, 0 );
         e_line.glowalpha = 1;
@@ -406,7 +515,13 @@ zmqol_subs_show( str_text, str_prefix, n_secs )
         wait n_show;
     }
 
+    //  v2.14.21 - a 0.25 s fade instead of a hard cut, user 2026-09-08:
+    //  *"make sure they're persistent and smooth"*. The show path still writes
+    //  alpha 1 directly, which snaps and cancels any fade still running when the
+    //  next line starts. Same single owner as before.
     wait 0.3;
+    self.zmqol_subs_hud[0] fadeovertime( 0.25 );
     self.zmqol_subs_hud[0].alpha = 0;
+    self.zmqol_subs_hud[1] fadeovertime( 0.25 );
     self.zmqol_subs_hud[1].alpha = 0;
 }

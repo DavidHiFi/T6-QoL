@@ -2628,7 +2628,10 @@ qol_opt_zone_hud( b_on )
         //  setpoint( "LEFT", "BOTTOM_LEFT", -45, 18 ). Matching the call is what
         //  makes "one line lower" mean exactly 11, in the same frame, on every
         //  map. See the measurement in the banner above.
-        self.qol_hud_zone setpoint( "LEFT", "BOTTOM_LEFT", -45, 29 );
+        //  v2.14.21 - 29 -> 27, the same two units the name row moved up in
+        //  quality_of_life.gsc::qol_health_hud_create() (its comment has the
+        //  measurement). The 11-unit gap between the two is unchanged.
+        self.qol_hud_zone setpoint( "LEFT", "BOTTOM_LEFT", -45, 27 );
 
         //  Never faded, never hidden. That is the whole row.
         self.qol_hud_zone.alpha = 1;
@@ -2771,7 +2774,18 @@ qol_opt_round_timer_hud( b_on )
         //  (Both keep vertalign "user_top" rather than round_hud()'s "top": the y
         //  values are measured in the "user_top" frame, so that offset is already
         //  accounted for.)
-        self.qol_hud_roundtimer = self createfontstring( "small", 1.2 );
+        //  🛑 v2.14.21 - BUILT EXACTLY AS THE GAME TIMER IS BUILT. User,
+        //  2026-09-08, screenshot in hand: *"the round timer below the global
+        //  timer still has the black outline and doesn't match the global timer,
+        //  so fix that"*. This used to be createfontstring( "small", 1.2 ), and
+        //  the "small" face is where the outline came from (v2.14.18's glow
+        //  fields changed nothing on either element - measured on that
+        //  screenshot). A raw newclienthudelem() with no .font at fontscale 1.4
+        //  is the game timer's own construction, so the two now share one face,
+        //  one size and one (absent) outline. y stays 94: both are aligny "top",
+        //  and the 14-unit row was measured glyph-top to glyph-top.
+        self.qol_hud_roundtimer = newclienthudelem( self );
+        self.qol_hud_roundtimer.fontscale = 1.4;
         self.qol_hud_roundtimer.alignx = "center";
         self.qol_hud_roundtimer.aligny = "top";
         self.qol_hud_roundtimer.vertalign = "user_top";
@@ -2783,16 +2797,9 @@ qol_opt_round_timer_hud( b_on )
         //  2026-08-14. Set at creation for the same reason: the watcher no-ops on
         //  its first pass. Console override: hud_color_round_timer "r g b".
         self.qol_hud_roundtimer.color = ( 1, 1, 1 );   //  white, user 2026-08-31 - twin of the game timer's write in quality_of_life.gsc
-        //  v2.14.18 - BLACK OUTLINE. Twin of the write in quality_of_life.gsc::
-        //  timer(); the full reasoning lives there, in the comment above its own
-        //  glowcolor line. Short version: this element is built by
-        //  createfontstring( "small", 1.2 ) and the game timer by a raw
-        //  newclienthudelem() that never assigns .font, so the two rendered in
-        //  different faces and only one carried an outline. Both now set the
-        //  outline explicitly, so it no longer depends on which helper built the
-        //  element. 🛑 Change one without the other and the pair splits again.
-        self.qol_hud_roundtimer.glowcolor = ( 0, 0, 0 );
-        self.qol_hud_roundtimer.glowalpha = 1;
+        //  No glow: see the v2.14.21 note above and in quality_of_life.gsc::
+        //  timer(). 🛑 Change one construction without the other and the pair
+        //  splits again.
         self.qol_hud_roundtimer.hidewheninmenu = 1;
 
         if ( isdefined( level.qol_round_start_time ) )
