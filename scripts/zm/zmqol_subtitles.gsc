@@ -1,5 +1,5 @@
 // ============================================================================
-//  SUBTITLES  -  your character's spoken lines as text          (v2.14.16)
+//  SUBTITLES  -  your character's spoken lines as text   (v2.14.16, v2.14.24)
 // ----------------------------------------------------------------------------
 //  User, 2026-09-08: *"add an option in the HUD tab for my mod called
 //  SUBTITLES, this'll be quite a task since zombies never had subtitles for
@@ -76,16 +76,36 @@
 //  zm_nuked::marlton_vo_inside_bunker(); scripts/zm/zm_nuked/zm_nuked.gsc
 //  replaces that function and feeds zmqol_subs_from_position() below.
 //
-//  THE HUD. Two lines, centred, anchored to the bottom of the safe area at
-//  y -30 and -17 (v2.14.21; were -34/-21): under the velocity meter (-45), above the safe line that
-//  the bottom-left bars and name row sit below (+2..+29), and between the
-//  stock points/perks column on the left and the ammo block on the right -
-//  a 58-character line at this font is ~330 units wide, x 155..485. Long
-//  lines are pre-paged in the table (2 x 58 characters per page, pages split
-//  by "|", lines by "~") and each page stays up for its share of the clip's
-//  real length from soundgetplaybacktime(). settext() only on a new page,
-//  never on a tick; the hide is an alpha write. Two hudelems per player,
-//  created on first use.
+//  THE HUD (v2.14.24 - TWO SLOTS, NOT TWO LINES). User, 2026-09-08: a subtle
+//  outline, your own line white on the bottom row with another speaker's line
+//  greyed on the row above, and the HUD row cycling OFF / SUBTITLES /
+//  SUBTITLES + NAMES with a [Name] prefix.
+//    * Two rows, centred, anchored to the bottom of the safe area at y -30
+//      and -17: under the velocity meter (-45), above the safe line that the
+//      bottom-left bars and name row sit below (+2..+29), and between the
+//      stock points/perks column on the left and the ammo block on the right.
+//      The footprint is unchanged from v2.14.21; only what the rows MEAN is.
+//    * The bottom row (-17) is the OWN slot: this viewer's own character,
+//      white. The row above (-30) is the OTHER slot: any other player's line
+//      (or a line played by position - Nuketown's Marlton), grey. The two run
+//      independently, so a team-mate's line never pushes your own off screen;
+//      a new line in a slot replaces the old one in that slot only.
+//    * The outline is the face, not a glow: the "small" face is what draws the
+//      name/area rows and the zombie counter outlined (v2.14.21 measured that
+//      .glowcolor/.glowalpha do nothing on "default"). Scale is the dvar
+//      zmqol_subs_scale (default 1.2, the name row's) so the size can be set
+//      from console against a screenshot without a rebuild.
+//    * One row is 58 characters. Long lines are pre-paged in the table
+//      (2 x 58 per page, pages split by "|", rows by "~"); a slot shows ONE
+//      row at a time, so a page's rows are shown in turn, each for its share
+//      of the clip's real length from soundgetplaybacktime(), never under
+//      1.2 s. settext() only on a new row, never on a tick; the hide is a
+//      fade. Two hudelems per player, created on first use.
+//    * NAMES. hud_subtitles 2 puts "[Name] " in front of EVERY line, your own
+//      included; 1 shows bare text in both slots (the slot's row and colour
+//      already say whose it is). Nothing else reads the value: any non-zero is
+//      "on" to zmqol_subs_enabled(), so a config holding the old 1 still
+//      works.
 // ============================================================================
 #include common_scripts\utility;
 #include maps\mp\_utility;
@@ -227,12 +247,12 @@ zmqol_subs_caption( str_alias, str_name, e_listener )
 
     if ( isdefined( e_listener ) )
     {
-        str_prefix = "";
+        str_slot = "other";
 
-        if ( e_listener != self && str_name != "" )
-            str_prefix = str_name + ": ";
+        if ( e_listener == self )
+            str_slot = "own";
 
-        e_listener thread zmqol_subs_show( str_text, str_prefix, n_ms * 0.001 );
+        e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_ms * 0.001, str_slot );
         return;
     }
 
@@ -301,6 +321,25 @@ zmqol_subs_enabled()
         return 0;
 
     return getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_subtitles", 0 );
+}
+
+//  hud_subtitles: 0 OFF, 1 SUBTITLES, 2 SUBTITLES + NAMES (v2.14.24). Only 2
+//  puts a name in front; hud_all turns the text on but adds no names.
+zmqol_subs_names_on()
+{
+    return getdvarintdefault( "hud_subtitles", 0 ) == 2;
+}
+
+//  "[Name] " when names are on and there is a name, else nothing.
+zmqol_subs_prefix( str_name )
+{
+    if ( !isdefined( str_name ) || str_name == "" )
+        return "";
+
+    if ( !zmqol_subs_names_on() )
+        return "";
+
+    return "[" + str_name + "] ";
 }
 
 //  A line played by POSITION instead of by a speaker: Nuketown's Marlton in
@@ -395,12 +434,14 @@ zmqol_subs_speaker_name( n_index )
     return a_names[n_index];
 }
 
-//  e_speaker is the player whose line it is (their own screen gets it with no
-//  name, wherever they are) or undefined for a line played by position; every
-//  other player gets it, name in front, only within n_range_sq of v_pos.
+//  e_speaker is the player whose line it is (their own screen gets it in the
+//  OWN slot, wherever they are) or undefined for a line played by position;
+//  every other player gets it in the OTHER slot, only within n_range_sq of
+//  v_pos. The name goes in front on every screen when names are on.
 zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq )
 {
     a_players = get_players();
+    str_prefix = zmqol_subs_prefix( str_name );
 
     for ( i = 0; i < a_players.size; i++ )
     {
@@ -411,103 +452,118 @@ zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq )
 
         if ( isdefined( e_speaker ) && e_player == e_speaker )
         {
-            e_player thread zmqol_subs_show( str_text, "", n_secs );
+            e_player thread zmqol_subs_show( str_text, str_prefix, n_secs, "own" );
             continue;
         }
 
         if ( !isdefined( v_pos ) || distancesquared( e_player.origin, v_pos ) > n_range_sq )
             continue;
 
-        str_prefix = "";
-
-        if ( str_name != "" )
-            str_prefix = str_name + ": ";
-
-        e_player thread zmqol_subs_show( str_text, str_prefix, n_secs );
+        e_player thread zmqol_subs_show( str_text, str_prefix, n_secs, "other" );
     }
 }
 
 zmqol_subs_ensure_hud()
 {
-    if ( isdefined( self.zmqol_subs_hud ) && self.zmqol_subs_hud.size == 2 )
+    if ( isdefined( self.zmqol_subs_hud ) && isdefined( self.zmqol_subs_hud["own"] ) && isdefined( self.zmqol_subs_hud["other"] ) )
         return;
 
     self.zmqol_subs_hud = [];
 
-    for ( i = 0; i < 2; i++ )
+    //  The face carries the outline (see the header); the scale is a dvar so it
+    //  can be matched to a screenshot from console. 1.2 is the name row's.
+    if ( getdvar( "zmqol_subs_scale" ) == "" )
+        setdvar( "zmqol_subs_scale", "1.2" );
+
+    n_scale = getdvarfloat( "zmqol_subs_scale" );
+
+    if ( n_scale <= 0 )
+        n_scale = 1.2;
+
+    a_slots = [];
+    a_slots[0] = "other";
+    a_slots[1] = "own";
+
+    for ( i = 0; i < a_slots.size; i++ )
     {
-        e_line = self createfontstring( "default", 1.1 );
-        //  v2.14.21 - rows -34/-21 -> -30/-17, four units lower, to open the
-        //  bottom-centre column for the velocity meter (quality_of_life.gsc::
-        //  zmqol_velocity_set, now -45 - its comment has the measurement). The
-        //  lower row's ink still ends ~4 units above the safe line, and nothing
-        //  else draws bottom-centre.
+        e_line = self createfontstring( "small", n_scale );
+        //  v2.14.21 rows: -30 (OTHER, above) and -17 (OWN, bottom). Under the
+        //  velocity meter (-45); the lower row's ink ends ~4 units above the safe
+        //  line, and nothing else draws bottom-centre.
         e_line setpoint( "CENTER", "BOTTOM", 0, -30 + i * 13 );
-        e_line.color = ( 1, 1, 1 );
-        e_line.glowcolor = ( 0, 0, 0 );
-        e_line.glowalpha = 1;
+
+        if ( a_slots[i] == "own" )
+            e_line.color = ( 1, 1, 1 );
+        else
+            e_line.color = ( 0.75, 0.75, 0.75 );
+
         e_line.alpha = 0;
         e_line.hidewheninmenu = 1;
         e_line.sort = 20;
-        self.zmqol_subs_hud[i] = e_line;
+        self.zmqol_subs_hud[a_slots[i]] = e_line;
     }
 }
 
-//  One line on screen at a time per viewer: a new line replaces the old one
-//  the moment it starts, which is also what the ear hears (stock refuses to
-//  start a line while a nearby speaker is still going, so overlap is rare).
-zmqol_subs_show( str_text, str_prefix, n_secs )
+//  One line per SLOT per viewer: a new line in a slot replaces the old one in
+//  that slot the moment it starts (which is also what the ear hears - stock
+//  refuses to start a line while a nearby speaker is still going). The other
+//  slot is untouched. str_slot is "own" or "other".
+zmqol_subs_show( str_text, str_prefix, n_secs, str_slot )
 {
     self endon( "disconnect" );
-    self notify( "zmqol_subs_new" );
-    self endon( "zmqol_subs_new" );
+
+    if ( !isdefined( str_slot ) )
+        str_slot = "own";
+
+    self notify( "zmqol_subs_new_" + str_slot );
+    self endon( "zmqol_subs_new_" + str_slot );
 
     self zmqol_subs_ensure_hud();
 
+    e_line = self.zmqol_subs_hud[str_slot];
+
+    //  Pages ("|") of rows ("~") flattened to rows; a slot is one row.
+    a_rows = [];
     a_pages = strtok( str_text, "|" );
 
     if ( !isdefined( a_pages ) || a_pages.size == 0 )
         return;
 
+    for ( i = 0; i < a_pages.size; i++ )
+    {
+        a_split = strtok( a_pages[i], "~" );
+
+        if ( !isdefined( a_split ) )
+            continue;
+
+        for ( j = 0; j < a_split.size; j++ )
+        {
+            if ( a_split[j] == "" )
+                continue;
+
+            a_rows[a_rows.size] = a_split[j];
+        }
+    }
+
     n_total = 0;
 
-    for ( i = 0; i < a_pages.size; i++ )
-        n_total += a_pages[i].size;
+    for ( i = 0; i < a_rows.size; i++ )
+        n_total += a_rows[i].size;
 
     if ( n_total <= 0 )
         return;
 
-    for ( i = 0; i < a_pages.size; i++ )
+    for ( i = 0; i < a_rows.size; i++ )
     {
-        a_lines = strtok( a_pages[i], "~" );
-        str_l1 = "";
-        str_l2 = "";
+        str_row = a_rows[i];
 
-        if ( isdefined( a_lines ) && a_lines.size > 0 )
-            str_l1 = a_lines[0];
+        if ( i == 0 && isdefined( str_prefix ) && str_prefix != "" )
+            str_row = str_prefix + str_row;
 
-        if ( isdefined( a_lines ) && a_lines.size > 1 )
-            str_l2 = a_lines[1];
+        e_line settext( str_row );
+        e_line.alpha = 1;
 
-        if ( i == 0 && str_prefix != "" )
-            str_l1 = str_prefix + str_l1;
-
-        //  a one-line page sits on the lower row so it hugs the same baseline
-        if ( str_l2 == "" )
-        {
-            self.zmqol_subs_hud[0] settext( "" );
-            self.zmqol_subs_hud[1] settext( str_l1 );
-        }
-        else
-        {
-            self.zmqol_subs_hud[0] settext( str_l1 );
-            self.zmqol_subs_hud[1] settext( str_l2 );
-        }
-
-        self.zmqol_subs_hud[0].alpha = 1;
-        self.zmqol_subs_hud[1].alpha = 1;
-
-        n_show = n_secs * a_pages[i].size / n_total;
+        n_show = n_secs * a_rows[i].size / n_total;
 
         if ( n_show < 1.2 )
             n_show = 1.2;
@@ -518,10 +574,8 @@ zmqol_subs_show( str_text, str_prefix, n_secs )
     //  v2.14.21 - a 0.25 s fade instead of a hard cut, user 2026-09-08:
     //  *"make sure they're persistent and smooth"*. The show path still writes
     //  alpha 1 directly, which snaps and cancels any fade still running when the
-    //  next line starts. Same single owner as before.
+    //  next line starts in this slot. Same single owner per slot as before.
     wait 0.3;
-    self.zmqol_subs_hud[0] fadeovertime( 0.25 );
-    self.zmqol_subs_hud[0].alpha = 0;
-    self.zmqol_subs_hud[1] fadeovertime( 0.25 );
-    self.zmqol_subs_hud[1].alpha = 0;
+    e_line fadeovertime( 0.25 );
+    e_line.alpha = 0;
 }

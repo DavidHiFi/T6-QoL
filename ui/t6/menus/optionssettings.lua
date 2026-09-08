@@ -2010,7 +2010,14 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- ceiling (see the note above CreateQolHudTab) - this tab is now FULL. The
 	-- GSC half is scripts/zm/zmqol_subtitles.gsc; the text is one stringtable
 	-- per map inside mod.ff. Default OFF, like every row added after launch.
-	T(QolHudButtons, LocalClientIndex, "SUBTITLES",         "hud_subtitles",  "Your character's spoken lines as text at the bottom of the screen.")
+	-- v2.14.24 - three-way, user request 2026-09-08. 1 = text only (a config
+	-- holding the old toggle's 1 lands here); 2 = "[Name] " in front of every
+	-- line. Read per line in zmqol_subtitles.gsc, nothing else reads it.
+	C(QolHudButtons, LocalClientIndex, "SUBTITLES",         "hud_subtitles",  "Spoken lines as text at the bottom of the screen. Yours on the bottom row, another player's above it.", {
+		{ "OFF",               0 },
+		{ "SUBTITLES",         1 },
+		{ "SUBTITLES + NAMES", 2 }
+	})
 
 	-- ========================================================================
 	--  v1.99.61 - THE TWO MATCH-START FLASH LINES, user request 2026-08-18.
