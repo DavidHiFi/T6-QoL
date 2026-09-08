@@ -173,3 +173,6 @@ installer/Mod Files/reshade/reshade-shaders/
 #  on this desktop and not in the repo. The installer's .bat files ARE tracked.
 # ============================================================================
 *.lnk
+
+# Local VS Code workspace settings — per-machine, not part of the mod.
+.vscode/
