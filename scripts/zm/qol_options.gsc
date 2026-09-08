@@ -2619,7 +2619,10 @@ qol_opt_zone_hud( b_on )
 
     if ( !isdefined( self.qol_hud_zone ) )
     {
-        self.qol_hud_zone = self createfontstring( "small", 1.2 );
+        //  v2.14.25 - 1.2 -> 1.1 together with the name row
+        //  (quality_of_life.gsc::qol_health_hud_create): user 2026-09-08,
+        //  *"the area and username text ... a tiny bit smaller"*.
+        self.qol_hud_zone = self createfontstring( "small", 1.1 );
 
         //  🛑 setpoint(), AND THE SAME CALL THE PLAYER NAME MAKES. The old
         //  position hand-assigned horzalign/vertalign "user_left"/"user_bottom"

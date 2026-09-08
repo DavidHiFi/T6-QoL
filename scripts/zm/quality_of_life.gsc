@@ -2190,7 +2190,12 @@ qol_health_hud_create()
     healthbar.width = zmqol_hud_bar_width();
     healthbar.sort = 0;
 
-    playername = self createfontstring( "small", 1.2 );
+    //  v2.14.25 - 1.2 -> 1.1. User, 2026-09-08: *"make sure the area and
+    //  username text in the bottom left a tiny bit smaller, just a bit, so it's
+    //  more compact"*. The area line (qol_options.gsc::qol_zone_hud, the twin)
+    //  goes 1.2 -> 1.1 with it; the two numbers to the right of the bar stay
+    //  at 1.2 - they were not asked about. Rows stay at y 16 / 27.
+    playername = self createfontstring( "small", 1.1 );
     //  v2.14.21 - y 18 -> 16, user 2026-09-08 with a screenshot: *"move the text
     //  for the name and current area up just a tiny little bit, it's just too
     //  close to the bottom of the screen ... make sure you don't move them up
@@ -5841,6 +5846,7 @@ zmqol_console_command_names()
     a[a.size] = "p";            a[a.size] = "round";        a[a.size] = "setround";
     a[a.size] = "god";          a[a.size] = "ghost";        a[a.size] = "afk";
     a[a.size] = "hud";          a[a.size] = "help";         a[a.size] = "where";
+    a[a.size] = "boxhere";
     a[a.size] = "fog";          a[a.size] = "night";        a[a.size] = "nightmode";
     a[a.size] = "pack";         a[a.size] = "unpack";       a[a.size] = "reload";
     a[a.size] = "infammo";      a[a.size] = "infiniteammo";
@@ -6727,6 +6733,19 @@ zmqol_dev_command_listener()
 
             player iprintln( "^2[zm_qol] ^7x " + int( v_pos[0] ) + "  y " + int( v_pos[1] ) + "  z " + int( v_pos[2] ) + "  ^2yaw ^7" + n_yaw );
             println( "[zm_qol] WHERE " + level.script + " (" + v_pos[0] + ", " + v_pos[1] + ", " + v_pos[2] + ") yaw " + n_yaw );
+        }
+        else if ( cmd == "boxhere" )
+        {
+            //  v2.14.25 - a placement probe for a location's moved mystery box:
+            //  stand where you would use it, face the wall, and the location's
+            //  own handler (level.zmqol_box_here_func, set by e.g.
+            //  scripts\zm\locs\zm_tomb_loc_crazy_place.gsc) moves the box there
+            //  and prints the numbers to bake. A level pointer, never a
+            //  qualified reference: this file loads on every map.
+            if ( isdefined( level.zmqol_box_here_func ) )
+                [[ level.zmqol_box_here_func ]]( player );
+            else
+                player iprintln( "^1[zm_qol] .boxhere ^7- nothing to move on this map/location" );
         }
         else if ( cmd == "giveperks" )
         {

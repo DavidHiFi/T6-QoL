@@ -70,13 +70,22 @@
 //      location scripts\zm\wunderfizz.gsc now places ONE machine inside the
 //      arena instead (v2.14.23) - see the crazy_place branch inside its
 //      zm_tomb block, and zmqol_wf_place() for the adjusters it now runs.
-//    * (v2.14.23) The Pack-a-Punch machine stands BUILT - the six stone pieces
-//      up, as on classic Origins once every generator is captured - see
-//      zmqol_cp_pap_built_pose() below. And it is the ONLY Pack-a-Punch on the
-//      location: the map's own struct is dropped from the struct index in
-//      struct_init() (zmqol_cp_drop_map_pap_structs), which is what makes the
-//      INSTANT PAP switch land on this machine instead of the one at the
-//      Excavation Site.
+//    * (v2.14.23, redone v2.14.25) The Pack-a-Punch machine stands BUILT - the
+//      six stone pieces up, as on classic Origins once every generator is
+//      captured. The pose is drawn the way stock draws it: by a CLIENT model
+//      (scripts\zm\zm_tomb\zm_tomb.csc::zmqol_cp_pap_client_model), with the
+//      server's own machine ghosted - see zmqol_cp_pap_built_pose() below for
+//      why the v2.14.23 server-side animation could not work. And it is the
+//      ONLY Pack-a-Punch on the location: the map's own struct is dropped from
+//      the struct index in struct_init() (zmqol_cp_drop_map_pap_structs),
+//      which is what makes the INSTANT PAP switch land on this machine instead
+//      of the one at the Excavation Site.
+//    * (v2.14.25) The box has COLLISION (two collision_geo_64x64x64_standard
+//      clips, spawned with it - stock's box collision is world clip that stays
+//      in the bunker), its light is GREEN (the powered look every captured-
+//      generator box has on classic Origins: zbarrier state "player_controlled"
+//      + magicbox_runes), and its wall is found by a nine-ray fan fitted to a
+//      line instead of one ray's normal. `.boxhere` moves it live for tuning.
 //
 //  Panzer Soldat: nothing to do. Reimagined has to return early from
 //  mechz_round_tracker() on this location because their copy skips the
@@ -269,34 +278,42 @@ zmqol_cp_drop_map_pap_structs()
 
 // ============================================================================
 //  zmqol_cp_pap_built_pose  -  the chamber's Pack-a-Punch stands ASSEMBLED.
-//                                                                   (v2.14.23)
+//                                                  (v2.14.23, redone v2.14.25)
 // ----------------------------------------------------------------------------
 //  On classic Origins the machine starts as a heap of stone and its pieces
-//  rise one per captured generator. That is a CLIENT animation on a client-only
+//  rise one per captured generator. That is a CLIENT animation on a CLIENT-ONLY
 //  map model: zm_tomb_capture_zones.csc::play_pap_anim() drives the entity
 //  "pap_cs" (mapents: script_model, spawnflags 2, at the Excavation Site) from
-//  the "packapunch_anim" clientfield, playing
-//  fxanim_zom_tomb_packapunch_pc1..pc6_anim and snapping each to its end. None
-//  of that can reach the chamber's machine, which is a SERVER script_model
-//  _zm_perks spawned from this location's struct.
+//  the "packapunch_anim" clientfield - setanim( anim, 1.0, 0.0, RATE 0 ) then
+//  setanimtime( anim, 1.0 ): a snap to the last frame that never plays and so
+//  never ends. The SERVER's machine, meanwhile, is ghost()ed and notsolid()ed
+//  from pack_a_punch_init() and nobody ever sees it.
 //
-//  So the same six anims are played on the server, on that model, the way the
-//  stock scripts animate any fxanim prop on Origins: zm_tomb_challenges.gsc:63
-//  /:73 (#using_animtree "fxanim_props_dlc4" + self useanimtree(#animtree) on a
-//  script_model, then setanim) and zm_tomb_ambient_scripts.gsc:111. The tree is
-//  registered on the server by zm_tomb.gsc:110 (init_pap_animtree ->
-//  scriptmodelsuseanimtree) on every gametype, so there is NO new
-//  scriptmodelsuseanimtree() here - adding one would break the server/client
-//  registration order (ERROR_CATALOGUE §4).
+//  🛑 v2.14.23 played the same six anims on the SERVER machine instead, at
+//  rate 1. Booted 2:10 PM 2026-09-08: the log said all six played (2.1 s each,
+//  "after 0s", before any client existed) and the machine still stood as the
+//  heap. Whatever the exact mechanism (a finished non-looping anim released,
+//  or an anim that ended before the first client connected never reaching
+//  it), stock never does it that way and it is not done that way any more.
 //
-//  The server has setanim() but no setanimtime(), so the pieces are PLAYED, at
-//  rate 1, as soon as the machine exists - _zm_perks::init() spawns it during
-//  level init, long before the blackscreen lifts - and a non-looping xanim holds
-//  its last frame (the challenge box above stays open the same way). The log
-//  prints each anim's length and the moment they started.
+//  v2.14.25 mirrors stock instead: scripts\zm\zm_tomb\zm_tomb.csc::
+//  zmqol_cp_pap_client_model() spawns, per local client, its own
+//  p6_zm_tm_packapunch at this machine's exact origin and angles and snaps the
+//  six anims to their last frame exactly as play_pap_anim() does for pap_cs
+//  (rate 0, setanimtime 1.0, the same useanimtree + mapshaderconstant pair
+//  get_pack_a_punch_model() applies). No clientfield is needed for a pose that
+//  never changes, so nothing is registered on either side.
+//
+//  This server half only GHOSTS the machine, so the heap does not draw through
+//  the built one. ghost() hides and keeps collision - stock calls ghost() and
+//  notsolid() as two separate steps, and here the solid one is wanted: the
+//  chamber has no clip brush for this spot, so the server model is the only
+//  thing stopping a player walking through the machine. Everything else about
+//  the machine (trigger, INSTANT PAP radius, the rising weapon model, sounds)
+//  keys off the trigger and the machine's origin, exactly as it does for the
+//  ghosted machine on classic. 🛑 pap_probe() used to show() every machine 3 s
+//  after round logic; that would undo this, so it only prints now.
 // ============================================================================
-#using_animtree( "fxanim_props_dlc4" );
-
 zmqol_cp_pap_built_pose()
 {
 	level endon( "intermission" );
@@ -326,34 +343,13 @@ zmqol_cp_pap_built_pose()
 
 	if ( !isdefined( m_pap ) )
 	{
-		println( "[zm_qol] crazy place pap: no machine after 30s - built pose NOT applied" );
+		println( "[zm_qol] crazy place pap: no machine after 30s - server machine NOT ghosted, the client's built model will draw through the heap" );
 		return;
 	}
 
-	a_anims = [];
-	a_anims[0] = %fxanim_zom_tomb_packapunch_pc1_anim;
-	a_anims[1] = %fxanim_zom_tomb_packapunch_pc2_anim;
-	a_anims[2] = %fxanim_zom_tomb_packapunch_pc3_anim;
-	a_anims[3] = %fxanim_zom_tomb_packapunch_pc4_anim;
-	a_anims[4] = %fxanim_zom_tomb_packapunch_pc5_anim;
-	a_anims[5] = %fxanim_zom_tomb_packapunch_pc6_anim;
+	m_pap ghost();
 
-	m_pap useanimtree( #animtree );
-
-	str_len = "";
-
-	for ( i = 0; i < a_anims.size; i++ )
-	{
-		m_pap setanim( a_anims[i], 1.0, 0.0, 1.0 );
-		str_len += " pc" + ( i + 1 ) + "=" + getanimlength( a_anims[i] );
-	}
-
-	b_black = 0;
-
-	if ( level flag_exists( "initial_blackscreen_passed" ) )
-		b_black = flag( "initial_blackscreen_passed" );
-
-	println( "[zm_qol] crazy place pap: built pose - 6 assembly anims playing on the machine at (" + int( m_pap.origin[0] ) + "," + int( m_pap.origin[1] ) + "," + int( m_pap.origin[2] ) + ") after " + ( n_wait * 0.05 ) + "s, lengths(s):" + str_len + " blackscreen_passed=" + b_black );
+	println( "[zm_qol] crazy place pap: server machine at (" + int( m_pap.origin[0] ) + "," + int( m_pap.origin[1] ) + "," + int( m_pap.origin[2] ) + ") ghosted after " + ( n_wait * 0.05 ) + "s, collision kept - the built pose is the client's own model (zm_tomb.csc)" );
 }
 
 precache()
@@ -371,6 +367,11 @@ precache()
 	precachemodel( "zombie_vending_sleight" );
 	precachemodel( "zombie_vending_doubletap2" );
 	precachemodel( "p6_zm_tm_packapunch" );
+
+	//  v2.14.25 - the box's own collision (zmqol_cp_box_collision). Stock's
+	//  own perk-machine clip is spawned the same way (_zm_perks.gsc:2898).
+	//  common_zm.ff carries the model (Unlinker --list, 2026-09-08).
+	precachemodel( "collision_geo_64x64x64_standard" );
 }
 
 main()
@@ -382,6 +383,12 @@ main()
 	level thread perk_fx();
 	level thread pap_probe();
 	level thread zmqol_cp_pap_built_pose();
+	level thread zmqol_cp_box_power_look();
+
+	//  `.boxhere` (quality_of_life.gsc's chat commands) reaches this location
+	//  through the pointer, never by a qualified reference - that file loads on
+	//  every map and this one only on Origins (ERROR_CATALOGUE §3).
+	level.zmqol_box_here_func = ::zmqol_cp_box_here;
 	level thread pap_fx();
 	level thread set_ee_ending();
 	level thread scripts\zm\locs\loc_common::init();
@@ -517,20 +524,39 @@ disable_zones()
 //
 //  WHERE. The user's screenshot carried the mod's own ".where" line:
 //  x 10536 y -8383 z -463 yaw 259, arrow on the floor at the foot of the
-//  pillars straight ahead. Rather than guess the distance to that wall from
-//  a screenshot, the placement TRACES it: a bullettrace from that standing
-//  point along yaw 259 at chest height finds the pillar face, the box goes
-//  80 units back from it (the box is ~40 deep; the use volume adds 22.5 in
-//  front), and a second trace drops it onto the floor. The wall normal sets
-//  the facing, axis-snapped the way the Wunderfizz wall snap does it. If the
-//  trace finds nothing plausible (< 150 or no hit within 1200) a fixed point
-//  320 units out along the same line is used and the log says so.
+//  pillars straight ahead. The placement TRACES that wall rather than guessing
+//  a distance off a screenshot.
 //
-//  🛑 RESIDUAL RISK, stated: a zbarrier is a map entity and nothing in the
-//  workspace moves one by assigning .origin/.angles (Reimagined only ever
-//  picks WHICH chest is live). The write is standard entity-field access and
-//  the log prints the entity's origin read back after it; if the box still
-//  draws at (2900, 5520, -368) in the bunker, that line is the evidence.
+//  🛑 v2.14.25 - A FAN OF NINE RAYS, FITTED TO A LINE, not one ray's normal.
+//  v2.14.23 fired ONE bullettrace along yaw 259 and faced the box off the
+//  normal it got back: "wall hit at (10499,-8568), 189 out, wall normal yaw 30"
+//  (2:10 PM log). The user was looking at the pillars nearly square-on (a wall
+//  facing them squarely reads normal 79), so 30 was one pillar's curved face
+//  or a carved facet, 49 degrees off the row. The box was then turned 49
+//  degrees to that row and pushed 80 out along the wrong line - which is the
+//  screenshot the user sent: "clipping into the wall ... on its side ... align
+//  it with those pillars". The Wunderfizz's own snap has the same single-ray
+//  shape and got away with it because its wall happened to return a flat face.
+//
+//  Now: nine traces 8 degrees apart across the user's yaw (259 +- 32), every
+//  hit between 100 and 600 out is kept, and a least-squares LINE is fitted
+//  through those hit points (principal axis of their 2-D scatter, eigenvector
+//  by hand - no atan in GSC, the direction goes through vectortoangles). A row
+//  of round pillars returns hits on crests and in gaps; the line through them
+//  is the row, and its perpendicular towards the standing point is the facing.
+//  The box sits on that line at the foot of the centre ray, n_gap out: 25 is
+//  the model's own back face (p6_anim_zm_tm_magic_box, dumped from zm_tomb.ff:
+//  local y -36.8 .. +25.0, x +-60, z +-24) and 31 is clearance for a pillar
+//  crest standing proud of the fitted line. Fewer than three usable hits falls
+//  back to the single-ray placement, logged as such.
+//
+//  Every hit, the fitted normal and the final spot are in the log. If it is
+//  still off, `.boxhere` moves the box live (zmqol_cp_box_here) and prints the
+//  numbers to bake.
+//
+//  A zbarrier is a map entity; assigning .origin/.angles moved it in the 9:02 AM
+//  boot (the log read the new origin back and the box drew there), so that
+//  question is settled.
 // ============================================================================
 treasure_chest_init()
 {
@@ -558,82 +584,154 @@ zmqol_cp_bring_chest_into_arena()
 	//  screenshot (2026-09-08).
 	v_stand = ( 10536, -8383, -463 );
 	n_yaw   = 259;
-	n_gap   = 80;
+	n_gap   = 56;
 
-	v_dir  = anglestoforward( ( 0, n_yaw, 0 ) );
 	v_from = v_stand + ( 0, 0, 40 );
-	v_to   = v_from + ( v_dir[0] * 1200, v_dir[1] * 1200, 0 );
 
-	trace = bullettrace( v_from, v_to, 0, undefined );
+	//  --- the fan ------------------------------------------------------------
+	a_hit = [];
+	v_aim = undefined;
 
-	n_out = n_yaw + 180;
-	v_box = undefined;
-
-	if ( trace["fraction"] < 1 && distance( v_from, trace["position"] ) >= 150 )
+	for ( k = -4; k <= 4; k++ )
 	{
-		v_hit = trace["position"];
+		n_k = n_yaw + k * 8;
+		v_d = anglestoforward( ( 0, n_k, 0 ) );
+		v_t = v_from + ( v_d[0] * 900, v_d[1] * 900, 0 );
 
-		if ( isdefined( trace["normal"] ) )
+		tr = bullettrace( v_from, v_t, 0, undefined );
+
+		if ( tr["fraction"] >= 1 )
 		{
-			v_flat = ( trace["normal"][0], trace["normal"][1], 0 );
-
-			if ( length( v_flat ) > 0.1 )
-				n_out = vectortoangles( vectornormalize( v_flat ) )[1];
+			println( "[zm_qol] crazy place box: fan yaw " + n_k + " - no hit within 900" );
+			continue;
 		}
 
-		while ( n_out < 0 )
-			n_out += 360;
-		while ( n_out >= 360 )
-			n_out -= 360;
+		n_d = distance( v_from, tr["position"] );
 
-		//  Axis snap, 8 degrees, as the Wunderfizz wall snap does: a pillar
-		//  edge or a carved face can return a normal a few degrees off the
-		//  wall's true line, and a box that is 5 degrees skewed reads as sloppy.
-		n_axis = int( ( n_out + 45 ) / 90 ) * 90;
+		if ( n_d < 100 || n_d > 600 )
+		{
+			println( "[zm_qol] crazy place box: fan yaw " + n_k + " hit " + int( n_d ) + " out - outside 100..600, ignored" );
+			continue;
+		}
 
-		if ( n_axis >= 360 )
-			n_axis -= 360;
+		a_hit[a_hit.size] = tr["position"];
 
-		n_off = abs( n_out - n_axis );
+		if ( k == 0 )
+			v_aim = tr["position"];
 
-		if ( n_off > 180 )
-			n_off = 360 - n_off;
+		println( "[zm_qol] crazy place box: fan yaw " + n_k + " hit (" + int( tr["position"][0] ) + "," + int( tr["position"][1] ) + "," + int( tr["position"][2] ) + ") " + int( n_d ) + " out" );
+	}
 
-		if ( n_off <= 8 )
-			n_out = n_axis;
+	n_out = undefined;
+	v_box = undefined;
 
-		v_out = anglestoforward( ( 0, n_out, 0 ) );
-		v_box = ( v_hit[0] + v_out[0] * n_gap, v_hit[1] + v_out[1] * n_gap, v_stand[2] );
+	if ( a_hit.size >= 3 )
+	{
+		//  --- least-squares line through the hits (2-D) ----------------------
+		n_mx = 0;
+		n_my = 0;
 
-		println( "[zm_qol] crazy place box: wall hit at (" + int( v_hit[0] ) + "," + int( v_hit[1] ) + "," + int( v_hit[2] ) + "), " + int( distance( v_from, v_hit ) ) + " out along yaw " + n_yaw + ", wall normal yaw " + int( n_out ) );
+		for ( i = 0; i < a_hit.size; i++ )
+		{
+			n_mx += a_hit[i][0];
+			n_my += a_hit[i][1];
+		}
+
+		n_mx = n_mx / a_hit.size;
+		n_my = n_my / a_hit.size;
+
+		n_sxx = 0;
+		n_syy = 0;
+		n_sxy = 0;
+
+		for ( i = 0; i < a_hit.size; i++ )
+		{
+			n_dx = a_hit[i][0] - n_mx;
+			n_dy = a_hit[i][1] - n_my;
+			n_sxx += n_dx * n_dx;
+			n_syy += n_dy * n_dy;
+			n_sxy += n_dx * n_dy;
+		}
+
+		//  Largest eigenvalue of [[sxx, sxy], [sxy, syy]] and its eigenvector,
+		//  taken from whichever row is better conditioned.
+		n_l1 = ( ( n_sxx + n_syy ) + sqrt( ( n_sxx - n_syy ) * ( n_sxx - n_syy ) + 4 * n_sxy * n_sxy ) ) * 0.5;
+
+		v_line = ( n_sxy, n_l1 - n_sxx, 0 );
+
+		if ( length( v_line ) < 0.001 || abs( n_l1 - n_syy ) > abs( n_l1 - n_sxx ) )
+			v_line = ( n_l1 - n_syy, n_sxy, 0 );
+
+		if ( length( v_line ) < 0.001 )
+			v_line = ( 1, 0, 0 );
+
+		v_line = vectornormalize( v_line );
+
+		//  Perpendicular, pointing back at the standing point.
+		v_n = ( 0 - v_line[1], v_line[0], 0 );
+		v_to_stand = ( v_stand[0] - n_mx, v_stand[1] - n_my, 0 );
+
+		if ( vectordot( v_n, v_to_stand ) < 0 )
+			v_n = ( 0 - v_n[0], 0 - v_n[1], 0 );
+
+		n_out = vectortoangles( v_n )[1];
+
+		//  Foot of the centre ray on the line (or the mean if that ray missed).
+		if ( !isdefined( v_aim ) )
+			v_aim = ( n_mx, n_my, v_stand[2] );
+
+		n_along = ( v_aim[0] - n_mx ) * v_line[0] + ( v_aim[1] - n_my ) * v_line[1];
+		v_foot = ( n_mx + v_line[0] * n_along, n_my + v_line[1] * n_along, v_stand[2] );
+
+		v_box = ( v_foot[0] + v_n[0] * n_gap, v_foot[1] + v_n[1] * n_gap, v_stand[2] );
+
+		println( "[zm_qol] crazy place box: line fit through " + a_hit.size + " hit(s) - row yaw " + int( vectortoangles( v_line )[1] ) + ", facing (normal) yaw " + int( n_out ) + ", foot (" + int( v_foot[0] ) + "," + int( v_foot[1] ) + "), box " + n_gap + " out" );
 	}
 	else
 	{
-		v_box = ( v_stand[0] + v_dir[0] * 320, v_stand[1] + v_dir[1] * 320, v_stand[2] );
+		//  --- fallback: the v2.14.23 single ray ------------------------------
+		v_dir = anglestoforward( ( 0, n_yaw, 0 ) );
+		v_to  = v_from + ( v_dir[0] * 1200, v_dir[1] * 1200, 0 );
 
-		while ( n_out >= 360 )
-			n_out -= 360;
+		trace = bullettrace( v_from, v_to, 0, undefined );
 
-		println( "[zm_qol] crazy place box: no usable wall along yaw " + n_yaw + " (fraction " + trace["fraction"] + ") - using the fixed fallback 320 out" );
+		n_out = n_yaw + 180;
+
+		if ( trace["fraction"] < 1 && distance( v_from, trace["position"] ) >= 150 )
+		{
+			v_hit = trace["position"];
+
+			if ( isdefined( trace["normal"] ) )
+			{
+				v_flat = ( trace["normal"][0], trace["normal"][1], 0 );
+
+				if ( length( v_flat ) > 0.1 )
+					n_out = vectortoangles( vectornormalize( v_flat ) )[1];
+			}
+
+			v_out = anglestoforward( ( 0, n_out, 0 ) );
+			v_box = ( v_hit[0] + v_out[0] * n_gap, v_hit[1] + v_out[1] * n_gap, v_stand[2] );
+
+			println( "[zm_qol] crazy place box: only " + a_hit.size + " fan hit(s) - single-ray fallback, wall hit at (" + int( v_hit[0] ) + "," + int( v_hit[1] ) + "," + int( v_hit[2] ) + "), normal yaw " + int( n_out ) );
+		}
+		else
+		{
+			v_box = ( v_stand[0] + v_dir[0] * 320, v_stand[1] + v_dir[1] * 320, v_stand[2] );
+
+			println( "[zm_qol] crazy place box: only " + a_hit.size + " fan hit(s) and no usable wall along yaw " + n_yaw + " - using the fixed fallback 320 out" );
+		}
 	}
+
+	while ( n_out < 0 )
+		n_out += 360;
+	while ( n_out >= 360 )
+		n_out -= 360;
 
 	//  Onto the floor. Same trace the Wunderfizz uses.
 	trace_floor = bullettrace( v_box + ( 0, 0, 72 ), v_box - ( 0, 0, 160 ), 0, undefined );
 
 	if ( trace_floor["fraction"] < 1 )
 		v_box = ( v_box[0], v_box[1], trace_floor["position"][2] );
-
-	//  The side players use is the struct's -right, which is yaw + 90. It has
-	//  to point INTO the room, along the wall normal: struct yaw = normal - 90.
-	n_struct_yaw = n_out - 90;
-
-	while ( n_struct_yaw < 0 )
-		n_struct_yaw += 360;
-
-	n_zb_yaw = n_struct_yaw + 180;
-
-	while ( n_zb_yaw >= 360 )
-		n_zb_yaw -= 360;
 
 	//  Which chest: the bunker start chest by preference (it is the one classic
 	//  Origins opens with), else whichever is first.
@@ -667,6 +765,36 @@ zmqol_cp_bring_chest_into_arena()
 
 	v_was = s_chest.origin;
 
+	zmqol_cp_place_box( s_chest, e_zb, v_box, n_out );
+
+	println( "[zm_qol] crazy place box: " + s_chest.script_noteworthy + " moved from (" + int( v_was[0] ) + "," + int( v_was[1] ) + "," + int( v_was[2] ) + ") to (" + int( v_box[0] ) + "," + int( v_box[1] ) + "," + int( v_box[2] ) + ") front yaw " + int( n_out ) + " (struct yaw " + int( s_chest.angles[1] ) + ", zbarrier yaw " + int( e_zb.angles[1] ) + ") - zbarrier reads back at (" + int( e_zb.origin[0] ) + "," + int( e_zb.origin[1] ) + "," + int( e_zb.origin[2] ) + ")" );
+
+	return s_chest;
+}
+
+// ============================================================================
+//  zmqol_cp_place_box  -  put the chest struct, its zbarrier and the box's
+//  collision at v_box with the box's FRONT (the side you use) facing n_out.
+//
+//  The side players use is the struct's -right, which is yaw + 90 (stock's
+//  unitrigger sits at origin + anglestoright( struct.angles ) * -22.5,
+//  _zm_magicbox.gsc:182). So struct yaw = front - 90, and every stock chest
+//  pairs its zbarrier at struct yaw + 180 (all seven, zm_tomb mapents).
+// ============================================================================
+zmqol_cp_place_box( s_chest, e_zb, v_box, n_out )
+{
+	n_struct_yaw = n_out - 90;
+
+	while ( n_struct_yaw < 0 )
+		n_struct_yaw += 360;
+	while ( n_struct_yaw >= 360 )
+		n_struct_yaw -= 360;
+
+	n_zb_yaw = n_struct_yaw + 180;
+
+	while ( n_zb_yaw >= 360 )
+		n_zb_yaw -= 360;
+
 	s_chest.origin = v_box;
 	s_chest.angles = ( 0, n_struct_yaw, 0 );
 	s_chest.start_exclude = undefined;
@@ -674,9 +802,182 @@ zmqol_cp_bring_chest_into_arena()
 	e_zb.origin = v_box;
 	e_zb.angles = ( 0, n_zb_yaw, 0 );
 
-	println( "[zm_qol] crazy place box: " + s_chest.script_noteworthy + " moved from (" + int( v_was[0] ) + "," + int( v_was[1] ) + "," + int( v_was[2] ) + ") to (" + int( v_box[0] ) + "," + int( v_box[1] ) + "," + int( v_box[2] ) + ") struct yaw " + int( n_struct_yaw ) + " zbarrier yaw " + int( n_zb_yaw ) + " - zbarrier reads back at (" + int( e_zb.origin[0] ) + "," + int( e_zb.origin[1] ) + "," + int( e_zb.origin[2] ) + ")" );
+	zmqol_cp_box_collision( v_box, n_zb_yaw );
+}
 
-	return s_chest;
+// ============================================================================
+//  zmqol_cp_box_collision  -  the box blocks players (and paths zombies).
+//
+//  Stock's boxes are stopped by clip brushes baked into the map at each
+//  chest's spot; nothing in the mapents near the bunker chest is a movable
+//  collision entity (checked 2026-09-08), so a moved box has none - the user
+//  ran straight through it. Two collision_geo_64x64x64_standard script_models
+//  cover the model's footprint: p6_anim_zm_tm_magic_box is x +-60 along the
+//  zbarrier's forward, y -36.8..+25 (centre -6, i.e. 6 along anglestoright),
+//  z +-24 - so the pair sits at +-32 along forward, 6 along right, 32 up, each
+//  spanning 64 x 64 x 64 about its origin (the family is centred: Reimagined's
+//  maze stacks collision_wall_128x128x10 at up*64/192/320). Spawned the way
+//  stock spawns a perk machine's clip (_zm_perks.gsc:2898: spawn(...,1) +
+//  disconnectpaths) and ghost()ed like Buried's ffotd clips.
+// ============================================================================
+zmqol_cp_box_collision( v_box, n_zb_yaw )
+{
+	v_fwd = anglestoforward( ( 0, n_zb_yaw, 0 ) );
+	v_rgt = anglestoright( ( 0, n_zb_yaw, 0 ) );
+	v_mid = v_box + ( v_rgt[0] * 6, v_rgt[1] * 6, 32 );
+
+	a_at = [];
+	a_at[0] = v_mid + ( v_fwd[0] * 32, v_fwd[1] * 32, 0 );
+	a_at[1] = v_mid - ( v_fwd[0] * 32, v_fwd[1] * 32, 0 );
+
+	if ( !isdefined( level.zmqol_cp_box_clips ) )
+	{
+		level.zmqol_cp_box_clips = [];
+
+		for ( i = 0; i < a_at.size; i++ )
+		{
+			clip = spawn( "script_model", a_at[i], 1 );
+			clip.angles = ( 0, n_zb_yaw, 0 );
+			clip setmodel( "collision_geo_64x64x64_standard" );
+			clip.script_noteworthy = "zmqol_cp_box_clip";
+			clip ghost();
+			clip disconnectpaths();
+			level.zmqol_cp_box_clips[i] = clip;
+		}
+
+		println( "[zm_qol] crazy place box: 2 collision clips spawned at (" + int( a_at[0][0] ) + "," + int( a_at[0][1] ) + "," + int( a_at[0][2] ) + ") and (" + int( a_at[1][0] ) + "," + int( a_at[1][1] ) + "," + int( a_at[1][2] ) + ")" );
+		return;
+	}
+
+	for ( i = 0; i < a_at.size; i++ )
+	{
+		clip = level.zmqol_cp_box_clips[i];
+
+		if ( !isdefined( clip ) )
+			continue;
+
+		clip connectpaths();
+		clip.origin = a_at[i];
+		clip.angles = ( 0, n_zb_yaw, 0 );
+		clip disconnectpaths();
+	}
+}
+
+// ============================================================================
+//  zmqol_cp_box_here  -  `.boxhere`: move the box to where the player is
+//  looking, live, and print the numbers to bake.
+//
+//  Stand where you would USE the box, face the wall, type .boxhere. The box
+//  goes 64 units in front of you with its front facing you (so the wall is
+//  behind it), on the floor there, with its collision. The use prompt and the
+//  light stay where the box was placed at load - both are fixed at map start
+//  (the unitrigger by _zm_magicbox, the light fx by the client) - so this is a
+//  placement PROBE, not a working relocation: look, read the numbers off the
+//  console, and they get baked into zmqol_cp_bring_chest_into_arena.
+// ============================================================================
+zmqol_cp_box_here( player )
+{
+	if ( !isdefined( level.chests ) || level.chests.size < 1 || !isdefined( level.chests[0].zbarrier ) )
+	{
+		player iprintln( "^1[zm_qol] .boxhere ^7- no chest/zbarrier to move" );
+		return;
+	}
+
+	s_chest = level.chests[0];
+	e_zb = s_chest.zbarrier;
+
+	v_ang = player getplayerangles();
+	n_face = int( v_ang[1] );
+
+	while ( n_face < 0 )
+		n_face += 360;
+	while ( n_face >= 360 )
+		n_face -= 360;
+
+	v_f = anglestoforward( ( 0, n_face, 0 ) );
+	v_at = player.origin + ( v_f[0] * 64, v_f[1] * 64, 0 );
+
+	trace_floor = bullettrace( v_at + ( 0, 0, 40 ), v_at - ( 0, 0, 160 ), 0, undefined );
+
+	if ( trace_floor["fraction"] < 1 )
+		v_at = ( v_at[0], v_at[1], trace_floor["position"][2] );
+
+	n_out = n_face + 180;
+
+	while ( n_out >= 360 )
+		n_out -= 360;
+
+	zmqol_cp_place_box( s_chest, e_zb, v_at, n_out );
+
+	player iprintln( "^2[zm_qol] box ^7at x " + int( v_at[0] ) + "  y " + int( v_at[1] ) + "  z " + int( v_at[2] ) + "  ^2front yaw ^7" + n_out + " ^7(prompt + light stay put until restart)" );
+	println( "[zm_qol] BOXHERE zm_tomb crazy place: box at (" + v_at[0] + ", " + v_at[1] + ", " + v_at[2] + ") front yaw " + n_out + " (struct yaw " + int( s_chest.angles[1] ) + ", zbarrier yaw " + int( e_zb.angles[1] ) + ") - player stood at (" + int( player.origin[0] ) + "," + int( player.origin[1] ) + "," + int( player.origin[2] ) + ") yaw " + n_face );
+}
+
+// ============================================================================
+//  zmqol_cp_box_power_look  -  the box's light is GREEN, not red.
+//
+//  User, 2026-09-08: *"that light on the front of the box is supposed to be
+//  green not red"*. Measured, not guessed: the light is the magicbox_amb_fx
+//  clientfield (_zm_magicbox_tomb.csc:96) - value 1 plays fx_tomb_magicbox_off
+//  (the red one), value 2 fx_tomb_magicbox_on. A chest goes 1 on "initial"
+//  (_zm_magicbox_tomb.gsc::magic_box_initial, 1 s after init) and only ever
+//  reaches 2 through zm_tomb_capture_zones::enable_mystery_boxes_in_zone(),
+//  when its generator's zone becomes player-controlled: zbarrier state
+//  "player_controlled" (showzbarrierpiece(2) + amb_fx 2, :2076) and
+//  magicbox_runes 1. Survival never registers a chest to a zone (the mod's
+//  replaced register_elements_powered_by_zone_capture_generators returns on
+//  !is_classic()), so this box stayed on 1 for ever. This does exactly what
+//  that stock function does, once the box is in its "close" state (the tomb
+//  handler sets .state "close" on "initial") and after round logic has started
+//  - which is also after setup_capture_zones() has installed the capture
+//  handler and after magic_box_initial()'s 1 s write of amb_fx 1.
+//  magicbox_runes is registered on every gametype by both sides
+//  (zm_tomb.gsc:225/:317, zm_tomb.csc:64). The direct call to the
+//  capture-zones handler is deliberate: it is the one that knows
+//  "player_controlled"; the _zm_magicbox wrapper only forwards to whichever
+//  handler is installed, and this location file loads on Origins only.
+// ============================================================================
+zmqol_cp_box_power_look()
+{
+	level endon( "intermission" );
+
+	flag_wait( "start_zombie_round_logic" );
+
+	n_wait = 0;
+
+	while ( n_wait < 300 )
+	{
+		if ( isdefined( level.chests ) && level.chests.size > 0 && isdefined( level.chests[0].zbarrier ) && isdefined( level.chests[0].zbarrier.state ) && level.chests[0].zbarrier.state == "close" )
+			break;
+
+		wait 0.1;
+		n_wait++;
+	}
+
+	if ( !isdefined( level.chests ) || level.chests.size < 1 || !isdefined( level.chests[0].zbarrier ) )
+	{
+		println( "[zm_qol] crazy place box: no zbarrier after " + ( n_wait * 0.1 ) + "s - powered look NOT applied" );
+		return;
+	}
+
+	e_zb = level.chests[0].zbarrier;
+	str_state = "undefined";
+
+	if ( isdefined( e_zb.state ) )
+		str_state = e_zb.state;
+
+	if ( str_state != "close" )
+	{
+		println( "[zm_qol] crazy place box: zbarrier state is '" + str_state + "' after " + ( n_wait * 0.1 ) + "s, not 'close' - powered look NOT applied" );
+		return;
+	}
+
+	e_zb notify( "zbarrier_state_change" );
+	e_zb maps\mp\zm_tomb_capture_zones::set_magic_box_zbarrier_state( "player_controlled" );
+	e_zb setclientfield( "magicbox_runes", 1 );
+	level.chests[0].is_locked = 0;
+
+	println( "[zm_qol] crazy place box: powered look applied after " + ( n_wait * 0.1 ) + "s - zbarrier state player_controlled (piece 2, magicbox_amb_fx 2 = fx_tomb_magicbox_on), magicbox_runes 1, is_locked 0" );
 }
 
 // ============================================================================
@@ -769,13 +1070,11 @@ rotate_loop()
 // ============================================================================
 //  pap_probe  -  zm_qol's, not Reimagined's.
 //
-//  Origins hides its Pack-a-Punch until every generator is captured
-//  (zm_tomb_capture_zones::pack_a_punch_init ghosts and un-solids the machine,
-//  and only the monolith assembly brings it back). The survival branch in
-//  scripts\zm\replaced\zm_tomb_capture_zones.gsc skips that block entirely, so
-//  the machine should be visible from the start - this line is how the first
-//  boot can tell whether it was, without guessing from a screenshot. Same
-//  technique as the Diner's pap probe.
+//  Counts the Pack-a-Punch triggers 3 s into round logic and prints where each
+//  machine is - the way the first boots proved the map's own Excavation Site
+//  machine was being spawned beside ours. (Until v2.14.25 it also show()ed
+//  each machine; the server machine is ghosted on purpose now, see
+//  zmqol_cp_pap_built_pose.)
 // ============================================================================
 pap_probe()
 {
@@ -790,9 +1089,9 @@ pap_probe()
 		if ( !isdefined( a_pap[i] ) || !isdefined( a_pap[i].machine ) )
 			continue;
 
-		a_pap[i].machine show();
-
-		println( "[zm_qol] crazy place pap: trigger " + ( i + 1 ) + " machine at (" + int( a_pap[i].machine.origin[0] ) + "," + int( a_pap[i].machine.origin[1] ) + "," + int( a_pap[i].machine.origin[2] ) + ") - show() re-asserted" );
+		//  v2.14.25 - no show() here any more: zmqol_cp_pap_built_pose() ghosts
+		//  the server machine on purpose (the client draws the built one).
+		println( "[zm_qol] crazy place pap: trigger " + ( i + 1 ) + " machine at (" + int( a_pap[i].machine.origin[0] ) + "," + int( a_pap[i].machine.origin[1] ) + "," + int( a_pap[i].machine.origin[2] ) + ")" );
 	}
 
 	println( "[zm_qol] crazy place pap: " + a_pap.size + " pack-a-punch trigger(s) on the map (expect 1 - ours in the chamber; Origins' own struct was dropped from the index in struct_init, v2.14.23)" );

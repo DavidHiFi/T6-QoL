@@ -602,6 +602,18 @@ setupWunderfizz()
 			zmqol_wf_add( (10144, -7429, -400), (0, 0, 0), zmqol_wf_machine_model() );
 			level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_yaw = 79;
 
+			//  v2.14.25 - 24 units further off the wall than the snap's default
+			//  30. Booted 2:10 PM 2026-09-08: the snap logged "wall snap ...
+			//  -> (10202,-7157,-464) wall normal yaw 270, gap 30, wall was 307
+			//  away" and the user's screenshot shows the machine's back-left
+			//  corner inside the round pillar behind it - the ray hit the flat
+			//  face between pillars and the pillars stand proud of it. User:
+			//  *"move the wunderfizz machine ever so slightly forward so it
+			//  isn't clipping into the pillars behind it"*. zmqol_wf_wall_snap
+			//  adds this on top of zmqol_wf_wall_gap, so the dvar still tunes
+			//  it live (set it before the map loads).
+			level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_gap_extra = 24;
+
 			println( "[zm_qol] wunderfizz: origins crazy place - one arena candidate, seed (10144,-7429,-400) yaw 79 (mirror of the box's standing point)" );
 		}
 		else
@@ -1358,6 +1370,11 @@ zmqol_wf_wall_snap( s_place )
 	n_clear = getdvarintdefault( "zmqol_wf_wall_gap", 30 );
 	n_reach = 900;
 	n_eye   = 60;
+
+	//  v2.14.25 - a per-candidate extra on top of the dvar (the Crazy Place's
+	//  arena machine, see the zm_tomb block). Everything else is unchanged.
+	if ( isdefined( s_place.snap_gap_extra ) )
+		n_clear += s_place.snap_gap_extra;
 
 	v_dir = anglestoforward( ( 0, n_yaw, 0 ) );
 	v_from = ( v_seed[0], v_seed[1], v_seed[2] + n_eye );

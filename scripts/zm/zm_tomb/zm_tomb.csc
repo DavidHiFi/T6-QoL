@@ -5,6 +5,14 @@
 #include clientscripts\mp\zombies\_zm;
 #include clientscripts\mp\zm_tomb_classic;
 
+//  The Crazy Place's built Pack-a-Punch (zmqol_cp_pap_client_model below) uses
+//  the same tree stock's zm_tomb_capture_zones.csc uses for pap_cs. This is a
+//  per-entity useanimtree() only - NO scriptmodelsuseanimtree() (the tree is
+//  already registered on both sides by the map: zm_tomb.gsc:110 /
+//  zm_tomb.csc:103), so the ordered list ERROR_CATALOGUE §4 is about is not
+//  touched. This file loads on Origins only, where the tree exists.
+#using_animtree( "fxanim_props_dlc4" );
+
 main()
 {
     replaceFunc(clientscripts\mp\zm_tomb::include_weapons, ::include_weapons);
@@ -13,6 +21,92 @@ main()
     //     scripts\zm\replaced\zm_tomb_gamemodes.gsc, hooked from
     //     scripts\zm\zm_tomb\zm_tomb.gsc::main(). Ship the two together. ---
     replaceFunc(clientscripts\mp\zm_tomb::init_gamemodes, ::init_gamemodes);
+
+    level thread zmqol_cp_pap_client_model();
+}
+
+// ============================================================================
+//  zmqol_cp_pap_client_model  -  THE CRAZY PLACE'S PACK-A-PUNCH STANDS BUILT.
+//                                                                   (v2.14.25)
+// ----------------------------------------------------------------------------
+//  The server half is scripts\zm\locs\zm_tomb_loc_crazy_place.gsc::
+//  zmqol_cp_pap_built_pose(): it ghost()s the server's machine (collision
+//  kept) and draws nothing. This is what draws the machine, and it is a copy
+//  of how stock draws the SAME model on classic Origins:
+//
+//    * zm_tomb_capture_zones.csc::get_pack_a_punch_model() - the client-only
+//      map entity "pap_cs": waittill_dobj, then if !hasanimtree():
+//      useanimtree( #animtree ) + mapshaderconstant( lcn, 2, "ScriptVector0", 1 ).
+//    * zm_tomb_capture_zones.csc::play_pap_anim() - on the initial snapshot
+//      (bnewent / binitialsnap) every assembled piece is
+//      setanim( anim, 1.0, 0.0, 0.0 ) + setanimtime( anim, 1.0 ): weight 1,
+//      RATE 0, time 1.0 - a snap to the last frame that never plays and so
+//      never ends. Six pieces, fxanim_zom_tomb_packapunch_pc1..pc6_anim, all
+//      in zm_tomb.ff (Unlinker --list; pc7 is NOT in the fastfile).
+//
+//  Stock's pap_cs stands at the Excavation Site and cannot be moved from a
+//  client script, so each local client spawns its OWN p6_zm_tm_packapunch
+//  (precached by zm_tomb_capture_zones::precache_everything on every gametype,
+//  and again by the location's precache()) at the chamber machine's exact
+//  struct origin and angles - (10340, -7906, -412), (0, 0, 0), the same two
+//  numbers scripts\zm\locs\zm_tomb_loc_crazy_place.gsc::struct_init() gives the
+//  server struct; change one, change both. Client-spawned script_models
+//  taking setmodel + anims is stock practice (_zm_magicbox_tomb.csc:100 for
+//  the spawn, zm_prison_weap_quest.csc for spawn + setanim).
+//
+//  🛑 v2.14.23 tried the six anims on the SERVER machine at rate 1 and the
+//  heap never changed (2:10 PM boot, 2026-09-08). Nothing in stock animates
+//  this model server-side; this is the stock way.
+//
+//  Runs once per local client after waitforallclients(), as stock's
+//  init_custom_pap() does. No clientfield: the pose never changes.
+// ============================================================================
+zmqol_cp_pap_client_model()
+{
+    if ( getdvar( "mapname" ) != "zm_tomb" || getdvar( "ui_zm_mapstartlocation" ) != "crazy_place" )
+        return;
+
+    waitforallclients();
+
+    a_players = getlocalplayers();
+
+    for ( localclientnum = 0; localclientnum < a_players.size; localclientnum++ )
+        level thread zmqol_cp_pap_client_model_for( localclientnum );
+}
+
+zmqol_cp_pap_client_model_for( localclientnum )
+{
+    m_pap = spawn( localclientnum, ( 10340, -7906, -412 ), "script_model" );
+    m_pap.angles = ( 0, 0, 0 );
+    m_pap setmodel( "p6_zm_tm_packapunch" );
+    m_pap waittill_dobj( localclientnum );
+
+    if ( !m_pap hasanimtree() )
+    {
+        m_pap useanimtree( #animtree );
+        m_pap mapshaderconstant( localclientnum, 2, "ScriptVector0", 1 );
+    }
+
+    a_anims = [];
+    a_anims[0] = %fxanim_zom_tomb_packapunch_pc1_anim;
+    a_anims[1] = %fxanim_zom_tomb_packapunch_pc2_anim;
+    a_anims[2] = %fxanim_zom_tomb_packapunch_pc3_anim;
+    a_anims[3] = %fxanim_zom_tomb_packapunch_pc4_anim;
+    a_anims[4] = %fxanim_zom_tomb_packapunch_pc5_anim;
+    a_anims[5] = %fxanim_zom_tomb_packapunch_pc6_anim;
+
+    for ( i = 0; i < a_anims.size; i++ )
+    {
+        m_pap setanim( a_anims[i], 1.0, 0.0, 0.0 );
+        m_pap setanimtime( a_anims[i], 1.0 );
+    }
+
+    if ( !isdefined( level.zmqol_cp_pap_client_models ) )
+        level.zmqol_cp_pap_client_models = [];
+
+    level.zmqol_cp_pap_client_models[localclientnum] = m_pap;
+
+    println( "[zm_qol] CLIENT crazy place pap: built pose - own p6_zm_tm_packapunch spawned at (10340,-7906,-412) for local client " + localclientnum + ", 6 assembly anims snapped to their last frame (rate 0, time 1.0)" );
 }
 
 // ============================================================================
