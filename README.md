@@ -135,7 +135,8 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * L96A1 — Pack-a-Punches into the **L115 Isolator**
   * Browning HP — Pack-a-Punches into **Bap**
   * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
-  * All four are in the Mystery Box on every map.
+  * All four are in the Mystery Box on every map except Origins. Origins runs out of weapon
+    precache slots — adding these four stopped the map loading at all — so it keeps the box it had.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.

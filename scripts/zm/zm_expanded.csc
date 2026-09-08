@@ -183,10 +183,23 @@ zmqol_mp_weapons_init()
 	//  list), these four have ONE name each, their defs are raw files in
 	//  weapons\zm\ that load on every map, and zmqol_tomb_weapon() does not
 	//  touch them - so addzombieboxweapon() can always find the model.
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
+	//  🛑 v2.15.3 - AND HELD BACK ON ORIGINS, TO MATCH THE SERVER. The four
+	//  cost 8 precache slots and Origins had 5 spare, so the map stopped loading
+	//  (crash dump 2026-09-09_07-27-39, "unknown weapon" inside
+	//  include_zombie_weapon). The server half in quality_of_life.gsc carries the
+	//  full arithmetic. These two lists MUST stay identical - a server-side
+	//  registration with no client twin is a box result the client cannot draw,
+	//  and a client include with no server twin is the v2.14.27 Betty crash.
+	//
+	//  📝 A root .csc cannot read level.script (it is server state), so the map
+	//  test is getdvar( "mapname" ) - the same one the EMP gate below uses.
+	if ( getdvar( "mapname" ) != "zm_tomb" )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
+	}
 
 	//  🛑 v2.14.27 - THE BETTY IS NOT IN THE BOX'S *DISPLAY* TABLE, AND
 	//  SAYING IT WAS CRASHED THE GAME. v2.9.9 added this line with no in_box flag

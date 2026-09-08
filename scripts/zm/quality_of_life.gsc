@@ -10631,10 +10631,56 @@ zmqol_mp_weapons_init()
     //  Pack-a-Punch name for an RPG - out of en_patch_zm.ff. Both were dumped
     //  and read, not assumed.
     // ========================================================================
-    zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-    zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
-    zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
-    zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
+    // ========================================================================
+    //  🛑 v2.15.3 - THE FOUR ARE HELD BACK ON ORIGINS. THE MAP DID NOT LOAD.
+    //
+    //  Boot 2026-09-09 7:27 AM, Crazy Place survival, crash dump
+    //  plutonium-r5346-t6zm-2026-09-09_07-27-39.txt:
+    //      last gsc error message 'unknown weapon 'm16qol_upgraded_zm''
+    //      last gsc pos maps/mp/zombies/_zm_weapons::include_zombie_weapon
+    //      gsc callstack: include_zombie_weapon
+    //        maps/mp/zombies/_zm_utility::include_weapon
+    //        scripts/zm/quality_of_life::zmqol_wallbuy_box_add
+    //        scripts/zm/quality_of_life::zmqol_wallbuy_box_init
+    //        scripts/zm/quality_of_life::init
+    //  "unknown weapon" inside include_zombie_weapon is THE PRECACHE TABLE
+    //  RUNNING OUT - the identical signature to the v2.14.0 Crazy Place and
+    //  v2.14.6 classic-Origins crashes (see zm_tomb.gsc's added_weapons banner).
+    //
+    //  🌟 THE ARITHMETIC, MEASURED, NOT ESTIMATED. zmqol_add_mp_weapon()
+    //  precaches base + upgraded, so it costs 2 slots per gun. Counted over
+    //  this function at both revisions:
+    //      ca9208a~1 (pre-BO1 guns)  15 pairs + 19 variants = 49 precacheitem
+    //      v2.15.2   (post)          19 pairs + 19 variants = 57 precacheitem
+    //  Exactly +8. v2.14.4 froze 14 slots on Origins and recorded that this
+    //  "leaves five spare". 8 > 5, so Origins went over the ceiling the moment
+    //  the four guns shipped, and the very next precache after the budget was
+    //  gone is the one the dump names.
+    //
+    //  Holding all four back restores the demand to 49 - the exact figure that
+    //  booted Origins in console_zm.log .001/.002/.003/.008/.009. Holding only
+    //  two back would free 4 and leave a margin of 1, which is not a margin.
+    //
+    //  ⚠️ WHAT THE PLAYER LOSES, PLAINLY: on Origins - every location, classic
+    //  and survival - the box does not offer the M60, the L96A1, the Browning HP
+    //  or the RPG-7. All five other maps are untouched. The alternative is a map
+    //  that does not load at all. Same trade v2.14.4 made for its seven.
+    //
+    //  🛑 zm_expanded.csc HOLDS BACK THE SAME FOUR, on the same map test. Its
+    //  include_weapon ends in addzombieboxweapon( w, getweaponmodel( w ), ... ),
+    //  a model lookup on a weapon nothing precached. Change one list, change
+    //  both. .give needs no guard: every give path already tests
+    //  isdefined( level.zombie_weapons[...] ) before offering a name.
+    // ========================================================================
+    if ( !isdefined( level.script ) || level.script != "zm_tomb" )
+    {
+        zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
+        zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
+        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+        zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
+    }
+    else
+        println( "[zm_qol] origins: the four Black Ops 1 box guns are held back - 8 precache slot(s) freed (v2.15.3)" );
 
 
     // Reachable only via a PaP attachment or as a projectile - never a box
@@ -10673,7 +10719,11 @@ zmqol_mp_weapons_init()
     zmqol_include_variant( "metalstorm4_mms_upgraded_zm" );
     zmqol_include_variant( "metalstorm5_mms_upgraded_zm" );
 
-    println( "[zm_qol] mp_weapons: 19 registered for the box on " + getdvar( "mapname" ) );
+    //  🛑 was a hardcoded "19" that drifted from the real list (old logs print
+    //  13 for a 15-pair list). Counted, not asserted - and it is map-dependent
+    //  now that Origins holds four back.
+    if ( isdefined( level.zombie_weapons ) )
+        println( "[zm_qol] mp_weapons: " + level.zombie_weapons.size + " in level.zombie_weapons for the box on " + getdvar( "mapname" ) );
 }
 
 // ============================================================================
