@@ -1,0 +1,39 @@
+// ============================================================================
+//  zm_qol raygun donor  -  built by build_raygun_donor.bat, loaded by build_ff
+//  AHEAD of zm_prison.ff.
+//
+//  WHY THIS EXISTS  (measured 2026-09-09)
+//    BO2 ships TWO different Ray Guns under the SAME asset names. Treyarch
+//    remade the model for Buried - it is a different mesh, not a retexture:
+//
+//      map                     t6_wpn_zmb_raygun_view    materials
+//      Green Run/Die Rise/     17899 verts / 5005 tris   mc/mtl_ray_gun,
+//        Nuketown                                        mc/mtl_ray_gun_battery
+//      Mob of the Dead         17899 verts / 5005 tris   mc/mtl_t6_wpn_zmb_raygun
+//                                                        (-> the SAME BO1 images
+//                                                         ~-gray_gun / ray_gun_n)
+//      Buried / Origins        17422 verts / 4916 tris   mc/mtl_t6_wpn_zmb_raygun
+//                                                        (-> ~-gmtl_t6_wpn_zmb_
+//                                                         raygun_col / _nml /
+//                                                         _spc) + _glow
+//
+//    So only Buried and Origins ever had the "new" Ray Gun art. Everything else
+//    - Mob included - draws the Black Ops 1 textures.
+//
+//    build_ff.bat loads zm_prison.ff 4th and zm_buried.ff 11th, and the Linker
+//    is FIRST-LOAD-WINS, so mod.ff has always baked MOB's copies. Measured: the
+//    shipped mod.ff's t6_wpn_zmb_raygun_view_upg material list is byte-identical
+//    to zm_prison.ff's, not zm_buried.ff's. That is why the Pack-a-Punched Ray
+//    Gun on Green Run / Die Rise / Nuketown wore Mob's BO1-textured art even
+//    though ray_gun_upgraded_zm ships Buried's DEF.
+//
+//    This donor supplies Buried's copies from a zone loaded ahead of zm_prison,
+//    which is the only lever the Linker offers. It is deliberately tiny: the
+//    four Ray Gun models and nothing else, so no other shared asset can shift.
+// ============================================================================
+>game,T6
+
+xmodel,t6_wpn_zmb_raygun_view
+xmodel,t6_wpn_zmb_raygun_world
+xmodel,t6_wpn_zmb_raygun_view_upg
+xmodel,t6_wpn_zmb_raygun_world_upg

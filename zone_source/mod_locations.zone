@@ -2491,6 +2491,48 @@ camo,camo_qol_xm8
 // ============================================================================
 xmodel,t6_wpn_zmb_raygun_view_upg
 xmodel,t6_wpn_zmb_raygun_world_upg
+
+//  v2.15.2 - THE UNPACKED PAIR JOINS THEM, AND THE DONOR THAT MAKES ALL FOUR
+//  BURIED'S. User ask 2026-09-09: "make it so all maps use the buried textures".
+//
+//  Measured: BO2 ships TWO Ray Gun MESHES under one set of names.
+//    Buried / Origins   17422 verts, 4916 tris, mc/mtl_t6_wpn_zmb_raygun ->
+//                       ~-gmtl_t6_wpn_zmb_raygun_col/_nml/_spc, plus an ember
+//                       _glow material. The "new" art.
+//    Green Run / Die Rise / Nuketown   17899 verts, mc/mtl_ray_gun +
+//                       mc/mtl_ray_gun_battery -> ~-gray_gun, ray_gun_n.
+//    Mob of the Dead    17899 verts, and although it NAMES
+//                       mc/mtl_t6_wpn_zmb_raygun, ITS copy of that material
+//                       points at the same BO1 images. So Mob looks old too.
+//  A retexture was therefore impossible: the meshes differ, so the UVs differ.
+//
+//  🛑 AND THE MODELS THIS ZONE ALREADY SHIPPED WERE MOB'S, NOT BURIED'S. The
+//  Linker is first-load-wins and build_ff loaded zm_prison.ff 4th, zm_buried.ff
+//  11th. Proven by dumping the shipped mod.ff: its t6_wpn_zmb_raygun_view_upg
+//  material list is byte-identical to zm_prison.ff's. So since v2.11.0 the
+//  PaP'd Ray Gun on Green Run / Die Rise / Nuketown has worn MOB's BO1-textured
+//  art while the comment above claimed it was Buried's. zone_sourceaygun_donor
+//  (build_raygun_donor.bat) now supplies all four models from zm_buried.ff at a
+//  --load slot ahead of zm_prison, which is the only lever the Linker offers.
+//  The _glow / _glow_upg / _thermal materials and their seven images ride in as
+//  dependencies - none of the three old maps defines them, so mod.ff is their
+//  only owner and they draw.
+//
+//  🛑 t6_wpn_zmb_raygun_view IS A PROBE, NOT A CERTAINTY. Unlike the other
+//  three names, EVERY map defines it, and §50 measured that for camo (and
+//  states it for material/image) the MAP's copy wins because the base zone
+//  loads last (mod 718 -> zm_transit_patch 943 -> zm_transit 944). Whether
+//  xmodel follows that rule has never been measured. If it does, this line is
+//  inert and the unpacked Ray Gun stays BO1-skinned in first person on Green
+//  Run / Die Rise / Nuketown / Mob; the world model still changes, because
+//  t6_wpn_zmb_raygun_world is a name those three maps do NOT define. If it does
+//  not, the feature is complete. Either way nothing breaks - the whole material
+//  chain is owned - and one boot settles a question the project needs answered.
+//  There is no fallback: OAT has no T6 raw xmodel loader (source-checked,
+//  ObjLoading\Game\T6 has Material and Weapon but no XModel), so a model
+//  cannot be renamed to dodge the collision the way camo_qol_* did.
+xmodel,t6_wpn_zmb_raygun_view
+xmodel,t6_wpn_zmb_raygun_world
 material,hud_icon_m14
 
 // ============================================================================

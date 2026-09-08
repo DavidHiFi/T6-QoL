@@ -196,6 +196,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Animated Pack-a-Punch camo:**
   * Every Pack-a-Punched gun gets the *Dark Matter* animated camo on all six maps; switch it off and each map uses its own stock PaP camo. The textures ship in the [HD Texture Pack](#standalone-downloads), so install that for the option to do anything.
 
+* **Ray Gun skin:**
+  * Black Ops II quietly ships two different Ray Guns. Buried and Origins got a remade model with new textures; Green Run, Die Rise, Nuketown and Mob of the Dead kept the older Black Ops 1 one. The Pack-a-Punched Ray Gun now wears Buried's on Green Run, Die Rise and Nuketown, and so does the Ray Gun you see in the box, lying on the floor and in other players' hands.
+
 * **Timers and counters:**
   * Game and round timers with configurable colours, plus a Cold War round counter.
 
