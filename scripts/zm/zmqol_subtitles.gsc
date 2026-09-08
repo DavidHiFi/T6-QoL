@@ -107,6 +107,75 @@
 //      "on" to zmqol_subs_enabled(), so a config holding the old 1 still
 //      works.
 // ============================================================================
+//
+//  ============================================================================
+//  v2.14.31 (2026-09-08) - EVERY VOICE, AND A STACK OF ROWS.
+//  ----------------------------------------------------------------------------
+//  User: *"Make subtitles also work for announcer lines too not just playable
+//  characters, so like maxis with the radios in origins, or buried stuff, or
+//  like when you get a death machine or any power up, or when you get a hell
+//  hound round and it says 'fetch me their souls' or when Brutus speaks in mob
+//  of the dead, or when in die rise the zombies say they lie they lie,
+//  basically subtitles works both solo and multiplayer with stacks subtitles
+//  if multiple lines are playing at once and not just for the players, for
+//  all dialogue."*
+//
+//  WHERE THE NON-PLAYER TEXT COMES FROM. 888 more clips - every vox_* alias
+//  that is not vox_plr_* in the six English tables, minus the MP sniper
+//  breathing (vox_gen_sinper), exerts and the riot-shield hit - pulled out of
+//  the banks and transcribed with the same Whisper pipeline (`zm_qol - dev\
+//  subtitles\extract_npc_clips.py`, `transcribe.py`). They ship in the same
+//  six tables, which gained a FOURTH column: the alias's own DistMaxDry, read
+//  straight out of its sound-alias row, so a line is shown to exactly the
+//  players who can hear it (5000 = the 2D announcer / Samantha / bus lines,
+//  everyone; 1250 = Buried's Maxis spot, Origins' radios; 625 = the bus,
+//  Nuketown's transmission).
+//
+//  HOW THE NON-PLAYER LINES ARE CAUGHT - three roads, measured in the dump:
+//    1. The ANNOUNCER (power-ups, the box leaving, the dog round's "fetch me
+//       their souls") is _zm_audio_announcer::playleaderdialogonplayer(): per
+//       player, `self playlocalsound( prefix + "_" + name + "_" + variant )`.
+//       Threaded from leaderdialogonplayer(), so replaceFunc reaches it (7a).
+//       scripts/zm/zmqol_subs_npc_common.gsc carries the copy; the announcer
+//       is "vox_zmba" on four maps (Richtofen; `level.sndannouncerisrich`,
+//       _zm_utility.gsc:4478), "vox_zmba_sam" after Maxis' ending and on
+//       Nuketown, and Samantha's own clips on Mob (the alias table's
+//       FileSource is vox_zmba_sam_powerup_*) and Origins.
+//    2. The DIALOGUE SYSTEM with a non-player speaker: TranZit's bus
+//       (zm_transit_automaton.gsc:107 zmbvoxinitspeaker( "automaton",
+//       "vox_bus_" )) talks through create_and_play_dialog() like a player
+//       does, so the same level._audio_custom_player_playvox pointer already
+//       sees it - zmqol_subs_playvox() no longer returns on !isplayer( self ).
+//    3. Everything else is a map script playing a builtin on an entity, a
+//       position or a player: Maxis and Richtofen through each map's
+//       maxissay()/richtofensay() (TranZit, Die Rise, Buried), Samantha and
+//       Maxis through zm_tomb_vo's samanthasayvoplay()/maxissayvoplay() and
+//       the audio logs, Brutus through _zm_ai_brutus::sndbrutusvox(), the
+//       Die Rise whispers through zm_highrise::custom_zombie_audio_func(), the
+//       ghost, the TVs, the station PA, the Nuketown transmissions. Those
+//       stock functions are copied verbatim with one zmqol_subs_npc() call
+//       beside each play builtin, by `zm_qol - dev\subtitles\gen_subs_npc.py`,
+//       into scripts/zm/<map>/qol_subs_npc_<map>.gsc. The builtin decides who
+//       hears the line, so its arguments decide who reads it.
+//
+//  📝 NOT REACHABLE, stated rather than hidden: Brutus' 38 "arrives /
+//  attacks / taunts" clips are referenced by no script, no client script and
+//  no animation notetrack in zm_prison.ff (all 1,435 xanims dumped and
+//  grepped 2026-09-08) - Treyarch shipped them unused. TranZit's twenty
+//  vox_zmba_player_* lines are registered to an "announcer" speaker that is
+//  never given a line (_zm_audio.gsc:204, no zmbvoxadd). Neither can be heard,
+//  so neither is captioned.
+//
+//  THE STACK. Rows are no longer OWN / OTHER slots: there are N rows
+//  (zmqol_subs_rows, default 2) from y -17 upward in 13-unit steps, and each
+//  new line takes the lowest FREE row; if none is free it replaces the OLDEST
+//  line on screen. Your own character's line is white, every other voice grey,
+//  and the NAMES setting puts "[Name] " in front of any of them. Two rows is
+//  what fits under the velocity meter (-45) and, on Origins, the generator
+//  dial above it (quality_of_life.gsc's meter banner has the measurement);
+//  a third row (-43) would sit inside the meter's box. The dvar is there for
+//  anyone who runs without the meter.
+//  ============================================================================
 #include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
@@ -133,12 +202,16 @@ init()
     level._audio_custom_player_playvox = ::zmqol_subs_playvox;
     level.zmqol_subs_table = "zm/zmqol_subs_" + level.script + ".csv";
 
-    //  DistMaxDry of the vox_plr_* rows: 1600 in zmb_tomb.english, 1250 in the
-    //  other five tables (measured, not the alias's DistMin or a guess).
+    //  Fallback range for a row with no 4th column: DistMaxDry of the
+    //  vox_plr_* rows, 1600 in zmb_tomb.english, 1250 in the other five
+    //  tables (measured). Every shipped row now carries its own.
     if ( level.script == "zm_tomb" )
         level.zmqol_subs_range_sq = 1600 * 1600;
     else
         level.zmqol_subs_range_sq = 1250 * 1250;
+
+    if ( getdvar( "zmqol_subs_rows" ) == "" )
+        setdvar( "zmqol_subs_rows", "2" );
 
     println( "[zm_qol] subtitles: installed, " + level.zmqol_subs_table );
 }
@@ -187,9 +260,6 @@ zmqol_subs_playvox( prefix, index, sound_to_play, waittime, category, type, over
     //  It runs up to its wait( playbacktime ) before this line returns.
     self thread maps\mp\zombies\_zm_audio::do_player_or_npc_playvox( prefix, index, sound_to_play, waittime, category, type, override, isresponse );
 
-    if ( !isplayer( self ) )
-        return;
-
     //  v2.14.21 - EVERY EXIT IS LOGGED, with the reason. User, 2026-09-08:
     //  *"the subtitles kinda worked, but not all the time"*. The two "stock
     //  declined" exits below mean the AUDIO did not play either, so a line that
@@ -215,15 +285,25 @@ zmqol_subs_playvox( prefix, index, sound_to_play, waittime, category, type, over
         return;
 
     str_alias = prefix + sound_to_play;
+
+    //  v2.14.31 - an NPC speaker (the bus is the one stock registers): its
+    //  line went out through playsoundontag() on itself, so it is heard within
+    //  the alias's range of it, name from the alias prefix.
+    if ( !isplayer( self ) )
+    {
+        zmqol_subs_npc( str_alias, self, undefined, undefined );
+        return;
+    }
+
     self zmqol_subs_caption( str_alias, zmqol_subs_speaker_name( index ), undefined );
 }
 
-//  THE ONE PLACE A CAPTION IS ISSUED, for both roads.             (v2.14.21)
+//  THE ONE PLACE A PLAYER'S CAPTION IS ISSUED, for both roads.     (v2.14.21)
 //  self is the speaking player. str_name is what a team-mate sees in front of
 //  the line. e_listener, when given, is the ONE player who hears it (a
 //  playsoundtoplayer() line - Mob's free-fall screams are played to each
 //  player's own ears); otherwise it goes to the speaker and everyone within
-//  the alias's DistMaxDry, as before.
+//  the alias's range, as before.
 zmqol_subs_caption( str_alias, str_name, e_listener )
 {
     n_ms = soundgetplaybacktime( str_alias );
@@ -247,16 +327,16 @@ zmqol_subs_caption( str_alias, str_name, e_listener )
 
     if ( isdefined( e_listener ) )
     {
-        str_slot = "other";
+        str_kind = "other";
 
         if ( e_listener == self )
-            str_slot = "own";
+            str_kind = "own";
 
-        e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_ms * 0.001, str_slot );
+        e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_ms * 0.001, str_kind );
         return;
     }
 
-    level thread zmqol_subs_broadcast( self, str_name, str_text, n_ms * 0.001, self.origin, level.zmqol_subs_range_sq );
+    level thread zmqol_subs_broadcast( self, str_name, str_text, n_ms * 0.001, self.origin, zmqol_subs_range_sq( str_alias ) );
 }
 
 //  THE RAW ROAD. A character line the map script plays straight through a
@@ -266,13 +346,6 @@ zmqol_subs_caption( str_alias, str_name, e_listener )
 //  replace those stock functions verbatim and add one call to this beside each
 //  such line. self is the speaking player; the alias itself says who
 //  ("vox_plr_N_..."). e_listener as in zmqol_subs_caption().
-//  Origins: the round 5-7 Samantha intro, the soul-box and beacon exchanges
-//  with Richtofen, the drone's first build, the robot-crush line. Mob: the
-//  electric-chair lines, the free-fall screams, the showdown exchange. Buried:
-//  Stuhlinger's three answers to Richtofen. Measured 2026-09-08 by grepping the
-//  six maps' scripts for every sound builtin fed a vox_plr alias; Maxis,
-//  Samantha and Richtofen-in-your-head lines are NPC voices with no table row
-//  and are not the character's own, so they stay uncaptioned.
 zmqol_subs_raw_line( str_alias, e_listener )
 {
     if ( !isdefined( level.zmqol_subs_table ) )
@@ -285,6 +358,161 @@ zmqol_subs_raw_line( str_alias, e_listener )
         return;
 
     self zmqol_subs_caption( str_alias, zmqol_subs_speaker_name( zmqol_subs_index_from_alias( str_alias ) ), e_listener );
+}
+
+// ============================================================================
+//  zmqol_subs_npc  -  THE NON-PLAYER ROAD.                          (v2.14.31)
+//
+//  Level-scope, called from the generated per-map copies (and from
+//  zmqol_subs_playvox for an NPC dialogue speaker) with the same facts the
+//  sound builtin had:
+//      e_source    the entity the sound plays ON  (playsound / playsoundontag /
+//                  playsoundwithnotify) - heard within the alias's range of it
+//      v_pos       a playsoundatposition() position - same rule
+//      e_listener  a playsoundtoplayer() / playlocalsound() target - that one
+//                  player, wherever they stand
+//  Neither source nor position given -> everyone (a 2D line).
+//
+//  A vox_plr_* alias arriving here (Origins' Samantha "promises" conversation
+//  mixes the player's own answers into the same loop) is a CHARACTER line and
+//  takes the player road, so it is white on that player's screen and named
+//  like every other character line.
+// ============================================================================
+zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
+{
+    if ( !isdefined( level.zmqol_subs_table ) )
+        return;
+
+    if ( !isdefined( str_alias ) || str_alias == "" )
+        return;
+
+    if ( !zmqol_subs_enabled() )
+        return;
+
+    if ( str_alias.size > 8 && getsubstr( str_alias, 0, 8 ) == "vox_plr_" )
+    {
+        if ( isdefined( e_listener ) && isplayer( e_listener ) )
+        {
+            e_listener zmqol_subs_raw_line( str_alias, e_listener );
+            return;
+        }
+
+        if ( isdefined( e_source ) && isplayer( e_source ) )
+        {
+            e_source zmqol_subs_raw_line( str_alias, undefined );
+            return;
+        }
+    }
+
+    n_ms = soundgetplaybacktime( str_alias );
+
+    if ( !isdefined( n_ms ) || n_ms <= 0 )
+    {
+        println( "[zm_qol] subtitles: skipped " + str_alias + " - no playback time (alias not in any loaded bank)" );
+        return;
+    }
+
+    str_text = zmqol_subs_lookup( str_alias );
+
+    if ( str_text == "" )
+    {
+        println( "[zm_qol] subtitles: no text for " + str_alias );
+        return;
+    }
+
+    str_name = zmqol_subs_npc_name( str_alias );
+    n_secs = n_ms * 0.001;
+
+    if ( isdefined( e_listener ) )
+    {
+        println( "[zm_qol] subtitles: " + str_alias + " (" + str_name + ") -> shown for " + n_secs + "s to one player" );
+        e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_secs, "other" );
+        return;
+    }
+
+    if ( !isdefined( v_pos ) && isdefined( e_source ) )
+        v_pos = e_source.origin;
+
+    n_range_sq = zmqol_subs_range_sq( str_alias );
+
+    //  A 2D line (DistMaxDry 5000 in every table for the announcer, Samantha,
+    //  the whispers) reaches every player wherever they stand.
+    if ( n_range_sq >= 4000 * 4000 )
+        v_pos = undefined;
+
+    if ( isdefined( v_pos ) )
+        println( "[zm_qol] subtitles: " + str_alias + " (" + str_name + ") -> shown for " + n_secs + "s within " + int( sqrt( n_range_sq ) ) + " of (" + int( v_pos[0] ) + "," + int( v_pos[1] ) + "," + int( v_pos[2] ) + ")" );
+    else
+        println( "[zm_qol] subtitles: " + str_alias + " (" + str_name + ") -> shown for " + n_secs + "s to everyone" );
+
+    level thread zmqol_subs_broadcast( undefined, str_name, str_text, n_secs, v_pos, n_range_sq );
+}
+
+//  Who a non-player alias is, from its prefix. Measured against the alias
+//  tables and the scripts that play them (2026-09-08):
+//    vox_zmba_sam_*   Samantha as the announcer (Nuketown; every map after
+//                     Maxis' ending, _zm_utility::sndswitchannouncervox)
+//    vox_zmba_*       the announcer: Richtofen on TranZit / Die Rise / Buried /
+//                     Nuketown (stock sets level.sndannouncerisrich for this
+//                     prefix); on Mob the clips ARE Samantha's
+//                     (FileSource vox_zmba_sam_powerup_*), and Origins' child
+//                     announcer is Samantha. Also Richtofen's quest lines
+//                     (sidequest / stuhlinger / end / zombie possession).
+//    vox_maxi_*       Maxis          vox_sam_*     Samantha
+//    vox_brutus_*     Brutus         vox_bus_*     T.E.D.D. (the bus driver)
+//    vox_fg_*         the ghost      vox_zombie_*  the zombies (Die Rise)
+//    vox_stat_*       the station PA vox_radi_*    the radio
+//    vox_surN_*       the TV         vox_guar_*    the guard's audio logs
+//    vox_nuked_*      the transmission
+zmqol_subs_npc_name( str_alias )
+{
+    a_tok = strtok( str_alias, "_" );
+
+    if ( !isdefined( a_tok ) || a_tok.size < 2 )
+        return "";
+
+    str_who = a_tok[1];
+
+    switch ( str_who )
+    {
+        case "zmba":
+            if ( a_tok.size > 2 && a_tok[2] == "sam" )
+                return "Samantha";
+
+            if ( level.script == "zm_prison" || level.script == "zm_tomb" )
+                return "Samantha";
+
+            return "Richtofen";
+        case "maxi":
+        case "maxis":
+            return "Maxis";
+        case "sam":
+            return "Samantha";
+        case "brutus":
+            return "Brutus";
+        case "bus":
+            return "T.E.D.D.";
+        case "fg":
+            return "Ghost";
+        case "zombie":
+            return "Zombie";
+        case "stat":
+            return "Station PA";
+        case "radi":
+            return "Radio";
+        case "sur1":
+        case "sur2":
+        case "sur3":
+        case "sur4":
+        case "sur5":
+            return "TV";
+        case "guar":
+            return "Guard";
+        case "nuked":
+            return "Transmission";
+    }
+
+    return "";
 }
 
 //  "vox_plr_N_..." -> N; anything else -> undefined (no name shown).
@@ -393,6 +621,24 @@ zmqol_subs_lookup( str_alias )
     return str_text;
 }
 
+//  Column 3 (v2.14.31) is the alias's own DistMaxDry from its sound-alias row,
+//  squared here for distancesquared(). A row without one (none shipped) takes
+//  the map's vox_plr default.
+zmqol_subs_range_sq( str_alias )
+{
+    str_range = tablelookup( level.zmqol_subs_table, 0, str_alias, 3 );
+
+    if ( !isdefined( str_range ) || str_range == "" )
+        return level.zmqol_subs_range_sq;
+
+    n_range = int( str_range );
+
+    if ( n_range <= 0 )
+        return level.zmqol_subs_range_sq;
+
+    return n_range * n_range;
+}
+
 //  Voice index -> the name a team-mate sees. Measured from each map's
 //  character switch: zm_highrise.gsc's viewhands (0 oldman, 1 reporter,
 //  2 farmgirl, 3 engineer - and Buried's vox_plr_1_respond_richtofen agrees
@@ -434,10 +680,11 @@ zmqol_subs_speaker_name( n_index )
     return a_names[n_index];
 }
 
-//  e_speaker is the player whose line it is (their own screen gets it in the
-//  OWN slot, wherever they are) or undefined for a line played by position;
-//  every other player gets it in the OTHER slot, only within n_range_sq of
-//  v_pos. The name goes in front on every screen when names are on.
+//  e_speaker is the player whose line it is (their own screen gets it white,
+//  wherever they are) or undefined for a non-player line; every other player
+//  gets it grey, only within n_range_sq of v_pos - and everyone when v_pos is
+//  undefined (a 2D line). The name goes in front on every screen when names
+//  are on.
 zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq )
 {
     a_players = get_players();
@@ -456,19 +703,50 @@ zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq )
             continue;
         }
 
-        if ( !isdefined( v_pos ) || distancesquared( e_player.origin, v_pos ) > n_range_sq )
+        if ( isdefined( v_pos ) && distancesquared( e_player.origin, v_pos ) > n_range_sq )
             continue;
 
         e_player thread zmqol_subs_show( str_text, str_prefix, n_secs, "other" );
     }
 }
 
+//  zmqol_subs_rows: how many rows the stack may use, 1..4. Two fit under the
+//  velocity meter; see the v2.14.31 banner.
+zmqol_subs_row_count()
+{
+    n_rows = getdvarintdefault( "zmqol_subs_rows", 2 );
+
+    if ( n_rows < 1 )
+        n_rows = 1;
+
+    if ( n_rows > 4 )
+        n_rows = 4;
+
+    return n_rows;
+}
+
 zmqol_subs_ensure_hud()
 {
-    if ( isdefined( self.zmqol_subs_hud ) && isdefined( self.zmqol_subs_hud["own"] ) && isdefined( self.zmqol_subs_hud["other"] ) )
+    n_rows = zmqol_subs_row_count();
+
+    if ( isdefined( self.zmqol_subs_hud ) && self.zmqol_subs_hud.size == n_rows )
         return;
 
+    //  a row-count change from console: drop the old elements and rebuild
+    if ( isdefined( self.zmqol_subs_hud ) )
+    {
+        for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
+        {
+            self notify( "zmqol_subs_row_" + i );
+
+            if ( isdefined( self.zmqol_subs_hud[i] ) )
+                self.zmqol_subs_hud[i] destroy();
+        }
+    }
+
     self.zmqol_subs_hud = [];
+    self.zmqol_subs_row_end = [];
+    self.zmqol_subs_row_start = [];
 
     //  The face carries the outline (see the header); the scale is a dvar so it
     //  can be matched to a screenshot from console. 1.2 is the name row's.
@@ -480,49 +758,56 @@ zmqol_subs_ensure_hud()
     if ( n_scale <= 0 )
         n_scale = 1.2;
 
-    a_slots = [];
-    a_slots[0] = "other";
-    a_slots[1] = "own";
-
-    for ( i = 0; i < a_slots.size; i++ )
+    for ( i = 0; i < n_rows; i++ )
     {
         e_line = self createfontstring( "small", n_scale );
-        //  v2.14.21 rows: -30 (OTHER, above) and -17 (OWN, bottom). Under the
-        //  velocity meter (-45); the lower row's ink ends ~4 units above the safe
-        //  line, and nothing else draws bottom-centre.
-        e_line setpoint( "CENTER", "BOTTOM", 0, -30 + i * 13 );
-
-        if ( a_slots[i] == "own" )
-            e_line.color = ( 1, 1, 1 );
-        else
-            e_line.color = ( 0.75, 0.75, 0.75 );
-
+        //  Row 0 is the bottom row at -17 (v2.14.21: ink ends ~4 units above
+        //  the safe line); each row above it is 13 units higher. Row 1 is the
+        //  old OTHER row at -30, under the velocity meter (-45).
+        e_line setpoint( "CENTER", "BOTTOM", 0, -17 - i * 13 );
+        e_line.color = ( 0.75, 0.75, 0.75 );
         e_line.alpha = 0;
         e_line.hidewheninmenu = 1;
         e_line.sort = 20;
-        self.zmqol_subs_hud[a_slots[i]] = e_line;
+        self.zmqol_subs_hud[i] = e_line;
+        self.zmqol_subs_row_end[i] = 0;
+        self.zmqol_subs_row_start[i] = 0;
     }
 }
 
-//  One line per SLOT per viewer: a new line in a slot replaces the old one in
-//  that slot the moment it starts (which is also what the ear hears - stock
-//  refuses to start a line while a nearby speaker is still going). The other
-//  slot is untouched. str_slot is "own" or "other".
-zmqol_subs_show( str_text, str_prefix, n_secs, str_slot )
+//  The row a new line takes: the lowest FREE one, else the one whose line
+//  started earliest (the oldest on screen is the one the ear has moved past).
+zmqol_subs_pick_row()
+{
+    n_now = gettime();
+    n_oldest = -1;
+
+    for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
+    {
+        if ( self.zmqol_subs_row_end[i] <= n_now )
+            return i;
+
+        if ( n_oldest < 0 || self.zmqol_subs_row_start[i] < self.zmqol_subs_row_start[n_oldest] )
+            n_oldest = i;
+    }
+
+    return n_oldest;
+}
+
+//  One line per ROW per viewer. str_kind "own" is this viewer's own character
+//  (white); anything else - another player, an NPC, the announcer - is grey.
+//  A row shows one 58-character chunk at a time for its share of the clip's
+//  real length, never under 1.2 s; then fades and frees the row.
+zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
 {
     self endon( "disconnect" );
 
-    if ( !isdefined( str_slot ) )
-        str_slot = "own";
-
-    self notify( "zmqol_subs_new_" + str_slot );
-    self endon( "zmqol_subs_new_" + str_slot );
+    if ( !isdefined( str_kind ) )
+        str_kind = "own";
 
     self zmqol_subs_ensure_hud();
 
-    e_line = self.zmqol_subs_hud[str_slot];
-
-    //  Pages ("|") of rows ("~") flattened to rows; a slot is one row.
+    //  Pages ("|") of rows ("~") flattened to chunks; a row is one chunk.
     a_rows = [];
     a_pages = strtok( str_text, "|" );
 
@@ -553,6 +838,33 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_slot )
     if ( n_total <= 0 )
         return;
 
+    n_row = self zmqol_subs_pick_row();
+
+    if ( n_row < 0 )
+        return;
+
+    //  one owner per row: whoever had it is cancelled, including its fade
+    self notify( "zmqol_subs_row_" + n_row );
+    self endon( "zmqol_subs_row_" + n_row );
+
+    e_line = self.zmqol_subs_hud[n_row];
+
+    if ( !isdefined( e_line ) )
+        return;
+
+    n_show_total = n_secs;
+
+    if ( n_show_total < 1.2 * a_rows.size )
+        n_show_total = 1.2 * a_rows.size;
+
+    self.zmqol_subs_row_start[n_row] = gettime();
+    self.zmqol_subs_row_end[n_row] = gettime() + int( n_show_total * 1000 ) + 300;
+
+    if ( str_kind == "own" )
+        e_line.color = ( 1, 1, 1 );
+    else
+        e_line.color = ( 0.75, 0.75, 0.75 );
+
     for ( i = 0; i < a_rows.size; i++ )
     {
         str_row = a_rows[i];
@@ -574,8 +886,9 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_slot )
     //  v2.14.21 - a 0.25 s fade instead of a hard cut, user 2026-09-08:
     //  *"make sure they're persistent and smooth"*. The show path still writes
     //  alpha 1 directly, which snaps and cancels any fade still running when the
-    //  next line starts in this slot. Same single owner per slot as before.
+    //  next line starts in this row. Same single owner per row as before.
     wait 0.3;
     e_line fadeovertime( 0.25 );
     e_line.alpha = 0;
+    self.zmqol_subs_row_end[n_row] = 0;
 }

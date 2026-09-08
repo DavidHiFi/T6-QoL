@@ -350,12 +350,17 @@ zmqol_tomb_drone_built_vo( s_craftable )
     wait 1;
     e_vo_origin = maps\mp\zm_tomb_vo::get_speaking_location_maxis_drone( self, s_craftable );
     vox_line = "vox_maxi_maxis_drone_1_0";
+    //  v2.14.31 - Maxis' two lines here are NPC voice, captioned like the
+    //  generated copies do it (qol_subs_npc_tomb.gsc): source = the origin
+    //  the sound plays on.
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, e_vo_origin, undefined, undefined );
     e_vo_origin playsoundwithnotify( vox_line, "sound_done" + vox_line );
     e_vo_origin waittill( "sound_done" + vox_line );
     e_vo_origin delete();
     wait 1;
     e_vo_origin = maps\mp\zm_tomb_vo::get_speaking_location_maxis_drone( self, s_craftable );
     vox_line = "vox_maxi_maxis_drone_4_0";
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, e_vo_origin, undefined, undefined );
     e_vo_origin playsoundwithnotify( vox_line, "sound_done" + vox_line );
     e_vo_origin waittill( "sound_done" + vox_line );
     e_vo_origin delete();

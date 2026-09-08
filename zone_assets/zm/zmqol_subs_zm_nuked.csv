@@ -1,14 +1,35 @@
-alias,mature,safe
-vox_plr_3_avogadro_attack_1,No! My electronic! It's ruined!,No! My electronic! It's ruined!
-vox_plr_3_avogadro_attack_2,"Ah, the amperes have hurt me to the quick!","Ah, the amperes have hurt me to the quick!"
-vox_plr_3_build_add_1,This device will prove my mental superiority once and for~all.,This device will prove my mental superiority once and for~all.
-vox_plr_3_build_pck_bjetgun_0,The cyclonic forces contained herein shall make me~unstoppable!,The cyclonic forces contained herein shall make me~unstoppable!
-vox_plr_3_bus_zom_chase_1,Execute them before they overwhelm us!,Execute them before they overwhelm us!
-vox_plr_3_bus_zom_roof_4,Chroma paralyzed already! There are zombies on the damn~roof!,Chroma paralyzed already! There are zombies on the damn~roof!
-vox_plr_3_map_in_fog_0,Visibility here is near zero. Where's the point?,Visibility here is near zero. Where's the point?
-vox_plr_3_map_in_fog_1,I cannot believe this is the best route to where we are~going.,I cannot believe this is the best route to where we are~going.
-vox_plr_3_map_in_fog_2,Fear is thick with the sounds of carnivorous beasts.,Fear is thick with the sounds of carnivorous beasts.
-vox_plr_3_oh_shit_0,Please respect my personal space.,Please respect my personal space.
-vox_plr_3_pap_wait_0,They asked me to leave? I was the one reporting the~disgusting behavior. Makes no sense.,They asked me to leave? I was the one reporting the~disgusting behavior. Makes no sense.
-vox_plr_3_pap_wait2_0,What an interminable weight.,What an interminable weight.
-vox_plr_3_pap_wait2_2,Just because one is different is not a valid excuse to~simply banish him.,Just because one is different is not a valid excuse to~simply banish him.
+alias,mature,safe,range
+vox_plr_3_avogadro_attack_1,No! My electronic! It's ruined!,No! My electronic! It's ruined!,1750
+vox_plr_3_avogadro_attack_2,"Ah, the amperes have hurt me to the quick!","Ah, the amperes have hurt me to the quick!",1750
+vox_plr_3_build_add_1,This device will prove my mental superiority once and for~all.,This device will prove my mental superiority once and for~all.,1750
+vox_plr_3_build_pck_bjetgun_0,The cyclonic forces contained herein shall make me~unstoppable!,The cyclonic forces contained herein shall make me~unstoppable!,1750
+vox_plr_3_bus_zom_chase_1,Execute them before they overwhelm us!,Execute them before they overwhelm us!,1750
+vox_plr_3_bus_zom_roof_4,Chroma paralyzed already! There are zombies on the damn~roof!,Chroma paralyzed already! There are zombies on the damn~roof!,1750
+vox_plr_3_map_in_fog_0,Visibility here is near zero. Where's the point?,Visibility here is near zero. Where's the point?,1750
+vox_plr_3_map_in_fog_1,I cannot believe this is the best route to where we are~going.,I cannot believe this is the best route to where we are~going.,1750
+vox_plr_3_map_in_fog_2,Fear is thick with the sounds of carnivorous beasts.,Fear is thick with the sounds of carnivorous beasts.,1750
+vox_plr_3_oh_shit_0,Please respect my personal space.,Please respect my personal space.,1750
+vox_plr_3_pap_wait_0,They asked me to leave? I was the one reporting the~disgusting behavior. Makes no sense.,They asked me to leave? I was the one reporting the~disgusting behavior. Makes no sense.,1750
+vox_plr_3_pap_wait2_0,What an interminable weight.,What an interminable weight.,1750
+vox_plr_3_pap_wait2_2,Just because one is different is not a valid excuse to~simply banish him.,Just because one is different is not a valid excuse to~simply banish him.,1750
+vox_nuked_tbase_transmission_0,"I knew I should have invented an egg-moving robot. Stupid~Maxis, Mrs. Rules, and his stupid accent.","I knew I should have invented an egg-moving robot. Stupid~Maxis, Mrs. Rules, and his stupid accent.",625
+vox_nuked_tbase_transmission_1,"Noggin, Teddy. Password? He's a liar. I'm not, but that's~why no one would guess it.","Noggin, Teddy. Password? He's a liar. I'm not, but that's~why no one would guess it.",625
+vox_nuked_tbase_transmission_2,"Hello, Samantha. Little brat. The time is coming. Soon. So~soon!","Hello, Samantha. Little brat. The time is coming. Soon. So~soon!",625
+vox_nuked_tbase_transmission_3,"Oh, this is going to be so much fun. Finally, we can~confront this little beast. Quickly, power up the machine.","Oh, this is going to be so much fun. Finally, we can~confront this little beast. Quickly, power up the machine.",625
+vox_nuked_tbase_transmission_4,Power! The power! I will control you all! I will destroy~you all! But not before we continue the game!,Power! The power! I will control you all! I will destroy~you all! But not before we continue the game!,625
+vox_zmba_event_dogstart_0,Fetch me their souls!,Fetch me their souls!,5000
+vox_zmba_event_magicbox_0,Bye-bye.,Bye-bye.,5000
+vox_zmba_powerup_carpenter_0,Carpenter!,Carpenter!,5000
+vox_zmba_powerup_doublepoints_0,Double Points.,Double Points.,5000
+vox_zmba_powerup_firesale_0,Time for a fire sale!,Time for a fire sale!,5000
+vox_zmba_powerup_instakill_0,Insta-Kill.,Insta-Kill.,5000
+vox_zmba_powerup_maxammo_0,Max Ammo.,Max Ammo.,5000
+vox_zmba_powerup_nuke_0,HA BOOM!,HA BOOM!,5000
+vox_zmba_sam_event_dogstart_0,That's me versus all of you.,That's me versus all of you.,5000
+vox_zmba_sam_event_magicbox_0,Bye-bye.,Bye-bye.,5000
+vox_zmba_sam_powerup_carpenter_0,Carpenter!,Carpenter!,5000
+vox_zmba_sam_powerup_doublepoints_0,Double Points!,Double Points!,5000
+vox_zmba_sam_powerup_firesale_0,Fire Sale.,Fire Sale.,5000
+vox_zmba_sam_powerup_instakill_0,Insta-Kill.,Insta-Kill.,5000
+vox_zmba_sam_powerup_maxammo_0,Max Ammo.,Max Ammo.,5000
+vox_zmba_sam_powerup_nuke_0,Kaboom.,Kaboom.,5000
