@@ -21,7 +21,18 @@
 //  should then answer on, given the measurement below, they chose:
 //  "Two seperate buttons, remove the betty from origins and buried."
 //
-//  🌟 WHY THAT IS THE WHOLE DESIGN, MEASURED 2026-09-06 - THE GAME HAS FOUR
+//  🛑 AND REVERSED ONCE MORE ON 2026-09-08 (v2.14.29) - THE 09-04 DIRECTIVE
+//  IS THE ONE THAT STANDS. The user read the README line describing two
+//  buttons and two mines held at once: "in the readme in the github it states
+//  that the betty and the claymore are seperate but i told you previously to
+//  make it so you can only have 1 at a time and they both use the same
+//  hotkey." So: register_placeable_mine_for_level() is back (stock's
+//  weapon_give swaps the two in both directions), the give records the mine
+//  and binds SLOT 4 - the claymore's own button - and the Buried/Origins gate
+//  is gone, because it only ever existed to keep a second button free (next
+//  paragraph). This is the v2.11.20 shape, which the user played 09-04..09-06.
+//
+//  🌟 THE SLOT CENSUS, MEASURED 2026-09-06 - THE GAME HAS FOUR
 //  ACTION SLOTS AND NO FIFTH. The user's own bindings_zm.bdg carries exactly
 //  `+actionslot 1..4` (keys 8 / 2 / 5 / X; DPAD_UP/DOWN/LEFT/RIGHT). Every
 //  setactionslot call in the whole stock ZM dump is 62 calls over those four:
@@ -38,53 +49,42 @@
 //  So slot 2 is the only button the claymore can sit beside, and it is free on
 //  TranZit, Nuketown, Die Rise and Mob of the Dead - but taken on Buried and
 //  Origins the moment those two craftables are built, which would silently
-//  unbind the Betty mid-game. Rather than ship that, the Betty is simply NOT
-//  OFFERED on zm_buried and zm_tomb (the user's call, quoted above). 📝 The
-//  slot-1 drone bind at zm_tomb_utility.gsc:196 is NOT a way out - it sits
-//  inside a /# #/ dev block and never runs in retail, and stock's
+//  unbind the Betty mid-game. That is why v2.12.8 dropped the weapon from
+//  zm_buried and zm_tomb. With the two mines exclusive again the Betty sits
+//  on slot 4, the claymore's own button, free on every map the moment the
+//  claymore is gone - so the clash is gone and the Betty is offered on all
+//  six maps, as in v2.11.20. 📝 The slot-1 drone bind at
+//  zm_tomb_utility.gsc:196 is NOT a way out for anything - it sits inside a
+//  /# #/ dev block and never runs in retail, and stock's
 //  craftablestub.use_actionslot hook is never set anywhere in the game.
 //
-//  The four points below are still the measured record of how the give path
-//  behaves; the two the 09-04 reversal had overturned are live again and are
+//  The four points below are the measured record of how the give path
+//  behaves; the two that v2.12.8 had re-enabled are SUPERSEDED again and are
 //  marked so.
 //
 //  📝 HOW IT COEXISTS WITH EVERYTHING, each point measured:
-//    - 🌟 LIVE AGAIN v2.12.8. It is deliberately NOT registered with
-//      register_placeable_mine_for_level: that registry is precisely what
-//      makes weapon_give's is_placeable_mine branch take your claymores away,
-//      and it cannot be had partway. The branch (_zm_weapons.gsc:2391) runs
-//      BEFORE the zombie_weapons_callbacks hook this file gives through
-//      (:2448), so no callback can undo the eviction after the fact - read in
-//      the stock dump 2026-09-06 rather than assumed. Staying out of the
-//      registry costs three stock mine rules, and each one is accounted for
-//      here rather than quietly dropped:
-//        1. a mine hit adds level.round_number * randomintrange( 100, 200 )
-//           to the zombie (_zm_spawner.gsc:1934). REPLACED IN THIS FILE: the
-//           hand-rolled loop at the end of zmqol_betty_jump_and_explode()
-//           applies exactly that number to every live zombie in the blast.
-//           It was written for this reason and is load-bearing again.
-//        2. a mine cannot hurt a PLAYER at all - _zm.gsc:4152,
-//           `if ( is_placeable_mine( sweapon ) ... ) return 0;`. REPLACED by
-//           zmqol_betty_damage_install() below, which chains onto
-//           level.overrideplayerdamage and returns 0 for this weapon. Without
-//           it the blast would do up to 210 to the planter, which is the one
-//           real regression this change could have shipped.
-//        3. holding one in hand blocks a box or perk purchase the way a held
-//           claymore does. NOT replaced - it is a minor stock courtesy, it is
-//           how this weapon behaved for the whole v2.9.9-v2.11.19 run, and
-//           faking it would mean owning another core check.
+//    - 🛑 SUPERSEDED v2.14.29. It IS registered with
+//      register_placeable_mine_for_level (init()): that registry is what makes
+//      weapon_give's is_placeable_mine branch (_zm_weapons.gsc:2391) take the
+//      mine you hold - one mine at a time, which is what is wanted. The
+//      registry also hands the Betty three stock mine rules, claymore parity
+//      all three: a mine hit adds level.round_number * randomintrange(100,200)
+//      to the zombie (_zm_spawner.gsc:1934 - the hand-rolled loop at the end
+//      of zmqol_betty_jump_and_explode() applies the same number, so standard
+//      zombies get it from both and the loop stays only to cover the AI that
+//      never runs enemy_death_detection, exactly as v2.11.20 shipped); a mine
+//      cannot hurt a PLAYER at all (_zm.gsc:4152 returns 0 - which is why the
+//      v2.12.8 overrideplayerdamage chain is gone again); and holding one in
+//      hand blocks a box or perk purchase the way a held claymore does.
 //    - The give goes through stock's own per-weapon hook,
 //      level.zombie_weapons_callbacks (_zm_weapons.gsc:2448) - the
 //      data-driven form of the hardcoded claymore_zm case right above it -
 //      so the generic give path never runs for this weapon at all.
-//    - 🌟 LIVE AGAIN v2.12.8. Betties bind D-pad DOWN / key `2` (actionslot 2),
-//      the claymore keeps D-pad RIGHT / key `X` (actionslot 4), and you carry
-//      both. The old hole this had - slot 2 not being free on Buried and
-//      Origins, so the bind was skipped there and the Betty sat unbound in the
-//      inventory - is closed by not offering the weapon on those two maps at
-//      all, instead of by shipping a button that stops working when the player
-//      builds the Time Bomb or the Maxis drone. See the slot census in the
-//      banner for the measurement behind that.
+//    - 🛑 SUPERSEDED v2.14.29. Betties take the claymore's own slot 4 (D-pad
+//      RIGHT / key `X` - read out of the user's bindings_zm.bdg: actionslot
+//      1/2/3/4 = DPAD_UP/DOWN/LEFT/RIGHT = 8/2/5/X), free on every map the
+//      moment the claymore is evicted - so the old slot-2 hole on Buried and
+//      Origins never arises and neither map has to lose the weapon.
 //    - 🛑 CORRECTED v2.9.11: the old claim that "the def is inventoryType item
 //      so weapon_give's takeweapon can never fire for it" was BACKWARDS.
 //      is_offhand_weapon() (_zm_utility.gsc:3523) reads nothing off the def -
@@ -207,13 +207,13 @@
 //    _zm_devgui.gsc:89                     dev only
 //  Answering "yes" is the truthful answer at all eight.
 //
-//  🛑 v2.12.8 - THIS HOOK IS LOAD-BEARING AGAIN, NOT A BELT-AND-BRACES SPARE.
-//  While the Betty was a registered placeable mine (v2.11.20 - v2.12.7) stock's
-//  own is_offhand_weapon() answered "yes" for it unaided, because
-//  is_placeable_mine() is one of its five list lookups. The Betty has been
-//  taken back out of that registry, so all five lookups miss it again and stock
-//  would answer "no" - which is precisely the v2.9.11 bug above: boxing a Betty
-//  while holding two guns would cost you a gun. Do not delete this.
+//  📝 v2.14.29 - stock's own is_offhand_weapon() answers "yes" for this
+//  weapon unaided again, because is_placeable_mine() is one of its five list
+//  lookups and the Betty is back in that list from init(). The replacement is
+//  kept rather than removed: it costs one string compare, it is what the
+//  eight callers above were audited against, and it keeps the answer right if
+//  the registry is ever cleared - the v2.9.11 take-a-gun bug (boxing a Betty
+//  while holding two guns costs you a gun) is the price of it being wrong.
 //
 //  📝 In main(), not init(), per CLAUDE.md section 4 failure mode 4.
 main()
@@ -230,101 +230,23 @@ zmqol_is_offhand_weapon( weaponname )
     return is_lethal_grenade( weaponname ) || is_tactical_grenade( weaponname ) || is_placeable_mine( weaponname ) || is_melee_weapon( weaponname ) || is_equipment( weaponname );
 }
 
-// ============================================================================
-//  zmqol_betty_damage_install  -  v2.12.8. YOUR OWN BETTY CANNOT HURT YOU.
-//
-//  🛑 THIS IS THE ONE REAL REGRESSION THE "ADDITION, NOT REPLACEMENT" CHANGE
-//  WOULD OTHERWISE HAVE SHIPPED, and it is invisible until someone stands over
-//  a mine. Stock's player damage path reaches _zm.gsc:4152, inside
-//  player_damage_override():
-//        if ( is_placeable_mine( sweapon ) || sweapon == "freezegun_zm" || ... )
-//            return 0;
-//  A registered mine - the claymore - therefore does nothing at all to a
-//  player. The Betty was inheriting that for free while it sat in the registry.
-//  Out of the registry it is a plain MOD_EXPLOSIVE, and the radiusdamage in
-//  zmqol_betty_jump_and_explode() would put up to level.zmqol_betty_damage_max
-//  (210) into the planter standing over it - more than a zombie swipe, and
-//  enough to down them.
-//
-//  🌟 THE HOOK IS THE ONE STOCK ITSELF USES, AND STOCK IS ALREADY SITTING IN
-//  IT. _zm.gsc:970 sets `level.overrideplayerdamage = ::player_damage_override`
-//  and _zm.gsc:1054-1057 is what calls it:
-//        if ( isdefined( self.overrideplayerdamage ) )
-//            idamage = self [[ self.overrideplayerdamage ]]( ... );
-//        else if ( isdefined( level.overrideplayerdamage ) )
-//            idamage = self [[ level.overrideplayerdamage ]]( ... );
-//  The RETURN VALUE becomes the damage, so returning 0 from here is the same
-//  sentence stock writes about a claymore, written about this weapon.
-//
-//  🛑 CHAINED, NOT CLOBBERED - and for a sharper reason than the usual one.
-//  What is already installed IS stock's player_damage_override, which carries
-//  every other rule a player depends on (Juggernog, flak jacket, the last-stand
-//  path), or the Cleansed gametype's own replacement of it. Overwriting it
-//  outright would break player damage across the board. This captures whatever
-//  is there and calls through FIRST, exactly as zmqol_three_hit_down_install()
-//  does in quality_of_life.gsc. The two chain onto each other safely in either
-//  order, because each keeps its predecessor under its own distinct name.
-//
-//  📝 Installed after initial_blackscreen_passed for the same reason that one
-//  is: stock (_zm.gsc:970) and the gametype both write this during map load, so
-//  installing any earlier captures a value that is then overwritten.
-//
-//  📝 Not installed on Buried or Origins - init() returns before this on those
-//  two maps, and with no Betty in the game there is nothing to guard.
-// ============================================================================
-zmqol_betty_damage_install()
-{
-    flag_wait( "initial_blackscreen_passed" );
-
-    //  Guarded so a second call can never chain this wrapper onto itself.
-    if ( isdefined( level.zmqol_betty_prev_damage_set ) )
-        return;
-
-    level.zmqol_betty_prev_damage_set = 1;
-    level.zmqol_betty_prev_damage = level.overrideplayerdamage;
-    level.overrideplayerdamage = ::zmqol_betty_damage_wrapper;
-
-    println( "[zm_qol] betty: player damage chain installed, prev=" + isdefined( level.zmqol_betty_prev_damage ) );
-}
-
-zmqol_betty_damage_wrapper( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
-{
-    if ( isdefined( level.zmqol_betty_prev_damage ) )
-        idamage = self [[ level.zmqol_betty_prev_damage ]]( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime );
-
-    //  Claymore parity, stock's own rule: a mine does nothing to a player.
-    if ( isdefined( sweapon ) && sweapon == "bouncingbetty_zm" )
-        return 0;
-
-    return idamage;
-}
+//  📝 v2.14.29 - the v2.12.8 zmqol_betty_damage_install() chain on
+//  level.overrideplayerdamage is gone. It existed only to give an UNregistered
+//  Betty the claymore's "a mine cannot hurt a player" rule; registered again,
+//  _zm.gsc:4152 (`if ( is_placeable_mine( sweapon ) ... ) return 0;`) covers
+//  it, exactly as it covered v2.11.20.
 
 init()
 {
-    //  🛑 THE CLAYMORE HALF OF THIS FILE IS NOT MAP-GATED. Shooting a planted
-    //  claymore to set it off is its own user request (2026-08-31) and applies
-    //  on every map, Buried and Origins included, so it is started before the
-    //  Betty gate below and must stay there.
+    //  Shooting a planted claymore to set it off is its own user request
+    //  (2026-08-31) and applies on every map.
     level thread zmqol_claymore_shot_connect();
 
-    //  🛑 v2.12.8 - NO BETTY ON BURIED OR ORIGINS, BY THE USER'S OWN CHOICE.
-    //  The Betty needs actionslot 2 now that it no longer evicts the claymore
-    //  from actionslot 4, and slot 2 is the only free button in the game - but
-    //  stock claims it on exactly these two maps once the player builds
-    //  Buried's Time Bomb (_zm_weap_time_bomb.gsc:2043,2055) or Origins' Maxis
-    //  drone (zm_tomb_craftables.gsc:1075). That would leave a Betty already in
-    //  the inventory with no button, mid-game, silently. Offered the choice,
-    //  the user picked "remove the betty from origins and buried" over that.
-    //
-    //  Returning here keeps it out of the box, out of include_weapon(), and
-    //  unprecached. 🌟 `.give betty` needs no separate gate and was checked
-    //  rather than assumed: EVERY rule in quality_of_life.gsc's
-    //  zmqol_give_resolve() resolves through level.zombie_weapons - rule 3 is
-    //  `if ( key == str_arg && isdefined( level.zombie_weapons[ row.base ] ) )`
-    //  and rules 4-5 walk the registry itself - so with add_zombie_weapon()
-    //  never reached, the name simply does not resolve on these two maps.
-    if ( level.script == "zm_buried" || level.script == "zm_tomb" )
-        return;
+    //  📝 v2.14.29 - the v2.12.8 `return` on zm_buried / zm_tomb that stood here
+    //  is gone. It existed only because a Betty held BESIDE a claymore needed
+    //  slot 2, which stock takes on those two maps (Time Bomb, Maxis drone).
+    //  Exclusive again, the Betty answers on slot 4 - see the banner - so it
+    //  is offered on all six maps, as it was in v2.11.20.
 
     precacheitem( "bouncingbetty_zm" );
     precachemodel( "t6_wpn_bouncing_betty_world" );
@@ -356,17 +278,21 @@ init()
     include_weapon( "bouncingbetty_zm" );
     add_zombie_weapon( "bouncingbetty_zm", undefined, &"ZMWEAPON_BOUNCINGBETTY", 1000, "", "", undefined );
 
-    //  🛑 v2.12.8 - THE register_placeable_mine_for_level() CALL THAT USED TO
-    //  SIT HERE IS GONE, and that single deletion is the whole "addition, not
-    //  replacement" change. With the Betty out of the registry,
-    //  weapon_give()'s is_placeable_mine branch (_zm_weapons.gsc:2391) never
-    //  fires for it, so picking Betties out of the box no longer runs
+    //  🌟 v2.14.29 (as v2.11.20) - THE BETTY IS A REGISTERED PLACEABLE MINE,
+    //  which is the one line that makes it and the claymore mutually
+    //  exclusive. User, 2026-09-08: "you can only have 1 at a time and they
+    //  both use the same hotkey." Nothing is hand-rolled for it. weapon_give()
+    //  already carries the swap (_zm_weapons.gsc:2391): for a registered mine
+    //  it takes the mine you are holding, then records the new one -
     //      old_mine = self get_player_placeable_mine();
     //      if ( isdefined( old_mine ) ) { takeweapon; unacquire_weapon_toggle; }
-    //  against your claymores - and the claymore's own gives leave the Betty
-    //  alone for the same reason. See the banner for the three stock mine
-    //  rules that leaving the registry costs and what covers each one.
-    level thread zmqol_betty_damage_install();
+    //      self set_player_placeable_mine( weapon );
+    //  and every give in this mod goes through weapon_give() - the box, the
+    //  wallbuy and the .give command alike (TranZit's own copy in
+    //  zm_transit.gsc keeps the branch) - so both directions come off the same
+    //  stock code: betty evicts claymore, claymore evicts betty.
+    register_placeable_mine_for_level( "bouncingbetty_zm" );
+
     level thread zmqol_betty_onplayerconnect();
 }
 
@@ -444,9 +370,8 @@ zmqol_claymore_damage_think( player )
         self detonate();
 }
 
-//  The give itself - stock claymore_setup() with the one line that makes
-//  claymores exclusive dropped (set_player_placeable_mine) and the action slot
-//  moved off the claymore's 4 onto 2. Runs as the zombie_weapons_callbacks
+//  The give itself - stock claymore_setup(), name-swapped: it records the mine
+//  and binds the claymore's own slot 4. Runs as the zombie_weapons_callbacks
 //  hook, threaded on the PLAYER by weapon_give, which also plays the weapon vo
 //  and returns before the generic give.
 zmqol_betty_setup()
@@ -461,36 +386,26 @@ zmqol_betty_setup()
 
     self giveweapon( "bouncingbetty_zm" );
 
-    //  🛑 v2.12.8 - NO set_player_placeable_mine() HERE, deliberately. That
-    //  field holds ONE weapon per player and the claymore owns it. Writing the
-    //  Betty into it is the eviction wearing a different hat: every stock
-    //  check that reads it back would stop seeing a claymore - the
-    //  between-round restore (_zm_weap_claymore.gsc:443, gated on
-    //  `is_player_placeable_mine( "claymore_zm" )`) and the Tombstone,
-    //  Chugabud and Afterlife restores (_zm_tombstone.gsc:267,
-    //  _zm_chugabud.gsc:366, _zm_afterlife.gsc:1305). Leaving it alone is
-    //  exactly what lets a player hold both and still get their claymores back
-    //  after a down.
-    //
-    //  Slot 2 (D-pad DOWN / key `2`), not the claymore's slot 4 - the slot
-    //  census in the banner is the measurement, and it is why this weapon is
-    //  not offered on Buried or Origins.
-    self setactionslot( 2, "weapon", "bouncingbetty_zm" );
+    //  Stock claymore_setup() records the mine and binds slot 4 itself even
+    //  though weapon_give() recorded the mine one call earlier; this mirrors it
+    //  line for line, which also covers any future give that does not come
+    //  through weapon_give(). (v2.12.8 had dropped the record and used slot 2
+    //  so both mines could be held; reversed in v2.14.29 - see the banner.)
+    self set_player_placeable_mine( "bouncingbetty_zm" );
+    self setactionslot( 4, "weapon", "bouncingbetty_zm" );
     self setweaponammostock( "bouncingbetty_zm", 2 );
 }
 
-//  🛑 v2.12.8 - SLOT 2 AGAIN, AND THE HOLE IS CLOSED BY DROPPING TWO MAPS.
-//  The Betty and the claymore are held at once once more, so the Betty needs a
-//  button of its own, and the full stock census (banner) leaves exactly one:
+//  🛑 v2.14.29 - SLOT 4, THE CLAYMORE'S OWN, AND THE SLOT MAP IS MOOT AGAIN.
+//  The two mines evict each other, so slot 4 - the claymore's bind on every
+//  map, free the moment the claymore is gone - is always available, and the
+//  Betty answers on the button the weapon it replaced used:
 //     slot 1  equipment and craftables - turbine, gas mask, drone, headchopper
-//     slot 2  Buried's Time Bomb + detonator, Origins' Maxis drone  <- Betty
+//     slot 2  Buried's Time Bomb + detonator, Origins' Maxis drone
 //     slot 3  "altMode" on every map (_zm.gsc:1320) + Origins' revive staff
-//     slot 4  the claymore, on every map
-//  v2.11.20 solved the Buried/Origins clash by taking slot 4 and evicting the
-//  claymore; the user has now rejected the eviction, so the clash is solved the
-//  other way instead - the Betty is not offered on those two maps at all
-//  (init()). Nothing else in the entire stock ZM dump binds slot 2, so on the
-//  four maps that do carry it the button cannot be taken away mid-game.
+//     slot 4  the claymore, on every map  <- and the Betty in its place
+//  That is what retires the Buried/Origins hole (a Betty beside a claymore
+//  needed slot 2, which stock takes there), and with it the v2.12.8 map gate.
 
 // ============================================================================
 //  zmqol_betty_max_ammo_watch  -  v2.11.20. MAX AMMO REFILLS THE BETTIES.

@@ -131,7 +131,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * All four are in the Mystery Box on every map except Origins and Buried.
 
 * **Bouncing Betties:**
-  * The multiplayer proximity mine, in the Mystery Box on every map except Origins and Buried. They sit alongside your Claymores rather than replacing them, and use their own equipment button.
+  * The multiplayer proximity mine, in the Mystery Box on every map. You can only carry one kind of mine at a time: pulling Betties from the box replaces your Claymores, buying Claymores replaces your Betties, and both use the same equipment button.
 
 * **Jet Gun clean-up:**
   * It's carried as a normal primary that cycles with your other guns instead of living in an equipment slot, so it costs a real weapon slot and respects Mule Kick. Still overheats, never breaks.
