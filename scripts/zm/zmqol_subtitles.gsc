@@ -450,14 +450,15 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
 
 //  Who a non-player alias is, from its prefix. Measured against the alias
 //  tables and the scripts that play them (2026-09-08):
-//    vox_zmba_sam_*   Samantha as the announcer (Nuketown; every map after
-//                     Maxis' ending, _zm_utility::sndswitchannouncervox)
-//    vox_zmba_*       the announcer: Richtofen on TranZit / Die Rise / Buried /
-//                     Nuketown (stock sets level.sndannouncerisrich for this
-//                     prefix); on Mob the clips ARE Samantha's
-//                     (FileSource vox_zmba_sam_powerup_*), and Origins' child
-//                     announcer is Samantha. Also Richtofen's quest lines
-//                     (sidequest / stuhlinger / end / zombie possession).
+//    vox_zmba_*       SPLIT BY CATEGORY since v2.15.4, because this prefix
+//    vox_zmba_sam_*   carries two different speakers:
+//                       powerup / qol_powerup / event / grief -> "Announcer",
+//                         the role. Who fills it changes MID-MATCH
+//                         (sndswitchannouncervox), so no name is derivable.
+//                       everything else (sidequest / stuhlinger / end / dr /
+//                         zombie possession / player / first / anim) -> the
+//                         character: Richtofen on TranZit / Die Rise / Buried,
+//                         Samantha on Mob and Origins.
 //    vox_maxi_*       Maxis          vox_sam_*     Samantha
 //    vox_brutus_*     Brutus         vox_bus_*     T.E.D.D. (the bus driver)
 //    vox_fg_*         the ghost      vox_zombie_*  the zombies (Die Rise)
@@ -476,7 +477,54 @@ zmqol_subs_npc_name( str_alias )
     switch ( str_who )
     {
         case "zmba":
+            //  🛑 v2.15.4 - THE ANNOUNCER IS A ROLE, NOT A PERSON.
+            //
+            //  User, 2026-09-09, with a screenshot: a Blood Money pickup was
+            //  captioned "[Richtofen] Blood money." while SAMANTHA spoke it -
+            //  *"make sure bonfire sale and death machine power ups say
+            //  [Announcer] or any other power up or other subtitle that doesn't
+            //  have a specific voice to it. don't just default to assuming its
+            //  richtofen or whatever."*
+            //
+            //  🌟 WHY NO NAME CAN BE DERIVED HERE, measured: who the announcer
+            //  IS changes at RUNTIME. _zm_utility::sndswitchannouncervox("sam")
+            //  repoints the announcer alias prefix mid-match - it is what runs
+            //  after Maxis' ending on any map - so the same bare vox_zmba_
+            //  alias is Richtofen before it and Samantha after it. A prefix test
+            //  cannot see that, and neither can a per-map table. The role name
+            //  is correct in every one of those states, which is exactly why it
+            //  is the right label.
+            //
+            //  These four second tokens are the announcer/overseer speaking as
+            //  the announcer, read off the shipped CSVs (2026-09-09):
+            //      powerup      "Insta-Kill!", "Double Points!"
+            //      qol_powerup  this mod's four added drops
+            //      event        "Fetch me their souls!" (dogs), "Bye-bye." (box)
+            //      grief        "One of them is down!"
+            //  Everything else under vox_zmba_ is the CHARACTER talking in the
+            //  ether or through Stuhlinger - sidequest, end, stuhlinger, dr,
+            //  zombie (possession), player, first, anim - and those keep a real
+            //  name, because a person really is saying them.
+            str_zmba = str_who;
             if ( a_tok.size > 2 && a_tok[2] == "sam" )
+                str_zmba = "sam";
+
+            if ( a_tok.size > 2 )
+            {
+                //  the category token: a_tok[2] normally, a_tok[3] behind "sam"
+                str_cat = a_tok[2];
+                if ( str_zmba == "sam" && a_tok.size > 3 )
+                    str_cat = a_tok[3];
+
+                if ( str_cat == "powerup" || str_cat == "event" || str_cat == "grief" )
+                    return "Announcer";
+
+                //  qol_powerup_* - this mod's own drops, two tokens
+                if ( str_cat == "qol" )
+                    return "Announcer";
+            }
+
+            if ( str_zmba == "sam" )
                 return "Samantha";
 
             if ( level.script == "zm_prison" || level.script == "zm_tomb" )

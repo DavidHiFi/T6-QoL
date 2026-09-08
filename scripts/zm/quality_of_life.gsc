@@ -5872,6 +5872,12 @@ zmqol_console_command_names()
     a[a.size] = "machines";     a[a.size] = "dropmachines";
     //  v2.9.34 - the Ray Gun hand-offset preset cycler (tuning tool).
     a[a.size] = "rayhand";
+    //  v2.15.4 - the console/bind twin of .bonfiresale, the same call bloodmoney
+    //  got in v1.99.57 and for the same reason: the user asked for this power-up
+    //  by name. 📝 The other power-up short forms (.firesale, .zombieblood,
+    //  .bonfire) still have no dedicated dvar - they are reachable from the
+    //  console through the generic `qol` dvar, which forwards any chat command.
+    a[a.size] = "bonfiresale";
 
     return a;
 }
@@ -7914,7 +7920,10 @@ zmqol_help_lines()
                 }
             }
 
-            a_lines[a_lines.size] = "^7short forms: ^3.dm ^3.nuke ^3.maxammo ^3.insta ^3.dp ^3.carp ^3.sale";
+            //  v2.15.4 - .bonfire added. The run-together spelling of every
+            //  name printed above also works now (.bonfiresale, .thecure), so
+            //  this line only needs the forms that are SHORTER than the key.
+            a_lines[a_lines.size] = "^7short forms: ^3.dm ^3.nuke ^3.maxammo ^3.insta ^3.dp ^3.carp ^3.sale ^3.bonfire";
         }
     }
 
@@ -8035,6 +8044,38 @@ zmqol_spawn_powerup( str_name )
 //  Returns undefined when the word is not a powerup - the listener relies on
 //  that to leave unknown commands alone.
 // ----------------------------------------------------------------------------
+//  v2.15.4 - the generic run-together matcher described in the default: branch
+//  below. ".bonfiresale" -> "bonfire_sale", ".thecure" -> "the_cure", and so on
+//  for anything this or a later version registers. Compares against the LIVE
+//  key set, so it is correct per map with nothing to maintain.
+zmqol_powerup_squashed( str_cmd )
+{
+    if ( !isdefined( str_cmd ) || str_cmd == "" || !isdefined( level.zombie_powerups ) )
+        return undefined;
+
+    a_keys = getarraykeys( level.zombie_powerups );
+
+    if ( !isdefined( a_keys ) )
+        return undefined;
+
+    for ( i = 0; i < a_keys.size; i++ )
+    {
+        //  strtok on "_" then rejoined is this language's replace(). A key with
+        //  no underscore comes back unchanged, which is harmless - the caller
+        //  already tested the exact key before reaching here.
+        a_parts  = strtok( a_keys[i], "_" );
+        str_flat = "";
+
+        for ( j = 0; j < a_parts.size; j++ )
+            str_flat = str_flat + a_parts[j];
+
+        if ( str_flat == str_cmd )
+            return a_keys[i];
+    }
+
+    return undefined;
+}
+
 zmqol_powerup_alias( str_cmd )
 {
     if ( !isdefined( str_cmd ) || !isdefined( level.zombie_powerups ) )
@@ -8061,6 +8102,15 @@ zmqol_powerup_alias( str_cmd )
         case "doublepoints":     str_canon = "double_points";        break;
         case "sale":
         case "firesale":         str_canon = "fire_sale";            break;
+        //  v2.15.4 - "bonfiresale" WAS MISSING AND IT WAS THE ONLY ONE OF THIS
+        //  MOD'S OWN FIVE POWER-UPS WITH THE GAP. User, 2026-09-09: *"the
+        //  bonfire sale powerup is missing a chat command, .bonfiresale"*.
+        //  ".bonfire" and ".bonfire_sale" already worked (the latter free,
+        //  because a bare registered key is checked before this table), so this
+        //  adds the spelling people actually type. Every other two-word power-up
+        //  here already carried its run-together form - fire_sale has
+        //  "firesale", zombie_blood has "zombieblood", free_perk has "freeperk".
+        case "bonfiresale":
         case "bonfire":          str_canon = "bonfire_sale";         break;
         case "carp":             str_canon = "carpenter";            break;
         case "perk":
@@ -8094,7 +8144,21 @@ zmqol_powerup_alias( str_cmd )
         case "teller":
         case "withdrawl":        str_canon = "teller_withdrawl";     break;
         default:
-            return undefined;
+            //  v2.15.4 - AND THE SAME GAP CANNOT HAPPEN AGAIN. The user's ask
+            //  was "make sure the chat commands are up to date always", so the
+            //  run-together spelling is no longer a per-power-up table entry
+            //  that someone has to remember: zmqol_powerup_squashed() matches
+            //  the typed word against every REGISTERED key with its underscores
+            //  removed. That is what makes ".bonfiresale" work above, and it is
+            //  also why ".thecure" and ".losepointsteam" now work without ever
+            //  being listed - and why the next power-up added to this mod gets
+            //  its run-together name for free.
+            //
+            //  🛑 STILL RETURNS undefined FOR A NON-POWER-UP WORD. The listener
+            //  depends on that to leave unknown commands alone (and, since
+            //  v2.11.0, to report a typo instead of silently doing nothing), so
+            //  this only ever matches a key the map really registered.
+            return zmqol_powerup_squashed( str_cmd );
     }
 
     // 🛑 "dm" is the interesting case. This mod's custom Death Machine registers

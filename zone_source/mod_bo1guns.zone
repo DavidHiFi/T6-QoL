@@ -61,6 +61,37 @@ material,menu_mp_weapons_m60
 material,mtl_t5_l96a1_scope_overlay
 
 // --- Pack-a-Punch camo, one per gun ---------------------------------------
+//
+//  🛑 v2.15.4 - camo_m60 IS NOW A RAW FILE IN zone_assets\camo\, AND THE
+//  DONOR'S COPY IS DELIBERATELY OVERRIDDEN. The Pack-a-Punched M60 came out with
+//  no camo at all (user screenshot, Tunnel survival, 2026-09-09).
+//
+//  🌟 MEASURED, by dumping every camo asset out of the built mod.ff: of the
+//  128 tables the mod owns, 127 carry 12-15 camoMaterials slots and camo_m60
+//  carried FOUR. Zombies reads exactly two of those slots - slot 3 is the static
+//  Pack-a-Punch camo (-> mc/mtl_weapon_camo_zombies) and slot 8 the animated one
+//  (-> mc/mtl_weapon_camo_zmb_dlc2*, index 44). In the donor's table slot 3 had
+//  an EMPTY materialOverrides list and slot 8 did not exist, so both were dead.
+//  This is the same failure the seven Green Run guns had in v2.9.15 - a table too
+//  short to hold slot 8 - and it is fixed the same way, with a raw JSON, because
+//  CLAUDE.md's measured precedence table says a raw zone_assets\camo\ file beats
+//  every --load.
+//
+//  📝 WHY IT IS SYNTHESISED AND NOT COPIED. The other route - lift a richer
+//  copy of the same gun's table out of another fastfile - does not exist here:
+//  retail Black Ops 2 has no M60, so no 13-slot camo_m60 exists anywhere
+//  (checked across the retail_lists dumps). The template is camo_rpd, the
+//  closest structural analogue in the game: also an LMG, also exactly three
+//  camo-capable materials, 13 slots. Its three base materials are renamed to the
+//  M60's, which were read off the model itself rather than assumed - the GLB for
+//  t6_wpn_lmg_m60_view/_world names mtl_t6_wpn_lmg_m60_camo1 / _camo2 / _camo3.
+//  Every one of the 13 camoMaterial targets it points at is already owned by
+//  mod.ff, so nothing new had to be linked.
+//
+//  📝 NO camo_qol_m60 COPY IS NEEDED. The seven guns that needed one
+//  (mod_locations.zone, v2.11.0) did so because a MAP owned a table of the same
+//  name and shadowed mod.ff's. "camo_m60" is defined in no retail fastfile at
+//  all, so there is nothing that can shadow it on any map.
 camo,camo_browninghp
 camo,camo_m60
 camo,camo_rpg
