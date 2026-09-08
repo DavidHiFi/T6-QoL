@@ -19219,10 +19219,16 @@ zmqol_three_hit_down_scale( idamage, smeansofdeath, eattacker )
 //      ( aim_accel_turnrate_*, aim_input_graph_*, aim_scale_view_axis,
 //        aim_turnrate_* ) - counted out of this install's own console_zm.log
 //      dvar dump, 3080 total dvars.
-//    * aim_lockon_enabled, aim_slowdown_enabled, aim_autoaim_enabled,
-//      aim_automelee_enabled and the whole aim_alternate_lockon_* block are
-//      STRINGS INSIDE t6zm.exe BUT NOT REGISTERED DVARS. Writing one creates a
-//      fresh dvar nothing reads.
+//    * aim_lockon_enabled, aim_slowdown_enabled, aim_autoaim_enabled and the
+//      whole aim_alternate_lockon_* block are STRINGS INSIDE t6zm.exe BUT NOT
+//      REGISTERED DVARS. Writing one creates a fresh dvar nothing reads.
+//      🛑 v2.14.28 CORRECTION: this bullet used to list aim_automelee_enabled
+//      here too. It IS a registered dvar - the dvar dump in
+//      crashlogs\console_zm_07-19-13.log carries aim_automelee_enabled "1",
+//      aim_automelee_range "120" and the rest of the aim_automelee_* family -
+//      and it is the engine's melee-charge (knife lunge) switch, which the
+//      GAME 3 tab's KNIFE LUNGE row (qol_options.gsc::qol_opt_knife_lunge)
+//      now drives. It has nothing to do with aim assist onto targets.
 //    * input_targetAssist is a PROFILE var, not a dvar - no input_* entry
 //      appears anywhere in the dump - and it is the single retail switch.
 //

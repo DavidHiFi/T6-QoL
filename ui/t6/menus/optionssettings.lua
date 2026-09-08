@@ -1627,7 +1627,7 @@ end
 --  past both ends of its container, over the tab strip above and the ESC
 --  prompt below. That is the whole of the reported "scuffed-ness".
 --
---  The mod's own tabs, as of v2.14.17: GAME 1 15.0, GAME 2 14.0, GAME 3 2.0,
+--  The mod's own tabs, as of v2.14.28: GAME 1 15.0, GAME 2 14.0, GAME 3 3.0,
 --  HUD 15.0 (v2.14.16, full), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
 --  PATCHES before v2.12.5; both were already at the ceiling, which is why
 --  GAME 3 exists.) The stock tabs this file also builds: ADVANCED 15.0 (full).
@@ -2275,7 +2275,7 @@ end
 --  from the user's own overflow screenshots. A 16th row on either one is the
 --  reported bug, not a risk of it.
 --
---  📝 ROOM LEFT: 13 more rows before this tab reaches the same ceiling. When
+--  📝 ROOM LEFT: 12 more rows (v2.14.28) before this tab reaches the same ceiling. When
 --  the next option needs a home, it belongs here rather than on GAME 1 or 2.
 --
 --  📝 The label reads NO DENIZENS rather than DENIZENS so that ENABLED is the
@@ -2291,7 +2291,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 
 	local T = CoD.OptionsSettings.QolToggle
 
-	--                                                                  2 rows
+	--                                                                  3 rows
 	T(QolGame3Buttons, LocalClientIndex, "NO DENIZENS", "no_denizens", "TranZit. No denizens spawn in the fog. Any already out are left alone.")
 
 	-- ========================================================================
@@ -2305,7 +2305,19 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "THIRD PERSON", "third_person", "Play from a camera behind your character. Off is the normal first-person view.")
 
-	return QolGame3Container                          -- 2 rows + 0 spacers = 2.0
+	-- ========================================================================
+	--  v2.14.28 - KNIFE LUNGE. User request 2026-09-08: "add an option in GAME
+	--  3 called KNIFE LUNGE and by default it's set to enabled (vanilla
+	--  behaviour), or you can set it to disabled so that you can no longer
+	--  lunge when meleeing". ENABLED = stock, so this is the one row in the
+	--  menu where ENABLED is the state that changes nothing - deliberately, as
+	--  asked. The default 1 is seeded by qol_options.gsc (qol_opt_dvar), the
+	--  same way BLEEDOUT BAR's is; the row is applied per player, once a
+	--  second, by qol_options.gsc::qol_opt_knife_lunge().
+	-- ========================================================================
+	T(QolGame3Buttons, LocalClientIndex, "KNIFE LUNGE", "knife_lunge", "The melee charge that pulls you onto a zombie. Disable it to knife in place.")
+
+	return QolGame3Container                          -- 3 rows + 0 spacers = 3.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)

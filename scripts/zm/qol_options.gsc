@@ -384,6 +384,13 @@ init()
     //  every spawn.
     qol_opt_dvar( "third_person", "0" );
 
+    //  v2.14.28 - KNIFE LUNGE, user request 2026-09-08, the GAME 3 tab. ON =
+    //  stock (the melee charge that pulls you onto the zombie). OFF writes the
+    //  engine's own switch for it, aim_automelee_enabled, to 0 - see
+    //  qol_opt_knife_lunge() below for the evidence. Applied per player, once a
+    //  second, live in both directions.
+    qol_opt_dvar( "knife_lunge", "1" );
+
     //  v2.7.2 - 3 HIT DOWN, user request 2026-08-28, the PATCHES tab. OFF =
     //  stock. Read on every zombie melee hit by
     //  quality_of_life.gsc::zmqol_three_hit_down_scale(), chained through the
@@ -930,6 +937,7 @@ qol_opt_player_init()
         self thread qol_opt_hud_watcher();
         self thread qol_opt_crosshair();
         self thread qol_opt_third_person();
+        self thread qol_opt_knife_lunge();
         //  v2.14.15 - BETTER SPEED COLA, part two: the perk-bottle drink watcher.
         //  Lives with the rest of that feature in quality_of_life.gsc.
         self thread scripts\zm\quality_of_life::zmqol_speed_cola_drink_watch();
@@ -2986,6 +2994,76 @@ qol_opt_crosshair()
             }
 
             println( "[zm_qol] crosshair -> " + n_now );
+        }
+
+        wait 1;
+    }
+}
+
+// ============================================================================
+//  qol_opt_knife_lunge  -  the GAME 3 tab's KNIFE LUNGE row           (v2.14.28)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-08: *"add an option in GAME 3 called KNIFE LUNGE and by
+//  default it's set to enabled (vanilla behaviour), or you can set it to
+//  disabled so that you can no longer lunge when meleeing/knifing in zombies
+//  ... reimagined has this implementation so it just needs to be a toggle."*
+//
+//  THE MECHANISM, found rather than guessed. Nothing in Reimagined mentions a
+//  "lunge" by that word; its commit feb3cf4d "Disabled melee lunging" is one
+//  line, setDvar( "aim_automelee_enabled", 0 ). That is the engine's melee
+//  charge: BO2 Detailed DVARS.txt describes aim_automelee_enabled as "Turn on
+//  auto melee" alongside aim_automelee_range (120), _region_width/_height and
+//  _move_limit* ("Speed at which player needs to be moving forward to
+//  activate the charge"). Treyarch's own campaign script
+//  nicaragua_menendez_rage.gsc flips the same dvar off and back on with
+//  setsaveddvar(), and BO2-Remix writes it per player with
+//  self setClientDvar( "aim_automelee_enabled", 0 ).
+//
+//  🛑 CORRECTING A NOTE OF THIS MOD'S OWN. quality_of_life.gsc's AIM ASSIST
+//  banner (v1.99.74) says aim_automelee_enabled is "a string inside t6zm.exe
+//  but not a registered dvar". It IS registered: the dvar dump in
+//  crashlogs\console_zm_07-19-13.log lists aim_automelee_enabled "1",
+//  aim_automelee_range "120", aim_automelee_region_width "320" and the rest,
+//  plus tu_aim_automelee_fix1. That banner is corrected in the same commit.
+//
+//  Two writes, because Plutonium runs every match as a listen server: the
+//  host's client and the server share one dvar table, so the plain setdvar
+//  (Reimagined's route) covers the host; a co-op joiner has its own table, so
+//  each player also gets setclientdvar (Remix's route). Both are written ONLY
+//  ON CHANGE - ERROR_CATALOGUE §7b, a setclientdvar loop with no stop
+//  condition is how EXE_ERR_RELIABLE_CYCLED_OUT happened twice.
+//
+//  Not verified offline, stated: whether a joiner's client honours the
+//  setclientdvar for this particular dvar. The host path is the one Reimagined
+//  and the campaign rely on.
+// ============================================================================
+qol_opt_knife_lunge()
+{
+    if ( zmqol_minimal() )
+        return;
+
+    self endon( "disconnect" );
+    level endon( "end_game" );
+
+    self.zmqol_lunge_applied = -1;
+
+    for ( ;; )
+    {
+        n_want = 0;
+
+        if ( getdvarintdefault( "knife_lunge", 1 ) != 0 )
+            n_want = 1;
+
+        if ( n_want != self.zmqol_lunge_applied )
+        {
+            self.zmqol_lunge_applied = n_want;
+
+            self setclientdvar( "aim_automelee_enabled", n_want );
+
+            if ( getdvarintdefault( "aim_automelee_enabled", 1 ) != n_want )
+                setdvar( "aim_automelee_enabled", n_want );
+
+            println( "[zm_qol] knife lunge -> " + n_want + " (aim_automelee_enabled now " + getdvar( "aim_automelee_enabled" ) + ")" );
         }
 
         wait 1;

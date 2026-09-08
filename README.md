@@ -202,6 +202,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Third person:**
   * A **THIRD PERSON** switch on the GAME 3 tab puts the camera behind your character. Off is the normal view.
 
+* **Knife lunge:**
+  * A **KNIFE LUNGE** switch on the GAME 3 tab. On is the normal game. Off removes the melee charge that pulls you onto a zombie, so you knife where you stand.
+
 * **Extras:**
   * Native "Tap to Interact" controller support under the standard Gamepad menu, and a tailored *Cinematic Colour Grading* ReShade preset.
 
