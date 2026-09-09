@@ -783,18 +783,23 @@ zmqol_subs_ensure_hud()
     //  a row-count change from console: drop the old elements and rebuild
     if ( isdefined( self.zmqol_subs_hud ) )
     {
+        self notify( "zmqol_subs_reset" );
+
         for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
         {
-            self notify( "zmqol_subs_row_" + i );
-
             if ( isdefined( self.zmqol_subs_hud[i] ) )
                 self.zmqol_subs_hud[i] destroy();
         }
     }
 
     self.zmqol_subs_hud = [];
-    self.zmqol_subs_row_end = [];
-    self.zmqol_subs_row_start = [];
+    self.zmqol_subs_st_text = [];
+    self.zmqol_subs_st_kind = [];
+    self.zmqol_subs_st_id = [];
+    self.zmqol_subs_st_fade = [];
+
+    if ( !isdefined( self.zmqol_subs_next_id ) )
+        self.zmqol_subs_next_id = 1;
 
     //  The face carries the outline (see the header); the scale is a dvar so it
     //  can be matched to a screenshot from console. 1.2 is the name row's.
@@ -818,44 +823,132 @@ zmqol_subs_ensure_hud()
         e_line.hidewheninmenu = 1;
         e_line.sort = 20;
         self.zmqol_subs_hud[i] = e_line;
-        self.zmqol_subs_row_end[i] = 0;
-        self.zmqol_subs_row_start[i] = 0;
     }
 }
 
-//  The row a new line takes: the lowest FREE one, else the one whose line
-//  started earliest (the oldest on screen is the one the ear has moved past).
-zmqol_subs_pick_row()
+//  ============================================================================
+//  THE STACK.  Slot 0 is the BOTTOM line and the OLDEST; every new line is
+//  pushed on top of it and drawn one row higher. When a line ends, its slot is
+//  removed and every line above slides DOWN one row to close the gap.
+//
+//  User, 2026-09-09, after taking a Zombie Blood and an Insta-Kill together and
+//  seeing one caption: *"if multiple subtitles would occur simultaneously, the
+//  next one shows up above, and when the original first one below fades away the
+//  next one then takes its place, so therefore multiple subtitles can appear on
+//  the screen"*.
+//
+//  Slot i is ALWAYS drawn by HUD element i, so the redraw IS the shift: the
+//  elements never move, the text moves between them. That is what makes a line
+//  "take the place" of the one under it without re-laying out the HUD.
+//
+//  🛑 WHY THAT USER REPORT IS NOT FIXED BY THIS ALONE - stated, not hidden.
+//  Two power-ups grabbed together only ever produce ONE announcer line, and the
+//  drop is stock's, upstream of every subtitle path: _zm_powerups.gsc:1147 calls
+//  leaderdialog( powerup_name, team ) with `queue` UNDEFINED, and
+//  _zm_audio_announcer.gsc:324 reads
+//        if ( !self.zmbdialogactive )        play
+//        else if ( isdefined( queue ) && queue )  enqueue
+//  - with no queue argument the second line is silently DISCARDED. It is never
+//  played, so there is no second caption to stack. This file captions what is
+//  spoken; making both appear means either captioning a line the player cannot
+//  hear, or passing queue = 1 so the second is spoken ~4 s later. Both change
+//  audible behaviour and are the user's call, so neither is done here.
+//  ============================================================================
+zmqol_subs_stack_index( n_id )
 {
-    n_now = gettime();
-    n_oldest = -1;
+    if ( !isdefined( self.zmqol_subs_st_id ) )
+        return -1;
+
+    for ( i = 0; i < self.zmqol_subs_st_id.size; i++ )
+    {
+        if ( self.zmqol_subs_st_id[i] == n_id )
+            return i;
+    }
+
+    return -1;
+}
+
+//  Drop one slot and close the gap - the shift-down, in one place.
+zmqol_subs_stack_remove( n_id )
+{
+    n_at = self zmqol_subs_stack_index( n_id );
+
+    if ( n_at < 0 )
+        return;
+
+    a_text = [];
+    a_kind = [];
+    a_id = [];
+    a_fade = [];
+
+    for ( i = 0; i < self.zmqol_subs_st_id.size; i++ )
+    {
+        if ( i == n_at )
+            continue;
+
+        a_text[a_text.size] = self.zmqol_subs_st_text[i];
+        a_kind[a_kind.size] = self.zmqol_subs_st_kind[i];
+        a_id[a_id.size] = self.zmqol_subs_st_id[i];
+        a_fade[a_fade.size] = self.zmqol_subs_st_fade[i];
+    }
+
+    self.zmqol_subs_st_text = a_text;
+    self.zmqol_subs_st_kind = a_kind;
+    self.zmqol_subs_st_id = a_id;
+    self.zmqol_subs_st_fade = a_fade;
+}
+
+//  Bottom-up: slot i into element i, blank every element with no slot.
+//
+//  A slot part-way through its fade is left alone - writing alpha 1 over it
+//  would cancel the fade (the show path relies on exactly that behaviour when
+//  it reuses an element, see below), so a line starting while another fades
+//  must not drag the fading one back to full.
+zmqol_subs_redraw()
+{
+    if ( !isdefined( self.zmqol_subs_hud ) || !isdefined( self.zmqol_subs_st_id ) )
+        return;
 
     for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
     {
-        if ( self.zmqol_subs_row_end[i] <= n_now )
-            return i;
+        e_line = self.zmqol_subs_hud[i];
 
-        if ( n_oldest < 0 || self.zmqol_subs_row_start[i] < self.zmqol_subs_row_start[n_oldest] )
-            n_oldest = i;
+        if ( !isdefined( e_line ) )
+            continue;
+
+        if ( i >= self.zmqol_subs_st_id.size )
+        {
+            e_line.alpha = 0;
+            continue;
+        }
+
+        if ( self.zmqol_subs_st_kind[i] == "own" )
+            e_line.color = ( 1, 1, 1 );
+        else
+            e_line.color = ( 0.75, 0.75, 0.75 );
+
+        e_line settext( self.zmqol_subs_st_text[i] );
+
+        if ( !self.zmqol_subs_st_fade[i] )
+            e_line.alpha = 1;
     }
-
-    return n_oldest;
 }
 
-//  One line per ROW per viewer. str_kind "own" is this viewer's own character
+//  One line per viewer per call. str_kind "own" is this viewer's own character
 //  (white); anything else - another player, an NPC, the announcer - is grey.
-//  A row shows one 58-character chunk at a time for its share of the clip's
-//  real length, never under 1.2 s; then fades and frees the row.
+//  A line shows one 58-character chunk at a time for its share of the clip's
+//  real length, never under 1.2 s; then fades and frees its slot.
 zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
 {
     self endon( "disconnect" );
+    self endon( "zmqol_subs_reset" );
 
     if ( !isdefined( str_kind ) )
         str_kind = "own";
 
     self zmqol_subs_ensure_hud();
 
-    //  Pages ("|") of rows ("~") flattened to chunks; a row is one chunk.
+    //  Pages ("|") of rows ("~") flattened to chunks; a chunk is one screenful.
     a_rows = [];
     a_pages = strtok( str_text, "|" );
 
@@ -886,57 +979,78 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
     if ( n_total <= 0 )
         return;
 
-    n_row = self zmqol_subs_pick_row();
+    //  The stack is full: the OLDEST line on screen gives up its slot, which is
+    //  what the fixed-row version did when no row was free.
+    if ( self.zmqol_subs_st_id.size >= self.zmqol_subs_hud.size )
+        self zmqol_subs_stack_remove( self.zmqol_subs_st_id[0] );
 
-    if ( n_row < 0 )
-        return;
+    n_id = self.zmqol_subs_next_id;
+    self.zmqol_subs_next_id = n_id + 1;
 
-    //  one owner per row: whoever had it is cancelled, including its fade
-    self notify( "zmqol_subs_row_" + n_row );
-    self endon( "zmqol_subs_row_" + n_row );
+    str_first = a_rows[0];
 
-    e_line = self.zmqol_subs_hud[n_row];
+    if ( isdefined( str_prefix ) && str_prefix != "" )
+        str_first = str_prefix + str_first;
 
-    if ( !isdefined( e_line ) )
-        return;
+    n_slot = self.zmqol_subs_st_id.size;
+    self.zmqol_subs_st_text[n_slot] = str_first;
+    self.zmqol_subs_st_kind[n_slot] = str_kind;
+    self.zmqol_subs_st_id[n_slot] = n_id;
+    self.zmqol_subs_st_fade[n_slot] = 0;
+
+    self zmqol_subs_redraw();
 
     n_show_total = n_secs;
 
     if ( n_show_total < 1.2 * a_rows.size )
         n_show_total = 1.2 * a_rows.size;
 
-    self.zmqol_subs_row_start[n_row] = gettime();
-    self.zmqol_subs_row_end[n_row] = gettime() + int( n_show_total * 1000 ) + 300;
-
-    if ( str_kind == "own" )
-        e_line.color = ( 1, 1, 1 );
-    else
-        e_line.color = ( 0.75, 0.75, 0.75 );
-
     for ( i = 0; i < a_rows.size; i++ )
     {
-        str_row = a_rows[i];
-
-        if ( i == 0 && isdefined( str_prefix ) && str_prefix != "" )
-            str_row = str_prefix + str_row;
-
-        e_line settext( str_row );
-        e_line.alpha = 1;
-
         n_show = n_secs * a_rows[i].size / n_total;
 
         if ( n_show < 1.2 )
             n_show = 1.2;
 
         wait n_show;
+
+        //  Evicted by a newer line while we waited - stop, the slot is gone.
+        n_at = self zmqol_subs_stack_index( n_id );
+
+        if ( n_at < 0 )
+            return;
+
+        if ( i + 1 < a_rows.size )
+        {
+            str_row = a_rows[i + 1];
+            self.zmqol_subs_st_text[n_at] = str_row;
+            self zmqol_subs_redraw();
+        }
     }
 
     //  v2.14.21 - a 0.25 s fade instead of a hard cut, user 2026-09-08:
-    //  *"make sure they're persistent and smooth"*. The show path still writes
-    //  alpha 1 directly, which snaps and cancels any fade still running when the
-    //  next line starts in this row. Same single owner per row as before.
+    //  *"make sure they're persistent and smooth"*. Marked fading first so a
+    //  line starting underneath cannot snap this one back to full alpha.
     wait 0.3;
-    e_line fadeovertime( 0.25 );
-    e_line.alpha = 0;
-    self.zmqol_subs_row_end[n_row] = 0;
+
+    n_at = self zmqol_subs_stack_index( n_id );
+
+    if ( n_at < 0 )
+        return;
+
+    self.zmqol_subs_st_fade[n_at] = 1;
+
+    e_line = self.zmqol_subs_hud[n_at];
+
+    if ( isdefined( e_line ) )
+    {
+        e_line fadeovertime( 0.25 );
+        e_line.alpha = 0;
+    }
+
+    wait 0.25;
+
+    //  Now drop the slot: everything above slides down one row into its place.
+    self zmqol_subs_stack_remove( n_id );
+    self zmqol_subs_redraw();
 }
