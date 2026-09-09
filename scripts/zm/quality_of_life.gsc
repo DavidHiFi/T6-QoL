@@ -9928,10 +9928,11 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "m16_zm",           "m16",         "m16a1 m16a2 colt" );
     a[a.size] = zmqol_give_name_row( "m1911_zm",         "m1911",       "1911 ms mustang sally" );
     a[a.size] = zmqol_give_name_row( "m32_zm",           "warmachine",  "m32" );
+    a[a.size] = zmqol_give_name_row( "metalstorm_mms_zm", "stormpsr",   "storm psr metalstorm" );
     a[a.size] = zmqol_give_name_row( "mg08_zm",          "mg08",        "mg0815 magnacollider" );
     a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "" );
     a[a.size] = zmqol_give_name_row( "mp40_zm",          "mp40",        "" );
-    a[a.size] = zmqol_give_name_row( "mp40_stalker_zm",  "mp40stalker", "stalker" );
+    a[a.size] = zmqol_give_name_row( "mp40_stalker_zm",  "mp40stalker", "" );
     a[a.size] = zmqol_give_name_row( "mp44_zm",          "stg44",       "stg mp44" );
     a[a.size] = zmqol_give_name_row( "mp5k_zm",          "mp5",         "mp5k" );
     a[a.size] = zmqol_give_name_row( "mp7_zm",           "mp7",         "" );
