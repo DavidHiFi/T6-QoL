@@ -70,6 +70,9 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 >
 > **Cloning the repo does not give you a playable mod** — `mod.iwd` is a build output and isn't tracked in git. Use the release.
 
+> [!WARNING]
+> **Known issue.** Choosing **INSTANT EXIT** straight after a **FAST RESTART** can drop the game to a `LUI_ERROR` dialog. The fault is inside Plutonium's own `MainMenuOG.lua`, which this mod neither ships nor overrides, so it can't be fixed from the mod's side. Leaving the match with Escape → INSTANT EXIT on its own is unaffected.
+
 ---
 
 <details>
@@ -221,6 +224,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 * **Subtitles:**
   * A **SUBTITLES** row on the HUD tab (OFF / SUBTITLES / SUBTITLES + NAMES) puts spoken lines on screen as text, on all six maps, solo and co-op: your own character in white, every other voice in grey, and the NAMES setting puts the speaker's name in front of every displayed chunk. That is every voice, not just the characters: the announcer (power-ups, the box, the dog rounds), Maxis and Samantha (Origins' radios and generators included), Richtofen in Stuhlinger's head, Brutus, the bus driver, the TVs and radios, the ghost, and Die Rise's whispering zombies. Lines that play at the same time stack on two rows, with older lines below newer ones; when an older line fades, the newer line slides down (on Nuketown that includes Marlton in the bunker). The text was machine-transcribed from the game's own audio, so the odd word can be off. The quest lines the maps play outside the normal dialogue system (the Origins Samantha intro and Richtofen exchanges, Mob's chair, free-fall and showdown lines, Buried's answers to Richtofen) are covered too; Maxis, Samantha and the Richtofen voice in Stuhlinger's head are treated as separate speakers.
+
+* **Scoreboard crew emblems:**
+  * The scoreboard shows the crew that belongs to the map you're on, in Classic and Survival alike. Origins and its Crazy Place get the Primis emblem, Buried and Borough get Buried's, Mob of the Dead and Cell Block get the inmates', and Die Rise and its three Survival locations get their own. Green Run and Nuketown keep the TranZit survivors in Classic; in Survival they show CIA or CDC to match the character you picked. Before this, every DLC map drew a missing-texture checkerboard there instead.
 
 * **Hitmarkers:**
   * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.
