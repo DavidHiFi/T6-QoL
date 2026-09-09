@@ -169,15 +169,17 @@ init()
 
     //  The nine effects the server plays. All 28 of the family are mod.ff assets
     //  copied out of the DLC5 zone (zone_source\mod_wavegun.zone).
-    level._effect["microwavegun_zap_shock_dw"]         = loadfx( "weapon/microwavegun/fx_zap_shock_dw" );
-    level._effect["microwavegun_zap_shock_eyes_dw"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_dw" );
-    level._effect["microwavegun_zap_shock_lh"]         = loadfx( "weapon/microwavegun/fx_zap_shock_lh" );
-    level._effect["microwavegun_zap_shock_eyes_lh"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_lh" );
-    level._effect["microwavegun_zap_shock_ug"]         = loadfx( "weapon/microwavegun/fx_zap_shock_ug" );
-    level._effect["microwavegun_zap_shock_eyes_ug"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_ug" );
-    level._effect["microwavegun_sizzle_blood_eyes"]    = loadfx( "weapon/microwavegun/fx_sizzle_blood_eyes" );
-    level._effect["microwavegun_sizzle_death_mist"]    = loadfx( "weapon/microwavegun/fx_sizzle_mist" );
-    level._effect["microwavegun_sizzle_death_mist_low_g"] = loadfx( "weapon/microwavegun/fx_sizzle_mist_low_g" );
+    // Private storage survives map initialization resetting level._effect.
+    level.zmqol_mgun_effects = [];
+    level.zmqol_mgun_effects["microwavegun_zap_shock_dw"]         = loadfx( "weapon/microwavegun/fx_zap_shock_dw" );
+    level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_dw"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_dw" );
+    level.zmqol_mgun_effects["microwavegun_zap_shock_lh"]         = loadfx( "weapon/microwavegun/fx_zap_shock_lh" );
+    level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_lh"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_lh" );
+    level.zmqol_mgun_effects["microwavegun_zap_shock_ug"]         = loadfx( "weapon/microwavegun/fx_zap_shock_ug" );
+    level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_ug"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_ug" );
+    level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"]    = loadfx( "weapon/microwavegun/fx_sizzle_blood_eyes" );
+    level.zmqol_mgun_effects["microwavegun_sizzle_death_mist"]    = loadfx( "weapon/microwavegun/fx_sizzle_mist" );
+    level.zmqol_mgun_effects["microwavegun_sizzle_death_mist_low_g"] = loadfx( "weapon/microwavegun/fx_sizzle_mist_low_g" );
 
     level._microwaveable_objects = [];
 
@@ -229,11 +231,11 @@ wait_for_microwavegun_fired()
     }
 }
 
-microwavegun_network_choke()
+microwavegun_network_choke( shot )
 {
-    level.microwavegun_network_choke_count++;
+    shot.choke_count++;
 
-    if ( !( level.microwavegun_network_choke_count % 10 ) )
+    if ( !( shot.choke_count % 10 ) )
     {
         wait_network_frame();
         wait_network_frame();
@@ -243,24 +245,23 @@ microwavegun_network_choke()
 
 microwavegun_fired( upgraded )
 {
-    if ( !isdefined( level.microwavegun_sizzle_enemies ) )
+    self endon( "disconnect" );
+
+    // Damage dispatch yields after ten targets. Keep each shot's targets and
+    // pacing together so another firing thread cannot overwrite them.
+    shot = spawnstruct();
+    shot.enemies = [];
+    shot.vecs = [];
+    shot.choke_count = 0;
+    self microwavegun_get_enemies_in_range( upgraded, 0, shot );
+    self microwavegun_get_enemies_in_range( upgraded, 1, shot );
+
+    for ( i = 0; i < shot.enemies.size; i++ )
     {
-        level.microwavegun_sizzle_enemies = [];
-        level.microwavegun_sizzle_vecs = [];
+        microwavegun_network_choke( shot );
+        if ( isdefined( shot.enemies[i] ) )
+            shot.enemies[i] thread microwavegun_sizzle_zombie( self, shot.vecs[i], i );
     }
-
-    self microwavegun_get_enemies_in_range( upgraded, 0 );
-    self microwavegun_get_enemies_in_range( upgraded, 1 );
-    level.microwavegun_network_choke_count = 0;
-
-    for ( i = 0; i < level.microwavegun_sizzle_enemies.size; i++ )
-    {
-        microwavegun_network_choke();
-        level.microwavegun_sizzle_enemies[i] thread microwavegun_sizzle_zombie( self, level.microwavegun_sizzle_vecs[i], i );
-    }
-
-    level.microwavegun_sizzle_enemies = [];
-    level.microwavegun_sizzle_vecs = [];
 }
 
 // ============================================================================
@@ -427,7 +428,7 @@ zmqol_ww_screecher_zap_watch()
     }
 }
 
-microwavegun_get_enemies_in_range( upgraded, microwaveable_objects )
+microwavegun_get_enemies_in_range( upgraded, microwaveable_objects, shot )
 {
     view_pos = self getweaponmuzzlepoint();
     test_list = undefined;
@@ -482,7 +483,7 @@ microwavegun_get_enemies_in_range( upgraded, microwaveable_objects )
 
         if ( isai( zombies[i] ) )
         {
-            level.microwavegun_sizzle_enemies[level.microwavegun_sizzle_enemies.size] = zombies[i];
+            shot.enemies[shot.enemies.size] = zombies[i];
             dist_mult = ( sizzle_range_squared - test_range_squared ) / sizzle_range_squared;
             sizzle_vec = vectornormalize( test_origin - view_pos );
 
@@ -491,7 +492,7 @@ microwavegun_get_enemies_in_range( upgraded, microwaveable_objects )
 
             sizzle_vec = ( sizzle_vec[0], sizzle_vec[1], abs( sizzle_vec[2] ) );
             sizzle_vec = vectorscale( sizzle_vec, 100 + 100 * dist_mult );
-            level.microwavegun_sizzle_vecs[level.microwavegun_sizzle_vecs.size] = sizzle_vec;
+            shot.vecs[shot.vecs.size] = sizzle_vec;
             continue;
         }
 
@@ -611,10 +612,10 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
 //  cost the garnish but never the kill above.
 zmqol_mgun_pop()
 {
-    fx = level._effect["microwavegun_sizzle_death_mist"];
+    fx = level.zmqol_mgun_effects["microwavegun_sizzle_death_mist"];
 
     if ( isdefined( self.in_low_g ) && self.in_low_g )
-        fx = level._effect["microwavegun_sizzle_death_mist_low_g"];
+        fx = level.zmqol_mgun_effects["microwavegun_sizzle_death_mist_low_g"];
 
     str_tag = "J_SpineLower";
     v_pos = self gettagorigin( str_tag );
@@ -707,21 +708,21 @@ microwavegun_dw_zombie_hit_response_internal( mod, damageweapon, player )
 microwavegun_zap_get_shock_fx( weapon )
 {
     if ( weapon == "microwavegundw_zm" )
-        return level._effect["microwavegun_zap_shock_dw"];
+        return level.zmqol_mgun_effects["microwavegun_zap_shock_dw"];
     else if ( weapon == "microwavegunlh_zm" )
-        return level._effect["microwavegun_zap_shock_lh"];
+        return level.zmqol_mgun_effects["microwavegun_zap_shock_lh"];
     else
-        return level._effect["microwavegun_zap_shock_ug"];
+        return level.zmqol_mgun_effects["microwavegun_zap_shock_ug"];
 }
 
 microwavegun_zap_get_shock_eyes_fx( weapon )
 {
     if ( weapon == "microwavegundw_zm" )
-        return level._effect["microwavegun_zap_shock_eyes_dw"];
+        return level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_dw"];
     else if ( weapon == "microwavegunlh_zm" )
-        return level._effect["microwavegun_zap_shock_eyes_lh"];
+        return level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_lh"];
     else
-        return level._effect["microwavegun_zap_shock_eyes_ug"];
+        return level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_ug"];
 }
 
 microwavegun_zap_head_gib( weapon )
