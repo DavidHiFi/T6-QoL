@@ -138,13 +138,21 @@
                         {
                             "baseMaterial": "mc/mtl_t6_wpn_lmg_m60_camo1",
                             "camoMaterial": "mc/mtl_weapon_camo_zombies"
+                        },
+                        {
+                            "baseMaterial": "mc/mtl_t6_wpn_lmg_m60_camo2",
+                            "camoMaterial": "mc/mtl_weapon_camo_zombies_1"
+                        },
+                        {
+                            "baseMaterial": "mc/mtl_t6_wpn_lmg_m60_camo3",
+                            "camoMaterial": "mc/mtl_weapon_camo_zombies_2"
                         }
                     ],
                     "shaderConsts": [
-                        3.0,
-                        3.0,
-                        0.0,
-                        0.800000011920929,
+                        1.7200000286102295,
+                        1.3600000143051147,
+                        0.7900000214576721,
+                        1.0,
                         0.0,
                         0.0,
                         0.0,
@@ -152,7 +160,23 @@
                     ],
                     "useColorMap": false,
                     "useNormalMap": true,
-                    "useSpecularMap": false
+                    "useSpecularMap": true
+                },
+                {
+                    "materialOverrides": [],
+                    "shaderConsts": [
+                        1.0,
+                        1.0,
+                        0.0,
+                        1.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "useColorMap": false,
+                    "useNormalMap": true,
+                    "useSpecularMap": true
                 }
             ]
         },
