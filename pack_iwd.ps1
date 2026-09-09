@@ -18,7 +18,7 @@ try {
     Add-Type -AssemblyName System.IO.Compression
 }
 catch {
-    Write-Host "  ERROR: .NET compression is unavailable (needs Windows 8+ / .NET 4.5+)."
+    Write-Output "  ERROR: .NET compression is unavailable (needs Windows 8+ / .NET 4.5+)."
     exit 1
 }
 
@@ -73,12 +73,20 @@ try {
     # as fastfile assets through zone_source\wavegun_donor (native T6 xanims from
     # Zombies Declassified's zm_moon.ff). The folder is empty now and skipped by the
     # Test-Path below; the entry stays so a future raw xanim needs no packer change.
-    $rootPath = (Resolve-Path -LiteralPath $Root).Path
-    $outPath  = Join-Path $rootPath $Out
-
-    if (Test-Path -LiteralPath $outPath) { Remove-Item -LiteralPath $outPath -Force }
-
-    $fs  = [System.IO.File]::Open($outPath, [System.IO.FileMode]::CreateNew)
+    $rootPath = (Resolve-Path -LiteralPath $Root).Path.TrimEnd('\','/')
+    $outPath = if ([System.IO.Path]::IsPathRooted($Out)) {
+        [System.IO.Path]::GetFullPath($Out)
+    } else { [System.IO.Path]::GetFullPath((Join-Path $rootPath $Out)) }
+    foreach ($folder in $folders) {
+        $sourcePath = (Join-Path $rootPath $folder) + [System.IO.Path]::DirectorySeparatorChar
+        if ($outPath.StartsWith($sourcePath, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw 'The output must be outside the packed source folders.'
+        }
+    }
+    # Finish and close a sibling archive before replacing the previous good build.
+    # A failed build retains its partial archive for diagnosis.
+    $tempPath = $outPath + '.' + [guid]::NewGuid().ToString('N') + '.partial'
+    $fs  = [System.IO.File]::Open($tempPath, [System.IO.FileMode]::CreateNew)
     $zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
     $count = 0
     try {
@@ -92,9 +100,9 @@ try {
             # past session's parse-check - found when the file count crept from 593
             # to 594 with no new source file added. Excluded structurally so a stray
             # `parsed\` anywhere under a packed folder can never leak in again.
-            Get-ChildItem -Path $folderPath -Recurse -File | Where-Object {
+            Get-ChildItem -LiteralPath $folderPath -Recurse -File | Where-Object {
                 $_.FullName -notmatch '\\parsed\\'
-            } | ForEach-Object {
+            } | Sort-Object FullName | ForEach-Object {
                 # entry path relative to project root, forward slashes
                 $rel   = $_.FullName.Substring($rootPath.Length + 1) -replace '\\','/'
 
@@ -112,22 +120,27 @@ try {
 
                 $entry = $zip.CreateEntry($rel, $level)
                 $es    = $entry.Open()
-                $fsIn  = [System.IO.File]::OpenRead($_.FullName)
-                try { $fsIn.CopyTo($es) } finally { $fsIn.Dispose() }
-                $es.Dispose()
+                try {
+                    $fsIn = [System.IO.File]::OpenRead($_.FullName)
+                    try { $fsIn.CopyTo($es) } finally { $fsIn.Dispose() }
+                } finally { $es.Dispose() }
                 $count++
             }
         }
     }
     finally {
-        if ($zip) { $zip.Dispose() }
-        if ($fs)  { $fs.Dispose() }
+        try { if ($zip) { $zip.Dispose() } }
+        finally { if ($fs) { $fs.Dispose() } }
     }
 
-    Write-Host ("  mod.iwd packed: {0:N0} files, {1:N0} bytes" -f $count, (Get-Item -LiteralPath $outPath).Length)
+    if (Test-Path -LiteralPath $outPath) {
+        [System.IO.File]::Replace($tempPath, $outPath, [System.Management.Automation.Language.NullString]::Value)
+    } else { [System.IO.File]::Move($tempPath, $outPath) }
+
+    Write-Output ("  mod.iwd packed: {0:N0} files, {1:N0} bytes" -f $count, (Get-Item -LiteralPath $outPath).Length)
     exit 0
 }
 catch {
-    Write-Host ("  ERROR packing mod.iwd: " + $_.Exception.Message)
+    Write-Output ("  ERROR packing mod.iwd: " + $_.Exception.Message)
     exit 1
 }

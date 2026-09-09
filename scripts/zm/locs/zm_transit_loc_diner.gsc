@@ -1051,7 +1051,7 @@ zmqol_claymore_wallbuy_origin()
 //  🌟 v2.5.3 - THE FLAT PANEL, MEASURED. Y MOVED FROM -7195 TO -7172.
 //
 //  v2.5.0's zmqol_probe_jugg_flat_wall() shipped in v2.5.2 and its output was
-//  read from a real boot: C:\Users\localuser\AppData\Local\Plutonium\storage\
+//  read from a real boot: %LOCALAPPDATA%\Plutonium\storage\
 //  t6\main\console_zm.log, lines 4780-4791, from the same session the user's
 //  two `.where` screenshots (-3602,-7199,-58 / -3553,-7255,-58) came from -
 //  the one where they confirmed the claymore was purchasable. Full result:

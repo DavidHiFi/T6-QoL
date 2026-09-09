@@ -2097,7 +2097,7 @@ end
 --  BACKSPEED PATCH relabel.
 --
 --  🌟 THE FIVE NEW ROWS ARE A PORT OF THE USER'S OWN REFERENCE, not a design.
---  H:\Claude\legacy-decompiled.gsc - the "legacy" pre-patch mod they supplied -
+--  legacy-decompiled.gsc - the "legacy" pre-patch mod they supplied -
 --  is four replaceFuncs and an init, and every row below is one line of it:
 --      round cap        stock round_think clamps `if (255 < round) round = 255`
 --      24 solo zombies  level.zombie_total = 23 while solo past round 5
@@ -2444,7 +2444,7 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	--  tab in my mod."*
 	--
 	--  🌟 THE DESTINATIONS ARE THE STRAT TESTER'S OWN, copied value for value out
-	--  of H:\Claude\Strat-Tester-BO2\scripts\zm\strattester\commands.gsc::tpcase()
+	--  of Strat-Tester-BO2\scripts\zm\strattester\commands.gsc::tpcase()
 	--  - position AND angles - so each one lands facing the way it does there.
 	--  Nothing is invented: a map that has no list in that file (Nuketown) gets
 	--  no row at all rather than a made-up destination.

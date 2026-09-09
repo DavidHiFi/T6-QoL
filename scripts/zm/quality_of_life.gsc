@@ -282,7 +282,7 @@ zmqol_enable_dog_rounds()
 //  POWER-UP TIMERS  -  seconds remaining under each power-up icon   (v1.99.0)
 //
 //  User, 2026-08-16, supplying a mod from the Plutonium forums
-//  (H:\Claude\POWER UP TIMERS): *"make this an option toggable in the HUD
+//  (POWER UP TIMERS): *"make this an option toggable in the HUD
 //  options ... it just shows the seconds remaining for all power ups, make it
 //  aware of added/modded in power ups like the death machine as well."*
 //
@@ -5566,7 +5566,7 @@ player_too_many_weapons_monitor()
 //
 //  Mechanism: T6 fires a level notify "say" carrying the speaker and the raw
 //  message. Verified against a known-working release rather than guessed -
-//  H:\Claude\BO2-GSC-Releases\Zombies Mods\Give Points Command uses exactly
+//  BO2-GSC-Releases\Zombies Mods\Give Points Command uses exactly
 //  level waittill( "say", player, message ). Builtins used were checked against
 //  the stock dump too: enableinvulnerability/disableinvulnerability appear in
 //  _hostmigration.gsc and add_to_player_score is _zm_score.gsc:311. iprintlnbold
@@ -5945,7 +5945,7 @@ zmqol_dev_command_listener()
         // v1.5.0 had these the wrong way round, which is why "!p 10000" silently
         // did nothing: strtok() was being handed a player ENTITY. Confirmed
         // against a working Plutonium T6 mod the user already runs,
-        // H:\Claude\littlegods-mod\chat.gsc:21 - `level waittill("say", message,
+        // littlegods-mod\chat.gsc:21 - `level waittill("say", message,
         // player)`. The BO2-GSC-Releases sample has them the other way round and
         // is what led me wrong; trust the mod that actually runs on Plutonium.
         level waittill( "say", message, player );
@@ -6448,7 +6448,7 @@ zmqol_dev_command_listener()
         }
         else if ( cmd == "velocity" || cmd == "vel" || cmd == "speed" )
         {
-            //  User, 2026-08-13, pointing at H:\Claude\T6-B2OP-PATCH.
+            //  User, 2026-08-13, pointing at T6-B2OP-PATCH.
             //
             //  🛑 THE METER IS NOT IN THAT PATCH. b2op.gsc has no velocity meter;
             //  its README only documents the stat slot that toggles B2FR's one,
@@ -18372,7 +18372,7 @@ show_grief_hud_msg_cleanup()
 //  mode: "unqualified same-file call defeats replaceFunc") assumed this
 //  couldn't work, because _zm.gsc's own main() calls it unqualified
 //  (`level thread onallplayersready();`). That assumption was wrong for this
-//  specific call: BO2-Reimagined (H:\Claude\BO2-Reimagined,
+//  specific call: BO2-Reimagined (BO2-Reimagined,
 //  scripts/zm/_zm_reimagined.gsc:33) successfully does
 //  `replaceFunc(maps\mp\zombies\_zm::onallplayersready, scripts\zm\replaced\_zm::onallplayersready);`
 //  in a real, working mod - proving replaceFunc DOES redirect this particular
@@ -20123,7 +20123,7 @@ zmqol_set_points_watch()
 //  zmqol_teleport_watch / zmqol_teleport_dest  -  CHEATS > TELEPORT
 //
 //  🌟 THE DESTINATIONS ARE THE STRAT TESTER'S OWN, copied value for value out of
-//  H:\Claude\Strat-Tester-BO2\scripts\zm\strattester\commands.gsc::tpcase() -
+//  Strat-Tester-BO2\scripts\zm\strattester\commands.gsc::tpcase() -
 //  position AND angles, so each one lands facing the way it does there. Nothing
 //  is invented: Nuketown has no list in that file, so until v2.10.4 it had no
 //  row in the menu and no case here.

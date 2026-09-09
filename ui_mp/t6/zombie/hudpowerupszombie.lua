@@ -465,7 +465,7 @@ CoD.PowerUps.PatchAmmoCounters()
 --  A ui_mp/ override is a WHOLE-FILE replacement, and there is no
 --  stock-faithful source for that file:
 --    - the stock copy is T6-modified Lua BYTECODE and no decompiler reads it
---      (unluac fails on four measured deviations - see H:\Claude\unluac\);
+--      (unluac fails on four measured deviations - see unluac\);
 --    - BO2-Reimagined's readable copy is stock PLUS their changes, and their
 --      Update() DROPS stock's STATE_PAUSED / STATE_TBD branches. Stock's
 --      bytecode string table proves those branches exist (STATE_PAUSED,

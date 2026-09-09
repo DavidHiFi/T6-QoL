@@ -10,11 +10,14 @@ REM    1) a send-ready copy:  <project>\build\zm_qol\
 REM    2) your Plutonium mods folder (skipped if Plutonium isn't installed)
 REM    3) installer\Mod Files\ - so the installer can never reinstall a stale
 REM       build over a fresh one (see [6/9]'s comment for why this exists)
+REM  Use build.bat offline to pack and verify without deployment or global cleanup.
 REM  Needs only Windows + PowerShell (both built in) - no other tools.
 REM ============================================================
 setlocal EnableExtensions
 cd /d "%~dp0"
 set "MOD_NAME=zm_qol"
+set "OFFLINE="
+if /I "%~1"=="offline" set "OFFLINE=1"
 REM  v1.99.55 - FIVE files, not six. deathmachine_zm.all.sabl is gone: its 18
 REM  aliases and all 11 of its audio payloads were already inside mod.all, so it
 REM  was a duplicate download for every player. The authoritative alias rows
@@ -90,7 +93,7 @@ REM  24 attachWorldModelOffset{Pitch,Yaw,Roll}1-8 fields are '0' on every gun in
 REM  this project, Reimagined's own working files omit them, and dropping them
 REM  saves exactly 720 bytes.
 set "WPN_OK="
-echo [0/6] Pre-flight: raw weapon file size ceiling (20480 bytes)...
+echo [0/9] Pre-flight: raw weapon file size ceiling (20480 bytes)...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$d=Join-Path $env:PROJ_DIR0 'weapons\zm'; if(-not (Test-Path -LiteralPath $d)){ Write-Host '    [skip] no weapons\zm folder'; exit 0 }; $ok=$env:WPN_OK -split ' '; $bad=@(); Get-ChildItem -LiteralPath $d -File | ForEach-Object { if($_.Length -ge 20480){ if($ok -contains $_.Name){ Write-Host ('    [known] ' + $_.Name + ' ' + $_.Length + ' B - over the limit on purpose, the map supplies its own') } else { $bad += ($_.Name + ' ' + $_.Length + ' B'); Write-Host ('    [OVER]  ' + $_.Name + ' ' + $_.Length + ' B') } } }; if($bad.Count -gt 0){ Write-Host ''; Write-Host '    This weapon will NOT load and will crash the game if a .csc include_weapon()s'; Write-Host '    it for the box. Trim it below 20480 before building.'; exit 1 }; Write-Host '    [ok] every raw weapon file is under the ceiling'"
 if errorlevel 1 goto wpnfail
 
@@ -101,7 +104,7 @@ REM  t6\images (the HD Texture Pack / Optionals\images). zone_assets\images keep
 REM  Treyarch's own 512x512 copies purely so the Linker can build mod.ff's image
 REM  headers; a fastfile carries no pixels, so nothing in the mod's five files can
 REM  override the pack, and nothing in mod.iwd can shadow it either.
-echo [1/6] Syncing zone_assets\images -^> images (runtime pixel data)...
+echo [1/9] Syncing zone_assets\images -^> images (runtime pixel data)...
 REM  T6 keeps image PIXEL DATA in a loose .iwi, not in the fastfile. mod.ff only
 REM  carries the material and an image header. An image that is linked but whose
 REM  .iwi never reaches mod.iwd draws BLACK - that was the black Diner loading
@@ -115,24 +118,26 @@ REM  These are a handful of small files, so copy unconditionally rather than dif
 if errorlevel 1 goto packfail
 
 echo.
-echo [2/6] Repacking mod.iwd from raw folders...
+echo [2/9] Repacking mod.iwd from raw folders...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0pack_iwd.ps1"
 if errorlevel 1 goto packfail
 
 echo.
-echo [3/6] Verifying all 6 source files are present...
+echo [3/9] Verifying all 5 source files are present...
 for %%F in (%FILES%) do (
     if exist "%~dp0%%F" ( echo    [ok] %%F ) else ( echo    [MISSING] %%F & goto missing )
 )
 
 echo.
-echo [4/6] Writing send-ready copy to:
+if defined OFFLINE ( echo Offline package verified. No deployment performed. & exit /b 0 )
+
+echo [4/9] Writing send-ready copy to:
 echo        %BUILD_DIR%
 call :deploy "%BUILD_DIR%"
 if errorlevel 1 goto copyfail
 
 echo.
-echo [5/6] Installing to Plutonium (skipped if not installed):
+echo [5/9] Installing to Plutonium (skipped if not installed):
 echo        %PLUTO_DIR%
 call :deploy "%PLUTO_DIR%"
 if errorlevel 1 echo    [skip] couldn't write to Plutonium - the send-ready copy above is still good.
@@ -229,12 +234,10 @@ REM
 REM  Two rules, and the difference matters:
 REM    - a loose script that ALSO exists in this project is REFRESHED, so it can
 REM      never be older than what was just packed
-REM    - a loose script under scripts\zm\ that this project no longer has is
-REM      DELETED, because it can only be a leftover from an earlier deploy of
-REM      this same mod, and a deleted source file must not keep running
-REM  Anything outside scripts\zm\ is left alone - it is not ours to touch.
+REM    - an unmatched loose script is reported and preserved. Its folder alone
+REM      does not establish ownership; it may belong to another mod.
 set "LOOSE_DIR=%LOCALAPPDATA%\Plutonium\storage\t6\scripts"
-"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$loose=$env:LOOSE_DIR; $proj=$env:PROJ_DIR; if(-not (Test-Path -LiteralPath $loose)){ Write-Host '    [skip] no loose scripts\ folder'; exit 0 }; $s=0; $d=0; Get-ChildItem -LiteralPath $loose -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.gsc','.csc' } | ForEach-Object { $rel=$_.FullName.Substring($loose.Length+1); $src=Join-Path (Join-Path $proj 'scripts') $rel; if(Test-Path -LiteralPath $src){ Copy-Item -LiteralPath $src -Destination $_.FullName -Force; $s++ } elseif($rel -like 'zm\*'){ Remove-Item -LiteralPath $_.FullName -Force; Write-Host ('    [stale] removed ' + $rel); $d++ } }; Write-Host ('    ' + $s + ' refreshed, ' + $d + ' stale removed')" 2>nul
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$loose=$env:LOOSE_DIR; $proj=$env:PROJ_DIR; if(-not (Test-Path -LiteralPath $loose)){ Write-Host '    [skip] no loose scripts\ folder'; exit 0 }; $s=0; $d=0; Get-ChildItem -LiteralPath $loose -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.gsc','.csc' } | ForEach-Object { $rel=$_.FullName.Substring($loose.Length+1); $src=Join-Path (Join-Path $proj 'scripts') $rel; if(Test-Path -LiteralPath $src){ Copy-Item -LiteralPath $src -Destination $_.FullName -Force; $s++ } elseif($rel -like 'zm\*'){ Write-Host ('    [review] unmatched loose script preserved: ' + $rel); $d++ } }; Write-Host ('    ' + $s + ' refreshed, ' + $d + ' unmatched preserved')" 2>nul
 
 echo.
 echo [9/9] Quarantining FOREIGN scripts in Plutonium's raw\ folder...
@@ -256,7 +259,7 @@ REM  backups\raw-foreign-parked\, which carries RESTORE-for-dlc5.ps1 to put them
 REM  back before playing that mod. Plutonium's OWN two ranked.gsc stay put.
 REM  ============================================================================
 set "PARK_DIR=%LOCALAPPDATA%\Plutonium\storage\t6\backups\raw-foreign-parked"
-"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$raw=$env:RAW_DIR; $park=$env:PARK_DIR; if(-not (Test-Path -LiteralPath $raw)){ Write-Host '    [skip] no raw\ folder'; exit 0 }; $keep=@('scripts\mp\ranked.gsc','scripts\zm\ranked.gsc'); $n=0; Get-ChildItem -LiteralPath $raw -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.gsc','.csc' } | ForEach-Object { $rel=$_.FullName.Substring($raw.Length+1); if($keep -contains $rel){ return }; $dst=Join-Path $park $rel; $dir=Split-Path $dst -Parent; if(-not (Test-Path -LiteralPath $dir)){ New-Item -ItemType Directory -Force $dir | Out-Null }; Move-Item -LiteralPath $_.FullName -Destination $dst -Force; Write-Host ('    [parked] ' + $rel); $n++ }; if($n -eq 0){ Write-Host '    [ok] raw\ holds no foreign script' } else { Write-Host ('    ' + $n + ' foreign script(s) parked in backups\raw-foreign-parked - run its RESTORE-for-dlc5.ps1 before playing that mod') }" 2>nul
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$raw=$env:RAW_DIR; $park=$env:PARK_DIR; if(-not (Test-Path -LiteralPath $raw)){ Write-Host '    [skip] no raw\ folder'; exit 0 }; $keep=@('scripts\mp\ranked.gsc','scripts\zm\ranked.gsc'); $n=0; $conflicts=0; Get-ChildItem -LiteralPath $raw -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -in '.gsc','.csc' } | ForEach-Object { $rel=$_.FullName.Substring($raw.Length+1); if($keep -contains $rel){ return }; $dst=Join-Path $park $rel; $dir=Split-Path $dst -Parent; if(-not (Test-Path -LiteralPath $dir)){ New-Item -ItemType Directory -Force $dir | Out-Null }; if(Test-Path -LiteralPath $dst){ Write-Host ('    [review] quarantine already exists; source preserved: ' + $rel); $conflicts++; return }; Move-Item -LiteralPath $_.FullName -Destination $dst -ErrorAction Stop; Write-Host ('    [parked] ' + $rel); $n++ }; if($n -eq 0 -and $conflicts -eq 0){ Write-Host '    [ok] raw\ holds no foreign script' } else { Write-Host ('    ' + $n + ' foreign script(s) parked in backups\raw-foreign-parked - run its RESTORE-for-dlc5.ps1 before playing that mod') }" 2>nul
 
 echo.
 echo Done.
@@ -265,7 +268,7 @@ echo.
 pause
 exit /b 0
 
-REM ---- copy all 6 files to %1, confirm each landed, stamp build time ----
+REM ---- copy all 5 files to %1, confirm each landed, stamp build time ----
 :deploy
 set "DEST=%~1"
 if not exist "%DEST%" mkdir "%DEST%" 2>nul
@@ -287,7 +290,7 @@ for %%F in (%OPTFILES%) do (
         if exist "%DEST%\%%F" ( echo    [ok] %%F ^(optional^) ) else ( echo    [FAILED] %%F & exit /b 1 )
     )
 )
-REM stamp all 6 with the current time - paths passed via env vars so any
+REM stamp all 5 with the current time - paths passed via env vars so any
 REM username/path (spaces, apostrophes, etc.) is safe
 set "STAMP_DIR=%DEST%"
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$t=Get-Date; foreach($f in $env:STAMP_FILES.Split(' ')){ $p=Join-Path $env:STAMP_DIR $f; if(Test-Path -LiteralPath $p){ (Get-Item -LiteralPath $p).LastWriteTime=$t } }" 2>nul
@@ -297,7 +300,7 @@ exit /b 0
 color C
 echo.
 echo   FAILED to pack mod.iwd (see the PowerShell error above).
-pause
+if not defined OFFLINE pause
 exit /b 1
 
 :wpnfail
@@ -305,7 +308,7 @@ echo.
 echo   BUILD STOPPED: a raw weapon file is at or over the 20480-byte ceiling.
 echo   Drop its 24 attachWorldModelOffset{Pitch,Yaw,Roll}1-8 fields (all '0') to
 echo   save 720 bytes, then build again.
-pause
+if not defined OFFLINE pause
 exit /b 1
 
 :missing
@@ -313,12 +316,12 @@ color C
 echo.
 echo   A required mod file is missing from this folder - cannot build.
 echo   Expected: %FILES%
-pause
+if not defined OFFLINE pause
 exit /b 1
 
 :copyfail
 color C
 echo.
 echo   Could not write the send-ready copy (permissions or disk full?).
-pause
+if not defined OFFLINE pause
 exit /b 1

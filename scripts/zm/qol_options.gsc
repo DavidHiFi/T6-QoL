@@ -1,7 +1,7 @@
 // ============================================================================
 //  qol_options  -  console-configurable options, adapted from BO2-Remix
 // ============================================================================
-//  Adds the dvars the user asked for from H:\Claude\BO2-Remix and NOTHING else
+//  Adds the dvars the user asked for from BO2-Remix and NOTHING else
 //  from that mod. Explicitly NOT ported: the walker removal, the power-up
 //  rework, the bank/perma-perk/fridge/box patches, the round-255 and points
 //  changes, the strat tester. Those are gameplay changes; this file is options.

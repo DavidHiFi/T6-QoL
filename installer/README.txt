@@ -51,8 +51,9 @@ Black Ops II Zombies  ·  Plutonium T6
       run that option once more from the new place and the
       shortcuts are rewritten.
 
-   ·  No game file is ever touched. Everything is written inside
-      Plutonium's own folder, and anything that would overwrite
+   ·  No game file is ever touched. Mod files are written inside
+      Plutonium's own folder; optional shortcuts use your Start menu.
+      Anything that would overwrite
       files of yours offers to back them up first.
 
    ·  BACKUPS. The menu has a "Back up / restore my own files"

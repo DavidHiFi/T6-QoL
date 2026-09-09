@@ -31,7 +31,7 @@ Install Plutonium and run it once so its folders exist, then close it.
 3. Choose **INSTALL → The mod** and confirm.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
-Arrow keys to move, **Enter** to choose, **Q** to quit. No admin rights, nothing left running, and no game file is touched — everything goes inside Plutonium's own folder. The installer can also fetch the optional extras: the HD texture and custom sound packs, controller icons, ReShade, backups, and a full uninstaller.
+Arrow keys to move, **Enter** to choose, **Q** to quit. The mod install needs no admin rights and leaves nothing running. Mod files go inside Plutonium's folder; the optional Start menu shortcuts go in your user Start menu. The installer can also fetch the optional extras: the HD texture and custom sound packs, controller icons, ReShade, backups, and a full uninstaller.
 
 **Start menu shortcuts** are one of its options — pick it and you can reach **Quality Of Life Mod** (this installer) and **Plutonium ReShade Watcher** by pressing the Windows key and typing. They point at the folder you unzipped to, so keep it somewhere you're happy to leave it; the uninstall list removes them again.
 
@@ -95,6 +95,19 @@ Use a `.`, `!` or `/` prefix, or bind them to keys. Type `.help` in game for the
 </details>
 
 ---
+
+## Building from source
+
+For script and menu changes, run `build.bat offline` to repack and verify the five
+mod files locally. This does not compile scripts or install anything. `build.bat`
+without arguments also deploys the mod, refreshes the installer bundle, and
+reconciles global Plutonium overrides; review its output for skipped copies or
+preserved conflicts.
+
+Asset changes use `build_ff.bat` and the existing legacy OpenAssetTools setup;
+they can require untracked asset sources and donor files. The root `mod.zone` is
+an unused empty legacy file; `zone_source/mod.zone` is the active fastfile recipe.
+A successful pack or link does not establish startup or gameplay compatibility.
 
 ## Contribute To Support Development
 
@@ -207,7 +220,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * A green bar in a grey box, bottom left, that turns yellow once you take damage and red when the next zombie hit would down you, with your health as a number beside it. Carrying a shield adds its own bar above and its remaining health next to yours.
 
 * **Subtitles:**
-  * A **SUBTITLES** row on the HUD tab (OFF / SUBTITLES / SUBTITLES + NAMES) puts spoken lines on screen as text, on all six maps, solo and co-op: your own character in white, every other voice in grey, and the NAMES setting puts the speaker's name in front of every line. That is every voice, not just the characters: the announcer (power-ups, the box, the dog rounds), Maxis and Samantha (Origins' radios and generators included), Richtofen in Stuhlinger's head, Brutus, the bus driver, the TVs and radios, the ghost, and Die Rise's whispering zombies. Lines that play at the same time stack on two rows, newest at the bottom (on Nuketown that includes Marlton in the bunker). The text was machine-transcribed from the game's own audio, so the odd word can be off. The quest lines the maps play outside the normal dialogue system (the Origins Samantha intro and Richtofen exchanges, Mob's chair, free-fall and showdown lines, Buried's answers to Richtofen) are covered too; Maxis, Samantha and the Richtofen voice in Stuhlinger's head are not your character's lines and are not.
+  * A **SUBTITLES** row on the HUD tab (OFF / SUBTITLES / SUBTITLES + NAMES) puts spoken lines on screen as text, on all six maps, solo and co-op: your own character in white, every other voice in grey, and the NAMES setting puts the speaker's name in front of every line. That is every voice, not just the characters: the announcer (power-ups, the box, the dog rounds), Maxis and Samantha (Origins' radios and generators included), Richtofen in Stuhlinger's head, Brutus, the bus driver, the TVs and radios, the ghost, and Die Rise's whispering zombies. Lines that play at the same time stack on two rows, newest at the bottom (on Nuketown that includes Marlton in the bunker). The text was machine-transcribed from the game's own audio, so the odd word can be off. The quest lines the maps play outside the normal dialogue system (the Origins Samantha intro and Richtofen exchanges, Mob's chair, free-fall and showdown lines, Buried's answers to Richtofen) are covered too; Maxis, Samantha and the Richtofen voice in Stuhlinger's head are treated as separate speakers.
 
 * **Hitmarkers:**
   * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.

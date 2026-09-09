@@ -7,7 +7,7 @@
 --
 --  This file is a faithful reconstruction of the stock one, verified against
 --  the constant table of the shipped bytecode
---  (H:\Claude\BO2-Raw-files\ui\t6\menus\privateonlinegamelobby.lua): require /
+--  (BO2-Raw-files\ui\t6\menus\privateonlinegamelobby.lua): require /
 --  T6.Menus.PrivateGameLobby / CoD / PrivateOnlineGameLobby / LUI / createMenu /
 --  New / isMultiplayer / setPreviousMenu / MainLobby / Engine / Localize /
 --  MPUI_CUSTOM_GAMES_CAPS / addTitle / panelManager / panels / buttonPane /
