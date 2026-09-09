@@ -1,5 +1,24 @@
 # Wave Gun: Windows stock-map work
 
+## 2026-09-10 correction: Declassified is the authoritative donor
+
+The conclusions below were scoped too narrowly. This machine has Zombies
+Declassified Beta 1 and its native T6 `zm_moon.ff`. That working Moon package is
+the reference for the Wave Gun port, including its AIType animation lists,
+animation states, clientfields, zombie materials, shader constants, effects and
+audio. A failed attempt to add Moon states to an unchanged retail AIType does
+not prove that the donor AIType or its required dependencies cannot be ported.
+
+The failed `setscale` experiment and the model-count estimate only reject those
+two substitutes. They do not reject a focused extraction from the working T6
+Moon donor. Any blanket statement below that calls the complete port impossible,
+unreachable, or the engine's final limit is superseded by this correction.
+
+Current acceptance target: reproduce Declassified Moon's Wave Gun behavior on
+the BO2 maps where T6-QoL enables the weapon. Do not replace its levitation,
+swell, eye-blood, mist, sounds, death notetracks or cleanup with an instant kill
+or an invented approximation.
+
 Target: T6-QoL, starting at `34e61b2`, on TranZit, Nuketown, Die Rise and Mob
 of the Dead. The existing Buried/Origins exclusions still apply.
 

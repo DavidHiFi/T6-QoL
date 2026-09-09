@@ -587,3 +587,24 @@ zm_traverse_crawl : aliased restart missing_legs notify traverse_anim
 	traverse_garage_door_crawl		ai_zombie_crawl
 }
 
+
+// DLC5 Moon Wave Gun sizzle deaths
+zm_death_sizzle : restart notify death_anim
+{
+	ai_zombie_microwave_death_a
+	ai_zombie_microwave_death_b
+	ai_zombie_microwave_death_c
+	ai_zombie_microwave_death_walking_a
+	ai_zombie_microwave_death_walking_b
+	ai_zombie_microwave_death_walking_c
+}
+
+zm_death_sizzle_crawl : restart missing_legs notify death_anim
+{
+	ai_zombie_crawl_microwave_death_a
+	ai_zombie_crawl_microwave_death_b
+	ai_zombie_crawl_microwave_death_c
+	ai_zombie_crawl_microwave_death_walking_a
+	ai_zombie_crawl_microwave_death_walking_b
+	ai_zombie_crawl_microwave_death_walking_c
+}

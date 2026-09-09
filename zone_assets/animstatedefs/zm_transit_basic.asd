@@ -1035,3 +1035,23 @@ zm_riotshield_breakthrough_crawl : missing_legs notify riotshield_breakthrough_a
 	ai_zombie_crawl_riotshield_breakthrough_v1
 	//ai_zombie_crawl_riotshield_breakthrough_v2
 }
+// DLC5 Moon Wave Gun sizzle deaths
+zm_death_sizzle : restart notify death_anim
+{
+	ai_zombie_microwave_death_a
+	ai_zombie_microwave_death_b
+	ai_zombie_microwave_death_c
+	ai_zombie_microwave_death_walking_a
+	ai_zombie_microwave_death_walking_b
+	ai_zombie_microwave_death_walking_c
+}
+
+zm_death_sizzle_crawl : restart missing_legs notify death_anim
+{
+	ai_zombie_crawl_microwave_death_a
+	ai_zombie_crawl_microwave_death_b
+	ai_zombie_crawl_microwave_death_c
+	ai_zombie_crawl_microwave_death_walking_a
+	ai_zombie_crawl_microwave_death_walking_b
+	ai_zombie_crawl_microwave_death_walking_c
+}

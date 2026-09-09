@@ -555,4 +555,17 @@ ai_zombie_bus_front_window_climbup_from_inside
 	ai_zombie_crawl_riotshield_breakthrough_v1
 	//ai_zombie_crawl_riotshield_breakthrough_v2 
 	
+	// DLC5 Moon Wave Gun sizzle deaths
+	ai_zombie_microwave_death_a
+	ai_zombie_microwave_death_b
+	ai_zombie_microwave_death_c
+	ai_zombie_microwave_death_walking_a
+	ai_zombie_microwave_death_walking_b
+	ai_zombie_microwave_death_walking_c
+	ai_zombie_crawl_microwave_death_a
+	ai_zombie_crawl_microwave_death_b
+	ai_zombie_crawl_microwave_death_c
+	ai_zombie_crawl_microwave_death_walking_a
+	ai_zombie_crawl_microwave_death_walking_b
+	ai_zombie_crawl_microwave_death_walking_c
 } // end body

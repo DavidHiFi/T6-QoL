@@ -44,7 +44,14 @@
 //      (32/32 is zm_buried and 31/32 is zm_tomb - the two maps in the gate
 //      above.) Two 1-bit fields would fit with room to spare. The real blocker
 //      is the material, see 2. Do not restore the fields expecting the swell.
-//   2. THE SWELL IS UNREACHABLE, FOR TWO INDEPENDENT REASONS. Both measured
+//   2. SUPERSEDED 2026-09-10. The tests below only prove that Moon states do not
+//      work when added to an unchanged retail AIType and that retail materials
+//      lack Moon's swell constant. Zombies Declassified Beta 1 is installed and
+//      its native T6 zm_moon.ff is the authoritative donor for those AIType,
+//      animation, material and shader dependencies. These findings reject the
+//      incomplete retail-only attempt, not a focused donor-based port.
+//
+//      THE OLD RETAIL-ONLY FINDINGS WERE:
 //      2026-09-06, either one alone is fatal to it:
 //        a) THE ANIMATION. The zm_death_sizzle / zm_death_zap animstates live
 //           in Moon's aitypes; a stock aitype's compiled anim list cannot take
@@ -526,6 +533,14 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
 
     self.no_gib = 1;
     self.gibbed = 1;
+
+    // Start Moon's initial-hit response while the actor is still alive. The
+    // old port called the sound and blood thread after DoDamage(), which let
+    // normal corpse cleanup remove the actor before either effect could play.
+    // nodeathragdoll must also be set before the lethal damage for the body to
+    // remain available through the microwave cycle.
+    self.nodeathragdoll = 1;
+    self zmqol_mgun_microwave_initial_hit();
     self dodamage( self.health + 666, player.origin, player );
 
     if ( self.health <= 0 )
@@ -642,11 +657,25 @@ zmqol_mgun_pop()
     self playsound( "wpn_mgun_explode_zombie" );
 }
 
+// Server-side equivalent of Moon's initial-hit clientfield callback. Keep this
+// separate from the burst so the effects begin before lethal damage is applied.
+zmqol_mgun_microwave_initial_hit()
+{
+    self playsound( "wpn_mgun_dual_sizzle" );
+
+    v_eye = self gettagorigin( "J_Eyeball_LE" );
+    if ( isdefined( v_eye ) )
+        playfx( level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], v_eye );
+}
+
 microwavegun_handle_death_notetracks( note )
 {
+    // The Moon death animation owns the levitation and the exact expand ->
+    // explode timing. Do not add the fallback delay after its explode marker.
     if ( note == "explode" )
     {
-        self thread zmqol_mgun_microwave_burst();
+        self zmqol_mgun_pop();
+        self thread microwavegun_sizzle_death_ending();
     }
 }
 
@@ -685,19 +714,13 @@ microwavegun_sizzle_death_ending()
 // ============================================================================
 zmqol_mgun_microwave_burst()
 {
-    //  Keep the body still for the brief sizzle instead of ragdoll-flopping -
-    //  a microwaved zombie holds, then bursts. Safe: a plain field write.
-    self.nodeathragdoll = 1;
+    // Match microwavegun_bloat() in DLC5 Moon. Full rigs swell for 2500 ms;
+    // the client uses 1000 ms when J_SpineLower is unavailable.
+    duration = 2.5;
+    if ( !isdefined( self gettagorigin( "J_SpineLower" ) ) )
+        duration = 1.0;
 
-    self playsound( "wpn_mgun_dual_sizzle" );
-
-    v_eye = self gettagorigin( "J_Eyeball_LE" );
-    if ( isdefined( v_eye ) )
-        playfx( level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], v_eye );
-
-    //  0.5 s of microwave before the burst - long enough to read as a sizzle,
-    //  short enough that a fast-clearing round is not held up.
-    wait 0.5;
+    wait duration;
 
     if ( !isdefined( self ) )
         return;

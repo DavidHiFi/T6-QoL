@@ -805,3 +805,24 @@ zm_blundersplat_stun_crawl : aliased restart missing_legs notify blundersplat_st
 	acid_stun_a ai_zombie_crawl_death_v1
 	acid_stun_b ai_zombie_crawl_death_v2
 }
+
+// DLC5 Moon Wave Gun sizzle deaths
+zm_death_sizzle : restart notify death_anim
+{
+	ai_zombie_microwave_death_a
+	ai_zombie_microwave_death_b
+	ai_zombie_microwave_death_c
+	ai_zombie_microwave_death_walking_a
+	ai_zombie_microwave_death_walking_b
+	ai_zombie_microwave_death_walking_c
+}
+
+zm_death_sizzle_crawl : restart missing_legs notify death_anim
+{
+	ai_zombie_crawl_microwave_death_a
+	ai_zombie_crawl_microwave_death_b
+	ai_zombie_crawl_microwave_death_c
+	ai_zombie_crawl_microwave_death_walking_a
+	ai_zombie_crawl_microwave_death_walking_b
+	ai_zombie_crawl_microwave_death_walking_c
+}

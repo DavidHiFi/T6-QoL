@@ -6,6 +6,9 @@ Read the latest checkpoint in `../zm_qol - dev/.agents/` and preserve outstandin
 gameplay checks. These are local development references, not release payloads.
 
 - Check `git status` before editing; preserve existing user work.
+- Keep `main` stable. Perform fixes and features on short-lived task branches, and do not merge them until their required offline and gameplay checks pass.
+- Keep each commit limited to one coherent task. Separate unrelated existing changes instead of silently combining them.
+- Run the relevant checks again from the merged `main` commit before treating a change as released.
 - The five mod files are `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, and
   `mod.all.sabs`. Raw GSC/Lua sources are packed into `mod.iwd`.
 - `build.bat offline` packs and verifies locally. `build.bat` without arguments
