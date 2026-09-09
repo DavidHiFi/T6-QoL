@@ -2013,7 +2013,7 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- v2.14.24 - three-way, user request 2026-09-08. 1 = text only (a config
 	-- holding the old toggle's 1 lands here); 2 = "[Name] " in front of every
 	-- line. Read per line in zmqol_subtitles.gsc, nothing else reads it.
-	C(QolHudButtons, LocalClientIndex, "SUBTITLES",         "hud_subtitles",  "Spoken lines as text at the bottom of the screen. Yours on the bottom row, another player's above it.", {
+	C(QolHudButtons, LocalClientIndex, "SUBTITLES",         "hud_subtitles",  "Spoken lines as text at the bottom of the screen. Simultaneous voices stack without covering each other.", {
 		{ "OFF",               0 },
 		{ "SUBTITLES",         1 },
 		{ "SUBTITLES + NAMES", 2 }

@@ -580,8 +580,17 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             //  Moon: setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 )
             //  -> the client plays the mist at the spine and wpn_mgun_explode_zombie.
             //  Broadcast from here instead (banner point 1).
-            self zmqol_mgun_pop();
-            self thread microwavegun_sizzle_death_ending();
+            //
+            //  v2.15.11: THE SWELL ROUTE IS REMOVED. Boot 2026-09-09 loaded
+            //  TranZit with this mod and the engine rejected the script at LOAD:
+            //      **** Unresolved external : "setscale" with 1 parameters
+            //           in "scripts/zm/zapgun.gsc" at line 1 ****  -> SV_Shutdown
+            //  `setscale` is not a builtin on this engine, so its mere presence
+            //  in the compiled script aborts every map load - the dvar gate never
+            //  gets a chance to run. Route 4 (actor scale) is dead; the pop path
+            //  stays, now led by the microwave sizzle + blood (v2.15.13, see
+            //  zmqol_mgun_microwave_burst).
+            self thread zmqol_mgun_microwave_burst();
         }
         else
         {
@@ -637,8 +646,7 @@ microwavegun_handle_death_notetracks( note )
 {
     if ( note == "explode" )
     {
-        self zmqol_mgun_pop();
-        self thread microwavegun_sizzle_death_ending();
+        self thread zmqol_mgun_microwave_burst();
     }
 }
 
@@ -650,6 +658,52 @@ microwavegun_sizzle_death_ending()
     self ghost();
     wait 0.1;
     self self_delete();
+}
+
+// ============================================================================
+//  zmqol_mgun_microwave_burst  -  THE MICROWAVE SIZZLE THE POP WAS MISSING
+//                                                                 (v2.15.13)
+//  User, 2026-09-09: the combined Wave Gun should sound and bleed like the real
+//  gun - the microwave hum, the burst, and the blood - not a bare pop.
+//
+//  🛑 WHAT IS ADDED AND WHAT STILL CANNOT BE, both measured, not guessed:
+//   ADDED  - wpn_mgun_dual_sizzle (the microwave hum) and the blood-from-the-
+//            eyes fx, both already shipped in this mod's bank/fx but never wired
+//            on the instant-pop path; then, after a short sizzle, the existing
+//            burst: fx_sizzle_mist at the spine + wpn_mgun_explode_zombie.
+//   NOT ADDED - the float-up and the expand. The float-up is the zm_death_sizzle
+//            death ANIM, which a stock aitype's compiled ASD does not carry
+//            (hasanimstatefromasd is false everywhere here, §45). The expand is
+//            Moon's DLC5 swell material OR setscale(); retail's zombie material
+//            dumps "constants":[] and setscale is an UNRESOLVED EXTERNAL that
+//            crashed the TranZit map load on the 2026-09-09 boot. Both need DLC5
+//            assets stock maps do not have, so this is the audible/blood half of
+//            the effect - the most the stock-map engine can actually run.
+//
+//  Own thread per corpse (the caller already threads the kill), and every step
+//  is isdefined-guarded so a corpse cleaned up mid-sizzle just stops.
+// ============================================================================
+zmqol_mgun_microwave_burst()
+{
+    //  Keep the body still for the brief sizzle instead of ragdoll-flopping -
+    //  a microwaved zombie holds, then bursts. Safe: a plain field write.
+    self.nodeathragdoll = 1;
+
+    self playsound( "wpn_mgun_dual_sizzle" );
+
+    v_eye = self gettagorigin( "J_Eyeball_LE" );
+    if ( isdefined( v_eye ) )
+        playfx( level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], v_eye );
+
+    //  0.5 s of microwave before the burst - long enough to read as a sizzle,
+    //  short enough that a fast-clearing round is not held up.
+    wait 0.5;
+
+    if ( !isdefined( self ) )
+        return;
+
+    self zmqol_mgun_pop();
+    self microwavegun_sizzle_death_ending();
 }
 
 microwavegun_dw_zombie_hit_response_internal( mod, damageweapon, player )

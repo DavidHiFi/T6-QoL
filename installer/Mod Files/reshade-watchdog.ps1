@@ -38,6 +38,13 @@ param(
 $ErrorActionPreference = 'Stop'
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 
+#  v2.15.11 - the window is the only place this ever reported anything, and a
+#  window cannot be read after the fact or while the game is fullscreen. Mirror
+#  everything to a log next to the script so what the watchdog did is
+#  recoverable. Best-effort: a transcript failure must never stop the watchdog.
+$LogFile = Join-Path $PSScriptRoot 'reshade-watchdog.log'
+try { Start-Transcript -Path $LogFile -Append -ErrorAction Stop | Out-Null } catch { }
+
 $BinDir   = Join-Path $PlutoRoot 'bin'
 # 🛑 Must match $RESHADE_VAULT in qol-installer.ps1 exactly - see that file's
 # Act-InstallReShade for the writer side of this path.
@@ -115,6 +122,195 @@ function Restore-MissingReShade {
         }
     }
     return $restored
+}
+
+# -----------------------------------------------------------------------------
+#  v2.15.11 - THE GUARD ABOVE IS ONE-DIRECTIONAL. THIS IS THE OTHER DIRECTION.
+#
+#  User, 2026-09-09: "the reshade is now loading duplicates of levels.fx ... make
+#  sure the reshade watcher automatically fixes problems like missing shaders /
+#  duplicates / errors by itself".
+#
+#  v2.10.3's Get-ShaderNameIndex stops THIS SCRIPT from restoring a second copy.
+#  It cannot remove one that something else created, and something else does:
+#  RenoDXCommander writes bin\reshade-shaders too and lays SweetFX out as
+#  Shaders\SweetFX\SweetFX\*.fx. Measured 2026-09-09: 56 duplicate .fx across
+#  SweetFX\SweetFX, CrosireLegacy, CrosireMaster, DaodanShaders, Prod80,
+#  MaxG2DSimpleHDR and FubaxShaders, including the Levels.fx the user reported.
+#
+#  🛑 BYTE-IDENTICAL ONLY, AND .fx ONLY. Both limits are load-bearing:
+#    - Same NAME is not enough. 9 names in this tree (technicolor.fx,
+#      composition.fx, resizer.fx, smart_sharp.fx ...) are DIFFERENT shaders by
+#      different authors that happen to share a filename. Deleting by name would
+#      silently destroy real effects. Only an sha256 match is treated as a copy.
+#    - .fxh includes and .png textures are left alone. They resolve by name to
+#      identical content and never become a duplicate technique, so removing
+#      them is blast radius with no benefit. Measured: a naive "delete the
+#      nested X\X folders" would have destroyed 36 UNIQUE files - all of
+#      FXShaders' .fxh headers and the whole of SHADERDECK.
+#
+#  🛑 IDLE ONLY - NEVER WHILE A GAME IS RUNNING. ReShade compiles its effects
+#  while the renderer starts up; pulling a .fx out from under a live compile is
+#  exactly the "causing problems in the games themselves" this must not do. The
+#  loop only calls this when no game process is up, so the tree is always clean
+#  BEFORE the next launch and is never touched during one.
+#
+#  🛑 QUARANTINE, NOT DELETE. Files move to storage\t6\backups\reshade-duplicates
+#  keeping their relative path, the same way build.bat parks foreign scripts.
+#  Nothing this script removes is unrecoverable.
+# -----------------------------------------------------------------------------
+$QuarantineDir = Join-Path $PlutoRoot 'storage\t6\backups\reshade-duplicates'
+
+#  🛑 .NET DIRECTLY, NOT Get-FileHash. Measured 2026-09-09: under the shell this
+#  script actually runs in, every single one of the 539 hashes failed with
+#  "CommandNotFoundException: The term 'Get-FileHash' is not recognized" - the
+#  Microsoft.PowerShell.Utility cmdlet is not resolvable there, though it is from
+#  an ordinary prompt. Because Get-FileSha swallowed the error and returned
+#  $null, the caller saw zero hashable files and reported "no duplicates found"
+#  while two identical Levels.fx sat on disk. SHA256 off System.Security
+#  .Cryptography has no module dependency and cannot fail that way.
+$script:LastShaError = $null
+$script:Sha256 = [System.Security.Cryptography.SHA256]::Create()
+
+function Get-FileSha {
+    param([string] $Path)
+    $stream = $null
+    try {
+        $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+        $bytes  = $script:Sha256.ComputeHash($stream)
+        return [System.BitConverter]::ToString($bytes).Replace('-', '')
+    }
+    catch {
+        $script:LastShaError = ($_.Exception.GetType().Name + ': ' + $_.Exception.Message)
+        return $null
+    }
+    finally { if ($null -ne $stream) { $stream.Dispose() } }
+}
+
+function Remove-DuplicateShaders {
+    $shaders = Join-Path $BinDir 'reshade-shaders\Shaders'
+    if (-not (Test-Path -LiteralPath $shaders)) { return 0 }
+
+    $seen    = @{}     # "name|sha256" -> the path we are keeping
+    $removed = 0
+
+    # Shallowest path first, then shortest, so the copy that gets KEPT is stable
+    # run to run - the vendor root beats a nested duplicate every time.
+    $all = Get-ChildItem -LiteralPath $shaders -Recurse -File -Filter *.fx -ErrorAction SilentlyContinue |
+           Sort-Object @{ Expression = { ($_.FullName -split '\\').Count } }, @{ Expression = { $_.FullName.Length } }
+
+    $scanned = 0
+    $skipped = 0
+    foreach ($f in $all) {
+        $scanned++
+        $sha = Get-FileSha $f.FullName
+        if ($null -eq $sha) { $skipped++; continue }
+        $key = ($f.Name.ToLower() + '|' + $sha)
+
+        if ($seen.ContainsKey($key)) {
+            $rel  = $f.FullName.Substring($BinDir.Length).TrimStart('\')
+            $dest = Join-Path $QuarantineDir $rel
+            try {
+                $destDir = Split-Path -Parent $dest
+                if (-not (Test-Path -LiteralPath $destDir)) {
+                    New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+                }
+                Move-Item -LiteralPath $f.FullName -Destination $dest -Force
+                Write-Host ("  [{0}] Duplicate shader quarantined: {1} (identical to {2})" -f `
+                    (Get-Date -Format 'HH:mm:ss'), $rel, $seen[$key]) -ForegroundColor Yellow
+                $removed++
+            } catch {
+                Write-Host ("  [{0}] Could not quarantine {1}: {2}" -f `
+                    (Get-Date -Format 'HH:mm:ss'), $rel, $_.Exception.Message) -ForegroundColor Red
+            }
+        } else {
+            $seen[$key] = $f.FullName.Substring($shaders.Length).TrimStart('\')
+        }
+    }
+    if ($skipped -gt 0) {
+        Write-Host ("  [{0}] Shader scan: {1} file(s) could not be hashed and were skipped. Last error: {2}" -f `
+            (Get-Date -Format 'HH:mm:ss'), $skipped, $script:LastShaError) -ForegroundColor Red
+    }
+    Write-Host ("  [{0}] Shader scan: {1} .fx hashed, {2} unique, {3} quarantined." -f `
+        (Get-Date -Format 'HH:mm:ss'), $scanned, $seen.Count, $removed) -ForegroundColor DarkGray
+    return $removed
+}
+
+# A zero-byte .fx cannot compile and ReShade reports it as a hard error every
+# load. It is always breakage (an interrupted copy), never a real shader, so it
+# is quarantined on the same idle pass. Restore-MissingReShade then puts the
+# vault's good copy back on the next poll, which is the actual repair.
+function Remove-CorruptShaders {
+    $shaders = Join-Path $BinDir 'reshade-shaders\Shaders'
+    if (-not (Test-Path -LiteralPath $shaders)) { return 0 }
+    $removed = 0
+    Get-ChildItem -LiteralPath $shaders -Recurse -File -Filter *.fx -ErrorAction SilentlyContinue |
+        Where-Object { $_.Length -eq 0 } | ForEach-Object {
+            $rel  = $_.FullName.Substring($BinDir.Length).TrimStart('\')
+            $dest = Join-Path $QuarantineDir $rel
+            try {
+                $destDir = Split-Path -Parent $dest
+                if (-not (Test-Path -LiteralPath $destDir)) {
+                    New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+                }
+                Move-Item -LiteralPath $_.FullName -Destination $dest -Force
+                Write-Host ("  [{0}] Zero-byte shader quarantined: {1}" -f `
+                    (Get-Date -Format 'HH:mm:ss'), $rel) -ForegroundColor Yellow
+                $removed++
+            } catch { }
+        }
+    return $removed
+}
+
+# -----------------------------------------------------------------------------
+#  v2.15.11 - THE DUPLICATE THE FILE SWEEP CANNOT SEE.
+#
+#  User, 2026-09-09, with a screenshot of two "Levels [Levels.fx]" rows in the
+#  ReShade overlay WHILE only one Levels.fx existed on disk. Deduplicating files
+#  was necessary and not sufficient: the preset itself had
+#      Techniques=...,Levels@Levels.fx,Levels@Levels.fx,...
+#  four occurrences across Techniques and TechniqueSorting. ReShade enables a
+#  technique once per entry, so one file still renders twice and shows twice.
+#
+#  This is how the v2.10.3 note's "the preset's Levels@Levels.fx enables both"
+#  outlives the second file: removing the duplicate .fx leaves the preset's
+#  second reference behind, pointing at the surviving copy.
+#
+#  Order-preserving first-wins dedupe, and ONLY on these two keys - every other
+#  line (every slider value the user has tuned) is written back byte-for-byte.
+#  Idle-only for the same reason as the file sweep, plus one of its own:
+#  ReShade owns this file while it runs and rewrites it on AutoSavePreset.
+# -----------------------------------------------------------------------------
+function Repair-PresetDuplicates {
+    if (-not (Test-Path -LiteralPath $BinDir)) { return 0 }
+    $fixed = 0
+    Get-ChildItem -LiteralPath $BinDir -File -Filter *.ini -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            $lines   = Get-Content -LiteralPath $_.FullName -ErrorAction Stop
+            $changed = $false
+            $out = foreach ($line in $lines) {
+                $handled = $null
+                foreach ($key in @('Techniques','TechniqueSorting')) {
+                    if ($line.StartsWith($key + '=')) {
+                        $vals = $line.Substring($key.Length + 1) -split ',' | Where-Object { $_ -ne '' }
+                        $uniq = [System.Collections.Generic.List[string]]::new()
+                        foreach ($v in $vals) { if (-not $uniq.Contains($v)) { $uniq.Add($v) } }
+                        if ($uniq.Count -ne $vals.Count) { $changed = $true }
+                        $handled = $key + '=' + ($uniq -join ',')
+                        break
+                    }
+                }
+                if ($null -ne $handled) { $handled } else { $line }
+            }
+            if ($changed) {
+                Set-Content -LiteralPath $_.FullName -Value $out -Encoding UTF8
+                Write-Host ("  [{0}] Preset repaired: removed duplicate technique entries from {1}" -f `
+                    (Get-Date -Format 'HH:mm:ss'), $_.Name) -ForegroundColor Yellow
+                $fixed++
+            }
+        } catch { }
+    }
+    return $fixed
 }
 
 # -----------------------------------------------------------------------------
@@ -210,6 +406,23 @@ $lastProcState  = $null
 $lastHeartbeat  = Get-Date -Year 1970
 $HeartbeatSeconds = 15
 
+#  v2.15.11 - how often the idle tidy runs. Only ever while NO game is up, so
+#  the cost is invisible and a compile can never race it. 60 s is far more often
+#  than RenoDXCommander can realistically rewrite the folder.
+$DedupeSeconds = 60
+$lastDedupe    = Get-Date -Year 1970
+
+#  One sweep at startup, before Plutonium is even opened - this is the pass that
+#  normally does the work, since the tree is only ever dirtied between sessions.
+$d = (Remove-DuplicateShaders) + (Remove-CorruptShaders) + (Repair-PresetDuplicates)
+$fxSeen = @(Get-ChildItem -LiteralPath (Join-Path $BinDir 'reshade-shaders\Shaders') -Recurse -File -Filter *.fx -ErrorAction SilentlyContinue).Count
+if ($d -gt 0) {
+    Write-Host ("  [{0}] Startup tidy: {1} duplicate/corrupt shader(s) quarantined, {2} .fx remain." -f (Get-Date -Format 'HH:mm:ss'), $d, $fxSeen) -ForegroundColor Green
+} else {
+    Write-Host ("  [{0}] Startup tidy: no duplicate or corrupt shaders found ({1} .fx scanned)." -f (Get-Date -Format 'HH:mm:ss'), $fxSeen) -ForegroundColor DarkGray
+}
+$lastDedupe = Get-Date
+
 while ($true) {
     $running = Test-AnyProcess $ProcNames
 
@@ -232,6 +445,20 @@ while ($true) {
         } elseif (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $HeartbeatSeconds) {
             Write-Host ("  [{0}] Watching - bin is intact, nothing to restore." -f (Get-Date -Format 'HH:mm:ss')) -ForegroundColor DarkGray
             $lastHeartbeat = Get-Date
+        }
+    }
+    else {
+        #  🛑 IDLE ONLY. See the banner over Remove-DuplicateShaders: this must
+        #  never run while a game is up, because ReShade compiles its effects
+        #  during renderer startup and removing a .fx mid-compile is precisely
+        #  the in-game breakage this feature is supposed to prevent. Sitting in
+        #  the else branch is the whole safety guarantee, not a tidiness choice.
+        if (((Get-Date) - $lastDedupe).TotalSeconds -ge $DedupeSeconds) {
+            $d = (Remove-DuplicateShaders) + (Remove-CorruptShaders) + (Repair-PresetDuplicates)
+            if ($d -gt 0) {
+                Write-Host ("  [{0}] Tidied {1} duplicate/corrupt shader(s) - ReShade will load one copy of each next launch." -f (Get-Date -Format 'HH:mm:ss'), $d) -ForegroundColor Green
+            }
+            $lastDedupe = Get-Date
         }
     }
 

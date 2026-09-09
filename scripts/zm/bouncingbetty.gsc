@@ -459,8 +459,23 @@ zmqol_betty_max_ammo_watch()
     {
         self waittill( "zmb_max_ammo" );
 
+        //  🛑 v2.15.13 - THE ONE-TIME BUG. THROWING BOTH BETTIES REMOVES THE
+        //  WEAPON, so Max Ammo found nothing to refill and `continue`'d past it -
+        //  the Betties never came back and the HUD icon stayed gone. A placeable
+        //  mine at 0 is dropped from the inventory exactly like a claymore, so
+        //  getweaponammoclip/givemaxammo have no weapon to act on. When it is
+        //  gone, Max Ammo must RE-GIVE it, not skip it - the same giveweapon +
+        //  bind + stock the setup does, which restores the icon and the count.
         if ( !self hasweapon( "bouncingbetty_zm" ) )
+        {
+            self giveweapon( "bouncingbetty_zm" );
+            self set_player_placeable_mine( "bouncingbetty_zm" );
+            self setactionslot( 4, "weapon", "bouncingbetty_zm" );
+            self setweaponammostock( "bouncingbetty_zm", 2 );
+            self setweaponammoclip( "bouncingbetty_zm", 2 );
+            println( "[zm_qol] betty max ammo: weapon was gone (both thrown) - re-given and restocked to 2" );
             continue;
+        }
 
         n_clip = self getweaponammoclip( "bouncingbetty_zm" );
         n_stock = self getweaponammostock( "bouncingbetty_zm" );

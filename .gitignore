@@ -148,6 +148,7 @@ parsed/
 # The installer's own run log — it records local paths and the user's install
 # history. It is written next to qol-installer.ps1, which lives in Mod Files\.
 installer/Mod Files/installer.log
+installer/Mod Files/reshade-watchdog.log
 
 # v2.3.2 - build.bat now deploys the 5 built mod files into installer\Mod
 # Files\ too (Act-InstallMod copies FROM there, and a stale copy sitting there

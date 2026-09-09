@@ -129,6 +129,24 @@ CoD.Class.ZmQolRestartPressed = function (IngameMenuWidget, ClientInstance)
 	Engine.Exec(ClientInstance.controller, "map_restart")
 end
 
+-- v2.15.12 - FAST RESTART, re-added after a LIVE re-test. User, 2026-09-09.
+--
+-- 🛑 THIS WAS REMOVED IN v2.2.6 BECAUSE fast_restart CRASHED 3/3 - and that
+-- removal was correct FOR THAT BUILD. It is re-added now only because the
+-- command was re-tested on Plutonium r5346 on 2026-09-09 and did NOT crash:
+-- sent once from the CLI into a live TranZit match, the game stayed on the same
+-- pid, reloaded the zones and came back with sv_running 1 and no crash dump and
+-- no console error. Plutonium fixed the engine bug the old note's minidump
+-- described (null read at 0x4) some time after 2026-08-23. Same shape as
+-- RESTART GAME above: one Engine.Exec of one command, no popup, no busy-block -
+-- the popup + busy-block was the OTHER half of the old freeze and stays gone.
+--
+-- 📝 If a future Plutonium update reintroduces the crash, this is the row to
+-- pull again; map_restart (RESTART GAME) is the crash-free full-reload fallback.
+CoD.Class.ZmQolFastRestartPressed = function (IngameMenuWidget, ClientInstance)
+	Engine.Exec(ClientInstance.controller, "fast_restart")
+end
+
 CoD.Class.ZmQolInstantExitPressed = function (IngameMenuWidget, ClientInstance)
 	Engine.Exec(ClientInstance.controller, "disconnect")
 end
@@ -186,6 +204,11 @@ CoD.Class.PrepareClassButtonList = function (LocalClientIndex, IngameMenuWidget)
 			-- the popup are both stock; see restartgamepopupzombie.lua for the
 			-- two lines that had to change in the popup itself.
 			CoD.Class.AddButton(IngameMenuWidget, Engine.Localize("MENU_RESTART_LEVEL_CAPS"), "zmqol_restart_game")
+			-- v2.15.12 - FAST RESTART, directly under RESTART GAME. Re-added after
+			-- the 2026-09-09 live re-test proved fast_restart no longer crashes on
+			-- r5346 (see the handler banner above). Engine.Localize returns the key
+			-- itself when a string is absent, so the literal reads as the row text.
+			CoD.Class.AddButton(IngameMenuWidget, Engine.Localize("FAST RESTART"), "zmqol_fast_restart")
 			-- 🛑 v2.2.6 - THE FAST RESTART ROW IS GONE, AND THE ROW WAS NEVER THE BUG.
 			-- The user reproduced the crash by typing `fast_restart` into the console
 			-- with no menu involved (2026-08-23), which retires every theory that
@@ -284,6 +307,7 @@ LUI.createMenu.class = function (LocalClientIndex)
 		IngameMenuWidget:registerEventHandler("close_all_ingame_menus", CoD.InGameMenu.CloseAllInGameMenus)
 	end
 	IngameMenuWidget:registerEventHandler("zmqol_restart_game", CoD.Class.ZmQolRestartPressed)
+	IngameMenuWidget:registerEventHandler("zmqol_fast_restart", CoD.Class.ZmQolFastRestartPressed)
 	IngameMenuWidget:registerEventHandler("zmqol_instant_exit", CoD.Class.ZmQolInstantExitPressed)
 	IngameMenuWidget:registerEventHandler("zmqol_quit_desktop", CoD.Class.ZmQolQuitToDesktopPressed)
 	if CoD.isZombie == true then

@@ -11856,6 +11856,18 @@ zmqol_kill_horde()
         if ( is_magic_bullet_shield_enabled( a_enemies[i] ) )
             continue;
 
+        //  🛑 v2.15.12 - CLAIM THE KILL, or no_bleedout undoes the whole point.
+        //  These kills are a bare attacker-less dodamage, which surfaces in the
+        //  "death" notify as `worldspawn`. The mod's own no_bleedout system
+        //  (zmqol_nb_death_notify) reads that as "nothing killed it" and OWES the
+        //  zombie back to the round (zombie_total++), so with no_bleedout ON the
+        //  horde was refunded as fast as it was cleared: `.endround` re-spawned
+        //  the round and `.round N` parked at N-1 and never closed to reach N.
+        //  Setting marked_for_death is exactly what stock's Nuke does before its
+        //  identical dodamage (see no_bleedout's :20853 gate) - it flags the
+        //  zombie as claimed by a killer, so nothing is owed back and the round
+        //  empties for real. Fixes both .round and .endround at their shared root.
+        a_enemies[i].marked_for_death = 1;
         a_enemies[i].health = 10000;
         a_enemies[i] dodamage( a_enemies[i].health + 666, a_enemies[i].origin );
         n_killed++;

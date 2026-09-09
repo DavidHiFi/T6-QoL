@@ -30,6 +30,23 @@ material,loadscreen_zm_transit_zstandard_diner
 material,loadscreen_zm_prison_zclassic_prison
 
 // ============================================================================
+//  SCOREBOARD SCROLL GLYPHS - prevent the game-over checkerboard       v2.15.14
+// ----------------------------------------------------------------------------
+//  User's live final-audit run, 2026-09-09: the game-over scoreboard drew a
+//  checkerboard box. The same run's console names the four missing materials
+//  together, immediately after scoreboard.lua loads:
+//      hudscoreboardscroll_uparrow / upkey / downarrow / downkey
+//  All four exist in retail common_mp.ff (OAT inventory lines 8528-8534), but
+//  that MP zone is not resident in this Zombies scoreboard path. build_ff.bat
+//  already loads common_mp.ff as a donor, so declaring them here copies their
+//  complete material/image dependencies into mod.ff for every Zombies map.
+// ============================================================================
+material,hudscoreboardscroll_uparrow
+material,hudscoreboardscroll_upkey
+material,hudscoreboardscroll_downarrow
+material,hudscoreboardscroll_downkey
+
+// ============================================================================
 //  MODELS DINER SPAWNS THAT ITS MAP DOES NOT SHIP
 // ----------------------------------------------------------------------------
 //  Both exist in the stock game, but only inside the per-gametype "so_" files:

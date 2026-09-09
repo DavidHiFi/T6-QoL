@@ -101,8 +101,9 @@
 //      of the clip's real length from soundgetplaybacktime(), never under
 //      1.2 s. settext() only on a new row, never on a tick; the hide is a
 //      fade. Two hudelems per player, created on first use.
-//    * NAMES. hud_subtitles 2 puts "[Name] " in front of EVERY line, your own
-//      included; 1 shows bare text in both slots (the slot's row and colour
+//    * NAMES. hud_subtitles 2 puts "[Name] " in front of EVERY displayed
+//      chunk, including later chunks of a long quote and your own lines; 1
+//      shows bare text in both slots (the slot's row and colour
 //      already say whose it is). Nothing else reads the value: any non-zero is
 //      "on" to zmqol_subs_enabled(), so a config holding the old 1 still
 //      works.
@@ -797,6 +798,8 @@ zmqol_subs_ensure_hud()
     self.zmqol_subs_st_kind = [];
     self.zmqol_subs_st_id = [];
     self.zmqol_subs_st_fade = [];
+    self.zmqol_subs_st_fade_end = [];
+    self.zmqol_subs_st_key = [];
 
     if ( !isdefined( self.zmqol_subs_next_id ) )
         self.zmqol_subs_next_id = 1;
@@ -880,6 +883,8 @@ zmqol_subs_stack_remove( n_id )
     a_kind = [];
     a_id = [];
     a_fade = [];
+    a_fade_end = [];
+    a_key = [];
 
     for ( i = 0; i < self.zmqol_subs_st_id.size; i++ )
     {
@@ -890,12 +895,16 @@ zmqol_subs_stack_remove( n_id )
         a_kind[a_kind.size] = self.zmqol_subs_st_kind[i];
         a_id[a_id.size] = self.zmqol_subs_st_id[i];
         a_fade[a_fade.size] = self.zmqol_subs_st_fade[i];
+        a_fade_end[a_fade_end.size] = self.zmqol_subs_st_fade_end[i];
+        a_key[a_key.size] = self.zmqol_subs_st_key[i];
     }
 
     self.zmqol_subs_st_text = a_text;
     self.zmqol_subs_st_kind = a_kind;
     self.zmqol_subs_st_id = a_id;
     self.zmqol_subs_st_fade = a_fade;
+    self.zmqol_subs_st_fade_end = a_fade_end;
+    self.zmqol_subs_st_key = a_key;
 }
 
 //  Bottom-up: slot i into element i, blank every element with no slot.
@@ -908,6 +917,8 @@ zmqol_subs_redraw()
 {
     if ( !isdefined( self.zmqol_subs_hud ) || !isdefined( self.zmqol_subs_st_id ) )
         return;
+
+    n_now = gettime();
 
     for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
     {
@@ -930,7 +941,31 @@ zmqol_subs_redraw()
         e_line settext( self.zmqol_subs_st_text[i] );
 
         if ( !self.zmqol_subs_st_fade[i] )
+        {
             e_line.alpha = 1;
+            continue;
+        }
+
+        // A fading caption can move down when an older row disappears. Resume
+        // the same fade on its new HUD element for the exact time remaining;
+        // otherwise the fade stays behind on the vacated row and the caption
+        // vanishes early.
+        n_left = self.zmqol_subs_st_fade_end[i] - n_now;
+
+        if ( n_left <= 0 )
+        {
+            e_line.alpha = 0;
+            continue;
+        }
+
+        n_alpha = n_left / 250.0;
+
+        if ( n_alpha > 1 )
+            n_alpha = 1;
+
+        e_line.alpha = n_alpha;
+        e_line fadeovertime( n_left * 0.001 );
+        e_line.alpha = 0;
     }
 }
 
@@ -941,12 +976,39 @@ zmqol_subs_redraw()
 zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
 {
     self endon( "disconnect" );
-    self endon( "zmqol_subs_reset" );
 
     if ( !isdefined( str_kind ) )
         str_kind = "own";
 
+    // Build/reset the HUD before subscribing this thread to the reset notify.
+    // If the row-count dvar changed, ensure_hud() must be allowed to finish the
+    // rebuild while its notify ends only the older caption threads.
     self zmqol_subs_ensure_hud();
+    self endon( "zmqol_subs_reset" );
+
+    //  🛑 v2.15.13 - DE-DUP THE SAME CAPTION. A power-up
+    //  like Blood Money is announced twice: once by stock's leaderdialog
+    //  (bonus_points -> vox_zmba_powerup_blood_money, captioned by the
+    //  playleaderdialogonplayer hook) and once by this mod's own guaranteed line
+    //  (vox_zmba_qol_powerup_blood_money, added because stock's AUDIO drops when
+    //  busy). Both resolve to the identical text "Blood Money." and fire in the
+    //  same grab, so the player saw it twice. Collapsing an EXACT text match
+    //  within 1.5 s shows it once; the window is short enough that a genuinely
+    //  repeated line a moment later is unaffected. The active-stack check also
+    //  prevents an identical long caption from occupying two visible rows even
+    //  when the second delivery arrives after the short time window.
+    for ( i = 0; i < self.zmqol_subs_st_key.size; i++ )
+    {
+        if ( self.zmqol_subs_st_key[i] == str_text )
+            return;
+    }
+
+    n_now = gettime();
+    if ( isdefined( self.zmqol_subs_dedup_text ) && self.zmqol_subs_dedup_text == str_text &&
+         isdefined( self.zmqol_subs_dedup_ms ) && ( n_now - self.zmqol_subs_dedup_ms ) < 1500 )
+        return;
+    self.zmqol_subs_dedup_text = str_text;
+    self.zmqol_subs_dedup_ms = n_now;
 
     //  Pages ("|") of rows ("~") flattened to chunks; a chunk is one screenful.
     a_rows = [];
@@ -997,6 +1059,8 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
     self.zmqol_subs_st_kind[n_slot] = str_kind;
     self.zmqol_subs_st_id[n_slot] = n_id;
     self.zmqol_subs_st_fade[n_slot] = 0;
+    self.zmqol_subs_st_fade_end[n_slot] = 0;
+    self.zmqol_subs_st_key[n_slot] = str_text;
 
     self zmqol_subs_redraw();
 
@@ -1018,6 +1082,10 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
         if ( i + 1 < a_rows.size )
         {
             str_row = a_rows[i + 1];
+
+            if ( isdefined( str_prefix ) && str_prefix != "" )
+                str_row = str_prefix + str_row;
+
             self.zmqol_subs_st_text[n_at] = str_row;
             self zmqol_subs_redraw();
         }
@@ -1027,15 +1095,8 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
     //  *"make sure they're persistent and smooth"*. Marked fading first so a
     //  line starting underneath cannot snap this one back to full alpha.
     //
-    //  📝 ONE ACCEPTED EDGE, stated rather than left to be re-found: the fade
-    //  runs on the element this line occupies WHEN THE FADE STARTS. If the line
-    //  below it ends inside that same 0.25 s, this line slides down a row
-    //  mid-fade and its remaining fade is left behind on the element it just
-    //  vacated, so it can vanish up to 0.25 s early. It needs two lines on
-    //  screen ending within a quarter second of each other, it costs a quarter
-    //  second of fade on one caption, and the alternative - alpha driven from
-    //  the redraw instead of fadeovertime - would re-time every fade in this
-    //  file to chase it. Left deliberately.
+    //  Fade deadline is stored with the slot. If the slot slides down during
+    //  these 250 ms, redraw resumes the remaining fade on its new HUD element.
     wait 0.3;
 
     n_at = self zmqol_subs_stack_index( n_id );
@@ -1044,14 +1105,8 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
         return;
 
     self.zmqol_subs_st_fade[n_at] = 1;
-
-    e_line = self.zmqol_subs_hud[n_at];
-
-    if ( isdefined( e_line ) )
-    {
-        e_line fadeovertime( 0.25 );
-        e_line.alpha = 0;
-    }
+    self.zmqol_subs_st_fade_end[n_at] = gettime() + 250;
+    self zmqol_subs_redraw();
 
     wait 0.25;
 
