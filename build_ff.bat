@@ -34,7 +34,7 @@ set "PROJ=%~dp0"
 if "%PROJ:~-1%"=="\" set "PROJ=%PROJ:~0,-1%"
 
 REM --- OpenAssetTools ---------------------------------------------------------
-if not defined OAT_BASE set "OAT_BASE=H:\Claude\Resources\oat-windows"
+if not defined OAT_BASE set "OAT_BASE=H:\Plutonium\tools\oat-windows"
 if not exist "%OAT_BASE%\Linker.exe" (
     echo   ERROR: Linker.exe not found in "%OAT_BASE%".
     echo          Set OAT_BASE to your OpenAssetTools folder and re-run.
@@ -404,7 +404,7 @@ REM  🌟 zone_source\wavegun_donor\mod.ff (v2.10.14) sits right after it, under
 REM  the same safety argument: it is a 191-asset donor (the 6 Wave Gun xmodels,
 REM  their 2 materials + images + 2 DLC5 techsets, hud_icon_colt, 49 viewmodel
 REM  xanims, 28 fx and the fx materials) copied out of Zombies Declassified's
-REM  zm_moon.ff with the patched OAT in H:\Claude\Resources\oat-dlc5 (recipe beside it), so
+REM  zm_moon.ff with the patched OAT in H:\Plutonium\tools\oat-dlc5 (recipe beside it), so
 REM  loaded at the tail it can only supply names no zombies fastfile above offers.
 REM  Its one shared name, mc/mtl_zombie_teleporter_glow, resolves from the existing
 REM  owner for that reason. A/B the asset list if it moves. (Replaced the v2.9.18
@@ -413,7 +413,7 @@ REM
 REM  🌟 zone_source\bonfire_donor\mod.ff (v2.12.0) is the same idea, two assets wide: the
 REM  BONFIRE SALE pickup model zombie_pickup_bonfire and the HUD countdown material
 REM  zom_icon_bonfire, copied out of Zombies Declassified's zm_pentagon.ff ("Five" - the only
-REM  map in any Call of Duty that ships this power-up) with the patched OAT in H:\Claude\Resources\oat-dlc5.
+REM  map in any Call of Duty that ships this power-up) with the patched OAT in H:\Plutonium\tools\oat-dlc5.
 REM  Recipe in zone_source\bonfire_donor\how_this_was_built.zone.txt.
 REM  🛑 BOTH NAMES ARE ABSENT FROM ALL EIGHT ZOMBIES FASTFILES - measured 2026-09-05 with
 REM  Unlinker --list over zm_transit, zm_nuked, zm_highrise, zm_prison, zm_buried, zm_tomb,

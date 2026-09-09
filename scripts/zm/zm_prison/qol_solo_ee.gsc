@@ -14,7 +14,7 @@
 //  was left off the row's map list. It is now written from Treyarch's own
 //  scripts, and BO2-Reimagined is the working precedent - it lifts the same two
 //  gates, in the same two functions, by the same replaceFunc route
-//  (Resources\BO2-Reimagined\scripts\zm\zm_prison\zm_prison_reimagined.gsc:43-44).
+//  (t6\reference\BO2-Reimagined\scripts\zm\zm_prison\zm_prison_reimagined.gsc:43-44).
 //
 //  ⭐ IT DOES NOTHING UNLESS THE LOBBY ROW SAYS SO. `solo_ee` is written by the
 //  SOLO EASTER EGGS row in ui_mp/t6/menus/privategamelobby_project.lua and
@@ -44,10 +44,10 @@
 //       solo press is swallowed silently, with no message and no sound.
 //
 //  Verified identical in three independent dumps of the stock script:
-//    Resources\t6 modding starter kit\reference\gsc-dump\...\zm_prison_sq_final.gsc:267,386
-//    Resources\t6-scripts\...\zm_prison_sq_final.gsc:267,386            (md5-identical to the above)
-//    Resources\COD-GSC-Source\BO2-GSC\maps\mp\zm_prison_sq_final.gsc:255,358
-//  and in the patch zone's own copy (Resources\BO2-Raw-files\Decompiled\
+//    t6\reference\t6 modding starter kit\reference\gsc-dump\...\zm_prison_sq_final.gsc:267,386
+//    t6\reference\t6-scripts\...\zm_prison_sq_final.gsc:267,386            (md5-identical to the above)
+//    t6\reference\COD-GSC-Source\BO2-GSC\maps\mp\zm_prison_sq_final.gsc:255,358
+//  and in the patch zone's own copy (t6\reference\BO2-Raw-files\Decompiled\
 //  zm_prison_patch\...:275,406 - rendered as `while (...) { continue; }` there,
 //  which is the decompiler's shape for `if (...) continue;`, per CLAUDE.md's
 //  rule about branch-mangled decompiles).

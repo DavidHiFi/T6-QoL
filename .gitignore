@@ -65,7 +65,7 @@ mod.iwd
 # The upscaled / BO3-style texture pack (2,852 .iwi, ~2.1 GB) that ships inside
 # mod.iwd. NOT tracked: it would add 2.1 GB to a repo that is otherwise ~86 MB,
 # and it is not this project's work - the master copy is
-#   H:\Claude\Projects Sources\add textures to mod
+#   H:\Plutonium\t6\assets\add textures to mod
 #
 # 🛑 This rule does NOT untrack the mod's own 64 images. gitignore never affects
 # files git already tracks, and those 64 were committed long before the pack
@@ -123,7 +123,7 @@ Optionals.zip
 # ============================================================================
 #  Development notes and agent state — moved OUT of this folder 2026-08-20 at
 #  the user's request, to keep the repo to the mod's own source. They now live
-#  in the sibling folder  "Projects Sources\zm_qol - dev\"  and are NOT public:
+#  in the sibling folder  "H:\Plutonium\t6\mods\zm_qol - dev\"  and are NOT public:
 #      .agents\            checkpoints + QUEUE.md / QUEUE_LIST.md
 #      CLAUDE.md           working practice for this project
 #      AI_CONTEXT.md       GSC/T6 primer

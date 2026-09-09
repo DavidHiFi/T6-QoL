@@ -22,7 +22,7 @@ REM  RUN THIS BEFORE build_ff.bat WHENEVER THE RAY GUN ART IS TOUCHED.
 REM ============================================================================
 setlocal
 set "PROJ=%~dp0"
-set "OAT=%PROJ%..\..\Resources\oat-windows"
+set "OAT=%PROJ%..\..\..\tools\oat-windows"
 set "BO2=F:\SteamLibrary\steamapps\common\Call of Duty Black Ops II"
 if not exist "%OAT%\Linker.exe" ( echo ERROR: Linker.exe not found. & exit /b 1 )
 set "TMPSRC=%TEMP%\zmqol_raygun_src"

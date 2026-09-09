@@ -20,7 +20,7 @@ REM    declare and ZERO overlap with its raw sources in zone_assets\.
 REM ============================================================================
 setlocal
 set "PROJ=%~dp0"
-set "OAT=%PROJ%..\..\Resources\oat-windows"
+set "OAT=%PROJ%..\..\..\tools\oat-windows"
 set "BO2=F:\SteamLibrary\steamapps\common\Call of Duty Black Ops II"
 if not exist "%OAT%\Linker.exe" ( echo ERROR: Linker.exe not found. & exit /b 1 )
 set "TMPSRC=%TEMP%\zmqol_wpnfix_src"

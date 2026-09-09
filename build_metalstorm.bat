@@ -35,9 +35,9 @@ REM  with ZERO rows added to mod.all, and the user's pack keeps winning.
 REM ============================================================================
 setlocal
 set "PROJ=%~dp0"
-set "OAT=%PROJ%..\..\Resources\oat-windows"
+set "OAT=%PROJ%..\..\..\tools\oat-windows"
 set "BO2=F:\SteamLibrary\steamapps\common\Call of Duty Black Ops II"
-set "SRCFF=%PROJ%..\..\Resources\BO2-Reimagined\zone\all\weapons!metalstorm_mms_sp.ff"
+set "SRCFF=%PROJ%..\..\reference\BO2-Reimagined\zone\all\weapons!metalstorm_mms_sp.ff"
 
 if not exist "%OAT%\Linker.exe" ( echo   ERROR: Linker.exe not found. & exit /b 1 )
 if not exist "%SRCFF%" ( echo   ERROR: donor fastfile not found: "%SRCFF%" & exit /b 1 )
