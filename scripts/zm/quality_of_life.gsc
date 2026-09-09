@@ -9055,12 +9055,18 @@ zmqol_give_wonder_weapon( str_weapon, str_which, str_name )
     // and plays the pickup sound. Routing through it makes the console command
     // behave exactly like pulling the gun out of the box, which is the whole point.
     //
-    // 📝 It also handles the already-holding case itself: givestartammo() then
-    // switchtoweapon(), so no separate refill branch is needed here.
-    // maps\mp\zombies\_zm* is globally safe to reference from a root script
-    // (AI_CONTEXT rule 2), so this is legal from quality_of_life.gsc.
-    self maps\mp\zombies\_zm_weapons::weapon_give( str_weapon );
-    self iprintln( "^2[zm_qol] gave ^7" + str_name );
+    // 📝 maps\mp\zombies\_zm* is globally safe to reference from a root
+    // script (AI_CONTEXT rule 2), so this is legal from quality_of_life.gsc.
+    //
+    // 🛑 v2.15.5 - THROUGH zmqol_give_or_refill(), not weapon_give() raw. The
+    // note that used to sit here said weapon_give "handles the already-holding
+    // case itself" - it does, but only on an EXACT name match, so asking for the
+    // base gun while holding the Pack-a-Punched one handed over a second copy.
+    // See the banner over zmqol_held_twin().
+    if ( self zmqol_give_or_refill( str_weapon ) )
+        self iprintln( "^2[zm_qol] refilled ^7" + str_name );
+    else
+        self iprintln( "^2[zm_qol] gave ^7" + str_name );
 }
 
 // ============================================================================
@@ -9388,6 +9394,131 @@ zmqol_iprintln_safe( e_player, str_msg )
 {
     if ( isdefined( e_player ) && isplayer( e_player ) )
         e_player iprintln( str_msg );
+}
+
+// ============================================================================
+//  zmqol_held_twin / zmqol_give_or_refill  -  ONE GUN, ONE COPY      (v2.15.5)
+//
+//  User, 2026-09-09, with a screenshot of an unpacked RPG-7 AND a packed Rocket
+//  Propelled Grievance held at the same time: *"i gave myself the rpg twice and
+//  i had the packed one and an unpacked one, make sure you cant have 2 of the
+//  same weapon, grabbing the same weapon from the box is meant to just be an
+//  ammo refill for the weapon."*
+//
+//  🌟 WHERE THE BUG ACTUALLY WAS - MEASURED, AND IT IS NOT THE BOX.
+//  The box has been correct since v1.63.3: _zm_magicbox::treasure_chest_give_
+//  weapon() (this mod's own copy) intercepts a re-pull, finds the held copy with
+//  get_weapon_with_attachments() and calls givemaxammo() instead of handing over
+//  a second gun. That path was never broken.
+//
+//  The `.give` commands never reach it. They call _zm_weapons::weapon_give()
+//  directly, and stock's own "already holding it" branch there is
+//      if ( self hasweapon( weapon ) ) { givestartammo(); switchtoweapon(); return; }
+//  - an EXACT-NAME test. Hold "rpg_upgraded_zm+<att>" and ask for "rpg_zm" and it
+//  is false, so the give falls through and you end up holding both. Stock never
+//  hits this because its box gate (has_weapon_or_upgrade) blocks the re-pull long
+//  before the give; this mod lifts that gate on purpose for NO BOX LIMITS, which
+//  is what makes the `.give` hole reachable.
+//
+//  🛑 THE THREE CASES, AND WHY THE THIRD IS NOT A REFILL:
+//    A  given what you hold          -> refill        (stock already did this)
+//    B  given the BASE, holding PaP  -> refill the PaP copy. Never downgrade -
+//                                       the same rule treasure_chest_give_weapon
+//                                       and Origins' custom_swap_weapon follow.
+//    C  given the PaP, holding BASE  -> a real upgrade, so take the base away and
+//                                       hand over the packed gun. NOT a refill:
+//                                       `.give <w> pap` is an explicit request
+//                                       for the packed version and must deliver
+//                                       it, it just must not leave you holding
+//                                       both halves.
+//
+//  📝 get_weapon_with_attachments(), never hasweapon(). This mod sets
+//  level.zombiemode_reusing_pack_a_punch = 1, so a packed gun is really held as
+//  "<name>+<attachment>" and every exact-name test silently fails - the v1.63.3
+//  case history in _zm_magicbox.gsc is the same trap, found the hard way on the
+//  KSG and the LSAT.
+// ============================================================================
+zmqol_held_twin( str_weapon )
+{
+    if ( !isdefined( str_weapon ) || str_weapon == "" )
+        return "";
+
+    //  the weapon itself, attachments and all
+    str_held = self maps\mp\zombies\_zm_weapons::get_weapon_with_attachments( str_weapon );
+
+    if ( isdefined( str_held ) )
+        return str_held;
+
+    str_base = maps\mp\zombies\_zm_weapons::get_base_name( str_weapon );
+
+    //  case B - asked for the base, already holding its Pack-a-Punched copy
+    if ( isdefined( level.zombie_weapons ) && isdefined( level.zombie_weapons[ str_base ] ) &&
+         isdefined( level.zombie_weapons[ str_base ].upgrade_name ) )
+    {
+        str_held = self maps\mp\zombies\_zm_weapons::get_weapon_with_attachments( level.zombie_weapons[ str_base ].upgrade_name );
+
+        if ( isdefined( str_held ) )
+            return str_held;
+    }
+
+    return "";
+}
+
+//  The base gun whose upgrade is str_weapon, or "" - stock's own reverse index,
+//  set by add_zombie_weapon( base, upgrade, ... ).
+zmqol_base_of_upgrade( str_weapon )
+{
+    if ( !isdefined( str_weapon ) || str_weapon == "" || !isdefined( level.zombie_weapons_upgraded ) )
+        return "";
+
+    str_base = maps\mp\zombies\_zm_weapons::get_base_name( str_weapon );
+
+    if ( isdefined( level.zombie_weapons_upgraded[ str_base ] ) )
+        return level.zombie_weapons_upgraded[ str_base ];
+
+    return "";
+}
+
+//  Every `.give` route funnels through here instead of calling weapon_give()
+//  raw. Returns 1 if it refilled rather than gave, so the caller can say so.
+zmqol_give_or_refill( str_weapon )
+{
+    str_held = self zmqol_held_twin( str_weapon );
+
+    if ( str_held != "" )
+    {
+        //  cases A and B - top the held copy up and put it in your hands. Stock's
+        //  own refill is givestartammo(); the box uses givemaxammo(). Take the box's
+        //  behaviour: this is the "grabbing the same weapon is an ammo refill" the
+        //  request asks for, and a start-ammo refill on a gun you already carry
+        //  would often be LESS ammo than you had.
+        self givemaxammo( str_held );
+
+        if ( !maps\mp\zombies\_zm_utility::is_offhand_weapon( str_held ) )
+            self switchtoweapon( str_held );
+
+        return 1;
+    }
+
+    //  case C - handing over the packed gun while the base is still held. Drop the
+    //  base first so the two can never sit in the list together.
+    //  unacquire_weapon_toggle() keeps the weapon-toggle bookkeeping straight,
+    //  exactly as stock's own weapon_give does when it evicts a gun at the limit.
+    str_base = self zmqol_base_of_upgrade( str_weapon );
+
+    if ( str_base != "" )
+    {
+        str_have_base = self maps\mp\zombies\_zm_weapons::get_weapon_with_attachments( str_base );
+
+        if ( isdefined( str_have_base ) )
+        {
+            self takeweapon( str_have_base );
+            self maps\mp\zombies\_zm_weapons::unacquire_weapon_toggle( str_have_base );
+        }
+    }
+
+    self maps\mp\zombies\_zm_weapons::weapon_give( str_weapon );
+    return 0;
 }
 
 zmqol_give_row( str_keys, str_base, str_name )
@@ -10089,8 +10220,10 @@ zmqol_give_named_weapon( str_arg, b_pap )
     {
         //  NOT via zmqol_give_wonder_weapon() - that gates on zmqol_ww, and the
         //  Death Machine is a power-up, not one of the three wonder weapons.
-        self maps\mp\zombies\_zm_weapons::weapon_give( "deathmachine_zm" );
-        self iprintln( "^2[zm_qol] gave ^7Death Machine" );
+        if ( self zmqol_give_or_refill( "deathmachine_zm" ) )
+            self iprintln( "^2[zm_qol] refilled ^7Death Machine" );
+        else
+            self iprintln( "^2[zm_qol] gave ^7Death Machine" );
         return;
     }
 
@@ -10130,9 +10263,14 @@ zmqol_give_named_weapon( str_arg, b_pap )
     //  sound - and for a grenade or a mine it swaps out the one you are already
     //  carrying and updates the player's lethal/tactical slot. That is exactly
     //  what pulling the thing out of the box does, which is the point.
-    self maps\mp\zombies\_zm_weapons::weapon_give( str_weapon );
+    //  🛑 v2.15.5 - zmqol_give_or_refill(), not weapon_give() raw. This is the
+    //  exact call the RPG-7 report came from: `.give rpg` while already holding
+    //  the packed Rocket Propelled Grievance left the player carrying both.
+    b_refilled = self zmqol_give_or_refill( str_weapon );
 
-    if ( b_pap )
+    if ( b_refilled )
+        self iprintln( "^2[zm_qol] refilled ^7" + str_weapon );
+    else if ( b_pap )
         self iprintln( "^2[zm_qol] gave ^7" + str_weapon + " ^5(Pack-a-Punched)" );
     else
         self iprintln( "^2[zm_qol] gave ^7" + str_weapon );
