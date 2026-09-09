@@ -85,6 +85,29 @@ images/*.iwi
 !images/specialty_zomblood_zombies.iwi
 !images/specialty_firesale_zombies.iwi
 
+# 🛑 v2.15.6 - THE L96A1'S TEN IMAGES, same rule as the two above: the mod's own
+# assets, and the gun is BROKEN without them. mod.ff carries only the image
+# HEADERS (every image in it dumps as "Could not find data" - the pixels always
+# ship as .iwi). For a retail gun those pixels come from the player's Black Ops II
+# install; the L96A1 is a Black Ops 1 port, so NO retail .iwi exists and nothing
+# supplies them but this folder. Shipped without them (v2.15.0-v2.15.5) the gun
+# rendered ENTIRELY BLACK and the scope overlay drew nothing at all when aiming
+# down sights (user screenshot, Tunnel survival, 2026-09-09).
+#
+# The other three Black Ops 1 guns need no entry here: their materials name
+# t6_wpn_* images that retail Black Ops II already ships, which is why the M60
+# and the Browning render correctly while the L96A1 did not.
+!images/t5_l96a1_base_c.iwi
+!images/t5_l96a1_base_n.iwi
+!images/t5_l96a1_base_s.iwi
+!images/t5_l96a1_lens_c.iwi
+!images/t5_l96a1_lens_s.iwi
+!images/t5_l96a1_plastic_c.iwi
+!images/t5_l96a1_scope_inner_c.iwi
+!images/t5_l96a1_scope_inner_s.iwi
+!images/t5_l96a1_scope_overlay.iwi
+!images/hud_t5_l96a1.iwi
+
 # 1.9 GB of optional payloads the INSTALLER ships, not the mod: the upscaled
 # texture pack for the player's Plutonium images folder and the custom sound
 # banks for their zone folder. Far past any sane git limit - they belong in a
