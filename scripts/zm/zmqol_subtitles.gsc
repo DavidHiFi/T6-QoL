@@ -1000,11 +1000,6 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
 
     self zmqol_subs_redraw();
 
-    n_show_total = n_secs;
-
-    if ( n_show_total < 1.2 * a_rows.size )
-        n_show_total = 1.2 * a_rows.size;
-
     for ( i = 0; i < a_rows.size; i++ )
     {
         n_show = n_secs * a_rows[i].size / n_total;
@@ -1031,6 +1026,16 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
     //  v2.14.21 - a 0.25 s fade instead of a hard cut, user 2026-09-08:
     //  *"make sure they're persistent and smooth"*. Marked fading first so a
     //  line starting underneath cannot snap this one back to full alpha.
+    //
+    //  📝 ONE ACCEPTED EDGE, stated rather than left to be re-found: the fade
+    //  runs on the element this line occupies WHEN THE FADE STARTS. If the line
+    //  below it ends inside that same 0.25 s, this line slides down a row
+    //  mid-fade and its remaining fade is left behind on the element it just
+    //  vacated, so it can vanish up to 0.25 s early. It needs two lines on
+    //  screen ending within a quarter second of each other, it costs a quarter
+    //  second of fade on one caption, and the alternative - alpha driven from
+    //  the redraw instead of fadeovertime - would re-time every fade in this
+    //  file to chase it. Left deliberately.
     wait 0.3;
 
     n_at = self zmqol_subs_stack_index( n_id );
