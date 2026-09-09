@@ -144,6 +144,21 @@ end
 -- 📝 If a future Plutonium update reintroduces the crash, this is the row to
 -- pull again; map_restart (RESTART GAME) is the crash-free full-reload fallback.
 CoD.Class.ZmQolFastRestartPressed = function (IngameMenuWidget, ClientInstance)
+	-- v2.15.35 - close the pause menu, then restart, so one click does both.
+	--
+	-- 🛑 USE button_prompt_back. NOT close_all_ingame_menus, and NOT the
+	-- RestartGamePopup. v2.15.34 tried CoD.InGameMenu.CloseAllInGameMenus here
+	-- and the user's game FROZE outright - character stood there holding the
+	-- Mauser, audio dead, no restart, no way back. That is the exact failure the
+	-- v1.99.87 note above describes: a restart that does not complete while the
+	-- UI is torn down or busy-blocked leaves the game hung. button_prompt_back is
+	-- the same close Resume uses a few lines below, it is a plain menu close, and
+	-- the user confirmed on 2026-09-10 that FAST RESTART with it restarts AND
+	-- closes the menu in one click with no spamming.
+	IngameMenuWidget:processEvent({
+		name = "button_prompt_back",
+		controller = ClientInstance.controller
+	})
 	Engine.Exec(ClientInstance.controller, "fast_restart")
 end
 

@@ -2528,7 +2528,7 @@ xmodel,t6_wpn_zmb_raygun_world_upg
 //  11th. Proven by dumping the shipped mod.ff: its t6_wpn_zmb_raygun_view_upg
 //  material list is byte-identical to zm_prison.ff's. So since v2.11.0 the
 //  PaP'd Ray Gun on Green Run / Die Rise / Nuketown has worn MOB's BO1-textured
-//  art while the comment above claimed it was Buried's. zone_sourceaygun_donor
+//  art while the comment above claimed it was Buried's. zone_source\raygun_donor
 //  (build_raygun_donor.bat) now supplies all four models from zm_buried.ff at a
 //  --load slot ahead of zm_prison, which is the only lever the Linker offers.
 //  The _glow / _glow_upg / _thermal materials and their seven images ride in as

@@ -642,10 +642,10 @@ function UpdateGameScoreboard(ScoreboardWidget)
 			end
 
 			if CoD.isZombie == true then
-				local Mapname = CoD.Zombie.GetUIMapName()
+				local Mapname = Dvar.ui_mapname:get()
 
 				if CoD.Zombie.IsSurvivalUsingCIAModel == true and ScoreboardTeam.team == CoD.TEAM_ALLIES then
-					if Mapname == CoD.Zombie.MAP_ZM_PRISON or Mapname == CoD.Zombie.MAP_ZM_TOMB then
+					if Mapname == "zm_prison" or Mapname == "zm_tomb" then
 						FactionTeam = "inmates"
 					else
 						FactionTeam = "cia"
@@ -672,7 +672,7 @@ function UpdateGameScoreboard(ScoreboardWidget)
 				-- that owning this file changes the title and nothing else.
 				if CoD.isZombie == true then
 					local GamemodeGroup = UIExpression.DvarString(nil, "ui_zm_gamemodegroup")
-					if GamemodeGroup == CoD.Zombie.GAMETYPEGROUP_ZCLASSIC then
+					if GamemodeGroup == "zclassic" then
 						FactionColorR = CoD.Zombie.SingleTeamColor.r
 						FactionColorG = CoD.Zombie.SingleTeamColor.g
 						FactionColorB = CoD.Zombie.SingleTeamColor.b
@@ -880,36 +880,49 @@ ScoreboardUpdateTeamElement = function(TeamElement, FactionTeam, FactionColorR, 
 		TeamElement.teamScore:setText(ScoreboardTeam.score)
 		if CoD.isZombie == true then
 			local GamemodeGroup = UIExpression.DvarString(nil, "ui_zm_gamemodegroup")
-			local Mapname = CoD.Zombie.GetUIMapName()
-			if GamemodeGroup == CoD.Zombie.GAMETYPEGROUP_ZCLASSIC then
-				if Mapname == CoD.Zombie.MAP_ZM_TOMB then
-					TeamElement.factionIcon:setImage(RegisterMaterial("faction_tomb"))
-				elseif Mapname == CoD.Zombie.MAP_ZM_BURIED then
-					TeamElement.factionIcon:setImage(RegisterMaterial("faction_buried"))
-				elseif Mapname == CoD.Zombie.MAP_ZM_PRISON then
-					TeamElement.factionIcon:setImage(RegisterMaterial("faction_prison"))
-				elseif Mapname == CoD.Zombie.MAP_ZM_HIGHRISE then
-					TeamElement.factionIcon:setImage(RegisterMaterial("faction_highrise"))
-				else
-					TeamElement.factionIcon:setImage(RegisterMaterial("faction_tranzit"))
-				end
-			end
+			-- v2.15.33 - compare the dvars' literal values. CoD.Zombie.MAP_ZM_* and
+			-- GAMETYPEGROUP_ZCLASSIC do not resolve here, so this test was always
+			-- false and the per-map crew emblem below never ran - a live Origins
+			-- match never once requests faction_tomb in the console log.
+			local Mapname = Dvar.ui_mapname:get()
+			-- ============================================================
+			-- zm_qol v2.15.35 - THE SCOREBOARD CREW EMBLEM, CHOSEN BY MAP.
+			--
+			-- Pick the emblem from the MAP, for classic AND survival. Each DLC crew
+			-- owns its emblem in either mode: Origins and its Crazy Place survival
+			-- are Primis (faction_tomb), Buried and Borough are Victus
+			-- (faction_buried), Mob is faction_prison, Die Rise is faction_highrise.
+			-- Only Green Run and Nuketown have no crew of their own - classic there
+			-- is the TranZit survivors, survival there is CIA vs CDC.
+			--
+			-- 🛑 WHY BY MAP AND NOT BY GAMEMODE GROUP. The stock line further up
+			-- sets faction_<team>, and on a Zombies map the allies team is "cdc".
+			-- faction_cdc ships only in the Green Run zones, so on any DLC map it
+			-- resolves to nothing and LUI draws the missing-texture checkerboard.
+			-- v2.15.33 cured that for classic but left survival broken, which is what
+			-- the user hit on the Crazy Place. Keying on the map covers both.
+			-- ============================================================
+			local ZmQolCrew = {
+				zm_tomb     = "faction_tomb",
+				zm_buried   = "faction_buried",
+				zm_prison   = "faction_prison",
+				zm_highrise = "faction_highrise"
+			}
+			local ZmQolCrewMaterial = ZmQolCrew[Mapname]
 
-			-- ============================================================
-			-- zm_qol v2.8.5 - CDC/CIA SCOREBOARD EMBLEM
-			--
-			-- Stock derives the emblem from the TEAM: Engine.GetFactionForTeam()
-			-- returns "cdc" for Allies on every survival map, so a player who chose
-			-- CIA in the lobby still got a CDC badge. Setting g_TeamIcon_Allies
-			-- server-side does nothing, because this widget never reads that dvar -
-			-- which is why the GSC fix logged the right value and changed nothing
-			-- on screen.
-			--
-			-- zmqol_team_emblem_watch() publishes the real answer (level.should_use_cia)
-			-- into g_TeamIcon_Allies; this reads it back. Guarded on the cdc/cia pair
-			-- so the zclassic per-map crew emblems set just above are left alone.
-			-- ============================================================
-			if FactionTeam == "cdc" or FactionTeam == "cia" then
+			if ZmQolCrewMaterial ~= nil then
+				TeamElement.factionIcon:setImage(RegisterMaterial(ZmQolCrewMaterial))
+			elseif GamemodeGroup == "zclassic" then
+				TeamElement.factionIcon:setImage(RegisterMaterial("faction_tranzit"))
+			elseif FactionTeam == "cdc" or FactionTeam == "cia" then
+				-- zm_qol v2.8.5 - CDC/CIA EMBLEM, Green Run and Nuketown survival only.
+				-- Stock derives the emblem from the TEAM: Engine.GetFactionForTeam()
+				-- returns "cdc" for Allies on every survival map, so a player who chose
+				-- CIA in the lobby still got a CDC badge. Setting g_TeamIcon_Allies
+				-- server-side does nothing because this widget never reads that dvar -
+				-- which is why the GSC fix logged the right value and changed nothing on
+				-- screen. zmqol_team_emblem_watch() publishes the real answer
+				-- (level.should_use_cia) into g_TeamIcon_Allies; this reads it back.
 				local QolWantIcon = UIExpression.DvarString(nil, "g_TeamIcon_Allies")
 				if QolWantIcon == "faction_cia" or QolWantIcon == "faction_cdc" then
 					TeamElement.factionIcon:setImage(RegisterMaterial(QolWantIcon))

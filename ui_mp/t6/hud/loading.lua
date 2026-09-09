@@ -708,6 +708,22 @@ function CoD.Loading.GetZMLoadingMapName()
 
 	local gametype = UIExpression.DvarString(nil, "ui_gametype")
 	if gametype == CoD.Zombie.GAMETYPE_ZCLASSIC then
+		-- A command-line map change can leave ls_mapname carrying the previous
+		-- map's title while ui_mapname already names the map being loaded. Resolve
+		-- the retail classic maps from ui_mapname so an Origins load cannot inherit
+		-- "GREEN RUN" from a preceding TranZit match.
+		local map = UIExpression.DvarString(nil, "ui_mapname")
+		local ZmQolClassicTitles = {
+			zm_transit  = "GREEN RUN",
+			zm_nuked    = "NUKETOWN ZOMBIES",
+			zm_highrise = "DIE RISE",
+			zm_prison   = "MOB OF THE DEAD",
+			zm_buried   = "BURIED",
+			zm_tomb     = "ORIGINS",
+		}
+		if map ~= nil and ZmQolClassicTitles[map] ~= nil then
+			return ZmQolClassicTitles[map]
+		end
 		return StockName
 	end
 
@@ -751,6 +767,11 @@ CoD.Loading.StartLoading = function (f8_arg0, f8_arg1)
 	local f8_local0 = CoD.Loading.GetZMLoadingMapName()
 	local f8_local1 = Dvar.ls_maplocation:get()
 	local f8_local2 = Dvar.ls_gametype:get()
+	-- Direct CLI map changes can leave ls_gametype carrying the previous map's
+	-- display text. ui_gametype already contains the mode being loaded.
+	if CoD.isZombie == true and UIExpression.DvarString(nil, "ui_gametype") == CoD.Zombie.GAMETYPE_ZCLASSIC then
+		f8_local2 = UIExpression.ToUpper(nil, Engine.Localize("MPUI_ZCLASSIC"))
+	end
 	f8_arg0.mapNameLabel:setText(f8_local0)
 	f8_arg0.mapLocationLabel:setText(f8_local1)
 	f8_arg0.gametypeLabel:setText(f8_local2)
@@ -852,4 +873,3 @@ CoD.Loading.SetupDYKContainerImages = function (f16_arg0)
 	f16_local3:setAlpha(0.06)
 	f16_arg0:addElement(f16_local3)
 end
-
