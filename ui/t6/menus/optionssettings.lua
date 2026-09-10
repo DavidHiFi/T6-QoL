@@ -100,6 +100,13 @@ if ZmQolModLoaded() and LUI and LUI.createMenu and LUI.createMenu.OptionsControl
 			controlsWidget.titleElement:setAlignment(LUI.Alignment.Center)
 		end
 
+		-- Plutonium's five control tabs occupy about 500 LUI units, but its
+		-- container is much wider. Keep a small margin outside LOOK and GAMEPAD
+		-- so the navigation arrows stay next to the labels.
+		if controlsWidget and controlsWidget.tabManager then
+			controlsWidget.tabManager:setLeftRight(false, false, -270, 270)
+		end
+
 		return controlsWidget
 	end
 end
@@ -2534,6 +2541,10 @@ CoD.OptionsSettings.CreateQolPageMenu = function (MenuName, Title, PageBuilder, 
 	PageMenu:addBackButton()
 
 	local PageContainer = PageBuilder(PageMenu, LocalClientIndex)
+	-- A normal settings tab gets this vertical separation from the tab manager.
+	-- Standalone HUD and Cheats pages need it explicitly or their first row
+	-- occupies the same band as the centered page title.
+	PageContainer:setTopBottom(true, true, 70, 70)
 	PageMenu:addElement(PageContainer)
 
 	if not PageMenu:restoreState() and PageMenu.buttonList then
@@ -2804,8 +2815,12 @@ end
 -- options.lua has finished defining the parent menu by the time the mod reloads
 -- this file. Wrap its category builder so the stock Settings and Controls code
 -- remains untouched, including Plutonium's additions.
-if ZmQolModLoaded() and CoD.Options and CoD.Options.AddOptionCategories and
-	LUI.createMenu.OptionsMenu and not ZmQolParentMenuWrapped then
+ZmQolInstallParentOptionsMenu = function ()
+	if not ZmQolModLoaded() or not CoD.Options or not CoD.Options.AddOptionCategories or
+		not LUI.createMenu.OptionsMenu or ZmQolParentMenuWrapped then
+		return false
+	end
+
 	ZmQolParentMenuWrapped = true
 
 	CoD.Options.OpenQolHud = function (OptionsMenuWidget, ClientInstance)
@@ -2831,9 +2846,11 @@ if ZmQolModLoaded() and CoD.Options and CoD.Options.AddOptionCategories and
 		end
 
 		local StockButtonListNew = CoD.ButtonList.new
+		local OptionsMenuButtonList = nil
 
 		CoD.ButtonList.new = function (...)
 			local ButtonList = StockButtonListNew(...)
+			OptionsMenuButtonList = ButtonList
 			local SettingsLabel = Engine.Localize("MENU_SETTINGS_CAPS")
 			local AddedQolPages = false
 
@@ -2892,6 +2909,12 @@ if ZmQolModLoaded() and CoD.Options and CoD.Options.AddOptionCategories and
 			return StockAddOptionCategories(OptionsMenuWidget)
 		end
 
+		-- Stock centers a two-row list. Recalculate its bounds for four rows so
+		-- Settings, HUD, Cheats and Controls are centered as one group.
+		if UIExpression.IsInGame() == 0 and OptionsMenuButtonList then
+			OptionsMenuButtonList:setTopBottom(false, false, -145, 245)
+		end
+
 		return Result
 	end
 
@@ -2902,4 +2925,8 @@ if ZmQolModLoaded() and CoD.Options and CoD.Options.AddOptionCategories and
 		OptionsMenuWidget:registerEventHandler("open_qol_cheats", CoD.Options.OpenQolCheats)
 		return OptionsMenuWidget
 	end
+
+	return true
 end
+
+ZmQolInstallParentOptionsMenu()
