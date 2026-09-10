@@ -2829,7 +2829,7 @@ end
 -- remains untouched, including Plutonium's additions.
 ZmQolInstallParentOptionsMenu = function ()
 	if not ZmQolModLoaded() or not CoD.Options or not CoD.Options.AddOptionCategories or
-		not LUI.createMenu.OptionsMenu or ZmQolWrappedOptionsMenu == LUI.createMenu.OptionsMenu then
+		not LUI.createMenu.OptionsMenu or CoD.Options.ZmQolWrappedOptionsMenu == LUI.createMenu.OptionsMenu then
 		return false
 	end
 
@@ -2935,7 +2935,7 @@ ZmQolInstallParentOptionsMenu = function ()
 		OptionsMenuWidget:registerEventHandler("open_qol_cheats", CoD.Options.OpenQolCheats)
 		return OptionsMenuWidget
 	end
-	ZmQolWrappedOptionsMenu = LUI.createMenu.OptionsMenu
+	CoD.Options.ZmQolWrappedOptionsMenu = LUI.createMenu.OptionsMenu
 
 	return true
 end
