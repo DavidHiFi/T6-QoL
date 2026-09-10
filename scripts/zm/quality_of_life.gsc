@@ -1199,7 +1199,12 @@ new_full_ammo_powerup( drop_item, player )
                 //  IS vanilla. No copy of stock is kept here to drift, and the
                 //  replaceFunc stays in place either way (calling stock's own
                 //  function back would re-enter this one - it has been replaced).
-                if ( getdvarintdefault( "bo4_max_ammo", 1 ) )
+                //
+                //  v2.15.37 - placeable mines keep their own clip. A claymore or
+                //  a Betty holds 2, and its count is restored by its own watcher
+                //  (stock's between-rounds restore, this mod's zmb_max_ammo
+                //  watch) - a 300 clip here would hand out 300 mines.
+                if ( getdvarintdefault( "bo4_max_ammo", 1 ) && !is_placeable_mine( curWeapon ) )
                     players[i] setweaponammoclip( curWeapon, 300);
             }
         }

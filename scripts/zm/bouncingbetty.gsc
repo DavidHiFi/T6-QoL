@@ -459,13 +459,19 @@ zmqol_betty_max_ammo_watch()
     {
         self waittill( "zmb_max_ammo" );
 
-        //  🛑 v2.15.13 - THE ONE-TIME BUG. THROWING BOTH BETTIES REMOVES THE
-        //  WEAPON, so Max Ammo found nothing to refill and `continue`'d past it -
-        //  the Betties never came back and the HUD icon stayed gone. A placeable
-        //  mine at 0 is dropped from the inventory exactly like a claymore, so
-        //  getweaponammoclip/givemaxammo have no weapon to act on. When it is
-        //  gone, Max Ammo must RE-GIVE it, not skip it - the same giveweapon +
-        //  bind + stock the setup does, which restores the icon and the count.
+        //  Stock's claymore restore checks current_placeable_mine before it
+        //  re-gives a depleted mine. Do the same here. This rejects players who
+        //  never acquired Betties and players who replaced them with Claymores,
+        //  while still preserving the ownership record after both Betties have
+        //  been planted and the weapon itself has disappeared. Without this,
+        //  Max Ammo handed Betties to everyone who never boxed them (seen on
+        //  Origins Crazy Place survival, and the same notify runs on every map).
+        if ( !self is_player_placeable_mine( "bouncingbetty_zm" ) )
+            continue;
+
+        //  v2.15.13: throwing both Betties removes the weapon. The placeable-mine
+        //  record above survives that, so re-give and bind the owned, depleted
+        //  equipment before restoring its count.
         if ( !self hasweapon( "bouncingbetty_zm" ) )
         {
             self giveweapon( "bouncingbetty_zm" );
