@@ -193,6 +193,67 @@ init()
 
     level thread microwavegun_on_player_connect();
     level thread zmqol_ww_screecher_zap_hook();   // denizens (v2.12.5)
+
+    if ( getdvarintdefault( "zmqol_mgun_selftest", 0 ) )
+        level thread zmqol_mgun_selftest();
+}
+
+// ============================================================================
+//  zmqol_mgun_selftest  -  DEV HARNESS, OFF UNLESS zmqol_mgun_selftest 1
+// ----------------------------------------------------------------------------
+//  Fires the combined Wave Gun for a headless test session so the sizzle path
+//  can be exercised without a person at the keyboard. It calls the REAL entry
+//  point (microwavegun_fired), so what it proves is what a trigger pull does -
+//  it is not a second implementation.
+//
+//  With zmqol_mgun_debug 1 the log then says, per kill, whether the death
+//  animation branch or the instant_explode fallback ran, which is the one thing
+//  a compile cannot tell you.
+//
+//  Never ships enabled: both dvars default to 0 and nothing below runs without
+//  them.
+// ============================================================================
+zmqol_mgun_selftest()
+{
+    level endon( "end_game" );
+
+    wait 8;
+
+    a_players = get_players();
+
+    for ( i = 0; i < a_players.size; i++ )
+    {
+        a_players[i] enableinvulnerability();
+        a_players[i] giveweapon( "microwavegundw_zm" );
+        a_players[i] switchtoweapon( "microwavegundw_zm" );
+    }
+
+    println( "[zm_qol] zapgun selftest: armed " + a_players.size + " player(s)" );
+
+    b_probed = 0;
+
+    for ( ;; )
+    {
+        wait 4;
+
+        a_players = get_players();
+
+        if ( !a_players.size )
+            continue;
+
+        a_zombies = getaispeciesarray( "axis", "all" );
+
+        if ( !b_probed && a_zombies.size )
+        {
+            //  One direct read of the thing the whole port turns on: does this
+            //  map's compiled ASD know Moon's sizzle death state?
+            println( "[zm_qol] zapgun selftest: animname=" + a_zombies[0].animname + " zm_death_sizzle=" + a_zombies[0] hasanimstatefromasd( "zm_death_sizzle" ) + " zm_death_sizzle_crawl=" + a_zombies[0] hasanimstatefromasd( "zm_death_sizzle_crawl" ) );
+            b_probed = 1;
+        }
+
+        println( "[zm_qol] zapgun selftest: firing, " + a_zombies.size + " actor(s) up" );
+        a_players[0] thread microwavegun_fired( 0 );
+    }
 }
 
 add_microwaveable_object( ent )
@@ -541,8 +602,12 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
         self.microwavegun_death = 1;
         instant_explode = 0;
 
-        //  Kept verbatim from Moon. On this mod's maps no aitype knows
-        //  zm_death_sizzle (§45), so every branch lands on instant_explode.
+        //  Kept verbatim from Moon. Which branch runs is decided by the map's
+        //  compiled ASD: zm_death_sizzle / zm_death_sizzle_crawl now ship as
+        //  animstatedef rawfiles for the four stock families (see
+        //  zone_source\mod_wonderweapons.zone) with the twelve Moon microwave
+        //  xanims behind them, so the anim branch is reachable where those load
+        //  and instant_explode is the honest fallback everywhere else.
         if ( !self.isdog )
         {
             if ( self.has_legs )
@@ -590,14 +655,23 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             //  gets a chance to run. Route 4 (actor scale) is dead; the pop path
             //  stays, now led by the microwave sizzle + blood (v2.15.13, see
             //  zmqol_mgun_microwave_burst).
+            if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+                println( "[zm_qol] zapgun: instant_explode fallback (no sizzle animstate)" );
+
             self thread zmqol_mgun_microwave_burst();
         }
         else
         {
-            //  Moon: the initial-hit clientfield (eye fx + wpn_mgun_impact_zombie)
-            //  and the swell driven by the death anim's notetracks. Unreachable
-            //  here; the pop is served from the "explode" notetrack the same way
-            //  for parity.
+            //  Moon: setclientfield( "..._initial_hit_response", 1 ) puts
+            //  fx_sizzle_blood_eyes on J_Eyeball_LE and plays
+            //  wpn_mgun_impact_zombie on the client. Broadcast from the server
+            //  here instead (banner point 1). wpn_mgun_dual_sizzle is the
+            //  microwave hum: Moon rides it in as the secondary alias of
+            //  wpn_imp_mgun_dual, which is the ZAP impact - the combined gun's
+            //  sizzle cone never fires one, so it is played directly.
+            //  From here the death anim drives the rest through its own
+            //  "expand" and "explode" notetracks (both present in all twelve
+            //  xanims this mod ships - checked in the asset bytes, not assumed).
             //
             //  📝 wpn_mgun_impact_zombie IS SILENT IN TREYARCH'S OWN BUILD, so
             //  nothing is being withheld. Re-confirmed 2026-09-06 by hashing the
@@ -610,7 +684,14 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             //  three payloads this mod already ships, which is what proves the
             //  method rather than assuming it.
             self.nodeathragdoll = 1;
+            self playsound( "wpn_mgun_cook_zombie" );
+            self playsound( "wpn_mgun_impact_zombie" );
+            network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
             self.handle_death_notetracks = ::microwavegun_handle_death_notetracks;
+            self thread zmqol_mgun_sizzle_watchdog();
+
+            if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+                println( "[zm_qol] zapgun: sizzle death anim '" + self.deathanim + "' on " + self.animname );
         }
     }
 }
@@ -639,15 +720,129 @@ zmqol_mgun_pop()
         v_pos = self getcentroid();
 
     playfx( fx, v_pos );
-    self playsound( "wpn_mgun_explode_zombie" );
+
+    //  🛑 playsoundatposition, NOT self playsound. The caller ghosts the corpse
+    //  and self_delete()s it 0.1 s later, and a sound playing ON an entity dies
+    //  with the entity - so the microwave ding was being cut to a click. Moon
+    //  never had this problem because its copy runs on the CLIENT as
+    //  playsound( 0, "wpn_mgun_explode_zombie", self.origin ), which is
+    //  positional and outlives the actor. User, 2026-09-10: "the ding microwave
+    //  ding sound effect when the zombie died was missing".
+    playsoundatposition( "wpn_mgun_explode_zombie", v_pos );
+
+    //  🌟 THE MICROWAVE DING. Treyarch's own alias, recovered by name rather
+    //  than invented: the DLC5 Moon bank carries two payload-bearing rows the
+    //  T6 scripts never call, stored under stripped hash names @48e268ca
+    //  (microwave_ding.wav) and @69b2adc0 (microwave_cooking.wav). Running
+    //  SND_HashName (seed 0x1505, h = c + 0x1003F*h, lowercased - the same
+    //  function that reproduces the known @323a08e1 wpn_mgun_explode_zombie and
+    //  @cd8064c2 wpn_mgun_impact_zombie) over candidate names resolves them to
+    //  wpn_mgun_ding_zombie and wpn_mgun_cook_zombie. Both payloads and both
+    //  rows now ship in this mod's bank.
+    playsoundatposition( "wpn_mgun_ding_zombie", v_pos );
 }
 
 microwavegun_handle_death_notetracks( note )
 {
+    if ( note == "expand" )
+    {
+        //  Moon: expand_response 1 -> the client threads microwavegun_bloat(),
+        //  which ramps shader constant 0 ("scriptVector3") from 0 to 0.5 over
+        //  2.5 s and makes the body visibly swell.
+        //
+        //  🛑 THE SWELL IS THE ONE PIECE THIS BRANCH STILL CANNOT DRIVE. It is
+        //  a property of the MATERIAL, not the script: Moon's DLC5 zombie
+        //  materials map a swell constant, retail BO2's dump "constants":[],
+        //  and setshaderconstant on a material with nothing mapped is a no-op.
+        //  setscale is not a builtin on this engine (its mere presence in the
+        //  compiled script aborted every map load on the 2026-09-09 boot), so
+        //  there is no server-side stand-in either. Levitation, blood, mist,
+        //  sizzle and timing all come from the anim and run; the expand needs a
+        //  swell-capable material shipped for these maps' zombie models.
+        self playsound( "wpn_mgun_impact_zombie" );
+
+        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+            println( "[zm_qol] zapgun: notetrack expand" );
+
+        //  🛑 "expand" IS THE ONLY NOTETRACK THAT ARRIVES. Measured on Town,
+        //  2026-09-10, with zmqol_mgun_debug 1: five sizzle deaths produced five
+        //  "expand" lines and ZERO "explode" lines. Both markers are present in
+        //  all twelve xanims - checked in the asset bytes - so the anim is not
+        //  the problem; the death animscript stops running notetracks before the
+        //  end of the cycle on these rigs. That is why bodies hung levitated.
+        //
+        //  So expand, not explode, is the timing anchor, and it is the right one:
+        //  Moon's client starts its 2500 ms bloat on this exact marker
+        //  (microwavegun_bloat), which makes the burst land where Treyarch put
+        //  it. The watchdog started at the kill still backs this up.
+        self thread zmqol_mgun_expand_to_burst();
+
+        return;
+    }
+
     if ( note == "explode" )
     {
-        self thread zmqol_mgun_microwave_burst();
+        //  Moon: expand_response 0 -> the client drops the eye fx, plays the
+        //  mist at J_SpineLower and wpn_mgun_explode_zombie. Same three things,
+        //  broadcast from here; the eye fx goes with the corpse on delete.
+        self zmqol_mgun_burst_once();
+
+        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+            println( "[zm_qol] zapgun: notetrack explode" );
     }
+}
+
+// ============================================================================
+//  zmqol_mgun_sizzle_watchdog  -  NO CORPSE HANGS IN THE AIR       (v2.15.16)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-10: "sometimes they're getting stuck in midair. After they
+//  would have been killed, right now they're just stuck floating in the air,
+//  just inanimate."
+//
+//  The death anim carries its own "explode" notetrack and that is what pops the
+//  body and deletes it. When the notetrack does not arrive - the corpse is
+//  cleaned up, restarted or retargeted mid-animation, so the death animscript
+//  stops running notetracks - nothing else was left to finish the kill, and the
+//  actor just held its last levitated frame forever.
+//
+//  So the pop no longer depends only on the notetrack. Moon's own cycle is
+//  2500 ms on a full rig and 1000 ms on one with no lower spine
+//  (microwavegun_bloat, DLC5 client script); 4 seconds clears the longer of the
+//  two with margin, so a corpse that reaches the notetrack normally is never
+//  touched by this. zmqol_mgun_burst_once() is what stops a second pop or a
+//  second delete when more than one of the three callers gets here.
+// ============================================================================
+zmqol_mgun_expand_to_burst()
+{
+    //  Moon's own cycle: 2500 ms on a full rig, 1000 ms when the lower spine
+    //  tag is missing (microwavegun_bloat, DLC5 client script).
+    n_cycle = 2.5;
+
+    if ( !isdefined( self gettagorigin( "J_SpineLower" ) ) )
+        n_cycle = 1;
+
+    wait n_cycle;
+    self zmqol_mgun_burst_once();
+}
+
+//  🛑 ONE FLAG, NOT A NOTIFY. Three callers can reach the burst - the "explode"
+//  notetrack, the expand timer and the watchdog - and only the first may run.
+//  A notify cannot do that job here: a thread that notifies its own endon
+//  condition kills itself on that line, so the pop would never be reached.
+zmqol_mgun_burst_once()
+{
+    if ( !isdefined( self ) || is_true( self.zmqol_mgun_burst_done ) )
+        return;
+
+    self.zmqol_mgun_burst_done = 1;
+    self zmqol_mgun_pop();
+    self microwavegun_sizzle_death_ending();
+}
+
+zmqol_mgun_sizzle_watchdog()
+{
+    wait 4;
+    self zmqol_mgun_burst_once();
 }
 
 microwavegun_sizzle_death_ending()
