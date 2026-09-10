@@ -25,9 +25,11 @@
 //  it with the campaign TC6 mine's full held-mine anim family driving an EMPTY
 //  gun model (t6_wpn_none_view), the betty mesh attached to tag_weapon with
 //  offsets (X -5, pitch -90). The def now mirrors that scheme exactly.
-//    - the 14 viewmodel_mine_tc6_* anims the def references exist in NO zombies
+//    - the 17 viewmodel_mine_tc6_* anims the def references exist in NO zombies
 //      fastfile - donor is so_cmp_afghanistan.ff, a NEW --load (carries the
-//      full set; verified by Unlinker --list 2026-09-01).
+//      full set; verified by Unlinker --list 2026-09-01, and the three d2p
+//      dive-to-prone anims re-verified 2026-09-10 - without them the hands
+//      froze going prone with the Betty held).
 //    - t6_wpn_none_view / t6_wpn_none_world come from zm_prison.ff, already
 //      loaded.
 //    - viewmodel_claymore_empty_idle (emptyDropAnim) is resident in ALL six
@@ -60,6 +62,9 @@ xanim,viewmodel_mine_tc6_crawl_back
 xanim,viewmodel_mine_tc6_crawl_right
 xanim,viewmodel_mine_tc6_crawl_left
 xanim,viewmodel_mine_tc6_crawl_out
+xanim,viewmodel_mine_tc6_d2p_in
+xanim,viewmodel_mine_tc6_d2p_loop
+xanim,viewmodel_mine_tc6_d2p_out
 
 fx,weapon/bouncing_betty/fx_betty_explosion
 fx,weapon/bouncing_betty/fx_betty_launch_dust
