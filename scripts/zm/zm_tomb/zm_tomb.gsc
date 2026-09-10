@@ -107,6 +107,11 @@ main()
     replaceFunc( maps\mp\zombies\_zm_perk_random::init_machines,        ::zmqol_tomb_no_native_wunderfizz );
     replaceFunc( maps\mp\zombies\_zm_perk_random::start_random_machine, ::zmqol_tomb_no_native_wunderfizz );
 
+    // Crazy Place Survival has no Origins challenge chests or quest path. Do
+    // not register the four Origins challenge stats, HUD, rewards, or milestone
+    // sound there. Classic Origins keeps the stock initializer below.
+    replaceFunc( maps\mp\zm_tomb_challenges::challenges_init, ::zmqol_tomb_challenges_init );
+
     //  v1.59.2 - MP40 wall-buys hand out the ADJUSTABLE STOCK version.
     //  THREADED, and it waits for the wall-buy stubs to exist - the v1.59.1
     //  version ran inline here and found zero structs. See the function.
@@ -162,6 +167,18 @@ main()
 
     // Must run in main(), before the map registers its own clientfields.
     zmqol_register_survival_clientfields();
+}
+
+zmqol_tomb_challenges_init()
+{
+    //  Challenges are classic-Origins content: four challenge chests, the quest
+    //  path and the milestone drum. No survival location has any of that, so
+    //  skip registration off classic. Crazy Place Survival is the reported case.
+    if ( !is_classic() )
+        return;
+
+    level.challenges_add_stats = maps\mp\zm_tomb_challenges::tomb_challenges_add_stats;
+    maps\mp\zombies\_zm_challenges::init();
 }
 
 // ============================================================================
