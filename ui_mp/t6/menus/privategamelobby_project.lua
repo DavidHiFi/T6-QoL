@@ -1194,6 +1194,13 @@ CoD.PrivateGameLobby.PopulateButtons_Project_Zombie = function (PrivateGameLobby
 			CoD.PrivateGameLobby.GameTypeSettings[5].maps = {}
 			CoD.PrivateGameLobby.GameTypeSettings[5].maps[1] = "zm_transit"
 		end
+		-- MAGIC now lives under Options > Settings > GAME 3. Keep using the
+		-- stock "magic" gametype setting, but do not draw its old lobby row.
+		if ZmQolLobbyModLoaded() then
+			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = {}
+		else
+			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = { "zstandard", "zgrief" }
+		end
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.GameTypeSettings, "gts")
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.Dvars, "dvar")
 		PrivateGameLobbyButtonPane:registerEventHandler("enable_sliding_zm", CoD.PrivateGameLobby.EnableSlidingZombie)

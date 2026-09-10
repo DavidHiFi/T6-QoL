@@ -1898,14 +1898,6 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	--  request. GAME is 14 rows + 0 spacers = 14.0, one full row under the 15.0
 	--  ceiling. Do not spend it on a spacer.
 	-- ========================================================================
-	CoD.OptionsSettings.QolMigrateFlash()
-	C(QolButtons, LocalClientIndex, "FLASH MESSAGES",     "flash_intro",        "Text flashed at match start: the credits, how to find the chat commands, both, or nothing.", {
-		{ "CREDITS",        2 },
-		{ "HELP",           3 },
-		{ "CREDITS + HELP", 1 },
-		{ "DISABLED",       0 }
-	})
-
 	-- 🛑 v1.99.61 - INTRO CREDITS IS GONE FROM THIS TAB. It moved to HUD and was
 	-- renamed FLASH CREDITS (user, 2026-08-18: *"it should be under the HUD tab
 	-- as it's a heads-up display element"*). Its DVAR is still intro_credits -
@@ -2083,7 +2075,16 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- v2.14.7 - CROSSHAIR spends one of those two: 14 rows = 14.0 pitches, hint
 	-- line at 234 + 14*50 = 934 px, still 102 px clear of the ESC prompt and a
 	-- row under the 15.0 ceiling this file measured on the SOUND tab.
-	return QolHudContainer                                          -- 15 total (v2.14.16: at the 15.0 ceiling)
+	CoD.OptionsSettings.QolMigrateFlash()
+	C(QolHudButtons, LocalClientIndex, "FLASH MESSAGES", "flash_intro",
+		"Text flashed at match start: the credits, how to find the chat commands, both, or nothing.", {
+			{ "CREDITS",        2 },
+			{ "HELP",           3 },
+			{ "CREDITS + HELP", 1 },
+			{ "DISABLED",       0 }
+		})
+
+	return QolHudContainer                                          -- 16 total on the standalone HUD page
 end
 
 -- ============================================================================
@@ -2324,7 +2325,18 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "KNIFE LUNGE", "knife_lunge", "The melee charge that pulls you onto a zombie. Disable it to knife in place.")
 
-	return QolGame3Container                          -- 3 rows + 0 spacers = 3.0
+	-- Moved from the pre-game lobby. This remains the stock gametype setting,
+	-- so map-start code reads the same "magic" value as before.
+	local MagicSelector = QolGame3Buttons:addGametypeSettingLeftRightSelector(
+		LocalClientIndex,
+		Engine.Localize("ZMUI_MAGIC_CAPS"),
+		"magic",
+		Engine.Localize("ZMUI_MAGIC_DESC")
+	)
+	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
+	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
+
+	return QolGame3Container                          -- 4 rows + 0 spacers = 4.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
@@ -2817,11 +2829,9 @@ end
 -- remains untouched, including Plutonium's additions.
 ZmQolInstallParentOptionsMenu = function ()
 	if not ZmQolModLoaded() or not CoD.Options or not CoD.Options.AddOptionCategories or
-		not LUI.createMenu.OptionsMenu or ZmQolParentMenuWrapped then
+		not LUI.createMenu.OptionsMenu or ZmQolWrappedOptionsMenu == LUI.createMenu.OptionsMenu then
 		return false
 	end
-
-	ZmQolParentMenuWrapped = true
 
 	CoD.Options.OpenQolHud = function (OptionsMenuWidget, ClientInstance)
 		if OptionsMenuWidget:getParent() then
@@ -2925,6 +2935,7 @@ ZmQolInstallParentOptionsMenu = function ()
 		OptionsMenuWidget:registerEventHandler("open_qol_cheats", CoD.Options.OpenQolCheats)
 		return OptionsMenuWidget
 	end
+	ZmQolWrappedOptionsMenu = LUI.createMenu.OptionsMenu
 
 	return true
 end
