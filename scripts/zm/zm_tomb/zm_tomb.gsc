@@ -171,14 +171,36 @@ main()
 
 zmqol_tomb_challenges_init()
 {
-    //  Challenges are classic-Origins content: four challenge chests, the quest
-    //  path and the milestone drum. No survival location has any of that, so
-    //  skip registration off classic. Crazy Place Survival is the reported case.
+    //  Survival locations have no challenge chests, boards, or quest path, so
+    //  no milestone can ever complete here. Classic Origins keeps the stock
+    //  stat table through the normal pointer.
     if ( !is_classic() )
-        return;
+        level.challenges_add_stats = ::zmqol_tomb_challenges_survival_stats;
+    else
+        level.challenges_add_stats = maps\mp\zm_tomb_challenges::tomb_challenges_add_stats;
 
-    level.challenges_add_stats = maps\mp\zm_tomb_challenges::tomb_challenges_add_stats;
     maps\mp\zombies\_zm_challenges::init();
+}
+
+//  Survival stat table: the same four stats in the same order (add_stat names
+//  challenge_complete_1..4 by position), but with goals no run can reach and
+//  no reward or tracker threads, so the medal drum never plays and no free
+//  packed weapon, max ammo, or perk is handed out.
+//
+//  The table must still exist. Stock init registers the four
+//  challenge_complete_N clientfields and the client registers its half
+//  unconditionally, so skipping init outright disconnects survival with
+//  EXE_CLIENT_FIELD_MISMATCH. The stock connect and spawn handlers run
+//  against these stats and find nothing awarded, which is the correct state.
+//
+//  add_stat is qualified because this file does not include _zm_challenges;
+//  an unqualified call would not resolve here.
+zmqol_tomb_challenges_survival_stats()
+{
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_headshots", 0, &"ZM_TOMB_CH1", 2000000000 );
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_zone_captures", 0, &"ZM_TOMB_CH2", 2000000000 );
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_points_spent", 0, &"ZM_TOMB_CH3", 2000000000 );
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_boxes_filled", 1, &"ZM_TOMB_CHT", 2000000000 );
 }
 
 // ============================================================================
