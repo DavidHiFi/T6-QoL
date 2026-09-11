@@ -186,28 +186,23 @@ struct_init()
 	zmqol_add_wallbuy( "ksg_zm",         "t6_wpn_shotty_ksg_world",   (10576, -7670, -383), (0, 45, 0) );
 
 	// --- the M14 on the west pillar ---------------------------------------
-	//  (v2.15.41, corrected v2.15.42) User, 2026-09-11: a fifth wall-buy on
-	//  the west pillar face. v2.15.41 guessed it (64 out along yaw 204, 80 up
-	//  like the four platform pillars) and it shipped floating high with no
-	//  chalk on the wall - the buy prompt only showed on jump. Measured, not
-	//  guessed, this time:
-	//    * DEPTH: the user's two .where rays - (9961,-7748) yaw 204 and
-	//      (9935,-7711) yaw 234 - intersect at (9883,-7783), ~86 out. The
-	//      struct floats in open air anywhere short of ~71 (its glow stays
-	//      visible), so the face sits at that intersection.
-	//    * HEIGHT: twenty stock buys audited against nearest pathnodes in the
-	//      zm_tomb mapents: struct origin sits +21..+39 over walkable floor
-	//      (canonical +30). The four platform pillars only look like +80 -
-	//      their floor is higher. This pillar's floor is the buyer's feet
-	//      (-455), so -425. Stock's trigger box is model-bounds-sized about
-	//      the origin, which is why +70 needed a jump and +30 does not.
-	//    * YAW 37: face-to-buyer bearing, so gun and chalk lie flat to the
-	//      buyer. m14_zm needs no include on either side: stock zm_tomb
-	//      registers it server-side and zm_tomb.csc already include_weapons()
-	//      it client-side (its Origins chalk is fx_zmb_wall_buy_rifle).
+	//  (v2.15.41, corrected v2.15.42, RE-TRACED v2.15.43) User, 2026-09-11:
+	//  a fifth wall-buy on the west pillar face. v2.15.41 guessed it (64 out
+	//  along yaw 204, 80 up like the four platform pillars) and shipped
+	//  floating high with no chalk on the wall. v2.15.42 crossed the user's
+	//  two .where rays at (9883,-7783) with canonical +30 height - the prompt
+	//  then showed standing, but the gun still floated 43 off the face:
+	//  crossing two aim rays invents along-ray precision that is not there.
+	//  v2.15.43 bakes the user's own live `.wallhere` trace instead - stood
+	//  at (9885,-7718,-453) facing 268, wall 109 out: face (9884,-7827),
+	//  origin feet + 30 = -424, wall normal yaw 30. Rounded to ints on both
+	//  sides so the <weapon>_<origin> clientfield still matches character
+	//  for character. m14_zm needs no include on either side: stock zm_tomb
+	//  registers it server-side and zm_tomb.csc already include_weapons()
+	//  it client-side (its Origins chalk is fx_zmb_wall_buy_rifle).
 	//  🛑 EXACT TWIN in scripts\zm\zm_expanded.csc::
 	//  zmqol_add_crazy_place_wallbuys() - same rule as the four above.
-	zmqol_add_wallbuy( "m14_zm", "t6_wpn_ar_m14_world", (9883, -7783, -425), (0, 37, 0) );
+	zmqol_add_wallbuy( "m14_zm", "t6_wpn_ar_m14_world", (9884, -7827, -424), (0, 30, 0) );
 }
 
 // ============================================================================
