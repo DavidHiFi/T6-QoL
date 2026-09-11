@@ -6,7 +6,7 @@
 
 **An extensive overhaul mod for Call of Duty: Black Ops II - Zombies on [Plutonium](https://plutonium.pw).**
 
-Almost all Campaign weapons and every single Multiplayer weapon in the Mystery Box, 4 wonder weapons ported straight from the unreleased DLC5, bonus Survival maps, and a user-friendly Settings menu that you can configure to your heart's content in-game.
+Extra Campaign and Multiplayer weapons in the Mystery Box, 4 wonder weapons ported straight from the unreleased DLC5, bonus Survival maps, and a user-friendly Settings menu that you can configure to your heart's content in-game.
 
 <a href="https://github.com/DavidHiFi/T6-QoL/releases/latest">
 <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20DOWNLOAD%20LATEST%20RELEASE-2EA043?style=for-the-badge&labelColor=161B22" alt="Download the latest release" height="42">
@@ -99,7 +99,63 @@ Use a `.`, `!` or `/` prefix, or bind them to keys. Type `.help` in game for the
 
 ---
 
-## Building from source
+## What's in the mod
+
+### Weapons
+
+**More guns in the Mystery Box:** Storm PSR, Dragunov, SPAS-12, SWAT-556, FAL OSW, Mk 48, QBB LSW, MP7, Vector K10, MSMC, Peacekeeper, Crossbow, XPR-50, Titus-6 and Tac-45.
+
+**Black Ops 1 classics:** M60, L96A1, Browning HP and RPG-7.
+
+**DLC5 wonder weapons:** Wave Gun, Thundergun, Wunderwaffe DG-2 and Winter's Howl.
+
+Origins and Buried skip some of these so the maps still load — everything else is in the box on every map.
+
+**Small gunplay touches:** the Pack-a-Punched SPAS-12 and the Python reload in one go. Bouncing Betties join the box and share the Claymore slot, so one mine type at a time. The Jet Gun takes a real weapon slot and respects Mule Kick — it still overheats, but never breaks.
+
+### Bonus Survival maps
+
+| Base map | Locations |
+|---|---|
+| TranZit | Diner, Power Station, Tunnel |
+| Die Rise | Shopping Mall, Dragon Rooftop, Sweatshop |
+| Mob of the Dead | Cell Block |
+| Buried | Borough |
+| Origins | The Crazy Place |
+
+### Gameplay
+
+* **Der Wunderfizz** — the random perk machine, on every map.
+* **No perk limit** — hold as many as you like, or set a cap of 1–12 in the pre-game lobby.
+* **Better Speed Cola** — an optional switch that also speeds up window boarding and drinking perks.
+* **Instant Pack-a-Punch** — Cold War-style, no wait. Toggle it in the settings menu.
+* **Bonfire Sale** — BO1's Pack-a-Punch sale from *Five*: 1,000-point upgrades for 30 seconds. Part of **Custom Power-Ups**, on every map except Mob of the Dead and Buried.
+* **Solo Easter Eggs** — a pre-game lobby switch (TranZit, Die Rise, Mob of the Dead, Buried, Origins) that scales the main quest to your actual party size instead of always demanding four. On Mob of the Dead you can fly the plane alone. Off by default, Classic only.
+
+### Map-specific touches
+
+* **Die Rise** — the Sliquifier can be Pack-a-Punched. Treyarch built the upgraded gun and left it in the files without ever hooking it up; here it kills at any round. There's also a Semtex wallbuy.
+* **TranZit (Diner Survival)** — a Semtex wallbuy by the doorway.
+
+### Look and feel
+
+* **Animated Pack-a-Punch camo** — every upgraded gun gets an animated camo on all six maps; turn it off and each map uses its own stock camo. Needs the [HD Texture Pack](#standalone-downloads).
+* **Ray Gun skin** — Green Run, Die Rise and Nuketown use Buried's remade Ray Gun model instead of the old Black Ops 1 one, in the box and in players' hands.
+* **Timers and counters** — game and round timers with configurable colours, plus a Cold War-style round counter.
+* **Health bar** — bottom left, with your health as a number. Turns yellow, then red when the next hit would down you. Shields get their own bar above it.
+* **Subtitles** — optional dialogue subtitles on every map (HUD tab: OFF / SUBTITLES / SUBTITLES + NAMES). Covers the crew, announcers, Maxis, Samantha and each map's extra voices. The lines were transcribed from the game audio, so the odd word may be off.
+* **Scoreboard emblems** — every map shows its own crew emblem instead of the missing-texture checkerboard the DLC maps used to draw.
+* **Hitmarkers** — pick your hit, kill, crit and downed sounds, or turn them off.
+* **In-game menu** — mechanics, rules, HUD and audio options with no console commands, including a **VOICE LINES** switch for your character's chatter.
+* **Third person** and **knife lunge** — two switches on the GAME 3 tab. Third person moves the camera behind you; turning knife lunge off stops the melee pull so you knife where you stand.
+* **Extras** — tap-to-interact controller support under the standard Gamepad menu, plus a tailored *Cinematic Colour Grading* ReShade preset.
+
+---
+
+<details>
+<summary><b>Building from source</b></summary>
+
+<br>
 
 For script and menu changes, run `build.bat offline` to repack and verify the five
 mod files locally. This does not compile scripts or install anything. `build.bat`
@@ -112,136 +168,13 @@ they can require untracked asset sources and donor files. The root `mod.zone` is
 an unused empty legacy file; `zone_source/mod.zone` is the active fastfile recipe.
 A successful pack or link does not establish startup or gameplay compatibility.
 
+</details>
+
 ## Contribute To Support Development
 
 The mod is free and always will be. Any amount of support is greatly appreciated, and I do sincerely hope you enjoy my little project. :-)
 
 [![Support DavidHiFi on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/davidhifi)
-
----
-
-## Weapons
-
-* **Campaign and Multiplayer guns/equipment in the box:**
-  * Storm PSR
-  * Dragunov
-  * SPAS-12
-  * SWAT-556
-  * FAL OSW
-  * Mk 48
-  * QBB LSW
-  * MP7
-  * Vector K10
-  * MSMC
-  * Peacekeeper
-  * Crossbow
-  * XPR-50
-  * Titus-6
-  * Tac-45
-
-* **DLC5 wonder weapons:**
-  * The Wave Gun
-  * Thundergun
-  * Wunderwaffe DG-2
-  * Winter's Howl
-  * All four are in the Mystery Box on every map except Origins and Buried.
-
-* **Black Ops 1 guns in the box:**
-  * M60 — Pack-a-Punches into **The Pig**
-  * L96A1 — Pack-a-Punches into the **L115 Isolator**
-  * Browning HP — Pack-a-Punches into **Bap**
-  * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
-  * All four are in the Mystery Box on every map except Origins. Origins runs out of weapon
-    precache slots — adding these four stopped the map loading at all — so it keeps the box it had.
-
-* **Reloads that don't waste your time:**
-  * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
-  * The Python loads all six rounds at once, the way its Pack-a-Punched version always has.
-
-* **Bouncing Betties:**
-  * The multiplayer proximity mine, in the Mystery Box on every map. You can only carry one kind of mine at a time: pulling Betties from the box replaces your Claymores, buying Claymores replaces your Betties, and both use the same equipment button.
-
-* **Jet Gun clean-up:**
-  * It's carried as a normal primary that cycles with your other guns instead of living in an equipment slot, so it costs a real weapon slot and respects Mule Kick. Still overheats, never breaks.
-
-* **Pack-a-Punchable Sliquifier:**
-  * Die Rise's Sliquifier can be Pack-a-Punched. Treyarch built the upgraded gun, called it the **Sl1qu1f13r** and left it in the game files without ever connecting it to the machine.
-  * The packed one kills at any round. The goo and every zombie the chain reaches die however much health they have, so it never falls off. The unpacked Sliquifier is exactly as it is in the stock game.
-
----
-
-## Maps, Power-ups, and Perks
-
-**Bonus Survival maps:**
-* **TranZit**
-  * Diner
-  * Power Station
-  * Tunnel
-* **Die Rise**
-  * Shopping Mall
-  * Dragon Rooftop
-  * Sweatshop
-* **Mob of the Dead**
-  * Cell Block
-* **Buried**
-  * Borough
-* **Origins**
-  * The Crazy Place
-
-* **Der Wunderfizz Machine on all maps:**
-  * The random perk machine is available on every map, not just Origins.
-
-* **No perk limit:**
-  * Carry as many as you like by default, or set a cap of 1–12 from the pre-game lobby.
-
-* **Better Speed Cola:**
-  * A **BETTER SPEED COLA** switch on the GAME tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
-
-* **Solo Easter Eggs:**
-  * A **SOLO EASTER EGGS** switch in the pre-game lobby on TranZit, Die Rise, Buried, Origins and Mob of the Dead. Turn it on and the main quest scales to however many players are actually in the lobby, instead of always demanding four. On Mob of the Dead that means the Final Flight can be boarded alone, and finishing it gives you Pop Goes the Weasel — which ending you get still depends on whether you are playing as the Weasel, exactly as the game decides it for a full team. Off by default, and the row is only shown on those five maps in Classic — never on Survival or Grief.
-
-* **Instant Pack-a-Punch:**
-  * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War - Zombies. It can be turned on or off in the settings menu.
-
-* **Bonfire Sale:**
-  * BO1's Pack-a-Punch power-up, from *Five*. Pick it up and Pack-a-Punch costs 1,000 points instead of 5,000 for thirty seconds. Part of the **Custom Power-Ups** option, on every map except Mob of the Dead and Buried.
-
----
-
-## Presentation
-
-* **Animated Pack-a-Punch camo:**
-  * Every Pack-a-Punched gun gets the *Dark Matter* animated camo on all six maps; switch it off and each map uses its own stock PaP camo. The textures ship in the [HD Texture Pack](#standalone-downloads), so install that for the option to do anything.
-
-* **Ray Gun skin:**
-  * Black Ops II quietly ships two different Ray Guns. Buried and Origins got a remade model with new textures; Green Run, Die Rise, Nuketown and Mob of the Dead kept the older Black Ops 1 one. The Pack-a-Punched Ray Gun now wears Buried's on Green Run, Die Rise and Nuketown, and so does the Ray Gun you see in the box, lying on the floor and in other players' hands.
-
-* **Timers and counters:**
-  * Game and round timers with configurable colours, plus a Cold War round counter.
-
-* **Health bar:**
-  * A green bar in a grey box, bottom left, that turns yellow once you take damage and red when the next zombie hit would down you, with your health as a number beside it. Carrying a shield adds its own bar above and its remaining health next to yours.
-
-* **Subtitles:**
-  * A **SUBTITLES** row on the HUD tab (OFF / SUBTITLES / SUBTITLES + NAMES) puts spoken lines on screen as text, on all six maps, solo and co-op: your own character in white, every other voice in grey, and the NAMES setting puts the speaker's name in front of every displayed chunk. That is every voice, not just the characters: the announcer (power-ups, the box, the dog rounds), Maxis and Samantha (Origins' radios and generators included), Richtofen in Stuhlinger's head, Brutus, the bus driver, the TVs and radios, the ghost, and Die Rise's whispering zombies. Lines that play at the same time stack on two rows, with older lines below newer ones; when an older line fades, the newer line slides down (on Nuketown that includes Marlton in the bunker). The text was machine-transcribed from the game's own audio, so the odd word can be off. The quest lines the maps play outside the normal dialogue system (the Origins Samantha intro and Richtofen exchanges, Mob's chair, free-fall and showdown lines, Buried's answers to Richtofen) are covered too; Maxis, Samantha and the Richtofen voice in Stuhlinger's head are treated as separate speakers.
-
-* **Scoreboard crew emblems:**
-  * The scoreboard shows the crew that belongs to the map you're on, in Classic and Survival alike. Origins and its Crazy Place get the Primis emblem, Buried and Borough get Buried's, Mob of the Dead and Cell Block get the inmates', and Die Rise and its three Survival locations get their own. Green Run and Nuketown keep the TranZit survivors in Classic; in Survival they show CIA or CDC to match the character you picked. Before this, every DLC map drew a missing-texture checkerboard there instead.
-
-* **Hitmarkers:**
-  * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.
-
-* **In-game menu:**
-  * Mechanics, gameplay rules, HUD and audio options are all toggleable in game — no console commands. That includes a **VOICE LINES** switch for your character's spoken lines.
-
-* **Third person:**
-  * A **THIRD PERSON** switch on the GAME 3 tab puts the camera behind your character. Off is the normal view.
-
-* **Knife lunge:**
-  * A **KNIFE LUNGE** switch on the GAME 3 tab. On is the normal game. Off removes the melee charge that pulls you onto a zombie, so you knife where you stand.
-
-* **Extras:**
-  * Native "Tap to Interact" controller support under the standard Gamepad menu, and a tailored *Cinematic Colour Grading* ReShade preset.
 
 ---
 
@@ -270,7 +203,7 @@ Built on [**Plutonium**](https://plutonium.pw), with **OpenAssetTools** and **xe
 
 **Disclaimers/Other Information:**
 
-This mod's code is mostly made using **Claude Code AI**; however, **ANY** and **ALL** artwork is human-made. I understand how controversial the usage of AI in any form is perceived to be, and that this will come as a disappointment to some; any criticism is understandable — I am not a coder, nor have I ever claimed to be. This project's initial intention was for it to be used by me, and me only. I have decided to open this project up as I understand that this could be quite resourceful.
+Most of this mod's code was built with the help of AI coding assistants; however, **ANY** and **ALL** artwork is human-made. I understand how controversial the usage of AI in any form is perceived to be, and that this will come as a disappointment to some; any criticism is understandable — I am not a coder, nor have I ever claimed to be. This project's initial intention was for it to be used by me, and me only. I have decided to open this project up as I understand that this could be quite resourceful.
 
 <div align="center">
 <br>
