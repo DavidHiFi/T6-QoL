@@ -1634,12 +1634,14 @@ end
 --  past both ends of its container, over the tab strip above and the ESC
 --  prompt below. That is the whole of the reported "scuffed-ness".
 --
---  The mod's own tabs, as of v2.14.28: GAME 1 15.0, GAME 2 14.0, GAME 3 3.0,
+--  The mod's own tabs, as of v2.15.45: GAME 1 14.0, GAME 2 14.0, GAME 3 3.0,
 --  HUD 15.0 (v2.14.16, full), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
 --  PATCHES before v2.12.5; both were already at the ceiling, which is why
 --  GAME 3 exists.) The stock tabs this file also builds: ADVANCED 15.0 (full).
---  🌟 v2.14.17 - GAME 2 HAS ONE FREE PITCH AGAIN: SLIQUIFIER PRE-NERF was
---  removed at the user's request. GAME 1 and HUD are still at the ceiling.
+--  🌟 v2.15.45 - GAME 1 AND GAME 2 ARE LEVEL AT 14 ROWS BY REQUEST (user,
+--  2026-09-12): BACKSPEED FIX moved from GAME 2 back to GAME 1, and NO DENIZENS
+--  moved from GAME 3 to GAME 2. Both sit one row under the 15.0 ceiling.
+--  🌟 v2.14.17 - SLIQUIFIER PRE-NERF was removed at the user's request.
 --  🛑 IF YOU ADD A ROW, ADD IT TO THE SHORTEST TAB IT HONESTLY BELONGS IN.
 --
 --  🌟 v1.99.61 - THE CEILING IS 15.0 PITCHES, NOT 14.5, AND IT IS MEASURED.
@@ -1761,13 +1763,16 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	-- nothing until it is thrown. OFF is exact stock: 0.7 back, 0.8 strafe,
 	-- 0.667 sprint-strafe, read out of this install's own dvar dump. Live both
 	-- ways; see qol_options::qol_opt_move_speed().
-	-- 🛑 v1.99.52 - the LABEL is "BACKSPEED PATCH" now (user, 2026-08-18) but the
-	-- DVAR is still move_speed, deliberately: it is already archived in the
-	-- player's config from v1.99.51 and it is the name the console takes.
-	-- Renaming it would reset the saved setting. Same call as whoswho_knife.
-	-- 🛑 v1.99.93 - BACKSPEED PATCH and ANIMATED CAMO PATCH MOVED TO THE NEW
-	-- PATCHES TAB, dvars unchanged (move_speed / anim_pap_camo). Do not re-add
-	-- them here; see CoD.OptionsSettings.CreateQolPatchesTab.
+	-- 🛑 v1.99.52 - the DVAR is move_speed and it stays that name: it is already
+	-- archived in the player's config from v1.99.51 and it is the name the
+	-- console takes. Renaming it would reset the saved setting. Same call as
+	-- whoswho_knife.
+	-- 🌟 v2.15.45 - MOVED BACK from GAME 2 and relabelled BACKSPEED FIX (user,
+	-- 2026-09-12): GAME 1 sat one row short of GAME 2 and this row lived here
+	-- before v1.99.93 moved it out. The dvar is untouched. One row went out of
+	-- GAME 2 to here and one row came into GAME 2 from GAME 3, so GAME 1 and
+	-- GAME 2 now show the same 14 rows.
+	T(QolButtons, LocalClientIndex, "BACKSPEED FIX",      "move_speed",          "Walk backwards and sideways at full speed.")
 
 	-- v1.99.61, user request 2026-08-18. ON by default - the +100 for proning
 	-- at a perk machine is behaviour the mod has always had, so the switch
@@ -1915,8 +1920,11 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	-- 🛑 STALE AGAIN, FIXED 2026-08-30 - said "14 rows + 1 spacer = 14.5";
 	-- PERMA-PERKS (v2.8.0) was added and the spacer had already gone. Recounted
 	-- against the T() calls: 15 rows, no spacer - also at the 15.0 ceiling.
-	-- v2.14.14 - FLASH CREDITS + FLASH HELP became the one FLASH MESSAGES row:
-	-- 13 T() + 1 C() = 14 rows, no spacer. One row of room, kept free on purpose.
+	-- 🛑 STALE A THIRD TIME, FIXED v2.15.45 - the v2.14.14 line this note used to
+	-- carry no longer describes this tab: FLASH MESSAGES is built on HUD now
+	-- (see CreateQolHudTab) and this tab held 13 rows, one short of GAME 2.
+	-- Recounted against the T() calls, 2026-09-12. BACKSPEED FIX arrived from
+	-- GAME 2 in v2.15.45 to level the two tabs at 14 rows each.
 	return QolContainer                              -- 14 rows + 0 spacers = 14.0
 end
 
@@ -2148,15 +2156,17 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 
 	local T = CoD.OptionsSettings.QolToggle
 
-	-- Moved here from the GAME tab, dvars unchanged.                  2 rows
-	T(QolPatchesButtons, LocalClientIndex, "BACKSPEED PATCH",     "move_speed",          "Walk backwards and sideways at full speed.")
-	T(QolPatchesButtons, LocalClientIndex, "NETWORK FRAME PATCH", "network_frame_patch", "Solo runs on the console's fixed 100ms network frame instead of PC timing.")
+	-- v2.15.45 - ONE row remains of the pair this block used to hold: BACKSPEED
+	-- FIX went back to GAME 1 (row balance, user 2026-09-12) and NO DENIZENS
+	-- arrived from GAME 3 further down. Both dvars unchanged.
+	T(QolPatchesButtons, LocalClientIndex, "NETWORK FRAME FIX", "network_frame_patch", "Solo runs on the console's fixed 100ms network frame instead of PC timing.")
 	-- 🛑 v2.1.2 - GRAPHICS BOOST IS NOT HERE ANY MORE. It moved to the stock
 	-- ADVANCED tab at the user's request, 2026-08-21, where the dvars it
 	-- overwrites already live. Its dvar is unchanged (graphics_boost) and so is
-	-- its behaviour; see the note in CreateAdvancedTab. This tab is now 10 rows
-	-- + 2 half-spacers = 11.0 pitches.
-	T(QolPatchesButtons, LocalClientIndex, "ANIMATED CAMO PATCH", "anim_pap_camo",       "Animated Pack-a-Punch camo on every map.")
+	-- its behaviour; see the note in CreateAdvancedTab. The "10 rows + 2
+	-- half-spacers = 11.0 pitches" this note used to end with was the v2.1.2
+	-- count; the footer below carries the current one.
+	T(QolPatchesButtons, LocalClientIndex, "ANIMATED CAMO FIX",   "anim_pap_camo",       "Animated Pack-a-Punch camo on every map.")
 
 
 	-- The legacy / pre-patch restorations.                            5 rows
@@ -2192,7 +2202,8 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	--  is left reading a dvar no menu writes.
 	-- ========================================================================
 	-- ========================================================================
-	--  v2.2.0 - NO BLEEDOUT PATCH. User, 2026-08-21: *"add an option to the
+	--  v2.2.0 - NO BLEEDOUT FIX (labelled "NO BLEEDOUT PATCH" until v2.15.45).
+	--  User, 2026-08-21: *"add an option to the
 	--  patches to tab called NO BLEEDOUT PATCH, which as the name suggests,
 	--  makes it so zombies don't die by themselves after being alive for too
 	--  long or getting stuck, so that way the player would have to actually kill
@@ -2209,7 +2220,7 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	--  would end the round forever rather than making the player earn the kill.
 	--  See zmqol_round_spawn_failsafe() in quality_of_life.gsc.
 	-- ========================================================================
-	T(QolPatchesButtons, LocalClientIndex, "NO BLEEDOUT PATCH",    "no_bleedout",         "Stuck zombies stay alive. You have to kill every one yourself.")
+	T(QolPatchesButtons, LocalClientIndex, "NO BLEEDOUT FIX",      "no_bleedout",         "Stuck zombies stay alive. You have to kill every one yourself.")
 
 	-- ========================================================================
 	--  v2.7.0 - NO LAVA DAMAGE. User, 2026-08-28: *"add an option ... that lets
@@ -2218,9 +2229,18 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	--  explode once shot/killed, and the player will no longer take damage from
 	--  standing on any pits of lava."* TranZit-family only (Classic TranZit,
 	--  Diner, Farm, Town, Bus Depot). Shown on every map, same as the other
-	--  map-specific rows on this tab (NO BLEEDOUT PATCH above).
+	--  map-specific rows on this tab (NO BLEEDOUT FIX above).
 	-- ========================================================================
 	T(QolPatchesButtons, LocalClientIndex, "NO LAVA DAMAGE",     "no_lava_damage",      "TranZit maps. The lava still glows, but it stops burning you and the zombies.")
+
+	-- ========================================================================
+	--  v2.15.45 - NO DENIZENS MOVED HERE FROM GAME 3. Same user request as the
+	--  BACKSPEED FIX move above (2026-09-12): GAME 2 gave a row to GAME 1 and
+	--  takes this one from GAME 3, so GAME 1 and GAME 2 both hold 14 rows. It
+	--  is TranZit map behaviour, so it sits next to the other map-specific row.
+	--  Label and dvar unchanged (no_denizens).
+	-- ========================================================================
+	T(QolPatchesButtons, LocalClientIndex, "NO DENIZENS",        "no_denizens",         "TranZit. No denizens spawn in the fog. Any already out are left alone.")
 
 	-- ========================================================================
 	--  v2.7.2 - 3 HIT DOWN. User, 2026-08-28: *"add '3 HIT DOWN' which as the
@@ -2259,13 +2279,16 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	T(QolPatchesButtons, LocalClientIndex, "ROUND DELAY OFF",    "round_delay_off",     "No pause between rounds. Removes the 10 second gap and the round announce wait.")
 	T(QolPatchesButtons, LocalClientIndex, "NO WALKERS",         "no_walkers",          "Every zombie sprints from round 10. No walkers to break up a train.")
 
-	-- 🛑 STALE COUNT FIXED 2026-08-27 - said "9 total"; NO BLEEDOUT PATCH (v2.2.0)
+	-- 🛑 STALE COUNT FIXED 2026-08-27 - said "9 total"; NO BLEEDOUT FIX (v2.2.0)
 	-- was added without updating it. Recounted directly against the T() calls.
 	-- v2.8.2 - two rows added (WINTER'S HOWL INFINITE, ROUND DELAY OFF).
-	-- v2.8.6 - NO WALKERS added, and BOTH half-spacers removed to pay for it:
-	-- 15 rows + 0 spacers = 15.0 pitches, exactly the measured ceiling in the
-	-- note above. This tab is FULL. Do not add a 16th row without moving one off.
-	return QolPatchesContainer                                      -- 15 total
+	-- v2.8.6 - NO WALKERS added, and BOTH half-spacers removed to pay for it.
+	-- v2.14.17 - SLIQUIFIER PRE-NERF removed; the "15 rows / FULL" this note
+	-- claimed was already one out. Recounted 2026-09-12: 14 rows.
+	-- v2.15.45 - one row out (BACKSPEED FIX back to GAME 1), one row in (NO
+	-- DENIZENS from GAME 3). STILL 14 rows + 0 spacers = 14.0 pitches - GAME 1
+	-- now holds the same 14 by request, so keep the two tabs level.
+	return QolPatchesContainer                                      -- 14 total
 end
 
 -- ============================================================================
@@ -2277,10 +2300,10 @@ end
 --  setting it to enabled makes no denizens spawn in the fog so they wont annoy
 --  the player."*
 --
---  🌟 THE TAB EXISTS BECAUSE THE OTHER TWO ARE MEASURABLY FULL, not as a
---  preference. CreateQolTab returns 15.0 row-pitches and CreateQolPatchesTab
---  returns 15.0, and 15.0 is the ceiling derived in the note above CreateQolTab
---  from the user's own overflow screenshots. A 16th row on either one is the
+--  🌟 THE TAB EXISTS TO GIVE NEW ROWS A HOME, not as a preference: at v2.12.5
+--  the other two were at their measured limits. 15.0 is the ceiling derived in
+--  the note above CreateQolTab from the user's own overflow screenshots; after
+--  v2.15.45 GAME 1 and GAME 2 both sit at 14.0. A 16th row on either is the
 --  reported bug, not a risk of it.
 --
 --  📝 ROOM LEFT: 12 more rows (v2.14.28) before this tab reaches the same ceiling. When
@@ -2299,8 +2322,9 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 
 	local T = CoD.OptionsSettings.QolToggle
 
-	--                                                                  3 rows
-	T(QolGame3Buttons, LocalClientIndex, "NO DENIZENS", "no_denizens", "TranZit. No denizens spawn in the fog. Any already out are left alone.")
+	-- v2.15.45 - NO DENIZENS MOVED TO GAME 2 (row balance, user 2026-09-12).
+	-- Its label and dvar are untouched; see the note beside it on GAME 2. This
+	-- tab now holds 3 rows, 12 short of the 15.0-pitch ceiling.
 
 	-- ========================================================================
 	--  v2.14.13 - THIRD PERSON. User request 2026-09-07: "put a 3rd person
@@ -2336,7 +2360,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 
-	return QolGame3Container                          -- 4 rows + 0 spacers = 4.0
+	return QolGame3Container                          -- 3 rows + 0 spacers = 3.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
