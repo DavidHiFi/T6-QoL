@@ -294,6 +294,50 @@ init()
     register_placeable_mine_for_level( "bouncingbetty_zm" );
 
     level thread zmqol_betty_onplayerconnect();
+    level thread zmqol_betty_round_refill();
+}
+
+//  ============================================================================
+//  zmqol_betty_round_refill - ROUND FLIP REFILLS THE BETTIES, CLAYMORE PARITY.
+//
+//  User, 2026-09-11: "whenever a round flips over you get your claymores
+//  refilled - make that the same way for the bouncing betty's as well."
+//
+//  Stock's own give_claymores_after_rounds() (_zm_weap_claymore.gsc:431) sits
+//  on `level waittill( "between_round_over" )` and, unless the teleporter was
+//  used, re-gives every player whose placeable-mine record is claymore_zm:
+//      giveweapon + set_player_placeable_mine + setactionslot 4 + setclip 2.
+//  This is that function, name-swapped. The is_player_placeable_mine check is
+//  the same ownership gate the max-ammo watch uses: players who never boxed
+//  Betties, and players who swapped them for Claymores, are skipped, while a
+//  player who planted both (weapon gone, record kept) is re-given. Stock only
+//  sets the clip; the stock line is set too so a planted-but-unfired count
+//  reads back identically to a claymore's.
+// ============================================================================
+zmqol_betty_round_refill()
+{
+    for (;;)
+    {
+        level waittill( "between_round_over" );
+
+        if ( !level flag_exists( "teleporter_used" ) || !flag( "teleporter_used" ) )
+        {
+            a_players = get_players();
+
+            for ( i = 0; i < a_players.size; i++ )
+            {
+                if ( a_players[i] is_player_placeable_mine( "bouncingbetty_zm" ) )
+                {
+                    a_players[i] giveweapon( "bouncingbetty_zm" );
+                    a_players[i] set_player_placeable_mine( "bouncingbetty_zm" );
+                    a_players[i] setactionslot( 4, "weapon", "bouncingbetty_zm" );
+                    a_players[i] setweaponammoclip( "bouncingbetty_zm", 2 );
+                    a_players[i] setweaponammostock( "bouncingbetty_zm", 2 );
+                    println( "[zm_qol] betty round refill: restocked to 2" );
+                }
+            }
+        }
+    }
 }
 
 //  ============================================================================
