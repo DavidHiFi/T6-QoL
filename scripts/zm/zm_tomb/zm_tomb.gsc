@@ -165,6 +165,27 @@ main()
     replaceFunc( maps\mp\zm_tomb_capture_zones::recapture_round_tracker,    scripts\zm\replaced\zm_tomb_capture_zones::recapture_round_tracker );
     replaceFunc( maps\mp\zm_tomb_capture_zones::all_zones_captured_vo,      scripts\zm\replaced\zm_tomb_capture_zones::all_zones_captured_vo );
 
+    // ========================================================================
+    //  ORIGINS SURVIVAL - the four chamber walls rise instead of snapping.
+    //
+    //  User, 2026-09-12: *"the walls just kind of disappear, they just
+    //  instantly disappear ... make it so that the walls fly up and then
+    //  disappear"*. Stock zm_tomb_chamber::inits raises every "chamber_wall"
+    //  1000 units with moveto( up_origin, 0.05 ) - a 50ms snap that nobody
+    //  sees from the classic Excavation Site spawn, but that the Crazy Place
+    //  survival spawn watches from the middle of the chamber.
+    //
+    //  The replacement is stock inits verbatim, one branch added: outside
+    //  classic the same walls fly to the same up_origin over 2s (echoing
+    //  stock's own move_wall_up timing shape) and connect paths when they
+    //  arrive. Classic Origins takes the stock 0.05s snap byte for byte.
+    //
+    //  📝 Registered in main(), not init(), for the reason at the top of this
+    //  function: inits() is threaded at map-init, so a replaceFunc in init()
+    //  would land after it had already run.
+    // ========================================================================
+    replaceFunc( maps\mp\zm_tomb_chamber::inits, scripts\zm\replaced\zm_tomb_chamber::inits );
+
     // Must run in main(), before the map registers its own clientfields.
     zmqol_register_survival_clientfields();
 }
