@@ -105,7 +105,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) install by hand, like any other Plu
 - **Timers and counters:** game and round timers with colours, plus a Cold War round counter.
 - **Hitmarkers:** choose your hit, kill, crit and downed sounds, or turn them off.
 - **Scoreboard emblems:** each map shows its own crew.
-- **Cheats:** god mode, ghost, infinite ammo, infinite sprint, fly, rapid fire, one shot, no power, round jumps, points, teleport.
+- **Cheats:** god mode, ghost, infinite ammo, infinite sprint, fly, rapid fire, one shot, no power, round control, points, teleport.
 - **Options:** everything is configurable in game, no console needed.
 
 ### Visuals
@@ -118,7 +118,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) install by hand, like any other Plu
 
 - **Third person:** camera behind your character (GAME 3 tab).
 - **Knife lunge:** turn it off to knife in place instead of lunging forward (GAME 3 tab).
-- **Tap to Interact:** controller support in the Gamepad menu.
+- **Tap to Interact:** tap the use button instead of holding it (Gamepad menu).
 
 ---
 
@@ -154,7 +154,6 @@ The mod adds nine Survival maps, plus a few tweaks that only apply to one map.
 
 ### Nuketown
 
-- **Hellhound rounds:** missing sounds and effects restored.
 - **Teleport:** three destinations from the map's own respawn points.
 
 ---
