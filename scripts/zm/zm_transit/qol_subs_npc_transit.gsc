@@ -52,6 +52,11 @@ zmqol_npc_repoint()
 // ----- maps\mp\zm_transit_sq::maxissay  (stock verbatim + 2 caption line(s)) -----
 zmqol_npc_maxissay( line, org, playonent, playonenttag, ignore_power_state )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - maxissay" );
 
     level endon( "end_game" );
@@ -89,6 +94,11 @@ zmqol_npc_maxissay( line, org, playonent, playonenttag, ignore_power_state )
 // ----- maps\mp\zm_transit_sq::richtofensay  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_richtofensay( vox_line, intro, ignore_power_state, time )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - richtofensay" );
 
     level endon( "end_game" );

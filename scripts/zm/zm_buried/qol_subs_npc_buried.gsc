@@ -36,6 +36,11 @@ init()
 // ----- maps\mp\zm_buried_sq::maxissayvoplay  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_maxissayvoplay( m_vo_spot, vox_line )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - maxissayvoplay" );
 
     scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, m_vo_spot, undefined, undefined );
@@ -48,6 +53,11 @@ zmqol_npc_maxissayvoplay( m_vo_spot, vox_line )
 // ----- maps\mp\zm_buried_sq::richtofensay  (stock verbatim + 2 caption line(s)) -----
 zmqol_npc_richtofensay( vox_line, time, play_in_3d )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - richtofensay" );
 
     level endon( "end_game" );

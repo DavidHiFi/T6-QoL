@@ -295,7 +295,7 @@ iwfx 2
 			1 0
 		}
 	};
-	sizeGraph0 40
+	sizeGraph0 30
 	{
 		{
 			0 1
@@ -306,7 +306,7 @@ iwfx 2
 			1 1
 		}
 	};
-	sizeGraph1 40
+	sizeGraph1 30
 	{
 		{
 			0 1
@@ -342,12 +342,12 @@ iwfx 2
 	alphaGraph 1
 	{
 		{
-			0 0.5
-			1 0.5
+			0 0.3
+			1 0.3
 		}
 		{
-			0 0.5
-			1 0.5
+			0 0.3
+			1 0.3
 		}
 	};
 	lightingFrac 0;

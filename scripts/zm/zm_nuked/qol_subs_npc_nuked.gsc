@@ -32,6 +32,11 @@ init()
 // ----- maps\mp\zm_nuked::moon_transmission_vo  (stock verbatim + 5 caption line(s)) -----
 zmqol_npc_moon_transmission_vo()
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - moon_transmission_vo" );
 
     start_round = 3;

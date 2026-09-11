@@ -1317,6 +1317,15 @@ treasure_chest_weapon_spawn( chest, player, respin )
     self.model_dw = undefined;
     self.weapon_model = spawn_weapon_model( rand, undefined, self.origin + v_float, self.angles + vectorscale( ( 0, 1, 0 ), 180.0 ) );
 
+    //  v2.15.44 - the MP Betty world model carries attachWorldModelOffsetPitch1
+    //  180 in its def (weapons/zm/bouncingbetty_zm), so the prize model this
+    //  routine raises renders upside down on every map. Guns have a 0 pitch
+    //  offset and are unaffected, planted mines and viewmodels never pass
+    //  through here, so correct only the Betty prize presentation by undoing
+    //  that baked pitch (180 + 180 = 360 = 0).
+    if ( rand == "bouncingbetty_zm" )
+        self.weapon_model.angles = self.weapon_model.angles + ( 180, 0, 0 );
+
     if ( weapon_is_dual_wield( rand ) )
         self.weapon_model_dw = spawn_weapon_model( rand, get_left_hand_weapon_model_name( rand ), self.weapon_model.origin - vectorscale( ( 1, 1, 1 ), 3.0 ), self.weapon_model.angles );
 

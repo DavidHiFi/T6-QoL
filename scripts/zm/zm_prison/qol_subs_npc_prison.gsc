@@ -109,6 +109,11 @@ zmqol_npc_nixie_935_audio()
 // ----- maps\mp\zm_prison_sq_final::stage_one  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_stage_one()
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - stage_one" );
 
     if ( isdefined( level.gamedifficulty ) && level.gamedifficulty == 0 )
@@ -146,6 +151,11 @@ zmqol_npc_stage_one()
 // ----- maps\mp\zm_prison_sq_final::nixie_final_audio_cue_code  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_nixie_final_audio_cue_code()
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - nixie_final_audio_cue_code" );
 
     m_nixie_tube = getent( "nixie_tube_1", "targetname" );
@@ -157,6 +167,11 @@ zmqol_npc_nixie_final_audio_cue_code()
 // ----- maps\mp\zm_prison_sq_final::play_sq_audio_log  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_play_sq_audio_log( num, a_vo, b_use_trig )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - play_sq_audio_log" );
 
     v_pos = getstruct( "sq_at_" + num, "targetname" ).origin;

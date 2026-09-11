@@ -48,6 +48,11 @@ init()
 // ----- maps\mp\zm_tomb_vo::samanthasayvoplay  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_samanthasayvoplay( e_source, vox_line )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - samanthasayvoplay" );
 
     scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, e_source, undefined, undefined );
@@ -60,6 +65,11 @@ zmqol_npc_samanthasayvoplay( e_source, vox_line )
 // ----- maps\mp\zm_tomb_vo::maxissayvoplay  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_maxissayvoplay( m_vo_spot, vox_line )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - maxissayvoplay" );
 
     scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, m_vo_spot, undefined, undefined );
@@ -72,6 +82,11 @@ zmqol_npc_maxissayvoplay( m_vo_spot, vox_line )
 // ----- maps\mp\zm_tomb_vo::play_maxis_audio_log  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_play_maxis_audio_log( v_trigger_origin, n_audiolog_id )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - play_maxis_audio_log" );
 
     a_audiolog = maps\mp\zm_tomb_vo::get_audiolog_vo();
@@ -118,6 +133,11 @@ zmqol_npc_play_maxis_audio_log( v_trigger_origin, n_audiolog_id )
 // ----- maps\mp\zm_tomb_vo::watch_one_shot_samantha_clue  (stock verbatim + 1 caption line(s)) -----
 zmqol_npc_watch_one_shot_samantha_clue( str_line, str_notify, str_endon )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - watch_one_shot_samantha_clue" );
 
     if ( isdefined( str_endon ) )
@@ -183,6 +203,11 @@ zmqol_npc_watch_one_shot_samantha_clue( str_line, str_notify, str_endon )
 // ----- maps\mp\zm_tomb_vo::play_sam_promises_conversation  (stock verbatim + 2 caption line(s)) -----
 zmqol_npc_play_sam_promises_conversation( a_promises )
 {
+    //  v2.15.44 - survival maps cannot run the full easter egg, so quest voices stay silent there.
+    //  Classic keeps the stock behavior below. (Generator SPEC marks this entry "survival_silent".)
+    if ( !is_classic() )
+        return;
+
     println( "[zm_qol] subtitles: hook ran - play_sam_promises_conversation" );
 
     for ( i = 0; i < a_promises.size; i++ )

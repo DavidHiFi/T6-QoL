@@ -21100,6 +21100,9 @@ zmqol_nb_stock_delete_watch()
 
         str_hp = self.health + "/" + self.maxhealth;
         str_dmg = "" + is_true( self.has_been_damaged_by_player );
+        n_thp = self.health;
+        n_tmax = self.maxhealth;
+        b_tdmg = is_true( self.has_been_damaged_by_player );
     }
     else if ( isdefined( level.zmqol_nb_last ) && isdefined( level.zmqol_nb_last[n_ent] ) )
     {
@@ -21107,6 +21110,9 @@ zmqol_nb_stock_delete_watch()
         str_zone = s_last.zone;
         str_hp = s_last.hp + "/" + s_last.maxhp;
         str_dmg = "" + s_last.dmg;
+        n_thp = s_last.hp;
+        n_tmax = s_last.maxhp;
+        b_tdmg = s_last.dmg;
     }
 
     if ( isdefined( level.zmqol_nb_last ) )
@@ -21117,7 +21123,24 @@ zmqol_nb_stock_delete_watch()
 
     a_ai = getaiarray( "axis" );
 
-    println( "[zm_qol] no_bleedout: REMOVED BY STOCK distance cleanup - stock counted it back itself, nothing owed - " + str_how + " - zone=" + str_zone + " hp=" + str_hp + " player_damaged=" + str_dmg + " ai=" + a_ai.size + " zombie_total=" + level.zombie_total + " round=" + level.round_number );
+    //  v2.15.44 - the vanilla endgame trim: with 24 or fewer left, stock
+    //  DROPS a player-damaged zombie (no zombie_total++) instead of paying it
+    //  back. On a survival map that reads as "died by itself when I walked
+    //  away", so with the row on it is owed back like any other unattributed
+    //  removal. Shaped narrowly (damaged, low count, readable hp) so normal
+    //  stock paybacks stay log-only and the 127-VANISHED double-count cannot
+    //  return; the 24-per-round cap in zmqol_nb_requeue() bounds a bad round.
+    b_trim = isdefined( n_thp ) && isdefined( n_tmax ) && is_true( b_tdmg ) && n_thp < n_tmax && ( a_ai.size + level.zombie_total ) <= 24;
+
+    if ( b_trim )
+        zmqol_nb_requeue( "vanilla endgame trim" );
+
+    str_fate = "stock counted it back itself, nothing owed";
+
+    if ( b_trim )
+        str_fate = "TRIM repaid";
+
+    println( "[zm_qol] no_bleedout: REMOVED BY STOCK distance cleanup - " + str_fate + " - " + str_how + " - zone=" + str_zone + " hp=" + str_hp + " player_damaged=" + str_dmg + " ai=" + a_ai.size + " zombie_total=" + level.zombie_total + " round=" + level.round_number );
 }
 
 //  The KILL path, unchanged from v2.14.6 except for the requeue at the end: the
