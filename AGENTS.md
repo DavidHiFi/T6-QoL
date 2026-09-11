@@ -6,6 +6,11 @@ Read the latest checkpoint in `../zm_qol - dev/.agents/` and preserve outstandin
 gameplay checks. These are local development references, not release payloads.
 
 - Check `git status` before editing; preserve existing user work.
+- Post-feature handover (workspace `AGENTS.md`, user 2026-09-11): after a
+  feature is built, deploy it, run the pre-launch gate, launch the game,
+  load the mod and the map, verify it, then leave the game open at the map
+  for the user to test. Never stop the session or ask the user to boot or
+  load; only skip the launch when a session is already running.
 - The five mod files are `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, and
   `mod.all.sabs`. Raw GSC/Lua sources are packed into `mod.iwd`.
 - `build.bat offline` packs and verifies locally. `build.bat` without arguments
