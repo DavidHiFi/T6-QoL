@@ -184,6 +184,17 @@ struct_init()
 	zmqol_add_wallbuy( "scar_zm",        "t6_wpn_ar_scarh_world",     (10104, -8142, -383), (0, 225, 0) );
 	zmqol_add_wallbuy( "mg08_zm",        "t6_wpn_zmb_mg08_world",     (10104, -7670, -383), (0, 135, 0) );
 	zmqol_add_wallbuy( "ksg_zm",         "t6_wpn_shotty_ksg_world",   (10576, -7670, -383), (0, 45, 0) );
+
+	// --- the M14 on the west pillar ---------------------------------------
+	//  (v2.15.41) User, 2026-09-11, standing in the arena at x 9961 y -7748
+	//  z -463 yaw 204 with the buy arrow on this pillar: a fifth wall-buy on
+	//  the pillar face in front of that spot - 64 out along the view
+	//  (cos204, sin204), 80 up like the other four, facing back yaw 24.
+	//  m14_zm needs no include on either side: stock zm_tomb registers it
+	//  server-side and zm_tomb.csc already include_weapons() it client-side.
+	//  🛑 EXACT TWIN in scripts\zm\zm_expanded.csc::
+	//  zmqol_add_crazy_place_wallbuys() - same rule as the four above.
+	zmqol_add_wallbuy( "m14_zm", "t6_wpn_ar_m14_world", (9903, -7774, -383), (0, 24, 0) );
 }
 
 // ============================================================================
