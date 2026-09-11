@@ -75,83 +75,87 @@ On **Linux** (Wine, Proton, Lutris, Bottles) install by hand, like any other Plu
 
 ### Weapons
 
-- **Extra Mystery Box guns:** Storm PSR, Dragunov, SPAS-12, SWAT-556, FAL OSW, Mk 48, QBB LSW, MP7, Vector K10, MSMC, Peacekeeper, Crossbow, XPR-50, Titus-6, Tac-45.
-- **Black Ops 1 guns:** M60 (The Pig), L96A1 (L115 Isolator), Browning HP (Bap), RPG-7 (Rocket Propelled Grievance). Everywhere except Origins.
-- **DLC5 wonder weapons:** Wave Gun, Thundergun, Wunderwaffe DG-2, Winter's Howl. Everywhere except Origins and Buried.
-- **Faster reloads:** the PaP SPAS-12 loads all 24 shells at once; the Python loads all six.
-- **Bouncing Betties:** join the box and share the Claymore slot.
-- **Jet Gun:** takes a weapon slot; overheats but never breaks.
-- **Starting pistol:** spawn with the map's pistol, M1911, Mauser, or TAC-45.
-- **No box limits:** duplicates, both Ray Guns, no wonder-weapon caps. Switch on the GAME tab.
+- **New Mystery Box weapons:** Storm PSR, Dragunov, SPAS-12, SWAT-556, FAL OSW, Mk 48, QBB LSW, MP7, Vector K10, MSMC, Peacekeeper, Crossbow, XPR-50, Titus-6, Tac-45.
+- **Black Ops 1 weapons:** M60 (The Pig), L96A1 (L115 Isolator), Browning HP (Bap), RPG-7 (Rocket Propelled Grievance). On every map except Origins.
+- **DLC5 wonder weapons:** Wave Gun, Thundergun, Wunderwaffe DG-2, Winter's Howl. On every map except Origins and Buried.
+- **Faster reloads:** the Pack-a-Punched SPAS-12 reloads all 24 shells at once, and the Python reloads all six.
+- **Bouncing Betties:** in the Mystery Box, sharing the Claymore slot.
+- **Jet Gun:** takes a weapon slot and never breaks, but it still overheats.
+- **Starting pistol:** spawn with the map's pistol, the M1911, the Mauser, or the TAC-45.
+- **No box limits:** duplicates, both Ray Guns, and no wonder-weapon caps (GAME tab).
 
 ### Perks and power-ups
 
-- **Der Wunderfizz** on every map.
-- **No perk limit:** take as many as you want, or cap it between 1 and 12.
+- **Der Wunderfizz:** available on every map.
+- **No perk limit:** carry as many perks as you want, or cap it between 1 and 12 (lobby).
 - **Perma-perks:** a PERMA-PERKS switch on the GAME tab.
-- **Better Speed Cola:** a GAME tab switch for faster windows and perk drinks.
-- **Instant Pack-a-Punch:** no wait. Toggle it in settings.
-- **Solo Easter Eggs:** run the main quests solo or with fewer than four players.
+- **Better Speed Cola:** boards windows and drinks perks faster (GAME tab).
+- **Instant Pack-a-Punch:** upgrade with no wait (settings).
+- **Solo Easter Eggs:** play the main quests solo or with fewer than four players.
 - **Custom power-ups (GAME tab):**
-  - Bonfire Sale: 1,000-point Pack-a-Punch for 30 seconds. Not on Mob or Buried.
-  - Blood Money: 1-2,500 points.
-  - Zombie Blood: zombies ignore you for 30 seconds. Not on Mob or Buried.
-  - Death Machine: the Black Ops 1 minigun.
+  - **Bonfire Sale:** Pack-a-Punch costs 1,000 points for 30 seconds. Not on Mob or Buried.
+  - **Blood Money:** a drop worth 1 to 2,500 points.
+  - **Zombie Blood:** zombies ignore you for 30 seconds. Not on Mob or Buried.
+  - **Death Machine:** the Black Ops 1 minigun.
 
 ### HUD and interface
 
 - **Subtitles:** every voice on every map (HUD tab: OFF / SUBTITLES / SUBTITLES + NAMES).
-- **Health bar:** bottom left; yellow on damage, red before you go down; shield bar above.
+- **Health bar:** bottom left. Turns yellow when you take damage, then red when the next hit would down you; a shield adds its own bar above.
 - **Timers and counters:** game and round timers with colours, plus a Cold War round counter.
-- **Hitmarkers:** pick your hit, kill, crit and downed sounds, or turn them off.
+- **Hitmarkers:** choose your hit, kill, crit and downed sounds, or turn them off.
 - **Scoreboard emblems:** each map shows its own crew.
 - **Cheats:** god mode, ghost, infinite ammo, infinite sprint, fly, rapid fire, one shot, no power, round jumps, points, teleport.
 - **Options:** everything is configurable in game, no console needed.
 
-### Presentation
+### Visuals
 
 - **Animated Pack-a-Punch camo:** Dark Matter on every upgraded gun. Needs the HD Texture Pack; off uses stock camo.
 - **Ray Gun model:** the Buried and Origins model on every map.
-- **Third person:** camera behind you (GAME 3 tab).
-- **Knife lunge:** off means no melee pull (GAME 3 tab).
-- **Extras:** tap-to-interact controller support and a Cinematic Colour Grading ReShade preset.
+- **Cinematic Colour Grading:** a ReShade preset included with the mod.
+
+### Controls
+
+- **Third person:** camera behind your character (GAME 3 tab).
+- **Knife lunge:** turn it off to knife in place instead of lunging forward (GAME 3 tab).
+- **Tap to Interact:** controller support in the Gamepad menu.
 
 ---
 
 ## Maps
 
-Nine added Survival starts, plus a few tweaks you only get on one map.
+The mod adds nine Survival maps, plus a few tweaks that only apply to one map.
 
 ### TranZit
 
-- **New starts:** Diner, Power Station, Tunnel.
-- **Diner:** Pack-a-Punch on the roof, restored wall buys, riot shield buildable, teddy bears.
+- **Survival maps:** Diner, Power Station, Tunnel.
+- **Diner:** its own Pack-a-Punch on the roof, a riot shield build, teddy bears, and extra wall buys.
 
 ### Die Rise
 
-- **New starts:** Shopping Mall, Dragon Rooftop, Sweatshop.
+- **Survival maps:** Shopping Mall, Dragon Rooftop, Sweatshop.
 - **Sliquifier:** can be Pack-a-Punched, kills at any round.
-- **Semtex wall buy.**
+- A Semtex wall buy.
 
 ### Mob of the Dead
 
-- **New start:** Cell Block.
+- **Survival map:** Cell Block.
 - **Final Flight:** can be done solo.
 
 ### Buried
 
-- **New start:** Borough.
-- **Borough:** seven perk machines, Vulture Aid through the Wunderfizz.
+- **Survival map:** Borough.
+- **Borough:** seven perk machines, and Vulture Aid from the Wunderfizz.
 
 ### Origins
 
-- **New start:** The Crazy Place.
-- **Crazy Place:** four wall buys, four floating perk bottles that shuffle, Pack-a-Punch. No box or Wunderfizz inside.
+- **Survival map:** The Crazy Place.
+- **Crazy Place:** four wall buys, Pack-a-Punch, and four shuffling perk bottles. No Mystery Box or Wunderfizz inside.
 
 ### Nuketown
 
 - **Hellhound rounds:** missing sounds and effects restored.
-- **Teleports:** the three destinations are the map's own respawn points.
+- **Teleport:** three destinations from the map's own respawn points.
 
 ---
 
