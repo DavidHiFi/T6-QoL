@@ -525,6 +525,52 @@ QolCrewRow(4, { "zm_transit", "zm_nuked", "zm_highrise", "zm_buried" }, { "zsurv
 --  exactly this reason - overriding it would replace the star-icon logic along
 --  with the dvar write, which is the v1.93.0 bug in a new costume.
 CoD.PrivateGameLobby.DvarDefaults["character"] = 0
+-- ===========================================================================
+--  STARTING PISTOL  -  above CHARACTER, every map and mode (user, 2026-09-11)
+-- ===========================================================================
+--  *"add an option into the pregame lobby menu screen for all maps that you
+--  can choose which starting pistol you start with ... above the character
+--  selection option ... four options: default ... m1911, the mauser, and the
+--  tac45."*
+--
+--  🌟 ONE ROW, NO FILTERS. Character needs four rows because the crews differ
+--  per map; the three pistols exist on every map - m1911 stock everywhere,
+--  c96 stock on Origins plus this mod's per-map includes on the other five,
+--  fnp45 (the Tac-45's def name) in this mod's MP-weapons box pool - so one
+--  unfiltered row shows on all six maps in classic, survival and grief alike.
+--  No `maps`, no `modeGroups`, no `gameTypes`: AddGameOptionsButtons() below
+--  renders such a row unconditionally.
+--
+--  📝 Rendered BEFORE QolCharacter in PopulateButtons_Project_Zombie, so it
+--  sits above CHARACTER as asked. Row order on this pane is insertion order.
+--
+--  📝 The values ARE the `starting_pistol` dvar directly: 0 = DEFAULT (stock,
+--  this map's own pistol), 1 = M1911, 2 = MAUSER (c96_zm), 3 = TAC-45
+--  (fnp45_zm). qol_options.gsc::qol_opt_starting_pistol() owns the other half;
+--  do not change one side without the other.
+--
+--  📝 The hint is 63 characters. ~90 is the measured ceiling before it wraps
+--  into the map preview panel - see the MACHINE DROPS note.
+--
+--  🛑 THE DVAR NAME IS FROZEN once this ships - it is what the console takes
+--  and what lands in the player's archived config. Renaming the label is free;
+--  renaming `starting_pistol` silently resets everyone's saved choice.
+CoD.PrivateGameLobby.QolStartingPistol = {}
+CoD.PrivateGameLobby.QolStartingPistol[1] = {}
+CoD.PrivateGameLobby.QolStartingPistol[1].id = "starting_pistol"
+CoD.PrivateGameLobby.QolStartingPistol[1].name = "STARTING PISTOL"
+CoD.PrivateGameLobby.QolStartingPistol[1].hintText = "Which pistol you spawn with. DEFAULT is this map's own pistol."
+CoD.PrivateGameLobby.QolStartingPistol[1].labels = {}
+CoD.PrivateGameLobby.QolStartingPistol[1].labels[1] = "DEFAULT"
+CoD.PrivateGameLobby.QolStartingPistol[1].labels[2] = "M1911"
+CoD.PrivateGameLobby.QolStartingPistol[1].labels[3] = "MAUSER"
+CoD.PrivateGameLobby.QolStartingPistol[1].labels[4] = "TAC-45"
+CoD.PrivateGameLobby.QolStartingPistol[1].values = {}
+CoD.PrivateGameLobby.QolStartingPistol[1].values[1] = 0
+CoD.PrivateGameLobby.QolStartingPistol[1].values[2] = 1
+CoD.PrivateGameLobby.QolStartingPistol[1].values[3] = 2
+CoD.PrivateGameLobby.QolStartingPistol[1].values[4] = 3
+CoD.PrivateGameLobby.DvarDefaults["starting_pistol"] = 0
 CoD.PrivateGameLobby.Dvars = {}
 -- CoD.PrivateGameLobby.Dvars[1] = {}
 -- CoD.PrivateGameLobby.Dvars[1].id = "zombies_minplayers"
@@ -1147,11 +1193,13 @@ CoD.PrivateGameLobby.PopulateButtons_Project_Zombie = function (PrivateGameLobby
 		-- DIFFICULTY is GameTypeSettings[1], so nothing short of rendering our
 		-- table before that one puts a row above it. Only one of these four rows
 		-- can pass the map/mode filters at a time, so this adds exactly one row.
+		-- STARTING PISTOL renders before CHARACTER, so it sits above it.
 		-- 🛑 v2.2.0 - only when zm_qol is the loaded mod. See ZmQolLobbyModLoaded()
 		-- at the top of this file: an older build may still have a copy of this
 		-- file sitting in Plutonium's global raw\ folder, where it is shared by
 		-- every mod.
 		if ZmQolLobbyModLoaded() then
+			AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.QolStartingPistol, "dvar")
 			AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.QolCharacter, "dvar")
 		end
 		-- ====================================================================
@@ -1193,6 +1241,13 @@ CoD.PrivateGameLobby.PopulateButtons_Project_Zombie = function (PrivateGameLobby
 		else
 			CoD.PrivateGameLobby.GameTypeSettings[5].maps = {}
 			CoD.PrivateGameLobby.GameTypeSettings[5].maps[1] = "zm_transit"
+		end
+		-- MAGIC now lives under Options > Settings > GAME 3. Keep using the
+		-- stock "magic" gametype setting, but do not draw its old lobby row.
+		if ZmQolLobbyModLoaded() then
+			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = {}
+		else
+			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = { "zstandard", "zgrief" }
 		end
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.GameTypeSettings, "gts")
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.Dvars, "dvar")

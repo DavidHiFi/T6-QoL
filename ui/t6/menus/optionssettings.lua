@@ -100,6 +100,13 @@ if ZmQolModLoaded() and LUI and LUI.createMenu and LUI.createMenu.OptionsControl
 			controlsWidget.titleElement:setAlignment(LUI.Alignment.Center)
 		end
 
+		-- Plutonium's five control tabs occupy about 500 LUI units, but its
+		-- container is much wider. Keep a small margin outside LOOK and GAMEPAD
+		-- so the navigation arrows stay next to the labels.
+		if controlsWidget and controlsWidget.tabManager then
+			controlsWidget.tabManager:setLeftRight(false, false, -270, 270)
+		end
+
 		return controlsWidget
 	end
 end
@@ -1891,14 +1898,6 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	--  request. GAME is 14 rows + 0 spacers = 14.0, one full row under the 15.0
 	--  ceiling. Do not spend it on a spacer.
 	-- ========================================================================
-	CoD.OptionsSettings.QolMigrateFlash()
-	C(QolButtons, LocalClientIndex, "FLASH MESSAGES",     "flash_intro",        "Text flashed at match start: the credits, how to find the chat commands, both, or nothing.", {
-		{ "CREDITS",        2 },
-		{ "HELP",           3 },
-		{ "CREDITS + HELP", 1 },
-		{ "DISABLED",       0 }
-	})
-
 	-- 🛑 v1.99.61 - INTRO CREDITS IS GONE FROM THIS TAB. It moved to HUD and was
 	-- renamed FLASH CREDITS (user, 2026-08-18: *"it should be under the HUD tab
 	-- as it's a heads-up display element"*). Its DVAR is still intro_credits -
@@ -2076,7 +2075,16 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- v2.14.7 - CROSSHAIR spends one of those two: 14 rows = 14.0 pitches, hint
 	-- line at 234 + 14*50 = 934 px, still 102 px clear of the ESC prompt and a
 	-- row under the 15.0 ceiling this file measured on the SOUND tab.
-	return QolHudContainer                                          -- 15 total (v2.14.16: at the 15.0 ceiling)
+	CoD.OptionsSettings.QolMigrateFlash()
+	C(QolHudButtons, LocalClientIndex, "FLASH MESSAGES", "flash_intro",
+		"Text flashed at match start: the credits, how to find the chat commands, both, or nothing.", {
+			{ "CREDITS",        2 },
+			{ "HELP",           3 },
+			{ "CREDITS + HELP", 1 },
+			{ "DISABLED",       0 }
+		})
+
+	return QolHudContainer                                          -- 16 total on the standalone HUD page
 end
 
 -- ============================================================================
@@ -2317,7 +2325,18 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "KNIFE LUNGE", "knife_lunge", "The melee charge that pulls you onto a zombie. Disable it to knife in place.")
 
-	return QolGame3Container                          -- 3 rows + 0 spacers = 3.0
+	-- Moved from the pre-game lobby. This remains the stock gametype setting,
+	-- so map-start code reads the same "magic" value as before.
+	local MagicSelector = QolGame3Buttons:addGametypeSettingLeftRightSelector(
+		LocalClientIndex,
+		Engine.Localize("ZMUI_MAGIC_CAPS"),
+		"magic",
+		Engine.Localize("ZMUI_MAGIC_DESC")
+	)
+	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
+	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
+
+	return QolGame3Container                          -- 4 rows + 0 spacers = 4.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
@@ -2505,6 +2524,63 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	return QolCheatsContainer                        -- 14 total, on every map
 end
 
+-- HUD and Cheats used to be the final two tabs on OptionsSettingsMenu. Keeping
+-- them there made the tab strip wider than smaller displays could show. They
+-- now have their own entries on OptionsMenu, between Settings and Controls.
+CoD.OptionsSettings.CreateQolPageMenu = function (MenuName, Title, PageBuilder, LocalClientIndex)
+	local PageMenu = nil
+	local InGame = UIExpression.IsInGame() == 1
+
+	if InGame then
+		PageMenu = CoD.InGameMenu.New(MenuName, LocalClientIndex, Engine.Localize(Title))
+		if PageMenu.titleElement then
+			PageMenu.titleElement:setAlignment(LUI.Alignment.Center)
+		end
+	else
+		PageMenu = CoD.Menu.New(MenuName)
+		PageMenu:addTitle(Engine.Localize(Title), LUI.Alignment.Center)
+		PageMenu:addLargePopupBackground()
+	end
+
+	PageMenu.addApplyPrompt = CoD.Options.AddApplyPrompt
+	PageMenu.addResetPrompt = CoD.Options.AddResetPrompt
+	PageMenu:setPreviousMenu("OptionsMenu")
+	PageMenu:setOwner(LocalClientIndex)
+	PageMenu:registerEventHandler("add_apply_prompt", CoD.Options.AddApplyPrompt)
+	PageMenu:registerEventHandler("button_prompt_back", CoD.OptionsSettings.Back)
+	PageMenu:registerEventHandler("selector_changed", CoD.OptionsSettings.SelectorChanged)
+	PageMenu:addSelectButton()
+	PageMenu:addBackButton()
+
+	local PageContainer = PageBuilder(PageMenu, LocalClientIndex)
+	-- A normal settings tab gets this vertical separation from the tab manager.
+	-- Standalone HUD and Cheats pages need it explicitly or their first row
+	-- occupies the same band as the centered page title.
+	PageContainer:setTopBottom(true, true, 70, 70)
+	PageMenu:addElement(PageContainer)
+
+	if not PageMenu:restoreState() and PageMenu.buttonList then
+		local FirstButton = PageMenu.buttonList:getFirstChild()
+		if FirstButton then
+			FirstButton:processEvent({ name = "gain_focus" })
+		end
+	end
+
+	return PageMenu
+end
+
+LUI.createMenu.OptionsQolHudMenu = function (LocalClientIndex)
+	return CoD.OptionsSettings.CreateQolPageMenu(
+		"OptionsQolHudMenu", "HUD", CoD.OptionsSettings.CreateQolHudTab, LocalClientIndex
+	)
+end
+
+LUI.createMenu.OptionsQolCheatsMenu = function (LocalClientIndex)
+	return CoD.OptionsSettings.CreateQolPageMenu(
+		"OptionsQolCheatsMenu", "CHEATS", CoD.OptionsSettings.CreateQolCheatsTab, LocalClientIndex
+	)
+end
+
 LUI.createMenu.OptionsSettingsMenu = function (LocalClientIndex)
 	local OptionsSettingsWidget = nil
 	local InGame = UIExpression.IsInGame() == 1
@@ -2680,7 +2756,7 @@ LUI.createMenu.OptionsSettingsMenu = function (LocalClientIndex)
 	-- 🛑 RENAMING IS NOT FREE. GAME -> "GAME 1" adds two characters and
 	-- PATCHES -> "GAME 2" removes one; a rename that changes the strip's width
 	-- has to come back through this arithmetic, exactly like adding a tab does.
-	local SettingsTabs = CoD.Options.SetupTabManager(OptionsSettingsWidget, (ZmQolLoaded and 1020) or 500)
+	local SettingsTabs = CoD.Options.SetupTabManager(OptionsSettingsWidget, (ZmQolLoaded and 830) or 500)
 	SettingsTabs:addTab(LocalClientIndex, "MENU_GRAPHICS_CAPS", CoD.OptionsSettings.CreateGraphicsTab)
 	SettingsTabs:addTab(LocalClientIndex, "MENU_ADVANCED_CAPS", CoD.OptionsSettings.CreateAdvancedTab)
 	SettingsTabs:addTab(LocalClientIndex, "MENU_SOUND_CAPS", CoD.OptionsSettings.CreateSoundTab)
@@ -2731,13 +2807,10 @@ LUI.createMenu.OptionsSettingsMenu = function (LocalClientIndex)
 	SettingsTabs:addTab(LocalClientIndex, "GAME 2", CoD.OptionsSettings.CreateQolPatchesTab)
 	-- v2.12.5 - GAME 3, directly after GAME 2 as asked.
 	SettingsTabs:addTab(LocalClientIndex, "GAME 3", CoD.OptionsSettings.CreateQolGame3Tab)
-	-- v1.95.1 - the visuals and HUD half, named "HUD" at the user's request
-	-- (2026-08-14), with the first tab renamed back to "GAME". Split so neither
-	-- tab overflows - see the note above CreateQolTab.
-	SettingsTabs:addTab(LocalClientIndex, "HUD", CoD.OptionsSettings.CreateQolHudTab)
-	-- v1.96.0 - CHEATS, last, immediately after HUD as asked.
-	SettingsTabs:addTab(LocalClientIndex, "CHEATS", CoD.OptionsSettings.CreateQolCheatsTab)
 	if CoD.OptionsSettings.CurrentTabIndex then
+		if CoD.OptionsSettings.CurrentTabIndex > 7 then
+			CoD.OptionsSettings.CurrentTabIndex = 1
+		end
 		SettingsTabs:loadTab(LocalClientIndex, CoD.OptionsSettings.CurrentTabIndex)
 	else
 		SettingsTabs:refreshTab(LocalClientIndex)
@@ -2750,3 +2823,121 @@ CoD.OptionsSettings.OpenSafeArea = function (OptionsSettingsWidget, ClientInstan
 	OptionsSettingsWidget:openMenu("SafeArea", ClientInstance.controller)
 	OptionsSettingsWidget:close()
 end
+
+-- options.lua has finished defining the parent menu by the time the mod reloads
+-- this file. Wrap its category builder so the stock Settings and Controls code
+-- remains untouched, including Plutonium's additions.
+ZmQolInstallParentOptionsMenu = function ()
+	if not ZmQolModLoaded() or not CoD.Options or not CoD.Options.AddOptionCategories or
+		not LUI.createMenu.OptionsMenu or CoD.Options.ZmQolWrappedOptionsMenu == LUI.createMenu.OptionsMenu then
+		return false
+	end
+
+	CoD.Options.OpenQolHud = function (OptionsMenuWidget, ClientInstance)
+		if OptionsMenuWidget:getParent() then
+			OptionsMenuWidget:saveState()
+			OptionsMenuWidget:openMenu("OptionsQolHudMenu", ClientInstance.controller)
+			OptionsMenuWidget:close()
+		end
+	end
+
+	CoD.Options.OpenQolCheats = function (OptionsMenuWidget, ClientInstance)
+		if OptionsMenuWidget:getParent() then
+			OptionsMenuWidget:saveState()
+			OptionsMenuWidget:openMenu("OptionsQolCheatsMenu", ClientInstance.controller)
+			OptionsMenuWidget:close()
+		end
+	end
+
+	local StockAddOptionCategories = CoD.Options.AddOptionCategories
+	CoD.Options.AddOptionCategories = function (OptionsMenuWidget)
+		if not ZmQolModLoaded() then
+			return StockAddOptionCategories(OptionsMenuWidget)
+		end
+
+		local StockButtonListNew = CoD.ButtonList.new
+		local OptionsMenuButtonList = nil
+
+		CoD.ButtonList.new = function (...)
+			local ButtonList = StockButtonListNew(...)
+			OptionsMenuButtonList = ButtonList
+			local SettingsLabel = Engine.Localize("MENU_SETTINGS_CAPS")
+			local AddedQolPages = false
+
+			local function AddQolButtons(AddButton)
+				if AddedQolPages then
+					return
+				end
+				AddedQolPages = true
+
+				local HudButton = AddButton("HUD", "open_qol_hud")
+				local CheatsButton = AddButton("CHEATS", "open_qol_cheats")
+
+				if UIExpression.IsInGame() == 0 and not CoD.isSinglePlayer then
+					HudButton.brackets:close()
+					HudButton.m_skipAnimation = true
+					CheatsButton.brackets:close()
+					CheatsButton.m_skipAnimation = true
+				end
+			end
+
+			if ButtonList.addButton then
+				local StockAddButton = ButtonList.addButton
+				ButtonList.addButton = function (Self, Label, ...)
+					local Button = StockAddButton(Self, Label, ...)
+					if Label == SettingsLabel then
+						AddQolButtons(function (QolLabel, EventName)
+							local QolButton = StockAddButton(Self, Engine.Localize(QolLabel))
+							QolButton:setActionEventName(EventName)
+							return QolButton
+						end)
+					end
+					return Button
+				end
+			end
+
+			if ButtonList.addNavButton then
+				local StockAddNavButton = ButtonList.addNavButton
+				ButtonList.addNavButton = function (Self, Label, EventName, ...)
+					local Button = StockAddNavButton(Self, Label, EventName, ...)
+					if Label == SettingsLabel then
+						AddQolButtons(function (QolLabel, QolEventName)
+							return StockAddNavButton(Self, Engine.Localize(QolLabel), QolEventName)
+						end)
+					end
+					return Button
+				end
+			end
+
+			return ButtonList
+		end
+
+		local Ok, Result = pcall(StockAddOptionCategories, OptionsMenuWidget)
+		CoD.ButtonList.new = StockButtonListNew
+
+		if not Ok then
+			return StockAddOptionCategories(OptionsMenuWidget)
+		end
+
+		-- Stock centers a two-row list. Recalculate its bounds for four rows so
+		-- Settings, HUD, Cheats and Controls are centered as one group.
+		if UIExpression.IsInGame() == 0 and OptionsMenuButtonList then
+			OptionsMenuButtonList:setTopBottom(false, false, -145, 245)
+		end
+
+		return Result
+	end
+
+	local StockOptionsMenu = LUI.createMenu.OptionsMenu
+	LUI.createMenu.OptionsMenu = function (LocalClientIndex)
+		local OptionsMenuWidget = StockOptionsMenu(LocalClientIndex)
+		OptionsMenuWidget:registerEventHandler("open_qol_hud", CoD.Options.OpenQolHud)
+		OptionsMenuWidget:registerEventHandler("open_qol_cheats", CoD.Options.OpenQolCheats)
+		return OptionsMenuWidget
+	end
+	CoD.Options.ZmQolWrappedOptionsMenu = LUI.createMenu.OptionsMenu
+
+	return true
+end
+
+ZmQolInstallParentOptionsMenu()

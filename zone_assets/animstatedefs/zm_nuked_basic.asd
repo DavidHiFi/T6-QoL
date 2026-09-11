@@ -1,81 +1,3 @@
-zm_death_tesla_t5 : restart notify death_anim
-{
-	ai_zombie_tesla_death_a
-	ai_zombie_tesla_death_b
-	ai_zombie_tesla_death_c
-	ai_zombie_tesla_death_d
-	ai_zombie_tesla_death_e
-}
-
-zm_death_tesla_crawl_t5 : restart missing_legs notify death_anim
-{
-	ai_zombie_tesla_crawl_death_a
-	ai_zombie_tesla_crawl_death_b
-}
-
-zm_death_freeze_t5 : restart notify death_anim
-{
-	ai_zombie_freeze_death_a
-	ai_zombie_freeze_death_b
-	ai_zombie_freeze_death_c
-	ai_zombie_freeze_death_d
-	ai_zombie_freeze_death_e
-}
-
-zm_death_freeze_crawl_t5 : restart missing_legs notify death_anim
-{
-	ai_zombie_crawl_freeze_death_01
-	ai_zombie_crawl_freeze_death_02
-}
-
-zm_thundergun_fall_front : restart notify thundergun_fall_anim
-{
-	ai_zombie_thundergun_hit_forwardtoface
-	ai_zombie_thundergun_hit_deadfallknee
-	ai_zombie_thundergun_hit_faceplant
-}
-
-zm_thundergun_fall_left : restart notify thundergun_fall_anim
-{
-	ai_zombie_thundergun_hit_legsout_right
-	ai_zombie_thundergun_hit_jackiespin_right
-}
-
-zm_thundergun_fall_right : restart notify thundergun_fall_anim
-{
-	ai_zombie_thundergun_hit_legsout_left
-	ai_zombie_thundergun_hit_jackiespin_left
-}
-	
-zm_thundergun_fall_back : restart notify thundergun_fall_anim
-{
-	ai_zombie_thundergun_hit_faceplant
-	ai_zombie_thundergun_hit_armslegsforward
-	ai_zombie_thundergun_hit_doublebounce
-	ai_zombie_thundergun_hit_stumblefall
-	ai_zombie_thundergun_hit_upontoback
-	ai_zombie_thundergun_hit_flatonback
-}
-
-zm_thundergun_getup_back_early : restart notify thundergun_getup_anim
-{
-	ai_zombie_thundergun_getup_quick_b
-	ai_zombie_thundergun_getup_quick_c
-}
-	
-zm_thundergun_getup_back_late : restart notify thundergun_getup_anim
-{
-	ai_zombie_thundergun_getup
-	ai_zombie_thundergun_getup_b
-	ai_zombie_thundergun_getup_c
-	ai_zombie_thundergun_getup_quick_c
-}
-
-zm_thundergun_getup_belly_early : restart notify thundergun_getup_anim
-{
-	ai_zombie_thundergun_getup_a
-}
-
 zm_inert : aliased notify inert_anim
 {
 	inert1 ai_zombie_inert_look_v1
@@ -587,3 +509,25 @@ zm_traverse_crawl : aliased restart missing_legs notify traverse_anim
 	traverse_garage_door_crawl		ai_zombie_crawl
 }
 
+
+
+// DLC5 Moon Wave Gun sizzle deaths
+zm_death_sizzle : restart notify death_anim
+{
+	ai_zombie_microwave_death_a
+	ai_zombie_microwave_death_b
+	ai_zombie_microwave_death_c
+	ai_zombie_microwave_death_walking_a
+	ai_zombie_microwave_death_walking_b
+	ai_zombie_microwave_death_walking_c
+}
+
+zm_death_sizzle_crawl : restart missing_legs notify death_anim
+{
+	ai_zombie_crawl_microwave_death_a
+	ai_zombie_crawl_microwave_death_b
+	ai_zombie_crawl_microwave_death_c
+	ai_zombie_crawl_microwave_death_walking_a
+	ai_zombie_crawl_microwave_death_walking_b
+	ai_zombie_crawl_microwave_death_walking_c
+}
