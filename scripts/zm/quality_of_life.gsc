@@ -14911,6 +14911,14 @@ zmqol_enable_whoswho()
 //     branches beyond the two isdefined guards - so the copy carries no risk of
 //     the kind a decompile of control flow would. The replacement is installed
 //     ONLY on the maps this mod enables the perk on, so Die Rise never sees it.
+//
+//  3. level._chugabud_reject_node_override_func is TREYARCH'S OWN node filter,
+//     called from inside get_chugabug_spawn_point_from_nodes() for every
+//     candidate pathnode that passed stock's own checks. v2.14.x installs
+//     zmqol_whoswho_reject_node here - see its banner for why stock's checks
+//     let Bus Depot respawns land inside the depot trucks and out of the map.
+//     Chained like the post-respawn pointer; on these maps there is no previous
+//     setter (only zm_highrise_classic sets one, and the perk is stock there).
 // ============================================================================
 zmqol_whoswho_install_sound_hooks()
 {
@@ -14919,6 +14927,11 @@ zmqol_whoswho_install_sound_hooks()
 
     level._chugabud_post_respawn_override_func = ::zmqol_ww_post_respawn_sound;
 
+    if ( isdefined( level._chugabud_reject_node_override_func ) )
+        level.zmqol_ww_prev_reject_func = level._chugabud_reject_node_override_func;
+
+    level._chugabud_reject_node_override_func = ::zmqol_whoswho_reject_node;
+
     replaceFunc( maps\mp\zombies\_zm_chugabud::chugabud_corpse_cleanup, ::zmqol_chugabud_corpse_cleanup );
 }
 
@@ -14926,13 +14939,243 @@ zmqol_whoswho_install_sound_hooks()
 //  WENT DOWN - setorigin( spawnpoint.origin ) is sixteen lines below it. So
 //  self.origin is stock's own disappear position and v_origin is stock's own
 //  appear position; neither is re-derived.
+//
+//  v2.14.x - AND THE APPEAR POSITION IS NOW VALIDATED. If stock's pick is bad
+//  (inside a truck visual, enclosed, outside the enabled zone - see
+//  zmqol_whoswho_pos_is_bad()), the respawn is forced back to the downed spot
+//  instead: the player stood there seconds ago, so it is provably inside the
+//  map. The appear sting then plays at the corrected spot, and the chained
+//  stock override - if one ever exists on these maps - receives the corrected
+//  origin too, so its own zone bookkeeping cannot disagree with where the
+//  player actually lands.
 zmqol_ww_post_respawn_sound( v_origin )
 {
+    v_final = v_origin;
+
+    if ( zmqol_whoswho_pos_is_bad( v_origin ) )
+    {
+        v_final = zmqol_whoswho_safe_fallback();
+
+        if ( !isdefined( v_final ) )
+            v_final = v_origin;
+        else
+            maps\mp\zombies\_zm_chugabud::force_player_respawn_position( v_final );
+
+        println( "[zm_qol] whoswho: rejected bad respawn at " + v_origin + ", falling back to " + v_final );
+    }
+
     playsoundatposition( "zmqol_ww_disappear", self.origin );
-    playsoundatposition( "zmqol_ww_appear", v_origin );
+    playsoundatposition( "zmqol_ww_appear", v_final );
 
     if ( isdefined( level.zmqol_ww_prev_respawn_func ) )
-        self [[ level.zmqol_ww_prev_respawn_func ]]( v_origin );
+        self [[ level.zmqol_ww_prev_respawn_func ]]( v_final );
+}
+
+// ============================================================================
+//  zmqol_whoswho_reject_node / zmqol_whoswho_pos_is_bad /
+//  zmqol_whoswho_safe_fallback / zmqol_whoswho_vehicle_points
+//
+//  WHY STOCK PICKS UNREACHABLE RESPAWNS OFF DIE RISE          (v2.14.x, user
+//  report 2026-09-11: downed on Bus Depot survival with all perks including
+//  Who's Who, respawned INSIDE a truck, walked out of the map.)
+//
+//  MECHANISM, read out of the scripts, not assumed. Stock picks the respawn in
+//  chugabud_get_spawnpoint() -> get_chugabug_spawn_point_from_nodes(), which
+//  keeps the FARTHEST pathnode in a 500-700 radius that passes three checks:
+//      1. !positionwouldtelefrag(node.origin)
+//      2. check_point_in_enabled_zone(node.origin, ...) against player_volumes
+//      3. a 30-up/30-down bulletTrace that hits SOMETHING (i.e. has ground)
+//
+//  The depot trucks are spawned by _zm_gametype::setup_standard_objects() as
+//  bare spawn( "script_model", struct.origin ) - no solid flag, compare the
+//  perk collision clips' spawn( "script_model", pos.origin, 1 ). Non-solid
+//  means every one of those three checks passes inside the truck: nothing to
+//  telefrag on, the yard volume covers it, and the vertical trace still finds
+//  ground. The farthest-first preference then favours exactly these edge-of-
+//  the-yard nodes, and from inside the truck visual the player walks straight
+//  past the boundary they would otherwise have collided with.
+//
+//  Die Rise never sees this because zm_highrise_classic installs its own
+//  reject/post-respawn overrides for its elevators and slide; every map this
+//  mod ports the perk to has NEITHER. So this installs both of Treyarch's own
+//  hooks, with purely generic tests - no map names, no coordinates, no model
+//  names - so the same code protects Nuketown and any future port:
+//
+//      REJECT (node filter, runs per candidate):
+//        - headroom: 12 -> 68 must be clear (standing player is ~70 tall).
+//          Catches enclosed cabs/trailers and any low solid roof.
+//        - sides: 4 traces at torso height (+30), 42 units out. Rejected only
+//          when 3+ are blocked, so a wall corner (2) or doorway (1) still
+//          passes but a truck bed / trailer / box (3-4) does not. Open-top
+//          beds pass headroom, so this is the check that catches them.
+//        - vehicles: within 62 units of a dead-vehicle visual's footprint
+//          (sampled along its facing axis, cached per match - see
+//          zmqol_whoswho_vehicle_points()). This is the check that catches
+//          NON-SOLID truck visuals, which no trace can ever see.
+//        - enabled zone: stock's own check, repeated here so the post-respawn
+//          clamp below can test a position stock already accepted.
+//
+//      CLAMP (post-respawn hook, runs once on the final pick): the same
+//      predicate re-tests stock's winner - belt and braces against any node
+//      the filter missed and against stock's non-node fallbacks
+//      (check_for_valid_spawn_near_team / initial_spawn). A bad winner is
+//      forced to the downed spot (or 45 units beside it), which the player
+//      provably stood on seconds ago.
+//
+//  OVER-REJECTION IS SAFE, UNDER-REJECTION IS THE BUG. Every rejected node
+//  just drops stock to its next tier (100-400, then 50-400, then near-team,
+//  then initial spawns) - the player still respawns, only nearer the corpse.
+//  Letting one bad node through strands them outside the map.
+//
+//  🛑 RESIDUAL RISK, stated: the fire-pit lava itself is open ground that
+//  passes every check here (open sky, open sides, in-zone). A respawn INTO the
+//  pit is vanilla-stock behaviour on classic TranZit too and is NOT filtered -
+//  this fix is about leaving the map, not about landing somewhere unpleasant.
+// ============================================================================
+zmqol_whoswho_reject_node( v_corpse_pos, nd_node )
+{
+    if ( isdefined( level.zmqol_ww_prev_reject_func ) )
+    {
+        if ( [[ level.zmqol_ww_prev_reject_func ]]( v_corpse_pos, nd_node ) )
+            return 1;
+    }
+
+    if ( !isdefined( nd_node ) || !isdefined( nd_node.origin ) )
+        return 0;
+
+    return zmqol_whoswho_pos_is_bad( nd_node.origin );
+}
+
+//  One predicate for both hooks. Returns 1 when v_pos must NOT be spawned on.
+zmqol_whoswho_pos_is_bad( v_pos )
+{
+    if ( !isdefined( v_pos ) )
+        return 1;
+
+    if ( positionwouldtelefrag( v_pos ) )
+        return 1;
+
+    //  Headroom: chest (+12) to just under standing height (+68) must be open.
+    v_chest = ( v_pos[0], v_pos[1], v_pos[2] + 12 );
+    v_head = ( v_pos[0], v_pos[1], v_pos[2] + 68 );
+    tr = bulletTrace( v_chest, v_head, 0, undefined );
+
+    if ( tr["fraction"] < 1 )
+        return 1;
+
+    //  Sides: torso height (+30), 42 units out, four cardinals. 3+ blocked is
+    //  enclosed (truck bed, trailer, container); 2 or fewer is a corner or a
+    //  wall and stays legal.
+    v_mid = ( v_pos[0], v_pos[1], v_pos[2] + 30 );
+    n_blocked = 0;
+    tr = bulletTrace( v_mid, v_mid + ( 42, 0, 0 ), 0, undefined );
+
+    if ( tr["fraction"] < 1 )
+        n_blocked++;
+
+    tr = bulletTrace( v_mid, v_mid + ( -42, 0, 0 ), 0, undefined );
+
+    if ( tr["fraction"] < 1 )
+        n_blocked++;
+
+    tr = bulletTrace( v_mid, v_mid + ( 0, 42, 0 ), 0, undefined );
+
+    if ( tr["fraction"] < 1 )
+        n_blocked++;
+
+    tr = bulletTrace( v_mid, v_mid + ( 0, -42, 0 ), 0, undefined );
+
+    if ( tr["fraction"] < 1 )
+        n_blocked++;
+
+    if ( n_blocked >= 3 )
+        return 1;
+
+    //  Dead-vehicle visuals: non-solid, so no trace above can see them.
+    a_pts = zmqol_whoswho_vehicle_points();
+
+    foreach ( v_pt in a_pts )
+    {
+        if ( distancesquared( v_pos, v_pt ) < 3844 )
+            return 1;
+    }
+
+    //  Enabled zone, stock's own rule, re-tested on the final pick.
+    a_vols = getentarray( "player_volume", "script_noteworthy" );
+
+    if ( !maps\mp\zombies\_zm_utility::check_point_in_enabled_zone( v_pos, 1, a_vols ) )
+        return 1;
+
+    return 0;
+}
+
+//  Where stock's winner was bad: the downed spot first (provably stood-on),
+//  else 45 units beside it, else the downed spot anyway - never outside the
+//  map, never nothing. self is the downed player.
+zmqol_whoswho_safe_fallback()
+{
+    if ( !zmqol_whoswho_pos_is_bad( self.origin ) )
+        return self.origin;
+
+    a_dirs = [];
+    a_dirs[0] = ( 45, 0, 0 );
+    a_dirs[1] = ( -45, 0, 0 );
+    a_dirs[2] = ( 0, 45, 0 );
+    a_dirs[3] = ( 0, -45, 0 );
+
+    foreach ( v_dir in a_dirs )
+    {
+        v_try = self.origin + v_dir;
+
+        if ( !zmqol_whoswho_pos_is_bad( v_try ) )
+            return v_try;
+    }
+
+    return self.origin;
+}
+
+//  Footprint points of every dead vehicle visual on the map, built once per
+//  match on first Who's Who down - after all map-init spawns (barricades,
+//  location barriers) exist. Long trailers are covered by sampling along the
+//  model's facing axis (origin, +/-80, +/-160, each radius 62); cars just get
+//  over-covered, which is the safe direction.
+zmqol_whoswho_vehicle_points()
+{
+    if ( isdefined( level.zmqol_ww_vehicle_pts ) )
+        return level.zmqol_ww_vehicle_pts;
+
+    level.zmqol_ww_vehicle_pts = [];
+    a_ents = getentarray( "script_model", "classname" );
+
+    if ( isdefined( a_ents ) )
+    {
+        foreach ( e_ent in a_ents )
+        {
+            if ( !isdefined( e_ent.model ) || !issubstr( e_ent.model, "veh_" ) )
+                continue;
+
+            if ( !isdefined( e_ent.origin ) )
+                continue;
+
+            //  angles is engine-defaulted on spawned script_models, but a
+            //  script error here would abort the whole fake_revive thread and
+            //  strand the player frozen - default rather than trust it.
+            v_angles = e_ent.angles;
+
+            if ( !isdefined( v_angles ) )
+                v_angles = ( 0, 0, 0 );
+
+            v_fwd = anglestoforward( v_angles );
+            level.zmqol_ww_vehicle_pts[level.zmqol_ww_vehicle_pts.size] = e_ent.origin;
+            level.zmqol_ww_vehicle_pts[level.zmqol_ww_vehicle_pts.size] = e_ent.origin + vectorscale( v_fwd, 80 );
+            level.zmqol_ww_vehicle_pts[level.zmqol_ww_vehicle_pts.size] = e_ent.origin - vectorscale( v_fwd, 80 );
+            level.zmqol_ww_vehicle_pts[level.zmqol_ww_vehicle_pts.size] = e_ent.origin + vectorscale( v_fwd, 160 );
+            level.zmqol_ww_vehicle_pts[level.zmqol_ww_vehicle_pts.size] = e_ent.origin - vectorscale( v_fwd, 160 );
+        }
+    }
+
+    println( "[zm_qol] whoswho: cached " + level.zmqol_ww_vehicle_pts.size + " vehicle footprint points" );
+    return level.zmqol_ww_vehicle_pts;
 }
 
 //  A verbatim copy of _zm_chugabud::chugabud_corpse_cleanup() with one added
