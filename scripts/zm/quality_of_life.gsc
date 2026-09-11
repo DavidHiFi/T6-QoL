@@ -5939,6 +5939,7 @@ zmqol_console_command_names()
     a[a.size] = "god";          a[a.size] = "ghost";        a[a.size] = "afk";
     a[a.size] = "hud";          a[a.size] = "help";         a[a.size] = "where";
     a[a.size] = "boxhere";
+    a[a.size] = "wallhere";
     a[a.size] = "fog";          a[a.size] = "night";        a[a.size] = "nightmode";
     a[a.size] = "pack";         a[a.size] = "unpack";       a[a.size] = "reload";
     a[a.size] = "infammo";      a[a.size] = "infiniteammo";
@@ -6844,6 +6845,20 @@ zmqol_dev_command_listener()
                 [[ level.zmqol_box_here_func ]]( player );
             else
                 player iprintln( "^1[zm_qol] .boxhere ^7- nothing to move on this map/location" );
+        }
+        else if ( cmd == "wallhere" )
+        {
+            //  v2.15.42 - a measurement probe for a future wall-buy: stand
+            //  where you would buy it, face the wall at buy height, and the
+            //  location's own handler (level.zmqol_wall_here_func, set by e.g.
+            //  scripts\zm\locs\zm_tomb_loc_crazy_place.gsc) traces the face
+            //  and prints the numbers to bake. Measurement only - structs are
+            //  load-time, so nothing moves live. A level pointer, never a
+            //  qualified reference: this file loads on every map.
+            if ( isdefined( level.zmqol_wall_here_func ) )
+                [[ level.zmqol_wall_here_func ]]( player );
+            else
+                player iprintln( "^1[zm_qol] .wallhere ^7- no wall-buy probe on this map/location" );
         }
         else if ( cmd == "giveperks" )
         {

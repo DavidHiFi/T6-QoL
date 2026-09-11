@@ -589,7 +589,7 @@ zmqol_add_crazy_place_wallbuys()
 	zmqol_add_crazy_place_wallbuy( "scar_zm",        "t6_wpn_ar_scarh_world",     ( 10104, -8142, -383 ), ( 0, 225, 0 ) );
 	zmqol_add_crazy_place_wallbuy( "mg08_zm",        "t6_wpn_zmb_mg08_world",     ( 10104, -7670, -383 ), ( 0, 135, 0 ) );
 	zmqol_add_crazy_place_wallbuy( "ksg_zm",         "t6_wpn_shotty_ksg_world",   ( 10576, -7670, -383 ), ( 0, 45, 0 ) );
-	zmqol_add_crazy_place_wallbuy( "m14_zm",         "t6_wpn_ar_m14_world",       ( 9903, -7774, -383 ),  ( 0, 24, 0 ) );   // v2.15.41 - twin of the M14 in zm_tomb_loc_crazy_place.gsc
+	zmqol_add_crazy_place_wallbuy( "m14_zm",         "t6_wpn_ar_m14_world",       ( 9883, -7783, -425 ),  ( 0, 37, 0 ) );   // v2.15.42 - measured: ray crossing + canonical +30 (see server copy)
 
 	println( "[zm_qol] CLIENT crazy place: 5 wallbuy struct pair(s) added" );
 }
