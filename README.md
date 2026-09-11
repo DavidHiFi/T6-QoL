@@ -135,22 +135,22 @@ The mod adds nine Survival maps, plus a few tweaks that only apply to one map.
 
 - **Survival maps:** Shopping Mall, Dragon Rooftop, Sweatshop.
 - **Sliquifier:** can be Pack-a-Punched, kills at any round.
-- A Semtex wall buy.
+- **Semtex:** a new wall buy.
 
 ### Mob of the Dead
 
 - **Survival map:** Cell Block.
-- **Final Flight:** can be done solo.
+- **Solo Easter Egg:** the plane can be flown alone.
 
 ### Buried
 
 - **Survival map:** Borough.
-- **Borough:** seven perk machines, and Vulture Aid from the Wunderfizz.
+- **Vulture Aid:** available through the Wunderfizz.
 
 ### Origins
 
 - **Survival map:** The Crazy Place.
-- **Crazy Place:** four wall buys, Pack-a-Punch, and four shuffling perk bottles. No Mystery Box or Wunderfizz inside.
+- **Crazy Place:** four wall buys, Pack-a-Punch, and four shuffling perk bottles; no Mystery Box or Wunderfizz.
 
 ### Nuketown
 
