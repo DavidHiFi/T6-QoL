@@ -6,7 +6,7 @@
 
 **A quality-of-life overhaul for Call of Duty: Black Ops II Zombies on [Plutonium](https://plutonium.pw).**
 
-More guns in the Mystery Box, DLC5 wonder weapons, new Survival maps, and an in-game options menu.
+More guns in the Mystery Box, wonder weapons from the unreleased DLC5, new Survival maps, and an in-game options menu.
 
 <a href="https://github.com/DavidHiFi/T6-QoL/releases/latest">
 <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20DOWNLOAD%20LATEST%20RELEASE-2EA043?style=for-the-badge&labelColor=161B22" alt="Download the latest release" height="42">
@@ -79,16 +79,16 @@ On **Linux** (Wine, Proton, Lutris, Bottles) install by hand, like any other Plu
 - **Black Ops 1 weapons:** M60 (The Pig), L96A1 (L115 Isolator), Browning HP (Bap), RPG-7 (Rocket Propelled Grievance). On every map except Origins.
 - **DLC5 wonder weapons:** Wave Gun, Thundergun, Wunderwaffe DG-2, Winter's Howl. On every map except Origins and Buried.
 - **Faster reloads:** the Pack-a-Punched SPAS-12 reloads all 24 shells at once, and the Python reloads all six.
-- **Bouncing Betties:** in the Mystery Box, sharing the Claymore slot.
+- **Bouncing Betties:** the multiplayer mine joins the box and shares the Claymore slot.
 - **Jet Gun:** takes a weapon slot and never breaks, but it still overheats.
 - **Starting pistol:** spawn with the map's pistol, the M1911, the Mauser, or the TAC-45.
-- **No box limits:** duplicates, both Ray Guns, and no wonder-weapon caps (GAME tab).
+- **No box limits:** duplicates, both Ray Guns and no cap on wonder weapons (GAME tab).
 
 ### Perks and power-ups
 
-- **Der Wunderfizz:** available on every map.
+- **Der Wunderfizz:** the random perk machine, on every map.
 - **No perk limit:** carry as many perks as you want, or cap it between 1 and 12 (lobby).
-- **Perma-perks:** a PERMA-PERKS switch on the GAME tab.
+- **Perma-perks:** start with every permanent perk the map has (GAME tab).
 - **Better Speed Cola:** boards windows and drinks perks faster (GAME tab).
 - **Instant Pack-a-Punch:** upgrade with no wait (settings).
 - **Solo Easter Eggs:** play the main quests solo or with fewer than four players.
@@ -100,11 +100,11 @@ On **Linux** (Wine, Proton, Lutris, Bottles) install by hand, like any other Plu
 
 ### HUD and interface
 
-- **Subtitles:** every voice on every map (HUD tab: OFF / SUBTITLES / SUBTITLES + NAMES).
+- **Subtitles:** on-screen text for every spoken line (HUD tab: OFF / SUBTITLES / SUBTITLES + NAMES).
 - **Health bar:** bottom left. Turns yellow when you take damage, then red when the next hit would down you; a shield adds its own bar above.
 - **Timers and counters:** game and round timers with colours, plus a Cold War round counter.
 - **Hitmarkers:** choose your hit, kill, crit and downed sounds, or turn them off.
-- **Scoreboard emblems:** each map shows its own crew.
+- **Scoreboard emblems:** each map shows its own crew emblem.
 - **Cheats:** god mode, ghost, infinite ammo, infinite sprint, fly, rapid fire, one shot, no power, round control, points, teleport.
 - **Options:** everything is configurable in game, no console needed.
 
@@ -129,12 +129,12 @@ The mod adds nine Survival maps, plus a few tweaks that only apply to one map.
 ### TranZit
 
 - **Survival maps:** Diner, Power Station, Tunnel.
-- **Diner:** its own Pack-a-Punch on the roof, a riot shield build, teddy bears, and extra wall buys.
+- **Diner:** its own Pack-a-Punch on the roof, a buildable riot shield, extra wall buys, and the teddy bear secret song.
 
 ### Die Rise
 
 - **Survival maps:** Shopping Mall, Dragon Rooftop, Sweatshop.
-- **Sliquifier:** can be Pack-a-Punched, kills at any round.
+- **Sliquifier:** the wonder weapon can be Pack-a-Punched and kills at any round.
 - **Semtex:** a new wall buy.
 
 ### Mob of the Dead
@@ -145,12 +145,12 @@ The mod adds nine Survival maps, plus a few tweaks that only apply to one map.
 ### Buried
 
 - **Survival map:** Borough.
-- **Vulture Aid:** available through the Wunderfizz.
+- **Vulture Aid:** buy the perk from the Wunderfizz.
 
 ### Origins
 
 - **Survival map:** The Crazy Place.
-- **Crazy Place:** four wall buys, Pack-a-Punch, and four shuffling perk bottles; no Mystery Box or Wunderfizz.
+- **Crazy Place:** four wall buys, Pack-a-Punch, and four perks you buy from floating bottles that move between the corners; no Mystery Box or Wunderfizz.
 
 ### Nuketown
 
