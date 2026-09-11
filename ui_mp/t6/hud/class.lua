@@ -95,6 +95,9 @@ end
 
 CoD.Class.OptionsButtonPressed = function (IngameMenuWidget, ClientInstance)
 	IngameMenuWidget:saveState()
+	if ZmQolInstallParentOptionsMenu then
+		ZmQolInstallParentOptionsMenu()
+	end
 	IngameMenuWidget:openMenu("OptionsMenu", ClientInstance.controller)
 	IngameMenuWidget:close()
 end
