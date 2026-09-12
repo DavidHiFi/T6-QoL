@@ -1,0 +1,20 @@
+{
+  "$schema": "http://openassettools.dev/schema/xmodel.v1.json",
+  "_game": "t6",
+  "_type": "xmodel",
+  "_version": 2,
+  "flags": 524288,
+  "lightingOriginOffset": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.5
+  },
+  "lightingOriginRange": 0.5,
+  "lods": [
+    {
+      "distance": 2522.095947265625,
+      "file": "model_export/c_zom_zombie_chinese_head1_swellS08_lod0.glb"
+    }
+  ],
+  "type": "animated"
+}

@@ -170,12 +170,13 @@ init()
     //  below is the working implementation; the client ramp is kept because it
     //  is Moon's own code and harmless.
     //
-    //  THE SWELL MODELS (v2.15.46): every zombie BODY and HEAD family the gun
-    //  can kill on its four maps, pre-scaled at build time (x1.20 / 1.45 /
-    //  1.70 by modding-jobs\wavegun-swell-002\gen_swell.py) and declared in
-    //  mod_wavegun_swell.zone. The head is its own attached model, so it has
-    //  its own scaled copies. Only the CURRENT map's families are precached:
-    //  the model index is a configstring pool, and precaching all 177 on
+    //  THE SWELL MODELS (v2.15.47): every zombie BODY and HEAD family the gun
+    //  can kill on its four maps, pre-scaled at build time by
+    //  modding-jobs\wavegun-swell-003\gen_swell2.py (eight body stages, mesh
+    //  scaled FAT on X/Z up to 1.70 and only 1.15 on the 60-unit height; the
+    //  head takes the S03/S06/S08 copies) and declared in
+    //  mod_wavegun_swell.zone. Only the CURRENT map's families are precached:
+    //  the model index is a configstring pool, and precaching all 332 on
     //  every map is a G_ModelIndex overflow waiting to happen. TranZit's two
     //  zones carry different families (so_zclassic: zombie1/2/3; so_zsurvival:
     //  zombie1/5/8 plus the female heads), so that map splits on is_classic().
@@ -1014,7 +1015,7 @@ microwavegun_handle_death_notetracks( note )
 }
 
 // ============================================================================
-//  zmqol_mgun_swell_model  -  THE BODY PUFFS UP, STAGE BY STAGE     (v2.15.46)
+//  zmqol_mgun_swell_model  -  THE BODY PUFFS UP, STAGE BY STAGE     (v2.15.47)
 // ----------------------------------------------------------------------------
 //  User, 2026-09-12: the float, the pop and the ding all read right, but "the
 //  zombies actually expanding and puffing up" was still missing.
@@ -1033,17 +1034,21 @@ microwavegun_handle_death_notetracks( note )
 //  visible result IS reachable the way other T6 projects do it: swap the
 //  corpse's body AND head through pre-scaled copies of themselves.
 //
-//  MEASURED LIVE 2026-09-13 (Town, per-tick actor tracker, job
-//  modding-jobs\wavegun-swell-002):
-//    - setmodel() to <body>_swell170 renders the actor visibly larger, and its
+//  MEASURED LIVE 2026-09-13 (Town, per-tick actor tracker, jobs
+//  modding-jobs\wavegun-swell-002 / -003):
+//    - setmodel() to a scaled copy renders the actor visibly larger, and its
 //      attachments (the head) survive the swap - so the head, a separate
 //      model attached on tag "" by every character script, is swapped with
 //      detach()/attach() alongside the body or it stays small.
 //    - the sizzle death reaches its "expand" notetrack ~3.4 s after the kill,
 //      Moon's swell cycle runs 2.5 s from there, and the old 4 s watchdog
-//      popped the corpse 0.5 s into it. That is why no stage past 120 was
+//      popped the corpse 0.5 s into it. That is why no stage past the first was
 //      ever on screen. The watchdog now stands down once expand has arrived
 //      (zmqol_mgun_sizzle_watchdog).
+//    - v2.15.47: the 3-stage uniform scale read as stop-motion ("they grow
+//      larger in steps... not the body swelling"). Each body now steps through
+//      TEN staged copies and the copies scale the mesh FAT (X/Z) rather than
+//      overall; the skeleton is untouched. See gen_swell2.py / the zone header.
 //
 //  The family is read from self.model by longest listed prefix, so a gibbed
 //  body (c_zom_zombie1_body01_g_larmoff) still finds its base; crawlers keep
@@ -1053,13 +1058,28 @@ microwavegun_handle_death_notetracks( note )
 zmqol_mgun_swell_add( str_name, b_head )
 {
     if ( b_head )
+    {
         level.zmqol_mgun_swell_heads[ level.zmqol_mgun_swell_heads.size ] = str_name;
+
+        //  A head carries the body's S03 / S06 / S08 copies (three models, not
+        //  eight) - enough to read while the body smooths through all eight.
+        precachemodel( str_name + "_swellS03" );
+        precachemodel( str_name + "_swellS06" );
+        precachemodel( str_name + "_swellS08" );
+    }
     else
+    {
         level.zmqol_mgun_swell_bodies[ level.zmqol_mgun_swell_bodies.size ] = str_name;
 
-    precachemodel( str_name + "_swell120" );
-    precachemodel( str_name + "_swell145" );
-    precachemodel( str_name + "_swell170" );
+        precachemodel( str_name + "_swellS01" );
+        precachemodel( str_name + "_swellS02" );
+        precachemodel( str_name + "_swellS03" );
+        precachemodel( str_name + "_swellS04" );
+        precachemodel( str_name + "_swellS05" );
+        precachemodel( str_name + "_swellS06" );
+        precachemodel( str_name + "_swellS07" );
+        precachemodel( str_name + "_swellS08" );
+    }
 }
 
 //  Longest listed name that prefixes str_model. Longest-wins is what keeps
@@ -1138,17 +1158,36 @@ zmqol_mgun_swell_model()
 zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_tag )
 {
     a_stages = [];
-    a_stages[0] = "120";
-    a_stages[1] = "145";
-    a_stages[2] = "170";
-    str_prev_head = str_head;
+    a_stages[0] = "S01";
+    a_stages[1] = "S02";
+    a_stages[2] = "S03";
+    a_stages[3] = "S04";
+    a_stages[4] = "S05";
+    a_stages[5] = "S06";
+    a_stages[6] = "S07";
+    a_stages[7] = "S08";
 
+    //  The head only has the S03 / S06 / S08 copies; swap it on those steps.
+    a_head_stages = [];
+    a_head_stages[0] = "S03";
+    a_head_stages[1] = "S06";
+    a_head_stages[2] = "S08";
+
+    str_prev_head = str_head;
+    i_head = 0;
+
+    //  v2.15.47 - eight steps over the expand cycle instead of three. First step
+    //  lands 0.15 s after "expand", then every 0.26 s, so the body reaches the
+    //  full 1.70 fat shape at ~1.97 s of Moon's 2.5 s cycle (measured: the
+    //  corpse pops at the cycle end via zmqol_mgun_expand_to_burst). Eight is a
+    //  hard ceiling: classic TranZit's base model index leaves room for 92
+    //  swell models, and ten body stages overflowed it (measured live).
     for ( i = 0; i < a_stages.size; i++ )
     {
         if ( i == 0 )
             wait 0.15;
         else
-            wait 0.7;
+            wait 0.26;
 
         if ( !isdefined( e_corpse ) )
             return;
@@ -1158,9 +1197,9 @@ zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_ta
         if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
             println( "[zm_qol] zapgun: swell drive setmodel ok " + a_stages[i] );
 
-        if ( str_head != "" )
+        if ( str_head != "" && i_head < a_head_stages.size && a_head_stages[i_head] == a_stages[i] )
         {
-            str_next = str_head_base + "_swell" + a_stages[i];
+            str_next = str_head_base + "_swell" + a_head_stages[i_head];
             e_corpse detach( str_prev_head, str_head_tag );
 
             if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
@@ -1172,6 +1211,7 @@ zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_ta
                 println( "[zm_qol] zapgun: swell drive attach ok " + str_next );
 
             str_prev_head = str_next;
+            i_head++;
         }
 
         if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
