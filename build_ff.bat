@@ -410,6 +410,16 @@ REM  Its one shared name, mc/mtl_zombie_teleporter_glow, resolves from the exist
 REM  owner for that reason. A/B the asset list if it moves. (Replaced the v2.9.18
 REM  zapgun_donor - the ezz package's 4 converted models - which is retired.)
 REM
+REM  🌟 zone_source\zomswell_donor\mod.ff (v2.15.45) follows the same recipe, two
+REM  assets wide: the two DLC5 zombie techsets mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
+REM  and mc_sw4_3d_char_skin_j92387z3_dlc5, copied out of Declassified's zm_moon.ff
+REM  with the patched OAT. They carry the Wave Gun swell vertex shader that
+REM  retail's same-named techsets do not (measured in the .tech dumps: the lit
+REM  spot technique embeds pimp_shader_sw4_3d_char_cloth_53938792.hlsl in DLC5
+REM  and pimp_shader_sw4_3d_phong_emissive_alcatraz_b7d697d7.hlsl in retail).
+REM  The names are new on every loaded fastfile, so at the tail this donor can
+REM  only add. A/B the asset list if it moves.
+REM
 REM  🌟 zone_source\bonfire_donor\mod.ff (v2.12.0) is the same idea, two assets wide: the
 REM  BONFIRE SALE pickup model zombie_pickup_bonfire and the HUD countdown material
 REM  zom_icon_bonfire, copied out of Zombies Declassified's zm_pentagon.ff ("Five" - the only
@@ -462,6 +472,7 @@ REM  target "REM".
   --load "%BO2_DIR%\zone\all\code_post_gfx.ff" ^
   --load "%PROJ%\zone_source\fx_donor\mod.ff" ^
   --load "%PROJ%\zone_source\wavegun_donor\mod.ff" ^
+  --load "%PROJ%\zone_source\zomswell_donor\mod.ff" ^
   --load "%PROJ%\zone_source\bonfire_donor\mod.ff" ^
   --load "%PROJ%\zone_source\metalstorm_donor\mod.ff" ^
   --load "%BO2_DIR%\zone\all\nicaragua.ff" ^

@@ -29,6 +29,7 @@ include,mod_nukeddogs
 include,mod_ballisticknife
 include,mod_emp
 include,mod_wavegun
+include,mod_wavegun_swell
 include,mod_spas
 include,mod_bonfire
 include,mod_metalstorm
