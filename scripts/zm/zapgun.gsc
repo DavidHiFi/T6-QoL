@@ -170,16 +170,17 @@ init()
     //  below is the working implementation; the client ramp is kept because it
     //  is Moon's own code and harmless.
     //
-    //  THE SWELL MODELS (v2.15.47): every zombie BODY and HEAD family the gun
-    //  can kill on its four maps, pre-scaled at build time by
-    //  modding-jobs\wavegun-swell-003\gen_swell2.py (eight body stages, mesh
-    //  scaled FAT on X/Z up to 1.70 and only 1.15 on the 60-unit height; the
-    //  head takes the S03/S06/S08 copies) and declared in
-    //  mod_wavegun_swell.zone. Only the CURRENT map's families are precached:
-    //  the model index is a configstring pool, and precaching all 332 on
-    //  every map is a G_ModelIndex overflow waiting to happen. TranZit's two
-    //  zones carry different families (so_zclassic: zombie1/2/3; so_zsurvival:
-    //  zombie1/5/8 plus the female heads), so that map splits on is_classic().
+    //  THE SWELL MODELS (v2.15.48): every zombie BODY family the gun can kill on
+    //  its four maps, pre-scaled at build time by
+    //  modding-jobs\wavegun-swell-003\gen_swell2.py (ten body stages, mesh
+    //  scaled FAT on X/Z up to 1.60 and only 1.25 on the 60-unit height). HEADS
+    //  ARE NOT SWELLED: the head is a separate attached model and the scaled
+    //  copies flung it off the body, which read as disappearing heads; body-only
+    //  reads fine. Declared in mod_wavegun_swell.zone. Only the CURRENT map's
+    //  families are precached: the model index is a configstring pool, and
+    //  precaching all 310 on every map is a G_ModelIndex overflow waiting to
+    //  happen. TranZit's two zones carry different families (so_zclassic:
+    //  zombie1/2/3; so_zsurvival: zombie1/5/8), so that map splits on is_classic().
     level.zmqol_mgun_swell_bodies = [];
     level.zmqol_mgun_swell_heads = [];
     str_map = getdvar( "mapname" );
@@ -1057,29 +1058,27 @@ microwavegun_handle_death_notetracks( note )
 // ============================================================================
 zmqol_mgun_swell_add( str_name, b_head )
 {
+    //  v2.15.48 - HEADS ARE NOT SWELLED ANY MORE. The head is a separate
+    //  attached model whose origin sits at the neck; the fat-scaled copies
+    //  flung it off the body (the user: "the zombies' heads disappear"), and
+    //  during the death anim the head is often not even matchable. init()
+    //  still lists head families so the family table stays in one place; they
+    //  are ignored here. The body-only swell below reads fine without it.
     if ( b_head )
-    {
-        level.zmqol_mgun_swell_heads[ level.zmqol_mgun_swell_heads.size ] = str_name;
+        return;
 
-        //  A head carries the body's S03 / S06 / S08 copies (three models, not
-        //  eight) - enough to read while the body smooths through all eight.
-        precachemodel( str_name + "_swellS03" );
-        precachemodel( str_name + "_swellS06" );
-        precachemodel( str_name + "_swellS08" );
-    }
-    else
-    {
-        level.zmqol_mgun_swell_bodies[ level.zmqol_mgun_swell_bodies.size ] = str_name;
+    level.zmqol_mgun_swell_bodies[ level.zmqol_mgun_swell_bodies.size ] = str_name;
 
-        precachemodel( str_name + "_swellS01" );
-        precachemodel( str_name + "_swellS02" );
-        precachemodel( str_name + "_swellS03" );
-        precachemodel( str_name + "_swellS04" );
-        precachemodel( str_name + "_swellS05" );
-        precachemodel( str_name + "_swellS06" );
-        precachemodel( str_name + "_swellS07" );
-        precachemodel( str_name + "_swellS08" );
-    }
+    precachemodel( str_name + "_swellS01" );
+    precachemodel( str_name + "_swellS02" );
+    precachemodel( str_name + "_swellS03" );
+    precachemodel( str_name + "_swellS04" );
+    precachemodel( str_name + "_swellS05" );
+    precachemodel( str_name + "_swellS06" );
+    precachemodel( str_name + "_swellS07" );
+    precachemodel( str_name + "_swellS08" );
+    precachemodel( str_name + "_swellS09" );
+    precachemodel( str_name + "_swellS10" );
 }
 
 //  Longest listed name that prefixes str_model. Longest-wins is what keeps
@@ -1123,39 +1122,15 @@ zmqol_mgun_swell_model()
     if ( str_body == "" )
         return;
 
-    //  The head: first attachment whose model is a listed head family.
-    str_head = "";
-    str_head_base = "";
-    str_head_tag = "";
-    n_att = self getattachsize();
-
-    for ( i = 0; i < n_att; i++ )
-    {
-        str_m = self getattachmodelname( i );
-        str_b = zmqol_mgun_swell_match( str_m, level.zmqol_mgun_swell_heads );
-
-        if ( str_b != "" )
-        {
-            str_head = str_m;
-            str_head_base = str_b;
-            str_head_tag = self getattachtagname( i );
-
-            if ( !isdefined( str_head_tag ) )
-                str_head_tag = "";
-
-            break;
-        }
-    }
-
-    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-        println( "[zm_qol] zapgun: swell_model head='" + str_head + "' base='" + str_head_base + "' tag='" + str_head_tag + "' attachments=" + n_att );
-
+    //  v2.15.48 - the head is left alone. It is a separate attached model and
+    //  setmodel() on the body keeps it attached; detaching/attaching fat copies
+    //  was what made the heads look like they vanished.
     //  Drive from level, not from the corpse: the actor's own threads are not
     //  trusted to survive its model swaps (measured 2026-09-12).
-    level thread zmqol_mgun_swell_drive( self, str_body, str_head, str_head_base, str_head_tag );
+    level thread zmqol_mgun_swell_drive( self, str_body );
 }
 
-zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_tag )
+zmqol_mgun_swell_drive( e_corpse, str_body )
 {
     a_stages = [];
     a_stages[0] = "S01";
@@ -1166,28 +1141,19 @@ zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_ta
     a_stages[5] = "S06";
     a_stages[6] = "S07";
     a_stages[7] = "S08";
+    a_stages[8] = "S09";
+    a_stages[9] = "S10";
 
-    //  The head only has the S03 / S06 / S08 copies; swap it on those steps.
-    a_head_stages = [];
-    a_head_stages[0] = "S03";
-    a_head_stages[1] = "S06";
-    a_head_stages[2] = "S08";
-
-    str_prev_head = str_head;
-    i_head = 0;
-
-    //  v2.15.47 - eight steps over the expand cycle instead of three. First step
-    //  lands 0.15 s after "expand", then every 0.26 s, so the body reaches the
-    //  full 1.70 fat shape at ~1.97 s of Moon's 2.5 s cycle (measured: the
-    //  corpse pops at the cycle end via zmqol_mgun_expand_to_burst). Eight is a
-    //  hard ceiling: classic TranZit's base model index leaves room for 92
-    //  swell models, and ten body stages overflowed it (measured live).
+    //  v2.15.48 - ten BODY-ONLY steps. First step 0.15 s after "expand", then
+    //  0.22 s each, so the body reaches the full 1.60 fat shape at ~2.13 s of
+    //  Moon's 2.5 s cycle. No head handling: the head stays on its tag, which
+    //  is what fixes the disappearing heads.
     for ( i = 0; i < a_stages.size; i++ )
     {
         if ( i == 0 )
             wait 0.15;
         else
-            wait 0.26;
+            wait 0.22;
 
         if ( !isdefined( e_corpse ) )
             return;
@@ -1197,25 +1163,8 @@ zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_ta
         if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
             println( "[zm_qol] zapgun: swell drive setmodel ok " + a_stages[i] );
 
-        if ( str_head != "" && i_head < a_head_stages.size && a_head_stages[i_head] == a_stages[i] )
-        {
-            str_next = str_head_base + "_swell" + a_head_stages[i_head];
-            e_corpse detach( str_prev_head, str_head_tag );
-
-            if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-                println( "[zm_qol] zapgun: swell drive detach ok " + str_prev_head );
-
-            e_corpse attach( str_next, str_head_tag, 1 );
-
-            if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-                println( "[zm_qol] zapgun: swell drive attach ok " + str_next );
-
-            str_prev_head = str_next;
-            i_head++;
-        }
-
         if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-            println( "[zm_qol] zapgun: swell stage " + a_stages[i] + " on " + str_body + " head " + str_head_base );
+            println( "[zm_qol] zapgun: swell stage " + a_stages[i] + " on " + str_body );
     }
 }
 
