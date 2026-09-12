@@ -61,17 +61,69 @@
 techniqueset,mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
 techniqueset,mc_sw4_3d_char_skin_j92387z3_dlc5
 
-//  THE SWELL MODELS (2026-09-12). Stock TranZit zombie1_body01 scaled at build
-//  time (every bone + vertex OFFSET x k) by
-//  modding-jobs\wavegun-swell-001\gen-scaled-models.ps1, swapped in by
-//  zapgun.gsc zmqol_mgun_swell_model(). First build carries one family; the
-//  rest follow once the live swap is confirmed.
+//  THE SWELL MODELS (v2.15.46). Every zombie BODY and HEAD family the gun can
+//  kill on its four maps, scaled at build time by
+//  modding-jobs\wavegun-swell-002\gen_swell.py (GLB POSITION stream and node
+//  translations x 1.20 / 1.45 / 1.70; source LOD0 only, declared at the
+//  source's farthest LOD distance so it draws at any range) and swapped in by
+//  zapgun.gsc zmqol_mgun_swell_drive() across Moon's 2.5 s expand cycle. The
+//  head is a separate attached model, so it has its own scaled copies.
+//  Confirmed live 2026-09-13: a setmodel() to <body>_swell170 renders the
+//  zombie visibly larger on Town.
+//    TranZit classic   zombie1/2/3 bodies, heads a/k/l/n
+//    TranZit survival  zombie1/5/8 bodies, heads a/k/l/n/d/d2/f/f2
+//    Nuketown          hazmat 1/2, soldier, solciv, heads 1-4 (+blueeyes), mask
+//    Die Rise          civ_shorts 1-6, scientist, soldier, chinese heads 1-4 + helmet
+//    Mob               guard, inmate 1/2, barbwire/hellcatraz/mask/device/slackjaw
+//  zapgun.gsc precaches only the current map's families (model index budget).
 xmodel,c_zom_zombie1_body01_swell120
 xmodel,c_zom_zombie1_body01_swell145
 xmodel,c_zom_zombie1_body01_swell170
 xmodel,c_zom_zombie1_body02_swell120
 xmodel,c_zom_zombie1_body02_swell145
 xmodel,c_zom_zombie1_body02_swell170
+xmodel,c_zom_zombie5_body01_swell120
+xmodel,c_zom_zombie5_body01_swell145
+xmodel,c_zom_zombie5_body01_swell170
+xmodel,c_zom_zombie5_body02_swell120
+xmodel,c_zom_zombie5_body02_swell145
+xmodel,c_zom_zombie5_body02_swell170
+xmodel,c_zom_zombie5_body03_swell120
+xmodel,c_zom_zombie5_body03_swell145
+xmodel,c_zom_zombie5_body03_swell170
+xmodel,c_zom_zombie8_body01_swell120
+xmodel,c_zom_zombie8_body01_swell145
+xmodel,c_zom_zombie8_body01_swell170
+xmodel,c_zom_zombie8_body02_swell120
+xmodel,c_zom_zombie8_body02_swell145
+xmodel,c_zom_zombie8_body02_swell170
+xmodel,c_zom_zombie8_body03_swell120
+xmodel,c_zom_zombie8_body03_swell145
+xmodel,c_zom_zombie8_body03_swell170
+xmodel,c_zom_zombie_head_a_swell120
+xmodel,c_zom_zombie_head_a_swell145
+xmodel,c_zom_zombie_head_a_swell170
+xmodel,c_zom_zombie_head_k_swell120
+xmodel,c_zom_zombie_head_k_swell145
+xmodel,c_zom_zombie_head_k_swell170
+xmodel,c_zom_zombie_head_l_swell120
+xmodel,c_zom_zombie_head_l_swell145
+xmodel,c_zom_zombie_head_l_swell170
+xmodel,c_zom_zombie_head_n_swell120
+xmodel,c_zom_zombie_head_n_swell145
+xmodel,c_zom_zombie_head_n_swell170
+xmodel,c_zom_zombie_head_d_swell120
+xmodel,c_zom_zombie_head_d_swell145
+xmodel,c_zom_zombie_head_d_swell170
+xmodel,c_zom_zombie_head_d2_swell120
+xmodel,c_zom_zombie_head_d2_swell145
+xmodel,c_zom_zombie_head_d2_swell170
+xmodel,c_zom_zombie_head_f_swell120
+xmodel,c_zom_zombie_head_f_swell145
+xmodel,c_zom_zombie_head_f_swell170
+xmodel,c_zom_zombie_head_f2_swell120
+xmodel,c_zom_zombie_head_f2_swell145
+xmodel,c_zom_zombie_head_f2_swell170
 xmodel,c_zom_zombie2_body01_swell120
 xmodel,c_zom_zombie2_body01_swell145
 xmodel,c_zom_zombie2_body01_swell170
@@ -96,6 +148,111 @@ xmodel,c_zom_zombie3_body04_swell170
 xmodel,c_zom_zombie3_body05_swell120
 xmodel,c_zom_zombie3_body05_swell145
 xmodel,c_zom_zombie3_body05_swell170
+xmodel,c_zom_dlc0_zom_haz_body1_swell120
+xmodel,c_zom_dlc0_zom_haz_body1_swell145
+xmodel,c_zom_dlc0_zom_haz_body1_swell170
+xmodel,c_zom_dlc0_zom_haz_body2_swell120
+xmodel,c_zom_dlc0_zom_haz_body2_swell145
+xmodel,c_zom_dlc0_zom_haz_body2_swell170
+xmodel,c_zom_dlc0_zom_sol_body1_swell120
+xmodel,c_zom_dlc0_zom_sol_body1_swell145
+xmodel,c_zom_dlc0_zom_sol_body1_swell170
+xmodel,c_zom_dlc0_zom_solciv_body1_swell120
+xmodel,c_zom_dlc0_zom_solciv_body1_swell145
+xmodel,c_zom_dlc0_zom_solciv_body1_swell170
+xmodel,c_zom_dlc0_zom_head1_swell120
+xmodel,c_zom_dlc0_zom_head1_swell145
+xmodel,c_zom_dlc0_zom_head1_swell170
+xmodel,c_zom_dlc0_zom_head2_swell120
+xmodel,c_zom_dlc0_zom_head2_swell145
+xmodel,c_zom_dlc0_zom_head2_swell170
+xmodel,c_zom_dlc0_zom_head3_swell120
+xmodel,c_zom_dlc0_zom_head3_swell145
+xmodel,c_zom_dlc0_zom_head3_swell170
+xmodel,c_zom_dlc0_zom_head4_swell120
+xmodel,c_zom_dlc0_zom_head4_swell145
+xmodel,c_zom_dlc0_zom_head4_swell170
+xmodel,c_zom_dlc0_zom_head1_blueeyes_swell120
+xmodel,c_zom_dlc0_zom_head1_blueeyes_swell145
+xmodel,c_zom_dlc0_zom_head1_blueeyes_swell170
+xmodel,c_zom_dlc0_zom_head2_blueeyes_swell120
+xmodel,c_zom_dlc0_zom_head2_blueeyes_swell145
+xmodel,c_zom_dlc0_zom_head2_blueeyes_swell170
+xmodel,c_zom_dlc0_zom_head3_blueeyes_swell120
+xmodel,c_zom_dlc0_zom_head3_blueeyes_swell145
+xmodel,c_zom_dlc0_zom_head3_blueeyes_swell170
+xmodel,c_zom_dlc0_zom_head4_blueeyes_swell120
+xmodel,c_zom_dlc0_zom_head4_blueeyes_swell145
+xmodel,c_zom_dlc0_zom_head4_blueeyes_swell170
+xmodel,c_zom_dlc0_zom_haz_head_mask_swell120
+xmodel,c_zom_dlc0_zom_haz_head_mask_swell145
+xmodel,c_zom_dlc0_zom_haz_head_mask_swell170
+xmodel,c_zom_dlc0_zom_haz_head_mask_blueeyes_swell120
+xmodel,c_zom_dlc0_zom_haz_head_mask_blueeyes_swell145
+xmodel,c_zom_dlc0_zom_haz_head_mask_blueeyes_swell170
+xmodel,c_zom_zombie_civ_shorts_body_swell120
+xmodel,c_zom_zombie_civ_shorts_body_swell145
+xmodel,c_zom_zombie_civ_shorts_body_swell170
+xmodel,c_zom_zombie_civ_shorts_body2_swell120
+xmodel,c_zom_zombie_civ_shorts_body2_swell145
+xmodel,c_zom_zombie_civ_shorts_body2_swell170
+xmodel,c_zom_zombie_civ_shorts_body3_swell120
+xmodel,c_zom_zombie_civ_shorts_body3_swell145
+xmodel,c_zom_zombie_civ_shorts_body3_swell170
+xmodel,c_zom_zombie_civ_shorts_body4_swell120
+xmodel,c_zom_zombie_civ_shorts_body4_swell145
+xmodel,c_zom_zombie_civ_shorts_body4_swell170
+xmodel,c_zom_zombie_civ_shorts_body5_swell120
+xmodel,c_zom_zombie_civ_shorts_body5_swell145
+xmodel,c_zom_zombie_civ_shorts_body5_swell170
+xmodel,c_zom_zombie_civ_shorts_body6_swell120
+xmodel,c_zom_zombie_civ_shorts_body6_swell145
+xmodel,c_zom_zombie_civ_shorts_body6_swell170
+xmodel,c_zom_zombie_scientist_body_swell120
+xmodel,c_zom_zombie_scientist_body_swell145
+xmodel,c_zom_zombie_scientist_body_swell170
+xmodel,c_zom_zombie_soldier_body_swell120
+xmodel,c_zom_zombie_soldier_body_swell145
+xmodel,c_zom_zombie_soldier_body_swell170
+xmodel,c_zom_zombie_chinese_head1_swell120
+xmodel,c_zom_zombie_chinese_head1_swell145
+xmodel,c_zom_zombie_chinese_head1_swell170
+xmodel,c_zom_zombie_chinese_head2_swell120
+xmodel,c_zom_zombie_chinese_head2_swell145
+xmodel,c_zom_zombie_chinese_head2_swell170
+xmodel,c_zom_zombie_chinese_head3_swell120
+xmodel,c_zom_zombie_chinese_head3_swell145
+xmodel,c_zom_zombie_chinese_head3_swell170
+xmodel,c_zom_zombie_chinese_head4_swell120
+xmodel,c_zom_zombie_chinese_head4_swell145
+xmodel,c_zom_zombie_chinese_head4_swell170
+xmodel,c_zom_zombie_chinese_head3_helmet_swell120
+xmodel,c_zom_zombie_chinese_head3_helmet_swell145
+xmodel,c_zom_zombie_chinese_head3_helmet_swell170
+xmodel,c_zom_guard_body_swell120
+xmodel,c_zom_guard_body_swell145
+xmodel,c_zom_guard_body_swell170
+xmodel,c_zom_inmate_body1_swell120
+xmodel,c_zom_inmate_body1_swell145
+xmodel,c_zom_inmate_body1_swell170
+xmodel,c_zom_inmate_body2_swell120
+xmodel,c_zom_inmate_body2_swell145
+xmodel,c_zom_inmate_body2_swell170
+xmodel,c_zom_zombie_barbwire_head_swell120
+xmodel,c_zom_zombie_barbwire_head_swell145
+xmodel,c_zom_zombie_barbwire_head_swell170
+xmodel,c_zom_zombie_hellcatraz_head_swell120
+xmodel,c_zom_zombie_hellcatraz_head_swell145
+xmodel,c_zom_zombie_hellcatraz_head_swell170
+xmodel,c_zom_zombie_mask_head_swell120
+xmodel,c_zom_zombie_mask_head_swell145
+xmodel,c_zom_zombie_mask_head_swell170
+xmodel,c_zom_zombie_mask_head_device_swell120
+xmodel,c_zom_zombie_mask_head_device_swell145
+xmodel,c_zom_zombie_mask_head_device_swell170
+xmodel,c_zom_zombie_slackjaw_head_swell120
+xmodel,c_zom_zombie_slackjaw_head_swell145
+xmodel,c_zom_zombie_slackjaw_head_swell170
 
 //  ?? THE BLOOD IS RED AGAIN (2026-09-12). User: "the color of what the
 //  zombie spews out of its mouth is white for some reason it should be red".
@@ -190,3 +347,22 @@ material,mc/mtl_c_zom_zombie3_body02
 material,mc/mtl_c_zom_zombie3_body03
 material,mc/mtl_c_zom_zombie3_body04
 material,mc/mtl_c_zom_zombie3_body05
+
+//  Nuketown head SWELL copies need the heads' UNLIT (_u) and blue-eye (_ub)
+//  materials too (v2.15.46). zm_nuked.ff is not a --load input, so like the
+//  25 images above they ship raw, dumped from zm_nuked.ff with the Unlinker.
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask_ub
+image,~-gc_zom_dlc0_hazmat_zombie_mask_b_c
+image,~-gc_zom_dlc0_zombie_head1_b_c
+image,~-gc_zom_dlc0_zombie_head2_b_c
+image,~-gc_zom_dlc0_zombie_head3_b_c
+image,~-gc_zom_dlc0_zombie_head4_b_c

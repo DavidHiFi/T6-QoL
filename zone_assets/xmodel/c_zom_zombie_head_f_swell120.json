@@ -1,0 +1,20 @@
+{
+  "$schema": "http://openassettools.dev/schema/xmodel.v1.json",
+  "_game": "t6",
+  "_type": "xmodel",
+  "_version": 2,
+  "flags": 524288,
+  "lightingOriginOffset": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.6
+  },
+  "lightingOriginRange": 0.6,
+  "lods": [
+    {
+      "distance": 2648.32177734375,
+      "file": "model_export/c_zom_zombie_head_f_swell120_lod0.glb"
+    }
+  ],
+  "type": "animated"
+}

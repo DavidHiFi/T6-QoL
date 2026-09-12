@@ -82,7 +82,17 @@ if /i "%~1"=="regen" (
     REM
     REM  Done here rather than by hand because this file is generated: a hand
     REM  edit would be silently undone the next time anyone runs `regen`.
-    "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path '%PROJ%' 'zone_source\_regen\zone_source\mod.zone'; $dst=Join-Path '%PROJ%' 'zone_source\mod_base.zone'; $in=@(Get-Content -LiteralPath $src); $out=@($in | Where-Object { $_ -notmatch '^\s*script,.*\.gsc\s*$' }); $n=$in.Count-$out.Count; Set-Content -LiteralPath $dst -Value $out -Encoding ASCII; Write-Host ('    stripped ' + $n + ' script,*.gsc line(s); ' + $out.Count + ' lines written')"
+    REM
+    REM  v2.15.46 - ALSO STRIP THE FOUR DATA-LESS BLOOD MATERIAL REFERENCES
+    REM  (material,,gfx_fxt_bio_blooddrops_ds64 / bloodgush_ds64 / bloodburst /
+    REM  bloodburst_b_ds64). The wavegun donor's fx pointed at those names and
+    REM  the donor inventory carried them as bare references; a reference
+    REM  declared first wins the name, so the real definitions declared in
+    REM  mod_wavegun_swell.zone never linked and the Wave Gun's blood drew WHITE
+    REM  (measured live 2026-09-13: Moon's fx_sizzle_blood_eyes white, stock
+    REM  misc/fx_zombie_bloodspurt red in the same build). With the references
+    REM  gone the swell zone's declarations pull the real common_zm materials.
+    "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path '%PROJ%' 'zone_source\_regen\zone_source\mod.zone'; $dst=Join-Path '%PROJ%' 'zone_source\mod_base.zone'; $in=@(Get-Content -LiteralPath $src); $out=@($in | Where-Object { $_ -notmatch '^\s*script,.*\.gsc\s*$' -and $_ -notmatch '^\s*material,,gfx_fxt_bio_(blooddrops_ds64|bloodgush_ds64|bloodburst|bloodburst_b_ds64)\s*$' }); $n=$in.Count-$out.Count; Set-Content -LiteralPath $dst -Value $out -Encoding ASCII; Write-Host ('    stripped ' + $n + ' script,*.gsc line(s); ' + $out.Count + ' lines written')"
     if errorlevel 1 ( echo   ERROR: could not write mod_base.zone. & exit /b 1 )
     rmdir /s /q "%PROJ%\zone_source\_regen"
     echo   mod_base.zone regenerated. Re-run build_ff.bat without 'regen' to link.

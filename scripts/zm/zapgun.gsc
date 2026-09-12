@@ -170,28 +170,96 @@ init()
     //  below is the working implementation; the client ramp is kept because it
     //  is Moon's own code and harmless.
     //
-    //  THE SWELL MODELS: stock TranZit bodies scaled at build time (every bone
-    //  and vertex offset x k) by gen-scaled-glb.ps1 into <body>_swell120/145/170,
-    //  swapped across the float by zmqol_mgun_swell_drive(). The base list is
-    //  the ten TranZit zombie bodies; self.torsodmg1 (set by every character
-    //  script, e.g. "c_zom_zombie1_body01_g_upclean") selects the family.
-    level.zmqol_mgun_swell_bases = [];
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie1_body01";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie1_body02";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie2_body01";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie2_body02";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie2_body03";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie3_body01";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie3_body02";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie3_body03";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie3_body04";
-    level.zmqol_mgun_swell_bases[ level.zmqol_mgun_swell_bases.size ] = "c_zom_zombie3_body05";
+    //  THE SWELL MODELS (v2.15.46): every zombie BODY and HEAD family the gun
+    //  can kill on its four maps, pre-scaled at build time (x1.20 / 1.45 /
+    //  1.70 by modding-jobs\wavegun-swell-002\gen_swell.py) and declared in
+    //  mod_wavegun_swell.zone. The head is its own attached model, so it has
+    //  its own scaled copies. Only the CURRENT map's families are precached:
+    //  the model index is a configstring pool, and precaching all 177 on
+    //  every map is a G_ModelIndex overflow waiting to happen. TranZit's two
+    //  zones carry different families (so_zclassic: zombie1/2/3; so_zsurvival:
+    //  zombie1/5/8 plus the female heads), so that map splits on is_classic().
+    level.zmqol_mgun_swell_bodies = [];
+    level.zmqol_mgun_swell_heads = [];
+    str_map = getdvar( "mapname" );
 
-    for ( i = 0; i < level.zmqol_mgun_swell_bases.size; i++ )
+    if ( str_map == "zm_transit" )
     {
-        precachemodel( level.zmqol_mgun_swell_bases[i] + "_swell120" );
-        precachemodel( level.zmqol_mgun_swell_bases[i] + "_swell145" );
-        precachemodel( level.zmqol_mgun_swell_bases[i] + "_swell170" );
+        zmqol_mgun_swell_add( "c_zom_zombie1_body01", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie1_body02", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_head_a", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_head_k", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_head_l", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_head_n", 1 );
+
+        if ( is_classic() )
+        {
+            zmqol_mgun_swell_add( "c_zom_zombie2_body01", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie2_body02", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie2_body03", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie3_body01", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie3_body02", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie3_body03", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie3_body04", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie3_body05", 0 );
+        }
+        else
+        {
+            zmqol_mgun_swell_add( "c_zom_zombie5_body01", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie5_body02", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie5_body03", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie8_body01", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie8_body02", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie8_body03", 0 );
+            zmqol_mgun_swell_add( "c_zom_zombie_head_d", 1 );
+            zmqol_mgun_swell_add( "c_zom_zombie_head_d2", 1 );
+            zmqol_mgun_swell_add( "c_zom_zombie_head_f", 1 );
+            zmqol_mgun_swell_add( "c_zom_zombie_head_f2", 1 );
+        }
+    }
+    else if ( str_map == "zm_nuked" )
+    {
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_body1", 0 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_body2", 0 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_sol_body1", 0 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_solciv_body1", 0 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head1", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head2", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head3", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head4", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head1_blueeyes", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head2_blueeyes", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head3_blueeyes", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head4_blueeyes", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_head_mask", 1 );
+        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_head_mask_blueeyes", 1 );
+    }
+    else if ( str_map == "zm_highrise" )
+    {
+        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body2", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body3", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body4", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body5", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body6", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_scientist_body", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_soldier_body", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head1", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head2", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head3", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head4", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head3_helmet", 1 );
+    }
+    else if ( str_map == "zm_prison" )
+    {
+        zmqol_mgun_swell_add( "c_zom_guard_body", 0 );
+        zmqol_mgun_swell_add( "c_zom_inmate_body1", 0 );
+        zmqol_mgun_swell_add( "c_zom_inmate_body2", 0 );
+        zmqol_mgun_swell_add( "c_zom_zombie_barbwire_head", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_hellcatraz_head", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_mask_head", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_mask_head_device", 1 );
+        zmqol_mgun_swell_add( "c_zom_zombie_slackjaw_head", 1 );
     }
 
     set_zombie_var( "microwavegun_cylinder_radius", 180 );
@@ -208,6 +276,16 @@ init()
     level.zmqol_mgun_effects["microwavegun_zap_shock_ug"]         = loadfx( "weapon/microwavegun/fx_zap_shock_ug" );
     level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_ug"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_ug" );
     level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"]    = loadfx( "weapon/microwavegun/fx_sizzle_blood_eyes" );
+
+    //  v2.15.46 - THE BLOOD IS RED. Moon's fx_sizzle_blood_eyes draws as a
+    //  white sparkle stream on this engine, before AND after the blood
+    //  materials were linked with data (measured live on Town 2026-09-13,
+    //  modding-jobs\wavegun-swell-002\sheet-fx-zoom3.jpg / sheet-final-fx.jpg),
+    //  while stock misc/fx_zombie_bloodspurt draws dark red in the same
+    //  build. So the cough is built from the stock spurt, played from the jaw
+    //  along the zombie's facing and from both eyes, for the whole cook
+    //  (zmqol_mgun_blood_cough). common_zm.ff owns it on every map.
+    level.zmqol_mgun_effects["zmqol_mgun_blood"] = loadfx( "misc/fx_zombie_bloodspurt" );
     level.zmqol_mgun_effects["microwavegun_sizzle_death_mist"]    = loadfx( "weapon/microwavegun/fx_sizzle_mist" );
     level.zmqol_mgun_effects["microwavegun_sizzle_death_mist_low_g"] = loadfx( "weapon/microwavegun/fx_sizzle_mist_low_g" );
 
@@ -281,6 +359,22 @@ zmqol_mgun_selftest()
 
     for ( ;; )
     {
+        //  v2.15.46 - a dev probe may hand over one actor in
+        //  level.zmqol_mgun_selftest_target. While that actor exists but is
+        //  dead (floating, swelling, about to pop) the camera holds on it and
+        //  nothing fires, so a headless recording keeps one death on screen
+        //  end to end instead of being yanked to the next zombie.
+        if ( isdefined( level.zmqol_mgun_selftest_target ) && !isalive( level.zmqol_mgun_selftest_target ) )
+        {
+            a_players = get_players();
+
+            if ( a_players.size )
+                a_players[0] setplayerangles( vectortoangles( level.zmqol_mgun_selftest_target.origin + ( 0, 0, 40 ) - a_players[0].origin - ( 0, 0, 55 ) ) );
+
+            wait 0.05;
+            continue;
+        }
+
         wait 4;
 
         a_players = get_players();
@@ -303,6 +397,12 @@ zmqol_mgun_selftest()
         //  and vectortoangles are stock builtins (the spawner uses both).
         e_target = undefined;
         n_best = 999999999;
+
+        if ( isdefined( level.zmqol_mgun_selftest_target ) && isalive( level.zmqol_mgun_selftest_target ) )
+        {
+            e_target = level.zmqol_mgun_selftest_target;
+            n_best = -1;
+        }
 
         for ( i = 0; i < a_zombies.size; i++ )
         {
@@ -759,13 +859,58 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             self.nodeathragdoll = 1;
             self playsound( "wpn_mgun_cook_zombie" );
             self playsound( "wpn_mgun_impact_zombie" );
-            network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
+            self thread zmqol_mgun_blood_cough();
             self.handle_death_notetracks = ::microwavegun_handle_death_notetracks;
             self thread zmqol_mgun_sizzle_watchdog();
 
             if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
                 println( "[zm_qol] zapgun: sizzle death anim '" + self.deathanim + "' on " + self.animname );
         }
+    }
+}
+
+// ============================================================================
+//  zmqol_mgun_blood_cough  -  RED BLOOD FROM THE MOUTH AND EYES     (v2.15.46)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-12: "what the zombie coughs up is WHITE, it must be RED".
+//  Moon's own eye fx is the white one here (see the loadfx note in init), so
+//  the cough is the stock zombie blood spurt: from the jaw along the body's
+//  facing every 0.2 s, from both eyes every 0.6 s, until the burst deletes
+//  the corpse. Tag names are TranZit's rig (J_Jaw / J_Head / J_Eyeball_*);
+//  a rig without them just skips that spurt.
+// ============================================================================
+zmqol_mgun_blood_cough()
+{
+    fx = level.zmqol_mgun_effects["zmqol_mgun_blood"];
+
+    for ( i = 0; i < 45; i++ )
+    {
+        if ( !isdefined( self ) || is_true( self.zmqol_mgun_burst_done ) )
+            return;
+
+        v_fwd = anglestoforward( self.angles );
+        v_jaw = self gettagorigin( "J_Jaw" );
+
+        if ( !isdefined( v_jaw ) )
+            v_jaw = self gettagorigin( "J_Head" );
+
+        if ( isdefined( v_jaw ) )
+            playfx( fx, v_jaw, v_fwd );
+
+        if ( i % 3 == 0 )
+        {
+            v_eye = self gettagorigin( "J_Eyeball_LE" );
+
+            if ( isdefined( v_eye ) )
+                playfx( fx, v_eye, v_fwd );
+
+            v_eye = self gettagorigin( "J_Eyeball_RI" );
+
+            if ( isdefined( v_eye ) )
+                playfx( fx, v_eye, v_fwd );
+        }
+
+        wait 0.2;
     }
 }
 
@@ -830,6 +975,7 @@ microwavegun_handle_death_notetracks( note )
         //  materials now ship with MaximumSwell (20,0,0,1) added
         //  (mod_wavegun_swell.zone); the client half is in zapgun.csc. The
         //  setclientfield below is what starts the ramp on every viewer.
+        self.zmqol_mgun_expand_seen = 1;
         self setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 );
         self playsound( "wpn_mgun_impact_zombie" );
 
@@ -868,10 +1014,10 @@ microwavegun_handle_death_notetracks( note )
 }
 
 // ============================================================================
-//  zmqol_mgun_swell_model  -  THE BODY PUFFS UP, STAGE BY STAGE     (v2.15.45)
+//  zmqol_mgun_swell_model  -  THE BODY PUFFS UP, STAGE BY STAGE     (v2.15.46)
 // ----------------------------------------------------------------------------
-//  User, 2026-09-12: the float, the blood, the pop and the ding all read right,
-//  but "the zombies actually expanding and puffing up" was still missing.
+//  User, 2026-09-12: the float, the pop and the ding all read right, but "the
+//  zombies actually expanding and puffing up" was still missing.
 //
 //  🛑 WHY IT CANNOT BE MOON'S OWN ROUTE ON THIS ENGINE. Moon ramps shader
 //  constant 0 ("scriptVector3") and its zombie materials carry MaximumSwell.
@@ -881,24 +1027,61 @@ microwavegun_handle_death_notetracks( note )
 //      to retail's pimp_shader_sw4_3d_phong_emissive_alcatraz_b7d697d7 shader;
 //    - its DXBC constant tables contain no MaximumSwell and no scriptVector
 //      input at all - the transform is a rigid world/view-projection pair;
-//    - T6 XModel has no scale field, `setscale` is an unresolved external on
-//      the server (measured live, this job: SV_Shutdown), and the configstring
-//      model index cannot take hundreds of pre-expanded stages per gib form.
+//    - T6 XModel has no scale field and `setscale` is an unresolved external
+//      on the server (measured live: SV_Shutdown).
 //  So the shader ramp is a no-op here no matter what the material says. The
 //  visible result IS reachable the way other T6 projects do it: swap the
-//  corpse's model through pre-scaled copies of its own body.
+//  corpse's body AND head through pre-scaled copies of themselves.
 //
-//  The source models are the STOCK bodies, scaled at build time by
-//  modding-jobs\wavegun-swell-001\gen-scaled-models.ps1 (every bone OFFSET and
-//  vertex OFFSET in the XMODEL_EXPORT scaled by k) and shipped as
-//  <body>_swell120/145/170. self.torsodmg1 identifies the body family (every
-//  character script sets it, e.g. "c_zom_zombie1_body01_g_upclean"), which is
-//  the only body-family key readable from GSC.
+//  MEASURED LIVE 2026-09-13 (Town, per-tick actor tracker, job
+//  modding-jobs\wavegun-swell-002):
+//    - setmodel() to <body>_swell170 renders the actor visibly larger, and its
+//      attachments (the head) survive the swap - so the head, a separate
+//      model attached on tag "" by every character script, is swapped with
+//      detach()/attach() alongside the body or it stays small.
+//    - the sizzle death reaches its "expand" notetrack ~3.4 s after the kill,
+//      Moon's swell cycle runs 2.5 s from there, and the old 4 s watchdog
+//      popped the corpse 0.5 s into it. That is why no stage past 120 was
+//      ever on screen. The watchdog now stands down once expand has arrived
+//      (zmqol_mgun_sizzle_watchdog).
 //
-//  This build carries all ten TranZit zombie body families (zombie1/2/3);
-//  Nuketown, Die Rise and Mob bodies follow the same pattern once this is
-//  confirmed live.
+//  The family is read from self.model by longest listed prefix, so a gibbed
+//  body (c_zom_zombie1_body01_g_larmoff) still finds its base; crawlers keep
+//  the pop only, because a full-body copy would hand them their legs back.
+//  Nuketown, Die Rise and Mob families are in the same lists (init above).
 // ============================================================================
+zmqol_mgun_swell_add( str_name, b_head )
+{
+    if ( b_head )
+        level.zmqol_mgun_swell_heads[ level.zmqol_mgun_swell_heads.size ] = str_name;
+    else
+        level.zmqol_mgun_swell_bodies[ level.zmqol_mgun_swell_bodies.size ] = str_name;
+
+    precachemodel( str_name + "_swell120" );
+    precachemodel( str_name + "_swell145" );
+    precachemodel( str_name + "_swell170" );
+}
+
+//  Longest listed name that prefixes str_model. Longest-wins is what keeps
+//  c_zom_zombie_civ_shorts_body from claiming c_zom_zombie_civ_shorts_body2.
+zmqol_mgun_swell_match( str_model, a_list )
+{
+    str_best = "";
+
+    if ( !isdefined( str_model ) || !isdefined( a_list ) )
+        return str_best;
+
+    for ( i = 0; i < a_list.size; i++ )
+    {
+        str_b = a_list[i];
+
+        if ( str_b.size > str_best.size && str_model.size >= str_b.size && getsubstr( str_model, 0, str_b.size ) == str_b )
+            str_best = str_b;
+    }
+
+    return str_best;
+}
+
 zmqol_mgun_swell_model()
 {
     if ( is_true( self.zmqol_mgun_swell_started ) )
@@ -906,67 +1089,94 @@ zmqol_mgun_swell_model()
 
     self.zmqol_mgun_swell_started = 1;
 
-    if ( !isdefined( self.torsodmg1 ) )
+    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+        println( "[zm_qol] zapgun: swell_model enter model=" + self.model + " has_legs=" + is_true( self.has_legs ) + " bodies=" + level.zmqol_mgun_swell_bodies.size + " heads=" + level.zmqol_mgun_swell_heads.size );
+
+    if ( !is_true( self.has_legs ) )
         return;
 
-    //  Character scripts set torsodmg1 = "<body>_g_upclean"; find the family by
-    //  prefix against the shipped base list.
-    str_base = "";
+    str_body = zmqol_mgun_swell_match( self.model, level.zmqol_mgun_swell_bodies );
 
-    if ( isdefined( level.zmqol_mgun_swell_bases ) )
+    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+        println( "[zm_qol] zapgun: swell_model body match='" + str_body + "'" );
+
+    if ( str_body == "" )
+        return;
+
+    //  The head: first attachment whose model is a listed head family.
+    str_head = "";
+    str_head_base = "";
+    str_head_tag = "";
+    n_att = self getattachsize();
+
+    for ( i = 0; i < n_att; i++ )
     {
-        for ( i = 0; i < level.zmqol_mgun_swell_bases.size; i++ )
-        {
-            str_b = level.zmqol_mgun_swell_bases[i];
+        str_m = self getattachmodelname( i );
+        str_b = zmqol_mgun_swell_match( str_m, level.zmqol_mgun_swell_heads );
 
-            if ( getsubstr( self.torsodmg1, 0, str_b.size ) == str_b )
-            {
-                str_base = str_b;
-                break;
-            }
+        if ( str_b != "" )
+        {
+            str_head = str_m;
+            str_head_base = str_b;
+            str_head_tag = self getattachtagname( i );
+
+            if ( !isdefined( str_head_tag ) )
+                str_head_tag = "";
+
+            break;
         }
     }
 
-    if ( str_base == "" )
-        return;
+    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+        println( "[zm_qol] zapgun: swell_model head='" + str_head + "' base='" + str_head_base + "' tag='" + str_head_tag + "' attachments=" + n_att );
 
     //  Drive from level, not from the corpse: the actor's own threads are not
-    //  trusted to survive its model swaps (first live run logged stage 120 and
-    //  then nothing - measured 2026-09-12).
-    level thread zmqol_mgun_swell_drive( self, str_base );
+    //  trusted to survive its model swaps (measured 2026-09-12).
+    level thread zmqol_mgun_swell_drive( self, str_body, str_head, str_head_base, str_head_tag );
 }
 
-zmqol_mgun_swell_drive( e_corpse, str_base )
+zmqol_mgun_swell_drive( e_corpse, str_body, str_head, str_head_base, str_head_tag )
 {
-    wait 0.15;
+    a_stages = [];
+    a_stages[0] = "120";
+    a_stages[1] = "145";
+    a_stages[2] = "170";
+    str_prev_head = str_head;
 
-    if ( !isdefined( e_corpse ) )
-        return;
+    for ( i = 0; i < a_stages.size; i++ )
+    {
+        if ( i == 0 )
+            wait 0.15;
+        else
+            wait 0.7;
 
-    e_corpse setmodel( str_base + "_swell120" );
+        if ( !isdefined( e_corpse ) )
+            return;
 
-    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-        println( "[zm_qol] zapgun: swell stage 120 on " + str_base );
+        e_corpse setmodel( str_body + "_swell" + a_stages[i] );
 
-    wait 0.7;
+        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+            println( "[zm_qol] zapgun: swell drive setmodel ok " + a_stages[i] );
 
-    if ( !isdefined( e_corpse ) )
-        return;
+        if ( str_head != "" )
+        {
+            str_next = str_head_base + "_swell" + a_stages[i];
+            e_corpse detach( str_prev_head, str_head_tag );
 
-    e_corpse setmodel( str_base + "_swell145" );
+            if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+                println( "[zm_qol] zapgun: swell drive detach ok " + str_prev_head );
 
-    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-        println( "[zm_qol] zapgun: swell stage 145 on " + str_base );
+            e_corpse attach( str_next, str_head_tag, 1 );
 
-    wait 0.7;
+            if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+                println( "[zm_qol] zapgun: swell drive attach ok " + str_next );
 
-    if ( !isdefined( e_corpse ) )
-        return;
+            str_prev_head = str_next;
+        }
 
-    e_corpse setmodel( str_base + "_swell170" );
-
-    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-        println( "[zm_qol] zapgun: swell stage 170 on " + str_base );
+        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+            println( "[zm_qol] zapgun: swell stage " + a_stages[i] + " on " + str_body + " head " + str_head_base );
+    }
 }
 
 // ============================================================================
@@ -1019,6 +1229,15 @@ zmqol_mgun_burst_once()
 zmqol_mgun_sizzle_watchdog()
 {
     wait 4;
+
+    //  v2.15.46 - MEASURED on Town with a per-tick tracker (2026-09-13): the
+    //  sizzle death reaches "expand" ~3.4 s after the kill and Moon's swell
+    //  cycle runs 2.5 s from there. Popping at a flat 4 s cut the swell to
+    //  0.5 s. Once expand has arrived, zmqol_mgun_expand_to_burst() owns the
+    //  timing; this only covers an anim that never gets there.
+    if ( is_true( self.zmqol_mgun_expand_seen ) )
+        return;
+
     self zmqol_mgun_burst_once();
 }
 
@@ -1063,9 +1282,7 @@ zmqol_mgun_microwave_burst()
 
     self playsound( "wpn_mgun_dual_sizzle" );
 
-    v_eye = self gettagorigin( "J_Eyeball_LE" );
-    if ( isdefined( v_eye ) )
-        playfx( level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], v_eye );
+    self thread zmqol_mgun_blood_cough();
 
     //  0.5 s of microwave before the burst - long enough to read as a sizzle,
     //  short enough that a fast-clearing round is not held up.

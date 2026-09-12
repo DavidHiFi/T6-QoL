@@ -1980,10 +1980,6 @@ xmodel,viewmodel_hands_cloth
 weapon,syrette_zm
 techniqueset,,mc_projecteddecal_27zq5445
 xmodel,,fx_decal_character_blood
-material,,gfx_fxt_bio_blooddrops_ds64
-material,,gfx_fxt_bio_bloodgush_ds64
-material,,gfx_fxt_bio_bloodburst
-material,,gfx_fxt_bio_bloodburst_b_ds64
 material,,gfx_fxt_smk_gen_z10
 xanim,viewmodel_m1911_dw_right_idle
 xanim,viewmodel_m1911_dw_right_idle_empty
