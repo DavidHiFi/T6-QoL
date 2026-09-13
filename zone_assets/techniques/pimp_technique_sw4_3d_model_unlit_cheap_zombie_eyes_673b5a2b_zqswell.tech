@@ -1,0 +1,16 @@
+{
+  stateMap "passthrough"; // TODO
+
+  vertexShader 4.0 "pimp_shader_sw4_3d_model_unlit_cheap_zombie_eyes_6a8c6a7c_zqswell.hlsl"
+  {
+  }
+
+  pixelShader 4.0 "pimp_shader_sw4_3d_model_unlit_cheap_zombie_eyes_ee6b6abd.hlsl"
+  {
+    ColorMap = material.ColorMap;
+  }
+
+  vertex.position = code.position;
+  vertex.normal = code.normal;
+  vertex.texcoord[0] = code.texcoord[0];
+}

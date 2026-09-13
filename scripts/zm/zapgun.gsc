@@ -1,5 +1,5 @@
 // ============================================================================
-//  zapgun.gsc  -  THE WAVE GUN / ZAP GUNS, COMPLETE                (v2.10.14)
+//  zapgun.gsc  -  THE WAVE GUN / ZAP GUNS, COMPLETE                (v2.15.49)
 // ----------------------------------------------------------------------------
 //  v2.9.18-v2.10.13 shipped the split Zap Guns alone, on the zm_ezz3.0
 //  package's converted models, because the combined Wave Gun existed only in T5
@@ -26,33 +26,25 @@
 //  counter, _zm.gsc lists the pair as pistols.
 //
 //  WHAT DIFFERS FROM THE ORIGINAL, AND WHY (each one measured, none guessed):
-//   1. THE SWELL CLIENTFIELD IS BACK (v2.15.45). The banner here used to say
-//      "no clientfields" - that was true only while the instant-pop branch was
-//      the one reachable path. Since v2.15.40 the sizzle death animstate IS
-//      reachable (the AIType/xanim/ASD work of commit 73db353), the "expand"
-//      notetrack fires, and Moon's own expand_response path is what the body
-//      swell needs: server raises zombie_actor_flag_microwavegun_expand_response
-//      (registered below, Moon's exact lifetime/width/type) on "expand", and
-//      zapgun.csc answers it with Moon's microwavegun_bloat() shader-constant
-//      ramp. The 53 stock zombie body/head materials it deforms ship in
-//      mod_wavegun_swell.zone. The old "31/32 actor fields" scare was never
-//      real on these maps (measured: transit/highrise 4-5/32, nuked 4/32,
-//      prison 11-13/32, and this adds ONE 1-bit field).
-//      The instant_explode fallback still broadcasts its pop from the server
-//      (zmqol_mgun_pop) exactly as before - that path never swells in Moon
-//      either.
-//   2. THE SWELL NEEDED A MATERIAL, NOT AN ENGINE FEATURE, AND NOW HAS ONE.
-//      Old note, still correct as written: the zm_death_sizzle / zm_death_zap
-//      animstates live in Moon's aitypes and a stock aitype's compiled anim
-//      list cannot take them by declaration alone - the fix was the AIType
-//      overrides of 73db353. And Moon's microwavegun_bloat() ramps a shader
-//      constant on techsets mc_sw4_3d_char_cloth_4z8fq5wu_DLC5 /
-//      mc_sw4_3d_char_skin_j92387z3_DLC5 with a MaximumSwell material
-//      constant. MEASURED 2026-09-12: those _dlc5 techsets are byte-identical
-//      JSON to the retail ones already in mod.ff (same pimp_technique_* names),
-//      so the swell lives in the retail shader already; the only missing
-//      pieces were the MaximumSwell constant on the maps' own zombie
-//      materials and the client ramp. Both ship now.
+//   1. THE SWELL IS MOON'S SHADER ROUTE, MADE REAL ON T6 (v2.15.49). Server
+//      raises zombie_actor_flag_microwavegun_expand_response on the sizzle
+//      death's "expand" notetrack (registered below with Moon's exact
+//      lifetime/width/type); zapgun.csc answers it with Moon's
+//      microwavegun_bloat() ramp of shader constant "scriptVector3" (BO1's
+//      values: X = fraction * 4.0 over 2500 ms). What reads that constant is
+//      the part DLC5 never shipped: its two zombie techsets embed the RETAIL
+//      vertex shader (measured: byte-identical DXBC, no scriptVector input).
+//      mod_wavegun_swell.zone now compiles those techsets from raw with
+//      vertex shaders rebuilt from retail's DXBC plus BO1's one bloat line
+//      (worldPos += worldNormal * scriptVector3.x). The 53 zombie materials
+//      keep MaximumSwell for parity with Moon's authoring; the shader does
+//      not read it. The instant_explode fallback still broadcasts its pop
+//      from the server (zmqol_mgun_pop) - that path never swells in Moon
+//      either. Actor clientfield budget: transit/highrise 4-5/32, nuked
+//      4/32, prison 11-13/32, and this adds ONE 1-bit field (measured).
+//   2. THE PRE-SCALED MODEL SWELL (v2.15.45-48) IS GONE. It read as stop
+//      motion (user, 2026-09-13) and could not be made smooth: precaching
+//      more stages overflows G_ModelIndex (118 total loads, 148 overflows).
 //   3. NO VOICE LINES. Moon's kill/pickup vox ("micro_single", "micro_dual",
 //      "wpck_microwave") are Moon-character aliases no stock map carries, so the
 //      create_and_play_dialog calls are out and the pickup vox category is "".
@@ -148,121 +140,24 @@ init()
     maps\mp\zombies\_zm_spawner::register_zombie_damage_callback( ::microwavegun_zombie_damage_response );
     maps\mp\zombies\_zm_spawner::register_zombie_death_animscript_callback( ::microwavegun_zombie_death_response );
 
-    //  🌟 THE BODY SWELL (v2.15.45). Moon's one actor clientfield, restored:
+    //  🌟 THE BODY SWELL. Moon's one actor clientfield:
     //  microwavegun_handle_death_notetracks() raises it on the sizzle death's
     //  "expand" notetrack, and the client half in zapgun.csc answers it with
-    //  Moon's own microwavegun_bloat() - shader constant 0 ("scriptVector3")
-    //  ramped 0 -> 0.5 over 2500 ms. Until this release the zombie materials
-    //  had no MaximumSwell constant, so that ramp was a silent no-op; they ship
-    //  now (mod_wavegun_swell.zone) and the swell renders.
+    //  Moon's own microwavegun_bloat() - shader constant "scriptVector3"
+    //  ramped over 2500 ms, read by the swell vertex shaders this mod compiles
+    //  into the two DLC5 zombie techsets (banner point 1, v2.15.49).
     //  Lifetime/width/type are Moon's own registration (zm_moon zone, :19).
     //  zapgun.csc MUST register the same field with the same numbers or the
     //  engine throws EXE_CLIENT_FIELD_MISMATCH; both files carry the identical
     //  gate above, so they always register together or not at all.
     registerclientfield( "actor", "zombie_actor_flag_microwavegun_expand_response", 15000, 1, "int" );
 
-    //  🛑 MEASURED 2026-09-12: THE SHADER RAMP CANNOT DEFORM THE BODY on this
-    //  engine. The DLC5 zombie vertex shader
-    //  (pimp_shader_sw4_3d_char_cloth_53938792) is BYTE-IDENTICAL to retail's
-    //  phong_emissive_alcatraz shader that the same techset already used - the
-    //  _dlc5 techset swap changes no geometry, and the disassembly reads no
-    //  scriptVector/MaximumSwell input at all. The script-driven swell model
-    //  below is the working implementation; the client ramp is kept because it
-    //  is Moon's own code and harmless.
-    //
-    //  THE SWELL MODELS (v2.15.48): every zombie BODY family the gun can kill on
-    //  its four maps, pre-scaled at build time by
-    //  modding-jobs\wavegun-swell-003\gen_swell2.py (ten body stages, mesh
-    //  scaled FAT on X/Z up to 1.60 and only 1.25 on the 60-unit height). HEADS
-    //  ARE NOT SWELLED: the head is a separate attached model and the scaled
-    //  copies flung it off the body, which read as disappearing heads; body-only
-    //  reads fine. Declared in mod_wavegun_swell.zone. Only the CURRENT map's
-    //  families are precached: the model index is a configstring pool, and
-    //  precaching all 310 on every map is a G_ModelIndex overflow waiting to
-    //  happen. TranZit's two zones carry different families (so_zclassic:
-    //  zombie1/2/3; so_zsurvival: zombie1/5/8), so that map splits on is_classic().
-    level.zmqol_mgun_swell_bodies = [];
-    level.zmqol_mgun_swell_heads = [];
-    str_map = getdvar( "mapname" );
-
-    if ( str_map == "zm_transit" )
-    {
-        zmqol_mgun_swell_add( "c_zom_zombie1_body01", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie1_body02", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_head_a", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_head_k", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_head_l", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_head_n", 1 );
-
-        if ( is_classic() )
-        {
-            zmqol_mgun_swell_add( "c_zom_zombie2_body01", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie2_body02", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie2_body03", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie3_body01", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie3_body02", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie3_body03", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie3_body04", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie3_body05", 0 );
-        }
-        else
-        {
-            zmqol_mgun_swell_add( "c_zom_zombie5_body01", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie5_body02", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie5_body03", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie8_body01", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie8_body02", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie8_body03", 0 );
-            zmqol_mgun_swell_add( "c_zom_zombie_head_d", 1 );
-            zmqol_mgun_swell_add( "c_zom_zombie_head_d2", 1 );
-            zmqol_mgun_swell_add( "c_zom_zombie_head_f", 1 );
-            zmqol_mgun_swell_add( "c_zom_zombie_head_f2", 1 );
-        }
-    }
-    else if ( str_map == "zm_nuked" )
-    {
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_body1", 0 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_body2", 0 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_sol_body1", 0 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_solciv_body1", 0 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head1", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head2", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head3", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head4", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head1_blueeyes", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head2_blueeyes", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head3_blueeyes", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_head4_blueeyes", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_head_mask", 1 );
-        zmqol_mgun_swell_add( "c_zom_dlc0_zom_haz_head_mask_blueeyes", 1 );
-    }
-    else if ( str_map == "zm_highrise" )
-    {
-        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body2", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body3", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body4", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body5", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_civ_shorts_body6", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_scientist_body", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_soldier_body", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head1", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head2", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head3", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head4", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_chinese_head3_helmet", 1 );
-    }
-    else if ( str_map == "zm_prison" )
-    {
-        zmqol_mgun_swell_add( "c_zom_guard_body", 0 );
-        zmqol_mgun_swell_add( "c_zom_inmate_body1", 0 );
-        zmqol_mgun_swell_add( "c_zom_inmate_body2", 0 );
-        zmqol_mgun_swell_add( "c_zom_zombie_barbwire_head", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_hellcatraz_head", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_mask_head", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_mask_head_device", 1 );
-        zmqol_mgun_swell_add( "c_zom_zombie_slackjaw_head", 1 );
-    }
+    //  🌟 THE SWELL IS A VERTEX SHADER AGAIN (v2.15.49). The two DLC5 zombie
+    //  techsets now compile from raw with vertex shaders that carry BO1 Moon's
+    //  bloat line (worldPos += worldNormal * scriptVector3.x); the client ramp
+    //  in zapgun.csc drives scriptVector3 exactly as BO1 does. No pre-scaled
+    //  models, no precache, no model-index budget. mod_wavegun_swell.zone has
+    //  the measurements behind it.
 
     set_zombie_var( "microwavegun_cylinder_radius", 180 );
     set_zombie_var( "microwavegun_sizzle_range", 480 );
@@ -279,15 +174,13 @@ init()
     level.zmqol_mgun_effects["microwavegun_zap_shock_eyes_ug"]    = loadfx( "weapon/microwavegun/fx_zap_shock_eyes_ug" );
     level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"]    = loadfx( "weapon/microwavegun/fx_sizzle_blood_eyes" );
 
-    //  v2.15.46 - THE BLOOD IS RED. Moon's fx_sizzle_blood_eyes draws as a
-    //  white sparkle stream on this engine, before AND after the blood
-    //  materials were linked with data (measured live on Town 2026-09-13,
-    //  modding-jobs\wavegun-swell-002\sheet-fx-zoom3.jpg / sheet-final-fx.jpg),
-    //  while stock misc/fx_zombie_bloodspurt draws dark red in the same
-    //  build. So the cough is built from the stock spurt, played from the jaw
-    //  along the zombie's facing and from both eyes, for the whole cook
-    //  (zmqol_mgun_blood_cough). common_zm.ff owns it on every map.
-    level.zmqol_mgun_effects["zmqol_mgun_blood"] = loadfx( "misc/fx_zombie_bloodspurt" );
+    //  v2.15.49 - MOON'S OWN EYE FX, NOTHING ELSE. v2.15.46 swapped in the
+    //  stock blood spurt because fx_sizzle_blood_eyes drew as a white stream;
+    //  the cause was in mod.ff, not the fx: the wavegun donor carried three of
+    //  its materials/models as data-less references (dust_mote_pcloud_blend,
+    //  smk_gen_z10, fx_axis_createfx), now declared for real in
+    //  mod_wavegun_swell.zone. The user wants the native effect, so this is
+    //  Moon's fx on Moon's tag, and the stock spurt is gone.
     level.zmqol_mgun_effects["microwavegun_sizzle_death_mist"]    = loadfx( "weapon/microwavegun/fx_sizzle_mist" );
     level.zmqol_mgun_effects["microwavegun_sizzle_death_mist_low_g"] = loadfx( "weapon/microwavegun/fx_sizzle_mist_low_g" );
 
@@ -861,58 +754,13 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             self.nodeathragdoll = 1;
             self playsound( "wpn_mgun_cook_zombie" );
             self playsound( "wpn_mgun_impact_zombie" );
-            self thread zmqol_mgun_blood_cough();
+            network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
             self.handle_death_notetracks = ::microwavegun_handle_death_notetracks;
             self thread zmqol_mgun_sizzle_watchdog();
 
             if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
                 println( "[zm_qol] zapgun: sizzle death anim '" + self.deathanim + "' on " + self.animname );
         }
-    }
-}
-
-// ============================================================================
-//  zmqol_mgun_blood_cough  -  RED BLOOD FROM THE MOUTH AND EYES     (v2.15.46)
-// ----------------------------------------------------------------------------
-//  User, 2026-09-12: "what the zombie coughs up is WHITE, it must be RED".
-//  Moon's own eye fx is the white one here (see the loadfx note in init), so
-//  the cough is the stock zombie blood spurt: from the jaw along the body's
-//  facing every 0.2 s, from both eyes every 0.6 s, until the burst deletes
-//  the corpse. Tag names are TranZit's rig (J_Jaw / J_Head / J_Eyeball_*);
-//  a rig without them just skips that spurt.
-// ============================================================================
-zmqol_mgun_blood_cough()
-{
-    fx = level.zmqol_mgun_effects["zmqol_mgun_blood"];
-
-    for ( i = 0; i < 45; i++ )
-    {
-        if ( !isdefined( self ) || is_true( self.zmqol_mgun_burst_done ) )
-            return;
-
-        v_fwd = anglestoforward( self.angles );
-        v_jaw = self gettagorigin( "J_Jaw" );
-
-        if ( !isdefined( v_jaw ) )
-            v_jaw = self gettagorigin( "J_Head" );
-
-        if ( isdefined( v_jaw ) )
-            playfx( fx, v_jaw, v_fwd );
-
-        if ( i % 3 == 0 )
-        {
-            v_eye = self gettagorigin( "J_Eyeball_LE" );
-
-            if ( isdefined( v_eye ) )
-                playfx( fx, v_eye, v_fwd );
-
-            v_eye = self gettagorigin( "J_Eyeball_RI" );
-
-            if ( isdefined( v_eye ) )
-                playfx( fx, v_eye, v_fwd );
-        }
-
-        wait 0.2;
     }
 }
 
@@ -984,9 +832,6 @@ microwavegun_handle_death_notetracks( note )
         if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
             println( "[zm_qol] zapgun: notetrack expand" );
 
-        //  The working swell: pre-scaled body models swapped across the float.
-        self thread zmqol_mgun_swell_model();
-
         //  🛑 "expand" IS THE ONLY NOTETRACK THAT ARRIVES. Measured on Town,
         //  2026-09-10, with zmqol_mgun_debug 1: five sizzle deaths produced five
         //  "expand" lines and ZERO "explode" lines. Both markers are present in
@@ -1012,159 +857,6 @@ microwavegun_handle_death_notetracks( note )
 
         if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
             println( "[zm_qol] zapgun: notetrack explode" );
-    }
-}
-
-// ============================================================================
-//  zmqol_mgun_swell_model  -  THE BODY PUFFS UP, STAGE BY STAGE     (v2.15.47)
-// ----------------------------------------------------------------------------
-//  User, 2026-09-12: the float, the pop and the ding all read right, but "the
-//  zombies actually expanding and puffing up" was still missing.
-//
-//  🛑 WHY IT CANNOT BE MOON'S OWN ROUTE ON THIS ENGINE. Moon ramps shader
-//  constant 0 ("scriptVector3") and its zombie materials carry MaximumSwell.
-//  MEASURED 2026-09-12, offline, from the asset bytes:
-//    - the DLC5 zombie vertex shader
-//      (vs_pimp_shader_sw4_3d_char_cloth_53938792.hlsl.cso) is BYTE-IDENTICAL
-//      to retail's pimp_shader_sw4_3d_phong_emissive_alcatraz_b7d697d7 shader;
-//    - its DXBC constant tables contain no MaximumSwell and no scriptVector
-//      input at all - the transform is a rigid world/view-projection pair;
-//    - T6 XModel has no scale field and `setscale` is an unresolved external
-//      on the server (measured live: SV_Shutdown).
-//  So the shader ramp is a no-op here no matter what the material says. The
-//  visible result IS reachable the way other T6 projects do it: swap the
-//  corpse's body AND head through pre-scaled copies of themselves.
-//
-//  MEASURED LIVE 2026-09-13 (Town, per-tick actor tracker, jobs
-//  modding-jobs\wavegun-swell-002 / -003):
-//    - setmodel() to a scaled copy renders the actor visibly larger, and its
-//      attachments (the head) survive the swap - so the head, a separate
-//      model attached on tag "" by every character script, is swapped with
-//      detach()/attach() alongside the body or it stays small.
-//    - the sizzle death reaches its "expand" notetrack ~3.4 s after the kill,
-//      Moon's swell cycle runs 2.5 s from there, and the old 4 s watchdog
-//      popped the corpse 0.5 s into it. That is why no stage past the first was
-//      ever on screen. The watchdog now stands down once expand has arrived
-//      (zmqol_mgun_sizzle_watchdog).
-//    - v2.15.47: the 3-stage uniform scale read as stop-motion ("they grow
-//      larger in steps... not the body swelling"). Each body now steps through
-//      TEN staged copies and the copies scale the mesh FAT (X/Z) rather than
-//      overall; the skeleton is untouched. See gen_swell2.py / the zone header.
-//
-//  The family is read from self.model by longest listed prefix, so a gibbed
-//  body (c_zom_zombie1_body01_g_larmoff) still finds its base; crawlers keep
-//  the pop only, because a full-body copy would hand them their legs back.
-//  Nuketown, Die Rise and Mob families are in the same lists (init above).
-// ============================================================================
-zmqol_mgun_swell_add( str_name, b_head )
-{
-    //  v2.15.48 - HEADS ARE NOT SWELLED ANY MORE. The head is a separate
-    //  attached model whose origin sits at the neck; the fat-scaled copies
-    //  flung it off the body (the user: "the zombies' heads disappear"), and
-    //  during the death anim the head is often not even matchable. init()
-    //  still lists head families so the family table stays in one place; they
-    //  are ignored here. The body-only swell below reads fine without it.
-    if ( b_head )
-        return;
-
-    level.zmqol_mgun_swell_bodies[ level.zmqol_mgun_swell_bodies.size ] = str_name;
-
-    precachemodel( str_name + "_swellS01" );
-    precachemodel( str_name + "_swellS02" );
-    precachemodel( str_name + "_swellS03" );
-    precachemodel( str_name + "_swellS04" );
-    precachemodel( str_name + "_swellS05" );
-    precachemodel( str_name + "_swellS06" );
-    precachemodel( str_name + "_swellS07" );
-    precachemodel( str_name + "_swellS08" );
-    precachemodel( str_name + "_swellS09" );
-    precachemodel( str_name + "_swellS10" );
-}
-
-//  Longest listed name that prefixes str_model. Longest-wins is what keeps
-//  c_zom_zombie_civ_shorts_body from claiming c_zom_zombie_civ_shorts_body2.
-zmqol_mgun_swell_match( str_model, a_list )
-{
-    str_best = "";
-
-    if ( !isdefined( str_model ) || !isdefined( a_list ) )
-        return str_best;
-
-    for ( i = 0; i < a_list.size; i++ )
-    {
-        str_b = a_list[i];
-
-        if ( str_b.size > str_best.size && str_model.size >= str_b.size && getsubstr( str_model, 0, str_b.size ) == str_b )
-            str_best = str_b;
-    }
-
-    return str_best;
-}
-
-zmqol_mgun_swell_model()
-{
-    if ( is_true( self.zmqol_mgun_swell_started ) )
-        return;
-
-    self.zmqol_mgun_swell_started = 1;
-
-    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-        println( "[zm_qol] zapgun: swell_model enter model=" + self.model + " has_legs=" + is_true( self.has_legs ) + " bodies=" + level.zmqol_mgun_swell_bodies.size + " heads=" + level.zmqol_mgun_swell_heads.size );
-
-    if ( !is_true( self.has_legs ) )
-        return;
-
-    str_body = zmqol_mgun_swell_match( self.model, level.zmqol_mgun_swell_bodies );
-
-    if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-        println( "[zm_qol] zapgun: swell_model body match='" + str_body + "'" );
-
-    if ( str_body == "" )
-        return;
-
-    //  v2.15.48 - the head is left alone. It is a separate attached model and
-    //  setmodel() on the body keeps it attached; detaching/attaching fat copies
-    //  was what made the heads look like they vanished.
-    //  Drive from level, not from the corpse: the actor's own threads are not
-    //  trusted to survive its model swaps (measured 2026-09-12).
-    level thread zmqol_mgun_swell_drive( self, str_body );
-}
-
-zmqol_mgun_swell_drive( e_corpse, str_body )
-{
-    a_stages = [];
-    a_stages[0] = "S01";
-    a_stages[1] = "S02";
-    a_stages[2] = "S03";
-    a_stages[3] = "S04";
-    a_stages[4] = "S05";
-    a_stages[5] = "S06";
-    a_stages[6] = "S07";
-    a_stages[7] = "S08";
-    a_stages[8] = "S09";
-    a_stages[9] = "S10";
-
-    //  v2.15.48 - ten BODY-ONLY steps. First step 0.15 s after "expand", then
-    //  0.22 s each, so the body reaches the full 1.60 fat shape at ~2.13 s of
-    //  Moon's 2.5 s cycle. No head handling: the head stays on its tag, which
-    //  is what fixes the disappearing heads.
-    for ( i = 0; i < a_stages.size; i++ )
-    {
-        if ( i == 0 )
-            wait 0.15;
-        else
-            wait 0.22;
-
-        if ( !isdefined( e_corpse ) )
-            return;
-
-        e_corpse setmodel( str_body + "_swell" + a_stages[i] );
-
-        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-            println( "[zm_qol] zapgun: swell drive setmodel ok " + a_stages[i] );
-
-        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
-            println( "[zm_qol] zapgun: swell stage " + a_stages[i] + " on " + str_body );
     }
 }
 
@@ -1271,7 +963,11 @@ zmqol_mgun_microwave_burst()
 
     self playsound( "wpn_mgun_dual_sizzle" );
 
-    self thread zmqol_mgun_blood_cough();
+    //  Keep the eye blood attached to the corpse, matching the full sizzle
+    //  route above. The old positional playfx survived self_delete() and left
+    //  a stream hanging in the world after the zombie was gone.
+    if ( isdefined( self gettagorigin( "J_Eyeball_LE" ) ) )
+        network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
 
     //  0.5 s of microwave before the burst - long enough to read as a sizzle,
     //  short enough that a fast-clearing round is not held up.

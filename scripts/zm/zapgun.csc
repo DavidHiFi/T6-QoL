@@ -1,5 +1,5 @@
 // ============================================================================
-//  zapgun.csc  -  client half of the Wave Gun / Zap Guns          (v2.15.45)
+//  zapgun.csc  -  client half of the Wave Gun / Zap Guns          (v2.15.49)
 // ----------------------------------------------------------------------------
 //  Two jobs:
 //
@@ -85,7 +85,10 @@ zmqol_mgun_client_bloat( localclientnum )
 
     durationmsec = 2500;
     tag_pos = self gettagorigin( "J_SpineLower" );
-    bloat_max_fraction = 0.5;
+    //  v2.15.49: BO1's own values (_zombiemode_weap_microwavegun.csc): the
+    //  fraction runs to 1.0 and the shader gets fraction * 4.0 in X. The T6
+    //  DLC5 decompile had 0.5 / W, which matched the shader it never had.
+    bloat_max_fraction = 1.0;
 
     if ( !isdefined( tag_pos ) )
         durationmsec = 1000;
@@ -104,7 +107,7 @@ zmqol_mgun_client_bloat( localclientnum )
         if ( !isdefined( self ) )
             return;
 
-        self setshaderconstant( localclientnum, 0, 0, 0, 0, bloat_fraction );
+        self setshaderconstant( localclientnum, 0, bloat_fraction * 4.0, 0, 0, 0 );
 
         if ( bloat_fraction >= bloat_max_fraction )
             break;

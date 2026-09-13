@@ -1,0 +1,76 @@
+"depth prepass":
+  pimp_technique_zprepass_f2a5c89d_zqswell;
+
+"build shadowmap depth":
+  pimp_technique_sw4_3d_char_cloth_bffe0b4a_zqswell;
+
+"unlit":
+  pimp_technique_radiant_7b1e6b00_zqswell;
+
+"lit":
+"lit sun":
+  pimp_technique_sw4_3d_char_cloth_b0d91c7_zqswell;
+
+"lit sun shadow":
+  pimp_technique_sw4_3d_char_cloth_ada6076a_zqswell;
+
+"lit spot":
+  pimp_technique_sw4_3d_char_cloth_920b0ae5_zqswell;
+
+"lit spot shadow":
+  pimp_technique_sw4_3d_char_cloth_c5b0b3cd_zqswell;
+
+"lit spot square":
+  pimp_technique_sw4_3d_char_cloth_727fe444_zqswell;
+
+"lit spot square shadow":
+  pimp_technique_sw4_3d_char_cloth_63dff021_zqswell;
+
+"lit spot round":
+  pimp_technique_sw4_3d_char_cloth_f8be1a2e_zqswell;
+
+"lit spot round shadow":
+  pimp_technique_sw4_3d_char_cloth_23911c16_zqswell;
+
+"lit omni":
+  pimp_technique_sw4_3d_char_cloth_ccadd63e_zqswell;
+
+"lit omni shadow":
+  pimp_technique_sw4_3d_char_cloth_390fc944_zqswell;
+
+"lit dlight glight":
+"lit sun dlight glight":
+  pimp_technique_sw4_3d_char_cloth_bc438f39_zqswell;
+
+"lit sun shadow dlight glight":
+  pimp_technique_sw4_3d_char_cloth_8d6ee3f_zqswell;
+
+"lit spot dlight glight":
+  pimp_technique_sw4_3d_char_cloth_9d03ceb2_zqswell;
+
+"lit spot shadow dlight glight":
+  pimp_technique_sw4_3d_char_cloth_1a8cac0b_zqswell;
+
+"lit spot square dlight glight":
+  pimp_technique_sw4_3d_char_cloth_b3345ce4_zqswell;
+
+"lit spot square shadow dlight glight":
+  pimp_technique_sw4_3d_char_cloth_748cd5ae_zqswell;
+
+"lit spot round dlight glight":
+  pimp_technique_sw4_3d_char_cloth_78ca5899_zqswell;
+
+"lit spot round shadow dlight glight":
+  pimp_technique_sw4_3d_char_cloth_39867768_zqswell;
+
+"lit omni dlight glight":
+  pimp_technique_sw4_3d_char_cloth_5ecc7bf5_zqswell;
+
+"lit omni shadow dlight glight":
+  pimp_technique_sw4_3d_char_cloth_3a4c3161_zqswell;
+
+"solid wireframe":
+  pimp_technique_radiant_c697b472_zqswell;
+
+"debug performance":
+  pimp_technique_debugperformance_c70841b5_zqswell;

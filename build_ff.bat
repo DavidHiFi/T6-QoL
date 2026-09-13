@@ -34,6 +34,14 @@ set "PROJ=%~dp0"
 if "%PROJ:~-1%"=="\" set "PROJ=%PROJ:~0,-1%"
 
 REM --- OpenAssetTools ---------------------------------------------------------
+REM  v2.15.49: the Wave Gun swell techsets compile from raw and need the PATCHED
+REM  Linker in tools\oat-dlc5 (OpenAssetTools v0.33 + local patches). One of those
+REM  patches keeps VertexShaderPrecompiledIndex at NONE for techniques whose
+REM  vertex shader is tagged _zqswell; the stock Linker assigns the engine's
+REM  built-in model shader index and the game then ignores the asset's shader
+REM  bytes, so the swell never draws. Retail zones load in it exactly as in the
+REM  release build (its README). tools\oat-windows stays the fallback.
+if not defined OAT_BASE if exist "H:\Plutonium\tools\oat-dlc5\Linker.exe" set "OAT_BASE=H:\Plutonium\tools\oat-dlc5"
 if not defined OAT_BASE set "OAT_BASE=H:\Plutonium\tools\oat-windows"
 if not exist "%OAT_BASE%\Linker.exe" (
     echo   ERROR: Linker.exe not found in "%OAT_BASE%".
@@ -92,7 +100,10 @@ if /i "%~1"=="regen" (
     REM  (measured live 2026-09-13: Moon's fx_sizzle_blood_eyes white, stock
     REM  misc/fx_zombie_bloodspurt red in the same build). With the references
     REM  gone the swell zone's declarations pull the real common_zm materials.
-    "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path '%PROJ%' 'zone_source\_regen\zone_source\mod.zone'; $dst=Join-Path '%PROJ%' 'zone_source\mod_base.zone'; $in=@(Get-Content -LiteralPath $src); $out=@($in | Where-Object { $_ -notmatch '^\s*script,.*\.gsc\s*$' -and $_ -notmatch '^\s*material,,gfx_fxt_bio_(blooddrops_ds64|bloodgush_ds64|bloodburst|bloodburst_b_ds64)\s*$' }); $n=$in.Count-$out.Count; Set-Content -LiteralPath $dst -Value $out -Encoding ASCII; Write-Host ('    stripped ' + $n + ' script,*.gsc line(s); ' + $out.Count + ' lines written')"
+    REM  v2.15.49 adds three more of the same kind, the sizzle fx' other
+    REM  dependencies: gfx_fxt_env_dust_mote_pcloud_blend, gfx_fxt_smk_gen_z10
+    REM  (materials) and fx_axis_createfx (xmodel). All three are common_zm's.
+    "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path '%PROJ%' 'zone_source\_regen\zone_source\mod.zone'; $dst=Join-Path '%PROJ%' 'zone_source\mod_base.zone'; $in=@(Get-Content -LiteralPath $src); $out=@($in | Where-Object { $_ -notmatch '^\s*script,.*\.gsc\s*$' -and $_ -notmatch '^\s*material,,gfx_fxt_bio_(blooddrops_ds64|bloodgush_ds64|bloodburst|bloodburst_b_ds64)\s*$' -and $_ -notmatch '^\s*material,,gfx_fxt_(env_dust_mote_pcloud_blend|smk_gen_z10)\s*$' -and $_ -notmatch '^\s*xmodel,,fx_axis_createfx\s*$' -and $_ -notmatch '^\s*image,,fxt_light_hot\s*$' }); $n=$in.Count-$out.Count; Set-Content -LiteralPath $dst -Value $out -Encoding ASCII; Write-Host ('    stripped ' + $n + ' script,*.gsc line(s); ' + $out.Count + ' lines written')"
     if errorlevel 1 ( echo   ERROR: could not write mod_base.zone. & exit /b 1 )
     rmdir /s /q "%PROJ%\zone_source\_regen"
     echo   mod_base.zone regenerated. Re-run build_ff.bat without 'regen' to link.
@@ -420,7 +431,10 @@ REM  Its one shared name, mc/mtl_zombie_teleporter_glow, resolves from the exist
 REM  owner for that reason. A/B the asset list if it moves. (Replaced the v2.9.18
 REM  zapgun_donor - the ezz package's 4 converted models - which is retired.)
 REM
-REM  🌟 zone_source\zomswell_donor\mod.ff (v2.15.45) follows the same recipe, two
+REM  (v2.15.49: zone_source\zomswell_donor is NO LONGER LOADED. The two DLC5 zombie
+REM  techsets now compile from raw - zone_assets\techsets + techniques + shader_bin -
+REM  with the Wave Gun swell vertex shaders; see mod_wavegun_swell.zone.)
+REM  🌟 zone_source\zomswell_donor\mod.ff (v2.15.45) followed the same recipe, two
 REM  assets wide: the two DLC5 zombie techsets mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
 REM  and mc_sw4_3d_char_skin_j92387z3_dlc5, copied out of Declassified's zm_moon.ff
 REM  with the patched OAT. They carry the Wave Gun swell vertex shader that
@@ -482,7 +496,6 @@ REM  target "REM".
   --load "%BO2_DIR%\zone\all\code_post_gfx.ff" ^
   --load "%PROJ%\zone_source\fx_donor\mod.ff" ^
   --load "%PROJ%\zone_source\wavegun_donor\mod.ff" ^
-  --load "%PROJ%\zone_source\zomswell_donor\mod.ff" ^
   --load "%PROJ%\zone_source\bonfire_donor\mod.ff" ^
   --load "%PROJ%\zone_source\metalstorm_donor\mod.ff" ^
   --load "%BO2_DIR%\zone\all\nicaragua.ff" ^

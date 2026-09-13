@@ -8,7 +8,8 @@
 //  ramps its W from 0 to 0.5 over 2500 ms).
 //
 //  WHY MATERIALS. Moon's own zombie materials carry a MaximumSwell constant
-//  (literal 20,0,0,1) and the DLC5 techsets report it to the shader. MEASURED
+//  (literal 20,0,0,1); it is kept for parity with Moon's material authoring
+//  (the shader reads scriptVector3, the material constant is not consulted). MEASURED
 //  2026-09-12, this job: the DLC5 techsets
 //  mc_sw4_3d_char_cloth_4z8fq5wu_dlc5 / mc_sw4_3d_char_skin_j92387z3_dlc5
 //  dump byte-identical to the retail techsets mc_sw4_3d_char_cloth_4z8fq5wu /
@@ -40,368 +41,52 @@
 //  c_gen_arm_rim_mask_norim_c, is NOT declared - it already resolves from the
 //  donor, and re-declaring it would only risk stomping it.
 //
-//  ?? THE MATERIALS KEEP THEIR STOCK TECHSETS. Declaring a techniqueset here
-//  would force the Linker to build it from raw .techset and requires its
-//  pimp_technique_* subassets; they are not shipped. As a material dependency
-//  the Linker resolves them from the loaded fastfiles exactly as the rest of
-//  this mod's materials already do (mod_wavegun.zone documents the trap).
+//  THE MATERIALS POINT AT THE *_dlc5 TECHSETS, which this zone now builds
+//  FROM RAW (see below); their pimp_technique_* sub-assets and shader
+//  binaries ship in zone_assets	echniques and zone_assets\shader_bin.
 //
 //  ?? DO NOT ADD THE BURIED/ORIGINS FAMILIES. The gun is gated off on those
 //  two maps (zapgun.gsc/zapgun.csc), their actor clientfield budgets are full
 //  (32/32 and 31/32), and their zombie materials already live in mod.ff.
 // ============================================================================
 
-// The shader half: DLC5's two zombie techsets, whose embedded lit vertex
-// shaders are the swell shaders. Retail's same-named techsets embed a different
-// vertex shader (pimp_shader_sw4_3d_phong_emissive_alcatraz_b7d697d7.hlsl vs
-// DLC5's pimp_shader_sw4_3d_char_cloth_53938792.hlsl) - measured in the .tech
-// dumps, 2026-09-12. They ship as a binary donor (zone_source\zomswell_donor,
-// copied out of Declassified's zm_moon.ff with tools\oat-dlc5) and are loaded
-// by build_ff.bat after every fastfile that could own a shared name.
+// ============================================================================
+//  THE SWELL IS A VERTEX SHADER (v2.15.49) - the route Treyarch used on Moon.
+// ----------------------------------------------------------------------------
+//  User, 2026-09-13: the pre-scaled model steps "look like stop motion... the
+//  body swells up, they don't just get larger overall." BO1's
+//  pimp_shader_sw4_3d_char_cloth_bloat vertex shader does exactly one thing
+//  more than the plain one: after the world transform it adds
+//      worldPos += worldNormal * scriptVector3.x
+//  and the client ramps scriptVector3.x from 0 to 4.0 over 2.5 s. Every
+//  vertex moves out along its own normal, so the body inflates in place.
+//
+//  DLC5's T6 port never carried that over: its two zombie techsets embed the
+//  RETAIL vertex shader (measured 2026-09-12, byte-identical DXBC, no
+//  scriptVector in the constant tables), which is why the shader ramp did
+//  nothing here and the model-swap detour was built. This build compiles the
+//  two techsets FROM RAW (zone_assets\techsets, \techniques, \shader_bin):
+//  every technique is DLC5's own, renamed *_zqswell, with the three vertex
+//  shaders replaced by ours (zone_source\swell_shader_src, built with fxc):
+//    pimp_shader_sw4_3d_char_cloth_53938792_zqswell   lit           (+bloat)
+//    pimp_shader_sw4_3d_char_cloth_c4eff3ec_zqswell   lit + shadow  (+bloat)
+//    pimp_shader_transformonly_d4f4e04b_zqswell       depth/shadowmap (+bloat,
+//                                                     reads NORMAL so the
+//                                                     shadow inflates too)
+//  The HLSL reproduces retail's DXBC instruction for instruction (constant
+//  buffer layouts copied from the retail reflection with packoffset), so the
+//  only difference the GPU sees is the one mad on scriptVector3. The 44 pixel
+//  shaders are DLC5's bytes, unchanged. The Linker (v0.32 and v0.33 agree,
+//  identical output) reflects scriptVector3 out of the DXBC and emits it as a
+//  code vertex constant, which is what mapshaderconstant()/setshaderconstant()
+//  write at runtime (stock uses the same path for the zombie eye glow).
+//
+//  zone_source\zomswell_donor (the DLC5 binary copy) is no longer --load'ed:
+//  raw beats a loaded zone, but keeping both would invite a stale copy.
+//  The 53 MaximumSwell materials below keep pointing at these techsets.
 techniqueset,mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
 techniqueset,mc_sw4_3d_char_skin_j92387z3_dlc5
-
-//  THE SWELL MODELS (v2.15.48). Every zombie BODY family the gun can kill on
-//  its four maps, pre-scaled at build time by
-//  modding-jobs\wavegun-swell-003\gen_swell2.py, and swapped in by zapgun.gsc
-//  zmqol_mgun_swell_drive() across Moon's 2.5 s expand cycle.
-//
-//  WHY v2.15.47 REPLACED THE 3-STAGE SET. User, 2026-09-12: the zombie "grows
-//  larger in like steps... looks like stop motion... the body swells up, they
-//  don't just get larger overall." So each body has TEN stages (1/10 .. 10/10)
-//  instead of three, and only the mesh POSITION is scaled per vertex: X and Z
-//  (the two horizontal axes, mesh Y is the 60-unit standing height) by up to
-//  1.60, Y by only 1.25. Node/bone translations are NOT scaled, so the skeleton
-//  keeps its size and the mesh puffs out around it - fat, not taller. Source
-//  LOD0 only, declared at the source's farthest LOD distance.
-//
-//  WHY v2.15.48 DROPPED THE HEAD SWAP. v2.15.47 also detached the head and
-//  attached a fat-scaled copy each stage. The head model's origin sits at the
-//  neck, so the scale flung it off the body, and during the death anim the head
-//  is often not matchable at all (live log: head=''). The user: "the zombies'
-//  heads disappear." Body-only swell reads fine; the head stays on its tag.
-//
-//  WHY TEN BODIES AND NO HEADS FIT. The model index is shared with the map.
-//  Measured live 2026-09-13: classic TranZit overflows at 112 swell models
-//  (G_ModelIndex -> SV_Shutdown) and loads at 92; dropping the 28 head families
-//  buys the room for ten body stages (classic: 10 families x 10 = 100).
-//    TranZit classic   zombie1/2/3 bodies
-//    TranZit survival  zombie1/5/8 bodies
-//    Nuketown          hazmat 1/2, soldier, solciv
-//    Die Rise          civ_shorts 1-6, scientist, soldier
-//    Mob               guard, inmate 1/2
-//  zapgun.gsc precaches only the current map's families (model index budget;
-//  measured 2026-09-13: 118 extra models fit on Town, 148 overflow).
-xmodel,c_zom_zombie1_body01_swellS01
-xmodel,c_zom_zombie1_body01_swellS02
-xmodel,c_zom_zombie1_body01_swellS03
-xmodel,c_zom_zombie1_body01_swellS04
-xmodel,c_zom_zombie1_body01_swellS05
-xmodel,c_zom_zombie1_body01_swellS06
-xmodel,c_zom_zombie1_body01_swellS07
-xmodel,c_zom_zombie1_body01_swellS08
-xmodel,c_zom_zombie1_body01_swellS09
-xmodel,c_zom_zombie1_body01_swellS10
-xmodel,c_zom_zombie1_body02_swellS01
-xmodel,c_zom_zombie1_body02_swellS02
-xmodel,c_zom_zombie1_body02_swellS03
-xmodel,c_zom_zombie1_body02_swellS04
-xmodel,c_zom_zombie1_body02_swellS05
-xmodel,c_zom_zombie1_body02_swellS06
-xmodel,c_zom_zombie1_body02_swellS07
-xmodel,c_zom_zombie1_body02_swellS08
-xmodel,c_zom_zombie1_body02_swellS09
-xmodel,c_zom_zombie1_body02_swellS10
-xmodel,c_zom_zombie5_body01_swellS01
-xmodel,c_zom_zombie5_body01_swellS02
-xmodel,c_zom_zombie5_body01_swellS03
-xmodel,c_zom_zombie5_body01_swellS04
-xmodel,c_zom_zombie5_body01_swellS05
-xmodel,c_zom_zombie5_body01_swellS06
-xmodel,c_zom_zombie5_body01_swellS07
-xmodel,c_zom_zombie5_body01_swellS08
-xmodel,c_zom_zombie5_body01_swellS09
-xmodel,c_zom_zombie5_body01_swellS10
-xmodel,c_zom_zombie5_body02_swellS01
-xmodel,c_zom_zombie5_body02_swellS02
-xmodel,c_zom_zombie5_body02_swellS03
-xmodel,c_zom_zombie5_body02_swellS04
-xmodel,c_zom_zombie5_body02_swellS05
-xmodel,c_zom_zombie5_body02_swellS06
-xmodel,c_zom_zombie5_body02_swellS07
-xmodel,c_zom_zombie5_body02_swellS08
-xmodel,c_zom_zombie5_body02_swellS09
-xmodel,c_zom_zombie5_body02_swellS10
-xmodel,c_zom_zombie5_body03_swellS01
-xmodel,c_zom_zombie5_body03_swellS02
-xmodel,c_zom_zombie5_body03_swellS03
-xmodel,c_zom_zombie5_body03_swellS04
-xmodel,c_zom_zombie5_body03_swellS05
-xmodel,c_zom_zombie5_body03_swellS06
-xmodel,c_zom_zombie5_body03_swellS07
-xmodel,c_zom_zombie5_body03_swellS08
-xmodel,c_zom_zombie5_body03_swellS09
-xmodel,c_zom_zombie5_body03_swellS10
-xmodel,c_zom_zombie8_body01_swellS01
-xmodel,c_zom_zombie8_body01_swellS02
-xmodel,c_zom_zombie8_body01_swellS03
-xmodel,c_zom_zombie8_body01_swellS04
-xmodel,c_zom_zombie8_body01_swellS05
-xmodel,c_zom_zombie8_body01_swellS06
-xmodel,c_zom_zombie8_body01_swellS07
-xmodel,c_zom_zombie8_body01_swellS08
-xmodel,c_zom_zombie8_body01_swellS09
-xmodel,c_zom_zombie8_body01_swellS10
-xmodel,c_zom_zombie8_body02_swellS01
-xmodel,c_zom_zombie8_body02_swellS02
-xmodel,c_zom_zombie8_body02_swellS03
-xmodel,c_zom_zombie8_body02_swellS04
-xmodel,c_zom_zombie8_body02_swellS05
-xmodel,c_zom_zombie8_body02_swellS06
-xmodel,c_zom_zombie8_body02_swellS07
-xmodel,c_zom_zombie8_body02_swellS08
-xmodel,c_zom_zombie8_body02_swellS09
-xmodel,c_zom_zombie8_body02_swellS10
-xmodel,c_zom_zombie8_body03_swellS01
-xmodel,c_zom_zombie8_body03_swellS02
-xmodel,c_zom_zombie8_body03_swellS03
-xmodel,c_zom_zombie8_body03_swellS04
-xmodel,c_zom_zombie8_body03_swellS05
-xmodel,c_zom_zombie8_body03_swellS06
-xmodel,c_zom_zombie8_body03_swellS07
-xmodel,c_zom_zombie8_body03_swellS08
-xmodel,c_zom_zombie8_body03_swellS09
-xmodel,c_zom_zombie8_body03_swellS10
-xmodel,c_zom_zombie2_body01_swellS01
-xmodel,c_zom_zombie2_body01_swellS02
-xmodel,c_zom_zombie2_body01_swellS03
-xmodel,c_zom_zombie2_body01_swellS04
-xmodel,c_zom_zombie2_body01_swellS05
-xmodel,c_zom_zombie2_body01_swellS06
-xmodel,c_zom_zombie2_body01_swellS07
-xmodel,c_zom_zombie2_body01_swellS08
-xmodel,c_zom_zombie2_body01_swellS09
-xmodel,c_zom_zombie2_body01_swellS10
-xmodel,c_zom_zombie2_body02_swellS01
-xmodel,c_zom_zombie2_body02_swellS02
-xmodel,c_zom_zombie2_body02_swellS03
-xmodel,c_zom_zombie2_body02_swellS04
-xmodel,c_zom_zombie2_body02_swellS05
-xmodel,c_zom_zombie2_body02_swellS06
-xmodel,c_zom_zombie2_body02_swellS07
-xmodel,c_zom_zombie2_body02_swellS08
-xmodel,c_zom_zombie2_body02_swellS09
-xmodel,c_zom_zombie2_body02_swellS10
-xmodel,c_zom_zombie2_body03_swellS01
-xmodel,c_zom_zombie2_body03_swellS02
-xmodel,c_zom_zombie2_body03_swellS03
-xmodel,c_zom_zombie2_body03_swellS04
-xmodel,c_zom_zombie2_body03_swellS05
-xmodel,c_zom_zombie2_body03_swellS06
-xmodel,c_zom_zombie2_body03_swellS07
-xmodel,c_zom_zombie2_body03_swellS08
-xmodel,c_zom_zombie2_body03_swellS09
-xmodel,c_zom_zombie2_body03_swellS10
-xmodel,c_zom_zombie3_body01_swellS01
-xmodel,c_zom_zombie3_body01_swellS02
-xmodel,c_zom_zombie3_body01_swellS03
-xmodel,c_zom_zombie3_body01_swellS04
-xmodel,c_zom_zombie3_body01_swellS05
-xmodel,c_zom_zombie3_body01_swellS06
-xmodel,c_zom_zombie3_body01_swellS07
-xmodel,c_zom_zombie3_body01_swellS08
-xmodel,c_zom_zombie3_body01_swellS09
-xmodel,c_zom_zombie3_body01_swellS10
-xmodel,c_zom_zombie3_body02_swellS01
-xmodel,c_zom_zombie3_body02_swellS02
-xmodel,c_zom_zombie3_body02_swellS03
-xmodel,c_zom_zombie3_body02_swellS04
-xmodel,c_zom_zombie3_body02_swellS05
-xmodel,c_zom_zombie3_body02_swellS06
-xmodel,c_zom_zombie3_body02_swellS07
-xmodel,c_zom_zombie3_body02_swellS08
-xmodel,c_zom_zombie3_body02_swellS09
-xmodel,c_zom_zombie3_body02_swellS10
-xmodel,c_zom_zombie3_body03_swellS01
-xmodel,c_zom_zombie3_body03_swellS02
-xmodel,c_zom_zombie3_body03_swellS03
-xmodel,c_zom_zombie3_body03_swellS04
-xmodel,c_zom_zombie3_body03_swellS05
-xmodel,c_zom_zombie3_body03_swellS06
-xmodel,c_zom_zombie3_body03_swellS07
-xmodel,c_zom_zombie3_body03_swellS08
-xmodel,c_zom_zombie3_body03_swellS09
-xmodel,c_zom_zombie3_body03_swellS10
-xmodel,c_zom_zombie3_body04_swellS01
-xmodel,c_zom_zombie3_body04_swellS02
-xmodel,c_zom_zombie3_body04_swellS03
-xmodel,c_zom_zombie3_body04_swellS04
-xmodel,c_zom_zombie3_body04_swellS05
-xmodel,c_zom_zombie3_body04_swellS06
-xmodel,c_zom_zombie3_body04_swellS07
-xmodel,c_zom_zombie3_body04_swellS08
-xmodel,c_zom_zombie3_body04_swellS09
-xmodel,c_zom_zombie3_body04_swellS10
-xmodel,c_zom_zombie3_body05_swellS01
-xmodel,c_zom_zombie3_body05_swellS02
-xmodel,c_zom_zombie3_body05_swellS03
-xmodel,c_zom_zombie3_body05_swellS04
-xmodel,c_zom_zombie3_body05_swellS05
-xmodel,c_zom_zombie3_body05_swellS06
-xmodel,c_zom_zombie3_body05_swellS07
-xmodel,c_zom_zombie3_body05_swellS08
-xmodel,c_zom_zombie3_body05_swellS09
-xmodel,c_zom_zombie3_body05_swellS10
-xmodel,c_zom_dlc0_zom_haz_body1_swellS01
-xmodel,c_zom_dlc0_zom_haz_body1_swellS02
-xmodel,c_zom_dlc0_zom_haz_body1_swellS03
-xmodel,c_zom_dlc0_zom_haz_body1_swellS04
-xmodel,c_zom_dlc0_zom_haz_body1_swellS05
-xmodel,c_zom_dlc0_zom_haz_body1_swellS06
-xmodel,c_zom_dlc0_zom_haz_body1_swellS07
-xmodel,c_zom_dlc0_zom_haz_body1_swellS08
-xmodel,c_zom_dlc0_zom_haz_body1_swellS09
-xmodel,c_zom_dlc0_zom_haz_body1_swellS10
-xmodel,c_zom_dlc0_zom_haz_body2_swellS01
-xmodel,c_zom_dlc0_zom_haz_body2_swellS02
-xmodel,c_zom_dlc0_zom_haz_body2_swellS03
-xmodel,c_zom_dlc0_zom_haz_body2_swellS04
-xmodel,c_zom_dlc0_zom_haz_body2_swellS05
-xmodel,c_zom_dlc0_zom_haz_body2_swellS06
-xmodel,c_zom_dlc0_zom_haz_body2_swellS07
-xmodel,c_zom_dlc0_zom_haz_body2_swellS08
-xmodel,c_zom_dlc0_zom_haz_body2_swellS09
-xmodel,c_zom_dlc0_zom_haz_body2_swellS10
-xmodel,c_zom_dlc0_zom_sol_body1_swellS01
-xmodel,c_zom_dlc0_zom_sol_body1_swellS02
-xmodel,c_zom_dlc0_zom_sol_body1_swellS03
-xmodel,c_zom_dlc0_zom_sol_body1_swellS04
-xmodel,c_zom_dlc0_zom_sol_body1_swellS05
-xmodel,c_zom_dlc0_zom_sol_body1_swellS06
-xmodel,c_zom_dlc0_zom_sol_body1_swellS07
-xmodel,c_zom_dlc0_zom_sol_body1_swellS08
-xmodel,c_zom_dlc0_zom_sol_body1_swellS09
-xmodel,c_zom_dlc0_zom_sol_body1_swellS10
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS01
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS02
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS03
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS04
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS05
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS06
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS07
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS08
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS09
-xmodel,c_zom_dlc0_zom_solciv_body1_swellS10
-xmodel,c_zom_zombie_civ_shorts_body_swellS01
-xmodel,c_zom_zombie_civ_shorts_body_swellS02
-xmodel,c_zom_zombie_civ_shorts_body_swellS03
-xmodel,c_zom_zombie_civ_shorts_body_swellS04
-xmodel,c_zom_zombie_civ_shorts_body_swellS05
-xmodel,c_zom_zombie_civ_shorts_body_swellS06
-xmodel,c_zom_zombie_civ_shorts_body_swellS07
-xmodel,c_zom_zombie_civ_shorts_body_swellS08
-xmodel,c_zom_zombie_civ_shorts_body_swellS09
-xmodel,c_zom_zombie_civ_shorts_body_swellS10
-xmodel,c_zom_zombie_civ_shorts_body2_swellS01
-xmodel,c_zom_zombie_civ_shorts_body2_swellS02
-xmodel,c_zom_zombie_civ_shorts_body2_swellS03
-xmodel,c_zom_zombie_civ_shorts_body2_swellS04
-xmodel,c_zom_zombie_civ_shorts_body2_swellS05
-xmodel,c_zom_zombie_civ_shorts_body2_swellS06
-xmodel,c_zom_zombie_civ_shorts_body2_swellS07
-xmodel,c_zom_zombie_civ_shorts_body2_swellS08
-xmodel,c_zom_zombie_civ_shorts_body2_swellS09
-xmodel,c_zom_zombie_civ_shorts_body2_swellS10
-xmodel,c_zom_zombie_civ_shorts_body3_swellS01
-xmodel,c_zom_zombie_civ_shorts_body3_swellS02
-xmodel,c_zom_zombie_civ_shorts_body3_swellS03
-xmodel,c_zom_zombie_civ_shorts_body3_swellS04
-xmodel,c_zom_zombie_civ_shorts_body3_swellS05
-xmodel,c_zom_zombie_civ_shorts_body3_swellS06
-xmodel,c_zom_zombie_civ_shorts_body3_swellS07
-xmodel,c_zom_zombie_civ_shorts_body3_swellS08
-xmodel,c_zom_zombie_civ_shorts_body3_swellS09
-xmodel,c_zom_zombie_civ_shorts_body3_swellS10
-xmodel,c_zom_zombie_civ_shorts_body4_swellS01
-xmodel,c_zom_zombie_civ_shorts_body4_swellS02
-xmodel,c_zom_zombie_civ_shorts_body4_swellS03
-xmodel,c_zom_zombie_civ_shorts_body4_swellS04
-xmodel,c_zom_zombie_civ_shorts_body4_swellS05
-xmodel,c_zom_zombie_civ_shorts_body4_swellS06
-xmodel,c_zom_zombie_civ_shorts_body4_swellS07
-xmodel,c_zom_zombie_civ_shorts_body4_swellS08
-xmodel,c_zom_zombie_civ_shorts_body4_swellS09
-xmodel,c_zom_zombie_civ_shorts_body4_swellS10
-xmodel,c_zom_zombie_civ_shorts_body5_swellS01
-xmodel,c_zom_zombie_civ_shorts_body5_swellS02
-xmodel,c_zom_zombie_civ_shorts_body5_swellS03
-xmodel,c_zom_zombie_civ_shorts_body5_swellS04
-xmodel,c_zom_zombie_civ_shorts_body5_swellS05
-xmodel,c_zom_zombie_civ_shorts_body5_swellS06
-xmodel,c_zom_zombie_civ_shorts_body5_swellS07
-xmodel,c_zom_zombie_civ_shorts_body5_swellS08
-xmodel,c_zom_zombie_civ_shorts_body5_swellS09
-xmodel,c_zom_zombie_civ_shorts_body5_swellS10
-xmodel,c_zom_zombie_civ_shorts_body6_swellS01
-xmodel,c_zom_zombie_civ_shorts_body6_swellS02
-xmodel,c_zom_zombie_civ_shorts_body6_swellS03
-xmodel,c_zom_zombie_civ_shorts_body6_swellS04
-xmodel,c_zom_zombie_civ_shorts_body6_swellS05
-xmodel,c_zom_zombie_civ_shorts_body6_swellS06
-xmodel,c_zom_zombie_civ_shorts_body6_swellS07
-xmodel,c_zom_zombie_civ_shorts_body6_swellS08
-xmodel,c_zom_zombie_civ_shorts_body6_swellS09
-xmodel,c_zom_zombie_civ_shorts_body6_swellS10
-xmodel,c_zom_zombie_scientist_body_swellS01
-xmodel,c_zom_zombie_scientist_body_swellS02
-xmodel,c_zom_zombie_scientist_body_swellS03
-xmodel,c_zom_zombie_scientist_body_swellS04
-xmodel,c_zom_zombie_scientist_body_swellS05
-xmodel,c_zom_zombie_scientist_body_swellS06
-xmodel,c_zom_zombie_scientist_body_swellS07
-xmodel,c_zom_zombie_scientist_body_swellS08
-xmodel,c_zom_zombie_scientist_body_swellS09
-xmodel,c_zom_zombie_scientist_body_swellS10
-xmodel,c_zom_zombie_soldier_body_swellS01
-xmodel,c_zom_zombie_soldier_body_swellS02
-xmodel,c_zom_zombie_soldier_body_swellS03
-xmodel,c_zom_zombie_soldier_body_swellS04
-xmodel,c_zom_zombie_soldier_body_swellS05
-xmodel,c_zom_zombie_soldier_body_swellS06
-xmodel,c_zom_zombie_soldier_body_swellS07
-xmodel,c_zom_zombie_soldier_body_swellS08
-xmodel,c_zom_zombie_soldier_body_swellS09
-xmodel,c_zom_zombie_soldier_body_swellS10
-xmodel,c_zom_guard_body_swellS01
-xmodel,c_zom_guard_body_swellS02
-xmodel,c_zom_guard_body_swellS03
-xmodel,c_zom_guard_body_swellS04
-xmodel,c_zom_guard_body_swellS05
-xmodel,c_zom_guard_body_swellS06
-xmodel,c_zom_guard_body_swellS07
-xmodel,c_zom_guard_body_swellS08
-xmodel,c_zom_guard_body_swellS09
-xmodel,c_zom_guard_body_swellS10
-xmodel,c_zom_inmate_body1_swellS01
-xmodel,c_zom_inmate_body1_swellS02
-xmodel,c_zom_inmate_body1_swellS03
-xmodel,c_zom_inmate_body1_swellS04
-xmodel,c_zom_inmate_body1_swellS05
-xmodel,c_zom_inmate_body1_swellS06
-xmodel,c_zom_inmate_body1_swellS07
-xmodel,c_zom_inmate_body1_swellS08
-xmodel,c_zom_inmate_body1_swellS09
-xmodel,c_zom_inmate_body1_swellS10
-xmodel,c_zom_inmate_body2_swellS01
-xmodel,c_zom_inmate_body2_swellS02
-xmodel,c_zom_inmate_body2_swellS03
-xmodel,c_zom_inmate_body2_swellS04
-xmodel,c_zom_inmate_body2_swellS05
-xmodel,c_zom_inmate_body2_swellS06
-xmodel,c_zom_inmate_body2_swellS07
-xmodel,c_zom_inmate_body2_swellS08
-xmodel,c_zom_inmate_body2_swellS09
-xmodel,c_zom_inmate_body2_swellS10
+techniqueset,mc_sw4_3d_model_unlit_cheap_zombie_eyes_jq3e7eqw_zqswell
 
 //  ?? THE BLOOD IS RED AGAIN (2026-09-12). User: "the color of what the
 //  zombie spews out of its mouth is white for some reason it should be red".
@@ -416,6 +101,17 @@ material,gfx_fxt_bio_bloodburst_b_ds64
 material,gfx_fxt_bio_bloodburst_c_ds64
 material,gfx_fxt_bio_blooddrops_ds64
 material,gfx_fxt_bio_bloodgush_ds64
+//  v2.15.49: the SAME defect, three more names. fx_sizzle_blood_eyes and
+//  fx_sizzle_mist also reference these, and the wavegun donor carried them as
+//  data-less references too; mod_base.zone no longer lists them, so these
+//  declarations pull common_zm's real assets. Moon's eye-blood fx drew as a
+//  white sparkle stream while its particle-cloud material had no data.
+material,gfx_fxt_env_dust_mote_pcloud_blend
+material,gfx_fxt_smk_gen_z10
+xmodel,fx_axis_createfx
+//  ...and the image behind gfx_fxt_light_hot_add (the beam's hot glow), which
+//  the donor inventory also carried data-less. common_zm owns it.
+image,fxt_light_hot
 // Nuketown image payloads (25) - see header
 image,~-gc_zom_dlc0_hazmat_zombie_body_1_c
 image,~-gc_zom_dlc0_hazmat_zombie_body_2_c
@@ -496,6 +192,36 @@ material,mc/mtl_c_zom_zombie3_body02
 material,mc/mtl_c_zom_zombie3_body03
 material,mc/mtl_c_zom_zombie3_body04
 material,mc/mtl_c_zom_zombie3_body05
+//  v2.15.49: TranZit SURVIVAL's own families (Town/Farm/Bus Depot spawn
+//  zombie5/zombie8 bodies and the female heads d/f), dumped from
+//  so_zsurvival_zm_transit.ff and re-authored the same way. Without these a
+//  survival zombie keeps the map's retail material and never swells.
+material,mc/mtl_c_zom_zombie5_body01
+material,mc/mtl_c_zom_zombie5_body02
+material,mc/mtl_c_zom_zombie5_body03
+material,mc/mtl_c_zom_zombie8_body01
+material,mc/mtl_c_zom_zombie8_body02
+material,mc/mtl_c_zom_zombie8_body03
+material,mc/mtl_c_zom_zombie_head_d
+material,mc/mtl_c_zom_zombie_head_f
+
+//  The separate unlit and glowing-eye layers use their own vertex shaders.
+//  Pointing these materials at the swell eye techset keeps the whole head
+//  together during the 2.5-second normal expansion.
+material,mc/mtl_c_zom_chinese_zombie_head1_u
+material,mc/mtl_c_zom_chinese_zombie_head2_u
+material,mc/mtl_c_zom_chinese_zombie_head3_u
+material,mc/mtl_c_zom_chinese_zombie_head4_u
+material,mc/mtl_c_zom_zombie_barbwire_head_unlit
+material,mc/mtl_c_zom_zombie_head_a_unlit
+material,mc/mtl_c_zom_zombie_head_d_unlit
+material,mc/mtl_c_zom_zombie_head_f_unlit
+material,mc/mtl_c_zom_zombie_head_k_unlit
+material,mc/mtl_c_zom_zombie_head_l_unlit
+material,mc/mtl_c_zom_zombie_head_n_unlit
+material,mc/mtl_c_zom_zombie_hellcatraz_head_unlit
+material,mc/mtl_c_zom_zombie_mask_head_unlit
+material,mc/mtl_c_zom_zombie_slackjaw_head_unlit
 
 //  Nuketown head SWELL copies need the heads' UNLIT (_u) and blue-eye (_ub)
 //  materials too (v2.15.46). zm_nuked.ff is not a --load input, so like the
