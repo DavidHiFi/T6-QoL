@@ -4131,7 +4131,7 @@ new_pap_trigger()
                 Trigger sethintstring( "			Hold ^3&&1^7 for Pack-a-Punch [Cost: " + cost + "]" );
             }
         }
-        if(player UseButtonPressed() && player.score >= cost && current_weapon != "riotshield_zm" && player can_buy_weapon() && !player.is_drinking && !is_placeable_mine( current_weapon ) && !is_equipment( current_weapon ) && level.revive_tool != current_weapon && current_weapon != "none" && can_upgrade_weapon( current_weapon ))
+        if(player UseButtonPressed() && player.score >= cost && current_weapon != "riotshield_zm" && player maps\mp\zombies\_zm_magicbox::can_buy_weapon() && !player.is_drinking && !is_placeable_mine( current_weapon ) && !is_equipment( current_weapon ) && level.revive_tool != current_weapon && current_weapon != "none" && can_upgrade_weapon( current_weapon ))
         {
             //  v1.99.30 - held while this upgrade runs, so qol_pap_mode_watch()
             //  cannot hand the machine over mid-upgrade and strand the player's
