@@ -1,0 +1,13 @@
+{
+  stateMap "passthrough"; // TODO
+
+  vertexShader 4.0 "pimp_shader_debugperformance_7a419c88.hlsl"
+  {
+  }
+
+  pixelShader 4.0 "pimp_shader_debugperformance_d7bca0fc.hlsl"
+  {
+  }
+
+  vertex.position = code.position;
+}

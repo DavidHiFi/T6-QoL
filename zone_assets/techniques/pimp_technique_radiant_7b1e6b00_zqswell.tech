@@ -1,0 +1,16 @@
+{
+  stateMap "passthrough"; // TODO
+
+  vertexShader 4.0 "pimp_shader_radiant_190f4788.hlsl"
+  {
+  }
+
+  pixelShader 4.0 "pimp_shader_radiant_46ce1b1c.hlsl"
+  {
+    radiantDiffuseMap = material.Diffuse_Map;
+  }
+
+  vertex.position = code.position;
+  vertex.color[0] = code.color;
+  vertex.texcoord[0] = code.texcoord[0];
+}

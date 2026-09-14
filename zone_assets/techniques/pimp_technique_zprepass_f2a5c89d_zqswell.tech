@@ -1,0 +1,14 @@
+{
+  stateMap "passthrough"; // TODO
+
+  vertexShader 4.0 "pimp_shader_transformonly_d4f4e04b_zqswell.hlsl"
+  {
+  }
+
+  pixelShader 4.0 "pimp_shader_null_3b4a8bd3.hlsl"
+  {
+  }
+
+  vertex.position = code.position;
+  vertex.normal = code.normal;
+}

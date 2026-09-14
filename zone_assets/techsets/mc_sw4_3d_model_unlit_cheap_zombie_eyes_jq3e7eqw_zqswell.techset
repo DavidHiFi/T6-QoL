@@ -1,0 +1,17 @@
+"depth prepass":
+  pimp_technique_zprepass_f2a5c89d_zqswell;
+
+"build shadowmap depth":
+  pimp_technique_sw4_3d_model_unlit_cheap_zombie_eyes_bffe0b4a_zqswell;
+
+"unlit":
+  pimp_technique_radiant_8659a004_zqswell;
+
+"emissive":
+  pimp_technique_sw4_3d_model_unlit_cheap_zombie_eyes_673b5a2b_zqswell;
+
+"solid wireframe":
+  pimp_technique_radiant_282e9ff6_zqswell;
+
+"debug performance":
+  pimp_technique_debugperformance_c70841b5_zqswell;
