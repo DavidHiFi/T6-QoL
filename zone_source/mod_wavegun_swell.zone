@@ -80,6 +80,11 @@
 //  identical output) reflects scriptVector3 out of the DXBC and emits it as a
 //  code vertex constant, which is what mapshaderconstant()/setshaderconstant()
 //  write at runtime (stock uses the same path for the zombie eye glow).
+//  v2.15.51: that mad became SwellOffset() (t6_consts.hlsli), the same push
+//  weighted by distance from the stomach in model space - scriptVector3.w is
+//  the J_SpineLower height the client ramp sends - so the belly leads and the
+//  limbs and head no longer inflate into each other. Same techsets, techniques
+//  and constant; only the five vertex shader binaries changed.
 //
 //  zone_source\zomswell_donor (the DLC5 binary copy) is no longer --load'ed:
 //  raw beats a loaded zone, but keeping both would invite a stale copy.

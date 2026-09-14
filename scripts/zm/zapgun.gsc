@@ -157,7 +157,10 @@ init()
     //  bloat line (worldPos += worldNormal * scriptVector3.x); the client ramp
     //  in zapgun.csc drives scriptVector3 exactly as BO1 does. No pre-scaled
     //  models, no precache, no model-index budget. mod_wavegun_swell.zone has
-    //  the measurements behind it.
+    //  the measurements behind it. v2.15.51 weights that push from the stomach
+    //  outward (SwellOffset in zone_source\swell_shader_src	6_consts.hlsli;
+    //  the ramp also sends the J_SpineLower height in scriptVector3.w) so the
+    //  belly leads and the limbs and head no longer inflate into each other.
 
     set_zombie_var( "microwavegun_cylinder_radius", 180 );
     set_zombie_var( "microwavegun_sizzle_range", 480 );

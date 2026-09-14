@@ -1,5 +1,5 @@
 // ============================================================================
-//  zapgun.csc  -  client half of the Wave Gun / Zap Guns          (v2.15.49)
+//  zapgun.csc  -  client half of the Wave Gun / Zap Guns          (v2.15.51)
 // ----------------------------------------------------------------------------
 //  Two jobs:
 //
@@ -107,7 +107,21 @@ zmqol_mgun_client_bloat( localclientnum )
         if ( !isdefined( self ) )
             return;
 
-        self setshaderconstant( localclientnum, 0, bloat_fraction * 4.0, 0, 0, 0 );
+        //  v2.15.51: X is still BO1's amount (fraction * 4.0). YZW carry the
+        //  stomach (J_SpineLower) relative to the local viewer's eye. The
+        //  zombie shaders see eye-relative world positions (retail's fog code
+        //  measures length(worldPos) as the eye distance), so the centre of
+        //  the swell ball must be given in that space, and re-read every tick
+        //  because the sizzle death floats the corpse and the player moves.
+        //  A rig without the tag uses its origin plus 42 units.
+        v_center = self gettagorigin( "J_SpineLower" );
+
+        if ( !isdefined( v_center ) )
+            v_center = self.origin + ( 0, 0, 42 );
+
+        v_center = v_center - getlocalclienteyepos( localclientnum );
+
+        self setshaderconstant( localclientnum, 0, bloat_fraction * 4.0, v_center[0], v_center[1], v_center[2] );
 
         if ( bloat_fraction >= bloat_max_fraction )
             break;
