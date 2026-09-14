@@ -459,7 +459,16 @@ freezegun_do_damage( upgraded, player, dist_ratio )
     //  leaves them alone: level.zmqol_ww_boss_hit has already had its say a few
     //  lines above, and self.actor_damage_func still runs after this.
     // ========================================================================
-    if ( getdvarintdefault( "winters_howl_infinite", 0 ) && isdefined( self.health ) && self.health > damage )
+    // The freezegun applies damage from this script instead of the stock weapon
+    // damage path, so stock check_for_instakill() never raises it for us. Match
+    // Treyarch's Paralyzer handling and include both team and personal insta-kill.
+    b_instakill = isdefined( player ) && isalive( player ) &&
+        ( level.zombie_vars[player.team]["zombie_insta_kill"] ||
+          isdefined( player.personal_instakill ) && player.personal_instakill );
+
+    if ( b_instakill && isdefined( self.health ) )
+        damage = self.health + 666;
+    else if ( getdvarintdefault( "winters_howl_infinite", 0 ) && isdefined( self.health ) && self.health > damage )
         damage = self.health;
 
     self DoDamage( damage, player.origin, player, player, "none", "MOD_PROJECTILE" );
