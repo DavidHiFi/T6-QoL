@@ -1,5 +1,5 @@
 QUALITY OF LIFE SERIES LAUNCHER
-Black Ops II Zombies  ·  Plutonium T6
+Quality of Life Series  ·  Plutonium
 
 One launcher for the whole Quality of Life series. This copy installs the
 Black Ops II Zombies mod; the T4, T5 and T7 releases use the same menu.

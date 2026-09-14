@@ -2278,7 +2278,7 @@ function Act-PlayLan {
         Pause-Key; return
     }
     $intro = @(
-        "Boots BO2 Zombies straight in, with the Quality of Life mod already",
+        "Boots straight into Zombies with the Quality of Life mod already",
         "loaded - no MODS menu, no manual pick.",
         '',
         "~LAN / offline only this session: no online servers, no stats. Solo and",
@@ -3478,7 +3478,7 @@ function Remove-Menu {
 function Main-Menu {
     while ($true) {
         $st = Get-Status
-        $sub = 'Black Ops II Zombies  ·  Plutonium T6'
+        $sub = 'Quality of Life Series  ·  Plutonium'
         $intro = @()
         if (-not (Test-Path $PLUTO)) {
             $intro += "!⚠️   Plutonium was not found on this PC."
