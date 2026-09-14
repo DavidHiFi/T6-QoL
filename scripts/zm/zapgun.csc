@@ -107,12 +107,18 @@ zmqol_mgun_client_bloat( localclientnum )
         if ( !isdefined( self ) )
             return;
 
-        //  v2.15.51: X is still BO1's amount (fraction * 4.0). YZW carry the
-        //  stomach (J_SpineLower) relative to the local viewer's eye. The
+        //  X is BO1's amount (fraction * 4.0). YZW carry the stomach
+        //  (J_SpineLower) RELATIVE TO THE LOCAL VIEWER'S EYE, because the
         //  zombie shaders see eye-relative world positions (retail's fog code
-        //  measures length(worldPos) as the eye distance), so the centre of
-        //  the swell ball must be given in that space, and re-read every tick
-        //  because the sizzle death floats the corpse and the player moves.
+        //  measures length(worldPos) as the eye distance).
+        //
+        //  🛑 v2.16.2 - THE EYE SUBTRACTION IS LOAD-BEARING. v2.16.1 removed
+        //  it and had SwellOffset reconstruct world space from
+        //  inverseViewMatrix instead; measured in game, zombies stopped
+        //  inflating at all, because that matrix row is not the camera
+        //  position on this engine. Restored. See the banner on SwellOffset
+        //  in t6_consts.hlsli before touching either half again - they are one
+        //  change in two files and must always agree about the space.
         //  A rig without the tag uses its origin plus 42 units.
         v_center = self gettagorigin( "J_SpineLower" );
 
@@ -126,6 +132,12 @@ zmqol_mgun_client_bloat( localclientnum )
         if ( bloat_fraction >= bloat_max_fraction )
             break;
 
-        waitrealtime( 0.05 );
+        //  🌟 v2.16.2 - RESEND EVERY FRAME, NOT EVERY 50 ms. This is the safe
+        //  half of the wobble fix. The shader rebuilds its side of the
+        //  comparison every frame, so at 50 ms the centre was up to three
+        //  frames stale and a strafing player dragged the ball across the
+        //  body. One frame of lag is small enough not to read as motion.
+        //  Cheap: one setshaderconstant on one dying actor, for 2.5 s.
+        waitrealtime( 0.016 );
     }
 }

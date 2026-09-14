@@ -87,7 +87,8 @@ Use a `.`, `!` or `/` prefix, or bind them to keys. Type `.help` in game for the
 .give <weapon> [pap]      Give any weapon ('.give list' shows what's available)
 .round <n> / .endround    Set or skip the current round
 .god / .ghost / .fly      Invincibility, noclip, flight
-.infammo / .infsprint     Infinite ammo and sprint
+.infammo / .bclip         Infinite reserves, or a magazine that never empties
+.infsprint                Sprint without tiring
 .pack / .unpack           Pack-a-Punch or unpack the held weapon
 .giveperks / .removeperks Grant or remove perks
 .pay <player> <amount>    Send points to another player

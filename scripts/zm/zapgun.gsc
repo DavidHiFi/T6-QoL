@@ -388,6 +388,56 @@ microwavegun_fired( upgraded )
     self microwavegun_get_enemies_in_range( upgraded, 0, shot );
     self microwavegun_get_enemies_in_range( upgraded, 1, shot );
 
+    // ------------------------------------------------------------------------
+    //  🛑 v2.16.4 - NO-GIB IS SET HERE, BEFORE ANY WAIT, OR HEADS POP.
+    //
+    //  User, 2026-09-14, three builds running: "their heads are still popping".
+    //  It was never the swell, the materials or the shader - it is stock's
+    //  ordinary head gib, and the mod was marking no_gib too late to stop it.
+    //
+    //  MEASURED in retail _zm_spawner.gsc: the gib decision runs inside the
+    //  damage override, which fires BEFORE any registered zombie damage
+    //  callback (check_zombie_damage_callbacks is further down the same chain).
+    //  zombie_should_gib() is the gate and it honours self.no_gib; if it
+    //  passes, head_should_gib() decides, and for grenade-type damage that is
+    //      distance( point, self gettagorigin( "j_head" ) ) > 55
+    //  - anywhere within FIFTY-FIVE units of the head pops it. That is most of
+    //  a torso, which is why it looked random rather than like a headshot.
+    //
+    //  microwavegun_sizzle_zombie() does set no_gib, but it is threaded per
+    //  target through microwavegun_network_choke(), which waits three network
+    //  frames every tenth target. Anything the shot damages before its own
+    //  thread is reached is still gibbable. Marking the whole list up front,
+    //  with no wait between building it and marking it, closes that window.
+    //
+    //  no_gib alone is the correct flag: it is what zombie_should_gib reads,
+    //  and it stops the head gib by stopping gibbing. Deliberately NOT
+    //  self.head_gibbed - that means "the head has already come off" and stock
+    //  reads it elsewhere (zombie_eye_glow_stop), so setting it on a live
+    //  zombie would be a lie with side effects.
+    // ------------------------------------------------------------------------
+    //  🛑 v2.16.6 - AND head_gibbed TOO, OR THE HEAD STILL COMES OFF.
+    //
+    //  The v2.16.5 attach probe answered it: every kill logged the head model
+    //  at the kill and c_zom_*_g_behead half a second later. That swap is
+    //  stock's zombie_head_gib() - detach the head, attach torsodmg5 - and it
+    //  runs AFTER death from zombie_death_event() whenever the attacker has
+    //  the multikill_headshots (Head Popper) perma-perk, which this mod's
+    //  perma_perks option grants to everyone. zombie_head_gib() never reads
+    //  no_gib; the only thing that stops it is self.head_gibbed already set.
+    //  Setting it on a zombie that dies on the next dodamage has no other
+    //  effect: head_gibbed is read by head_should_gib, zombie_head_gib, the
+    //  Electric Cherry tesla gib and _zm_turned's spawn-point pick, all of
+    //  which are exactly the things a corpse must not do.
+    for ( i = 0; i < shot.enemies.size; i++ )
+    {
+        if ( isdefined( shot.enemies[i] ) )
+        {
+            shot.enemies[i].no_gib = 1;
+            shot.enemies[i].head_gibbed = 1;
+        }
+    }
+
     for ( i = 0; i < shot.enemies.size; i++ )
     {
         microwavegun_network_choke( shot );
@@ -658,6 +708,7 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
 
     self.no_gib = 1;
     self.gibbed = 1;
+    self.head_gibbed = 1;   // v2.16.6 - blocks the post-death perma-perk head gib, see microwavegun_fired()
     self dodamage( self.health + 666, player.origin, player );
 
     if ( self.health <= 0 )
@@ -709,6 +760,32 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
         {
             self.deathanim = undefined;
             instant_explode = 1;
+        }
+
+        //  🌟 v2.16.3 - SAY WHICH BRANCH, EVERY KILL, WITHOUT A DVAR.
+        //  The user reports the float-up happening "half the time", and which
+        //  half is decided right here. Two guesses have already been spent on
+        //  this; one line in the log settles it instead. Deliberately NOT
+        //  gated on zmqol_mgun_debug: the dvar cannot be set without sending a
+        //  console command into the user's live game, and the whole point is
+        //  to read this back from a session they played normally. One line per
+        //  Wave Gun kill, in the same [zm_qol] shape as everything else here.
+        //  Remove once the split is known.
+        s_why = "anim";
+        if ( instant_explode )
+        {
+            s_why = "fallback";
+            if ( self.isdog ) s_why = "fallback:dog";
+            else if ( is_true( self.is_traversing ) ) s_why = "fallback:traversing";
+            else if ( is_true( self.in_the_ceiling ) ) s_why = "fallback:ceiling";
+            else if ( !self.has_legs ) s_why = "fallback:crawler-no-asd";
+            else s_why = "fallback:no-sizzle-asd";
+        }
+        println( "[zm_qol] zapgun branch: " + s_why + " animname=" + self.animname );
+        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+        {
+            self zmqol_mgun_log_attaches( "at-kill" );
+            self thread zmqol_mgun_attach_probe();
         }
 
         if ( instant_explode )
@@ -765,6 +842,59 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
                 println( "[zm_qol] zapgun: sizzle death anim '" + self.deathanim + "' on " + self.animname );
         }
     }
+}
+
+// ============================================================================
+//  zmqol_mgun_log_attaches  -  IS THE HEAD GONE, OR JUST NOT DRAWN? (v2.16.5)
+// ----------------------------------------------------------------------------
+//  Three fixes have now been aimed at the heads coming off during a Wave Gun
+//  kill and the user still sees it, so this stops guessing and measures the
+//  one thing that splits the problem in half.
+//
+//  A zombie's head is a MODEL ATTACHED to the actor. So:
+//    * if the attach count DROPS across the death, something is detaching it -
+//      a gib, a model swap, script - and the fix is on the server;
+//    * if the count HOLDS and the head is still invisible, nothing removed it
+//      and it is a RENDER failure - material or vertex shader - which points
+//      straight back at the head materials taken off the swell techsets in
+//      v2.16.1, and the fix is to put them back.
+//
+//  Those two have opposite fixes, which is exactly why guessing has cost three
+//  builds. Sampled at the kill, at "expand", and again after the swell has run,
+//  because the moment it changes is as informative as the fact that it did.
+//
+//  ANSWERED 2026-09-14 (v2.16.6): count held at 1 but the model went from
+//  c_zom_zombie_head_* to c_zom_zombie2_body01_g_behead within 0.5 s - the
+//  head was detached by stock's zombie_head_gib() after death (Head Popper
+//  perma-perk). Kept behind zmqol_mgun_debug 1 as the regression check.
+// ============================================================================
+//  Samples the attach list across the whole death without depending on a
+//  notetrack arriving - "expand" is the only one that reliably does, and if
+//  the head goes after it this still catches it.
+zmqol_mgun_attach_probe()
+{
+    self endon( "death" );
+
+    wait 0.5;
+    self zmqol_mgun_log_attaches( "t+0.5" );
+    wait 1.0;
+    self zmqol_mgun_log_attaches( "t+1.5" );
+    wait 1.0;
+    self zmqol_mgun_log_attaches( "t+2.5" );
+}
+
+zmqol_mgun_log_attaches( str_when )
+{
+    if ( !isdefined( self ) )
+        return;
+
+    n = self getattachsize();
+    s = "";
+
+    for ( i = 0; i < n; i++ )
+        s = s + " " + self getattachmodelname( i );
+
+    println( "[zm_qol] zapgun attach " + str_when + ": count=" + n + s );
 }
 
 //  The server-side twin of Moon's client expand response: the sizzle mist at
@@ -958,10 +1088,32 @@ microwavegun_sizzle_death_ending()
 //  Own thread per corpse (the caller already threads the kill), and every step
 //  is isdefined-guarded so a corpse cleaned up mid-sizzle just stops.
 // ============================================================================
+//  🌟 v2.16.1 - THIS PATH NOW SWELLS AND FLOATS TOO, so every Wave Gun kill
+//  reads the same. User, 2026-09-14: *"sometimes they just kind of tap around
+//  and they don't float up in the air ... sometimes they float up after they
+//  tap around, but then they tap around and then they just explode and pop.
+//  make sure it's consistent."*
+//
+//  That inconsistency was this branch versus the anim branch, and the split is
+//  decided per kill a few lines up: a zombie mid-window-traversal, in the
+//  ceiling, a crawler with no sizzle-crawl state, or a dog takes
+//  instant_explode - and instant_explode used to sizzle for half a second and
+//  burst, with no rise and no swell. On TranZit a traversing zombie is common,
+//  which is exactly why it looked like a coin flip.
+//
+//  The float-up in the anim branch belongs to zm_death_sizzle, which this
+//  branch by definition does not have. So it is driven here instead: the
+//  corpse is already held rigid by nodeathragdoll, so a plain moveto lifts it
+//  in a straight smooth line, eased at both ends. The swell is Moon's own
+//  clientfield - the same one the "expand" notetrack raises - so the body
+//  inflates on the identical 2.5 s ramp rather than a second code path.
+//  Timings are matched to the anim branch on purpose: swell and rise together,
+//  then burst at the top.
 zmqol_mgun_microwave_burst()
 {
-    //  Keep the body still for the brief sizzle instead of ragdoll-flopping -
-    //  a microwaved zombie holds, then bursts. Safe: a plain field write.
+    //  Keep the body still for the sizzle instead of ragdoll-flopping - a
+    //  microwaved zombie holds, rises, then bursts. Safe: a plain field write,
+    //  and it is what makes the moveto below read as a lift and not a drag.
     self.nodeathragdoll = 1;
 
     self playsound( "wpn_mgun_dual_sizzle" );
@@ -972,9 +1124,31 @@ zmqol_mgun_microwave_burst()
     if ( isdefined( self gettagorigin( "J_Eyeball_LE" ) ) )
         network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
 
-    //  0.5 s of microwave before the burst - long enough to read as a sizzle,
-    //  short enough that a fast-clearing round is not held up.
-    wait 0.5;
+    //  Start the swell on the same clientfield the notetrack uses, and mark it
+    //  seen so nothing else tries to cut the cycle short.
+    self.zmqol_mgun_expand_seen = 1;
+    self setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 );
+    self playsound( "wpn_mgun_impact_zombie" );
+
+    //  🛑 v2.16.3 - NO moveto ON AN ACTOR. v2.16.2 lifted the corpse with
+    //  `self moveto( self.origin + (0,0,42), 1.6, 0.45, 0.45 )` and the user
+    //  reported two things at once on that build: heads popping off, and the
+    //  rise only happening about half the time. Both are the one mistake.
+    //  bouncingbetty.gsc:670 already wrote the rule down for a neighbouring
+    //  case - "a planted grenade entity cannot be moveto'd - which is exactly
+    //  why MP spawns its minemover" - and an AI is the same class: it owns its
+    //  own movement, so the move is fought or dropped (the rise that only
+    //  sometimes lands) and the head, a separate model riding a tag, desyncs
+    //  from a body being shoved from underneath (the popping).
+    //
+    //  The float is NOT reimplemented here with a stand-in mover. The engine
+    //  already floats corpses correctly in the anim branch, and the honest way
+    //  to make the rise consistent is to get more kills INTO that branch
+    //  rather than to hand-roll a second rise that has to look identical. The
+    //  print below is what decides which, with evidence instead of a guess.
+    //  The swell above stays: it is Moon's own clientfield and the user
+    //  confirmed inflation working.
+    wait 2.5;
 
     if ( !isdefined( self ) )
         return;

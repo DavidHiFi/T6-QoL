@@ -216,6 +216,25 @@ transit_zone_init()
 
             zone_init( "zone_trans_8" );
             enable_zone( "zone_trans_8" );
+
+            // 🛑 2026-09-14 - THE STRIP MUST SEE THE ARENA, OR SPAWNS GO TO THE
+            // BUS DEPOT. manage_zones() force-activates initial_zone - which for
+            // TranZit is zone_pri, the Bus Depot - whenever no occupied or
+            // connected-adjacent zone is spawning_allowed. zone_trans_8 has its
+            // own spawning switched off (the loc script below) and had no
+            // adjacency edge to anything, so a player standing on the strip was
+            // exactly that case: the Bus Depot's spawn locations came back into
+            // level.zombie_spawn_locations and zombies spawned there, ~2 km away.
+            // Measured 2026-09-14, Power Station: spawn_point tn=zone_pri_spawners
+            // (-7427,6730,-58), stuck at (-7060,5452,-55) until the no_bleedout
+            // rescue moved it - the "one zombie left and it will not come" report.
+            // One-way edges are enough and keep the arena's own adjacency set
+            // exactly stock: the strip can see the arena zones, the manager sees
+            // a spawning_allowed neighbour, and the fallback never fires.
+            add_adjacent_zone( "zone_trans_8", "zone_pow", "always_on", 1 );
+            add_adjacent_zone( "zone_trans_8", "zone_prr", "always_on", 1 );
+            add_adjacent_zone( "zone_trans_8", "zone_pcr", "always_on", 1 );
+            add_adjacent_zone( "zone_trans_8", "zone_pow_warehouse", "always_on", 1 );
         }
     }
 }

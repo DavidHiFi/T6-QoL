@@ -6,6 +6,9 @@ Read the latest checkpoint in `../zm_qol - dev/.agents/` and preserve outstandin
 gameplay checks. These are local development references, not release payloads.
 
 - Check `git status` before editing; preserve existing user work.
+- One branch per issue, always on GitHub (workspace `AGENTS.md`, user
+  2026-09-11): create the `fix/...` branch before editing, commit only that
+  issue's files, push it to `origin`. Never stack issues on one branch.
 - The five mod files are `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, and
   `mod.all.sabs`. Raw GSC/Lua sources are packed into `mod.iwd`.
 - `build.bat offline` packs and verifies locally. `build.bat` without arguments
@@ -14,6 +17,11 @@ gameplay checks. These are local development references, not release payloads.
 - `build_ff.bat` retains the legacy `tools/oat-windows` pipeline. Its active
   recipe is `zone_source/mod.zone`; the empty root `mod.zone` is unused.
   Preserve donors and untracked asset sources. Do not retrofit a JSON recipe.
+- For GSC/CSC experiments, hotload first: drop a loose probe script under
+  `%LOCALAPPDATA%\Plutonium\storage\t6\raw\scripts\` (mirroring the mod's
+  `scripts\zm\` layout) and reload the map — no `build.bat`, no mod edit.
+  Full rule in the workspace `AGENTS.md` ("GSC hotload"). Delete the probe
+  when done; stale loose scripts shadow the mod on every boot.
 - Keep the bundled JSON toolchain separate. Its offline verification outputs
   belong under the workspace `modding-jobs/`, outside source/include trees.
 - `* -text` in `.gitattributes` is intentional. Preserve binary data and source

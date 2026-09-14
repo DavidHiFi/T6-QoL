@@ -280,8 +280,16 @@ zmqol_powerup_drop( drop_point )
 }
 
 // ============================================================================
-//  zmqol_enable_dog_rounds  -  HELLHOUNDS DROPPED FROM DINER AND NUKETOWN
-//                                                    (v2.3.4, fixed for real v2.3.8)
+//  zmqol_enable_dog_rounds  -  HELLHOUNDS ON EVERY MAP THAT CAN SPAWN THEM
+//                                                    (reworked v2.16.7)
+// ----------------------------------------------------------------------------
+//  🛑 THE v2.3.4 SQUELCH DESCRIBED BELOW IS SUPERSEDED AND NO LONGER SHIPS.
+//  User, 2026-09-14: *"make sure hellhounds work for all the maps that don't
+//  have them natively ... get hellhounds working for diner ... every single
+//  map."* Diner and Nuketown are enabled again. The v2.3.4-v2.3.8 history
+//  below is kept as the record of why they were dropped and what the
+//  Diner-specific handler involved; the function itself carries the current
+//  contract. The Diner location's own logic is untouched and still owns Diner.
 // ----------------------------------------------------------------------------
 //  User, 2026-08-25: *"because of how much of a hassle it's been to get
 //  hellhounds working on Diner survival, and Nuketown survival, just drop it
@@ -338,31 +346,551 @@ zmqol_powerup_drop( drop_point )
 // ============================================================================
 zmqol_enable_dog_rounds()
 {
-    if ( getdvar( "ui_zm_mapstartlocation" ) == "diner" )
+    //  ========================================================================
+    //  🛑 v2.16.7 - THE v2.3.4 "DROP HELLHOUNDS FROM DINER AND NUKETOWN" HOOK
+    //  IS REVERSED. User, 2026-09-14: *"make sure hellhounds work for all the
+    //  maps that don't have them natively ... get hellhounds working for diner
+    //  ... every single map ... the spawns are really buggy, one spawned inside
+    //  the car and then it just disappeared."*
+    //
+    //  Diner and Nuketown both ship the FULL hellhound asset set and are
+    //  re-enabled here. The Diner-specific arena pruning + garage choke point in
+    //  zm_transit_loc_diner.gsc are left in place and still own that map (see
+    //  zmqol_dog_owns_this_map() below) - this hook only takes over the maps
+    //  that had no fix of their own.
+    //
+    //  🌟 THE PLACEMENT FIX IS THE POINT. Stock spawns every hellhound at
+    //  level.dog_spawners[0] (one actor at the world origin) then dog_spawn_fx()
+    //  teleports it to a point from level.enemy_dog_locations - the map's
+    //  scattered `dog_location` structs. Those sit wherever the level designer
+    //  tagged them, which on Tunnel is a car body. level.zombie_spawn_locations
+    //  is the list the regular zombies rise from: ground level, in the active
+    //  arena, already filtered by _zm_zonemgr to enabled+active zones.
+    //  zmqol_dog_spawn_logic() prefers it and only falls back to the dog structs.
+    //
+    //  🛑 THE EMPTY-SPAWNER HANG, STOCK'S OWN BLIND SPOT. A map with
+    //  dog_location structs but no `zombie_dog_spawner` actor gets an empty
+    //  level.dog_spawners from _zm_ai_dogs::dog_spawner_init(), and
+    //  dog_round_spawning() then calls spawn_zombie( level.dog_spawners[0] ) =
+    //  spawn_zombie( undefined ), which returns undefined WITHOUT incrementing
+    //  `count`. The dog round's while loop never terminates and the match is
+    //  lost. Stock has no guard; this hook refuses to start a round it cannot
+    //  populate and says so in the log instead.
+    //  ========================================================================
+    if ( !isdefined( level.dog_spawners ) || level.dog_spawners.size == 0 )
     {
-        println( "[zm_qol] diner hellhounds: dropped (enable_dog_rounds() no-op on this location)" );
+        println( "[zm_qol] hellhounds: no zombie_dog_spawner on this map - dog rounds left off (stock would hang the round)" );
         return;
     }
 
-    if ( getdvar( "mapname" ) == "zm_nuked" )
-    {
-        println( "[zm_qol] nuketown hellhounds: dropped (enable_dog_rounds() no-op on this map)" );
-        return;
-    }
+    level.dog_rounds_enabled = 1;
 
-    //  Stock _zm_ai_dogs::enable_dog_rounds(), unchanged - EXCEPT the ::dog_round_tracker
+    //  Stock _zm_ai_dogs::enable_dog_rounds(), unchanged - EXCEPT the tracker
     //  pointer, which has to be qualified here. Stock writes it as a bare
     //  ::dog_round_tracker because IT lives in _zm_ai_dogs.gsc, where that
     //  resolves to _zm_ai_dogs::dog_round_tracker by same-file default. This
     //  function lives in quality_of_life.gsc instead, where a bare
     //  ::dog_round_tracker would look for that name in THIS file and fail to
     //  resolve at load - qualifying it is not a style choice, it is required.
-    level.dog_rounds_enabled = 1;
-
+    //
+    //  v2.16.7 points it at our own copy of the tracker instead of stock's, so
+    //  the dog round's opening callout can be captioned - see
+    //  zmqol_dog_round_tracker(). An override somebody else already set still
+    //  wins, exactly as before.
     if ( !isdefined( level.dog_round_track_override ) )
-        level.dog_round_track_override = maps\mp\zombies\_zm_ai_dogs::dog_round_tracker;
+        level.dog_round_track_override = ::zmqol_dog_round_tracker;
+
+    //  The Diner location script installs its own spawn logic and two watchdogs
+    //  from its own main(); when it has, it owns this map and none of the
+    //  generic machinery below runs. Otherwise this hook owns every map.
+    if ( !zmqol_dog_owns_this_map() )
+    {
+        level.zmqol_dog_generic_owned = 1;
+        zmqol_dog_snapshot_locations();
+        level.dog_spawn_func = ::zmqol_dog_spawn_logic;
+        level thread zmqol_dog_watchdog();
+        level thread zmqol_dog_spawn_director();
+    }
 
     level thread [[ level.dog_round_track_override ]]();
+}
+
+// ============================================================================
+//  "FETCH ME THEIR SOULS!"  -  the dog round callout, captioned    (v2.16.7)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-14: *"i have my subtitles turned on and when the whole hound
+//  round started Richtofen said fetch me their souls, but the subtitle didn't
+//  appear in the bottom of the screen"* and, on who it is: *"it should say
+//  under the alias of announcer."*
+//
+//  🛑 WHY THE ANNOUNCER HOOK NEVER SAW THIS LINE. Every other announcer quote
+//  reaches the player through _zm_audio_announcer::playleaderdialogonplayer(),
+//  which zmqol_subs_npc_common.gsc replaces - that is the one road the caption
+//  system watches. The dog round's opener does not take it. It is a bare
+//  builtin with a hardcoded alias, at _zm_ai_dogs.gsc:118 inside
+//  dog_round_spawning():
+//
+//        array_thread( players, ::play_dog_round );
+//        wait 1;
+//        playsoundatposition( "vox_zmba_event_dogstart_0", ( 0, 0, 0 ) );
+//
+//  No dialogue function runs, so there was nothing for the hook to catch. The
+//  TEXT was never the problem - it has shipped in the tables the whole time
+//  (zone_assets/zm/zmqol_subs_zm_transit.csv:2148, and the buried / highrise /
+//  nuked / prison tables carry their own row).
+//
+//  🌟 WHY THE TRACKER IS COPIED RATHER THAN THE ROUND LOOP. dog_round_spawning()
+//  is the function that runs a dog round to completion, and getting it wrong is
+//  exactly the hang this version is fixing elsewhere - it is not worth copying
+//  for a caption. The seam is one level up: dog_round_tracker() points
+//  level.round_spawn_func at ::dog_round_spawning for the length of a dog round
+//  and restores the ordinary spawner afterwards. Copying the TRACKER (eight
+//  lines, and the same thing qol_subs_npc_highrise.gsc already does for Die
+//  Rise's leaper round) lets the pointer be set to a wrapper that starts the
+//  caption and then calls stock, untouched.
+//
+//  🛑 AND WHY NOT JUST WAIT ON THE NOTIFY. Watching for "dog_round_starting"
+//  and swapping the pointer afterwards is a race this file has already been
+//  bitten by once - see the ROUND DELAY OFF note in zmqol_round_think(), where
+//  the round loop read round_spawn_func in the same frame as the notify and ran
+//  an ordinary round to jumping-jacks music. Assigning the pointer at the exact
+//  point stock assigns it cannot race.
+// ============================================================================
+
+//  Stock _zm_ai_dogs::dog_round_tracker() verbatim (dev-only /# #/ blocks
+//  dropped, same-file calls qualified) - EXCEPT the one spawn-func pointer,
+//  which goes to the captioning wrapper instead of straight to stock's
+//  ::dog_round_spawning. Stock sets round_wait_func on the way OUT only; that
+//  asymmetry is stock's and is kept.
+zmqol_dog_round_tracker()
+{
+    level.dog_round_count = 1;
+    level.next_dog_round = level.round_number + randomintrange( 4, 7 );
+    old_spawn_func = level.round_spawn_func;
+    old_wait_func = level.round_wait_func;
+
+    while ( 1 )
+    {
+        level waittill( "between_round_over" );
+
+        if ( level.round_number == level.next_dog_round )
+        {
+            level.music_round_override = 1;
+            old_spawn_func = level.round_spawn_func;
+            old_wait_func = level.round_wait_func;
+            maps\mp\zombies\_zm_ai_dogs::dog_round_start();
+            level.round_spawn_func = ::zmqol_dog_round_spawning;
+            level.next_dog_round = level.round_number + randomintrange( 4, 6 );
+            continue;
+        }
+        else
+        {
+            if ( flag( "dog_round" ) )
+            {
+                maps\mp\zombies\_zm_ai_dogs::dog_round_stop();
+                level.round_spawn_func = old_spawn_func;
+                level.round_wait_func = old_wait_func;
+                level.music_round_override = 0;
+                level.dog_round_count += 1;
+            }
+        }
+    }
+}
+
+//  Stock dog_round_spawning() with the caption started alongside it. Stock is
+//  CALLED, never copied, so the round logic is byte-for-byte the shipped one.
+zmqol_dog_round_spawning()
+{
+    level thread zmqol_dog_start_caption();
+    maps\mp\zombies\_zm_ai_dogs::dog_round_spawning();
+}
+
+//  Mirrors stock's own `wait 1` before playsoundatposition(), so the text and
+//  the line land in the same frame.
+//
+//  The alias is hardcoded here because it is hardcoded there: the announcer can
+//  be switched to Samantha mid-match (_zm_utility::sndswitchannouncervox), but
+//  _zm_ai_dogs.gsc:118 plays vox_zmba_event_dogstart_0 either way, so that is
+//  the line the player hears and the one to caption. zmqol_subs_npc() resolves
+//  the speaker to "Announcer" from the vox_zmba_event_ prefix on its own, does
+//  the table lookup, and no-ops when subtitles are off or the map has no table.
+zmqol_dog_start_caption()
+{
+    level endon( "end_game" );
+
+    wait 1;
+
+    //  stock returns before the sound when the match is already ending
+    if ( isdefined( level.intermission ) && level.intermission )
+        return;
+
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_zmba_event_dogstart_0" );
+}
+
+//  True when a location script has taken over this map's dog behaviour itself
+//  (currently only Diner). Keyed on the snapshot the location script publishes
+//  in zmqol_diner_dog_init(), which every generic entry point checks.
+zmqol_dog_owns_this_map()
+{
+    return ( isdefined( level.zmqol_diner_dog_locs ) && level.zmqol_diner_dog_locs.size > 0 );
+}
+
+// ============================================================================
+//  Generic hellhound support - the spawn placement, the fallback snapshot and
+//  the repair watchdog, for every map except the one a location script owns.
+// ----------------------------------------------------------------------------
+//  Everything here is referenced only from quality_of_life.gsc, which loads on
+//  every map, and only calls _zm_ai_dogs / _zm_utility / _zm_zonemgr - all core
+//  zombies modules that ship in patch_zm.ff / common_zm.ff on all six maps, so
+//  no map-specific external is named (AI_CONTEXT rule 2).
+// ============================================================================
+
+//  Snapshot every enabled zone's dog_location structs once, as a last-resort
+//  fallback list. Mirrors zmqol_diner_dog_init()'s snapshot, including the
+//  zone.is_enabled gate that a pre-v2.2.6 version of that function was missing.
+zmqol_dog_snapshot_locations()
+{
+    level.zmqol_dog_locs = [];
+
+    if ( !isdefined( level.zone_keys ) || !isdefined( level.zones ) )
+        return;
+
+    for ( z = 0; z < level.zone_keys.size; z++ )
+    {
+        zone = level.zones[level.zone_keys[z]];
+
+        if ( !isdefined( zone ) || !isdefined( zone.dog_locations ) )
+            continue;
+
+        if ( isdefined( zone.is_enabled ) && !zone.is_enabled )
+            continue;
+
+        for ( i = 0; i < zone.dog_locations.size; i++ )
+        {
+            s_loc = zone.dog_locations[i];
+
+            if ( !isdefined( s_loc ) || !isdefined( s_loc.origin ) )
+                continue;
+
+            if ( isdefined( s_loc.is_enabled ) && !s_loc.is_enabled )
+                continue;
+
+            level.zmqol_dog_locs[level.zmqol_dog_locs.size] = s_loc;
+        }
+    }
+
+    println( "[zm_qol] hellhounds: " + level.zmqol_dog_locs.size + " enabled-zone dog location(s) snapshotted for fallback" );
+}
+
+//  Picks the spawn point for one hellhound. Stock's dog_spawn_func contract is
+//  ( dog_array, favorite_enemy ) -> an entity whose .origin the dog is
+//  teleported to. dog_array is level.dog_spawners (the actor spawners at the
+//  world origin) and is deliberately ignored, exactly as stock's own
+//  dog_spawn_transit_logic() ignores it.
+zmqol_dog_spawn_logic( dog_array, favorite_enemy )
+{
+    //  Pass 1 - ground zombie spawn locations, stock's own 400-1150 unit window
+    //  (160000 and 1322500 are 400^2 and 1150^2, read from zm_transit.gsc:2925).
+    loc = zmqol_dog_pick_from( level.zombie_spawn_locations, 160000, 1322500, 1 );
+
+    //  Pass 2 - same ground list, window relaxed rather than giving up.
+    if ( !isdefined( loc ) )
+        loc = zmqol_dog_pick_from( level.zombie_spawn_locations, 90000, 2250000, 0 );
+
+    //  Pass 3 - the map's own dog structs, relaxed.
+    if ( !isdefined( loc ) )
+        loc = zmqol_dog_pick_from( level.enemy_dog_locations, 90000, 2250000, 0 );
+
+    //  Pass 4 - the init snapshot, no distance test.
+    if ( !isdefined( loc ) )
+        loc = zmqol_dog_pick_from( level.zmqol_dog_locs, 0, 0, 0 );
+
+    //  Pass 5 - anything at all, so dog_spawn_fx is never handed undefined.
+    if ( !isdefined( loc ) )
+        loc = zmqol_dog_pick_from( level.zombie_spawn_locations, 0, 0, 0 );
+
+    if ( isdefined( loc ) )
+    {
+        level.old_dog_spawn = loc;
+        println( "[zm_qol] hellhounds: spawn point (" + int( loc.origin[0] ) + "," + int( loc.origin[1] ) + "," + int( loc.origin[2] ) + ")" );
+    }
+    else
+    {
+        println( "[zm_qol] hellhounds: WARNING no spawn location available at all - dog may be stranded" );
+    }
+
+    return loc;
+}
+
+//  A location that is i_min2..i_max2 units-squared from EVERY player (b_strict),
+//  or any valid location when not strict. Randomised so consecutive dogs differ.
+zmqol_dog_pick_from( a_locs, i_min2, i_max2, b_strict )
+{
+    if ( !isdefined( a_locs ) || a_locs.size == 0 )
+        return undefined;
+
+    a_shuffled = array_randomize( a_locs );
+
+    for ( i = 0; i < a_shuffled.size; i++ )
+    {
+        s = a_shuffled[i];
+
+        if ( !isdefined( s ) || !isdefined( s.origin ) )
+            continue;
+
+        if ( b_strict )
+        {
+            if ( isdefined( level.old_dog_spawn ) && level.old_dog_spawn == s )
+                continue;
+
+            b_ok = 1;
+
+            foreach ( player in get_players() )
+            {
+                if ( !b_ok )
+                    continue;
+
+                d2 = distancesquared( s.origin, player.origin );
+
+                if ( d2 < i_min2 || d2 > i_max2 )
+                    b_ok = 0;
+            }
+
+            if ( !b_ok )
+                continue;
+        }
+
+        return s;
+    }
+
+    return undefined;
+}
+
+//  Runs for the life of the match. Re-asserts level.dog_spawn_func whenever a
+//  per-map script (TranZit's survival_init) has re-pointed it, so every dog
+//  round - and every mid-round special_dog_spawn() - uses the ground picker.
+zmqol_dog_spawn_director()
+{
+    level endon( "end_game" );
+
+    for ( ;; )
+    {
+        wait 1;
+
+        if ( zmqol_dog_owns_this_map() )
+            return;
+
+        level.dog_spawn_func = ::zmqol_dog_spawn_logic;
+    }
+}
+
+//  Repairs a dog whose stock dog_spawn_fx() thread died partway (invisible,
+//  invulnerable, ignoreme), returns a stranded or runaway dog to a real spawn
+//  point, and force-returns the sole remaining dog after 20s so a dog round can
+//  never hang. A condensed, map-agnostic port of zmqol_diner_dog_watchdog().
+zmqol_dog_watchdog()
+{
+    level endon( "end_game" );
+
+    v_spawner = ( 0, 0, 0 );
+
+    if ( isdefined( level.dog_spawners ) && level.dog_spawners.size > 0 && isdefined( level.dog_spawners[0] ) )
+        v_spawner = level.dog_spawners[0].origin;
+
+    for ( ;; )
+    {
+        wait 1;
+
+        if ( zmqol_dog_owns_this_map() )
+            return;
+
+        a_ai = getaiarray( level.zombie_team );
+
+        for ( i = 0; i < a_ai.size; i++ )
+        {
+            ai = a_ai[i];
+
+            if ( !isdefined( ai ) || !isalive( ai ) )
+                continue;
+
+            if ( !( isdefined( ai.isdog ) && ai.isdog ) )
+                continue;
+
+            if ( !isdefined( ai.zmqol_dog_seen ) )
+            {
+                ai.zmqol_dog_seen = gettime();
+                continue;
+            }
+
+            //  dog_spawn_fx takes 1.5s of its own before it teleports.
+            if ( gettime() - ai.zmqol_dog_seen < 4000 )
+                continue;
+
+            //  ------------------------------------------------ pre-spawn repair
+            if ( !isdefined( ai.zmqol_dog_state_fixed ) )
+            {
+                ai.zmqol_dog_state_fixed = 1;
+                str_fixed = "";
+
+                if ( isdefined( ai.magic_bullet_shield ) && ai.magic_bullet_shield == 1 )
+                {
+                    ai maps\mp\zombies\_zm_utility::stop_magic_bullet_shield();
+                    str_fixed = str_fixed + " unkillable";
+                }
+
+                if ( isdefined( ai.ignoreme ) && ai.ignoreme )
+                {
+                    ai.ignoreme = 0;
+                    str_fixed = str_fixed + " ignoreme";
+                }
+
+                //  disablearrivals is the last write of stock's
+                //  zombie_setup_attack_properties_dog(), so it doubles as a
+                //  "did that function complete" flag - and gating the growl
+                //  thread on it stops a healthy dog growling twice.
+                if ( !( isdefined( ai.disablearrivals ) && ai.disablearrivals ) )
+                {
+                    ai.ignoreall          = 0;
+                    ai.pathenemyfightdist = 64;
+                    ai.meleeattackdist    = 64;
+                    ai.disablearrivals    = 1;
+                    ai.disableexits       = 1;
+                    ai thread maps\mp\zombies\_zm_ai_dogs::dog_behind_audio();
+                    str_fixed = str_fixed + " attack-properties+audio";
+                }
+
+                ai show();
+                ai setfreecameralockonallowed( 1 );
+
+                if ( str_fixed != "" )
+                    println( "[zm_qol] hellhounds: a dog was still in its pre-spawn state after 4s -" + str_fixed + " - stock's dog_spawn_fx did not finish. Repaired." );
+            }
+
+            //  ------------------------------------------------ last-dog timeout
+            if ( a_ai.size == 1 )
+            {
+                if ( !isdefined( ai.zmqol_dog_lastone_since ) )
+                    ai.zmqol_dog_lastone_since = gettime();
+
+                if ( !isdefined( ai.zmqol_dog_lastone_rescued ) && gettime() - ai.zmqol_dog_lastone_since >= 20000 )
+                {
+                    ai.zmqol_dog_lastone_rescued = 1;
+                    s_home = zmqol_dog_home_point( ai );
+                    ai forceteleport( s_home.origin, ai.angles );
+                    zmqol_dog_reassert( ai );
+                    println( "[zm_qol] hellhounds: LAST ZOMBIE TIMEOUT - sole remaining dog force-returned to a spawn point" );
+                }
+            }
+            else
+            {
+                ai.zmqol_dog_lastone_since   = undefined;
+                ai.zmqol_dog_lastone_rescued = undefined;
+            }
+
+            //  ------------------------------------------------ out-of-arena rescue
+            b_far = 1;
+
+            foreach ( player in get_players() )
+            {
+                if ( isdefined( player ) && distancesquared( ai.origin, player.origin ) < 6250000 )   //  2500 units
+                    b_far = 0;
+            }
+
+            if ( !b_far )
+            {
+                ai.zmqol_dog_far_ticks = 0;
+            }
+            else
+            {
+                if ( !isdefined( ai.zmqol_dog_far_ticks ) )
+                    ai.zmqol_dog_far_ticks = 0;
+
+                ai.zmqol_dog_far_ticks++;
+
+                if ( ai.zmqol_dog_far_ticks >= 5 )
+                {
+                    ai.zmqol_dog_far_ticks = 0;
+
+                    if ( !isdefined( maps\mp\zombies\_zm_zonemgr::get_zone_from_position( ai.origin ) ) )
+                    {
+                        s_home = zmqol_dog_home_point( ai );
+                        ai forceteleport( s_home.origin, ai.angles );
+                        zmqol_dog_reassert( ai );
+                        println( "[zm_qol] hellhounds: RUNAWAY DOG was in no enabled zone - returned to a spawn point" );
+                    }
+                }
+            }
+
+            //  ------------------------------------------------ stranded at spawner
+            if ( isdefined( ai.zmqol_dog_rescued ) )
+                continue;
+
+            if ( distancesquared( ai.origin, v_spawner ) > 4096 )     //  64 units
+                continue;
+
+            ai.zmqol_dog_rescued = 1;
+            s_loc = zmqol_dog_home_point( ai );
+            ai forceteleport( s_loc.origin, ai.angles );
+            zmqol_dog_reassert( ai );
+            println( "[zm_qol] hellhounds: STRANDED DOG rescued to a spawn point" );
+        }
+    }
+}
+
+//  Nearest ground zombie spawn location to a dog, so a rescue drops it back into
+//  the fight rather than across the map. Falls back to the snapshot, then the
+//  map's dog structs, then the spawner itself.
+zmqol_dog_home_point( ai )
+{
+    best  = undefined;
+    //  🛑 NOT 9999999999 - a GSC int literal is parsed with the engine's stoi(),
+    //  and anything above INT_MAX (2147483647) throws "stoi argument out of
+    //  range", which is a fatal COM_ERROR at script load. This is the largest
+    //  valid int, and distancesquared() is clamped well below it in practice.
+    bestd = 2147483647;
+
+    if ( isdefined( level.zombie_spawn_locations ) )
+    {
+        for ( i = 0; i < level.zombie_spawn_locations.size; i++ )
+        {
+            s = level.zombie_spawn_locations[i];
+
+            if ( !isdefined( s ) || !isdefined( s.origin ) )
+                continue;
+
+            d = distancesquared( ai.origin, s.origin );
+
+            if ( d < bestd )
+            {
+                bestd = d;
+                best  = s;
+            }
+        }
+    }
+
+    if ( isdefined( best ) )
+        return best;
+
+    if ( isdefined( level.zmqol_dog_locs ) && level.zmqol_dog_locs.size > 0 )
+        return level.zmqol_dog_locs[randomint( level.zmqol_dog_locs.size )];
+
+    if ( isdefined( level.enemy_dog_locations ) && level.enemy_dog_locations.size > 0 )
+        return level.enemy_dog_locations[randomint( level.enemy_dog_locations.size )];
+
+    return level.dog_spawners[0];
+}
+
+//  The tail of stock's dog_spawn_fx(), in stock's order, used by every rescue.
+zmqol_dog_reassert( ai )
+{
+    if ( isdefined( ai.magic_bullet_shield ) && ai.magic_bullet_shield == 1 )
+        ai maps\mp\zombies\_zm_utility::stop_magic_bullet_shield();
+
+    ai show();
+    ai setfreecameralockonallowed( 1 );
+    ai.ignoreme  = 0;
+    ai.ignoreall = 0;
+    ai notify( "visible" );
 }
 
 // ============================================================================
@@ -792,6 +1320,7 @@ init()
     zmqol_discord_presence();   // mod name on the Discord profile (v2.12.2)
     zmqol_restore_perk_bottles_on_survival();
     zmqol_register_divetonuke_visionset();
+    zmqol_arm_divetonuke_explosion();   // v2.15.53 - PhD dive explodes without a machine
     zmqol_register_vulture_visionset();
     zmqol_register_zombie_blood_visionsets();
     zmqol_dev_commands();
@@ -1007,9 +1536,10 @@ init()
     level thread nofog_onplayerconnect();
 
     // --- noperklimit ---
-    //  v1.99.26 - 0 = as many as this map offers (the behaviour since v1.55.4).
+    //  v2.15.50 - default 4 = the vanilla limit. 0 still means "as many as this
+    //  map offers" and is the lobby row's MAP MAX choice, now opt-in.
     //  Set from the pre-game lobby's PERK LIMIT row; read in remove_perk_limit().
-    create_dvar( "perk_limit", 0 );
+    create_dvar( "perk_limit", 4 );
     level thread remove_perk_limit();
     level thread perklimit_onplayerconnect();
 
@@ -4889,20 +5419,19 @@ remove_perk_limit()
     if ( isdefined( a_perks ) && a_perks.size > n_limit )
         n_limit = a_perks.size;
 
-    //  v1.99.26 - PERK LIMIT is now choosable from the pre-game lobby, user
-    //  request 2026-08-17.
+    //  v2.15.50 - PERK LIMIT is choosable from the pre-game lobby and defaults
+    //  to 4, the vanilla limit (user, 2026-09-14). Older builds ran MAP MAX by
+    //  default; that is now the opt-in first choice, value 0.
     //
-    //  🛑 0 MEANS "AS MANY AS THIS MAP OFFERS" AND IS THE DEFAULT, so the
-    //  behaviour above - and every bug fixed in the long comment above it - is
-    //  exactly unchanged unless somebody deliberately picks a number. Two
-    //  separate in-game bugs came from this value being wrong; a new option must
-    //  not become a third.
+    //  🛑 0 MEANS "AS MANY AS THIS MAP OFFERS". It is still supported exactly as
+    //  before - the long comment above is the record of the two in-game bugs
+    //  caused by a wrong number, and none of that logic changed.
     //
     //  📝 A chosen limit is NOT clamped up to 12. Picking 4 is the whole point of
     //  the option - it is how you play stock rules - so it is honoured as given.
     //  It IS clamped down to the derived maximum, because offering more slots
     //  than the map has perks would just be a number that can never be reached.
-    n_choice = getdvarintdefault( "perk_limit", 0 );
+    n_choice = getdvarintdefault( "perk_limit", 4 );
 
     if ( n_choice > 0 )
     {
@@ -5943,6 +6472,7 @@ zmqol_console_command_names()
     a[a.size] = "fog";          a[a.size] = "night";        a[a.size] = "nightmode";
     a[a.size] = "pack";         a[a.size] = "unpack";       a[a.size] = "reload";
     a[a.size] = "infammo";      a[a.size] = "infiniteammo";
+    a[a.size] = "bclip";        a[a.size] = "bottomlessclip";
     a[a.size] = "infsprint";    a[a.size] = "infinitesprint";
     a[a.size] = "giveperks";    a[a.size] = "removeperks";  a[a.size] = "nozmspawns";
     a[a.size] = "powerup";      a[a.size] = "powerups";     a[a.size] = "drop";
@@ -6584,7 +7114,7 @@ zmqol_dev_command_listener()
                 player iprintln( "^2[zm_qol] fly ON ^7- WASD to move, JUMP up, STANCE down, SPRINT boost" );
             }
         }
-        else if ( cmd == "infiniteammo" || cmd == "infammo" )
+        else if ( cmd == "bottomlessclip" || cmd == "bclip" )
         {
             //  🛑 v1.97.0 - THE DVAR IS WRITTEN BACK, AND WITHOUT THIS LINE THE
             //  COMMAND CANNOT WORK AT ALL.
@@ -6595,7 +7125,7 @@ zmqol_dev_command_listener()
             //  "infinite ammo OFF".
             //
             //  🌟 THE MECHANISM, EXACTLY. zmqol_toggle_dvar_watch() polls
-            //  `infinite_ammo` every 0.25s and drives self.zmqol_infammo from
+            //  `bottomless_clip` every 0.25s and drives self.zmqol_bclip from
             //  it. This branch set the FIELD and never the DVAR, so the very
             //  next poll saw want=0, is=1, and switched it straight back off -
             //  printing the OFF line the user photographed. The menu row was
@@ -6609,6 +7139,27 @@ zmqol_dev_command_listener()
             //  📝 The dvar is global while the field is per-player, so in co-op
             //  this turns it on for everyone - the same contract .god and
             //  .ghost already have, and this mod is a private-match mod.
+            if ( isdefined( player.zmqol_bclip ) && player.zmqol_bclip )
+            {
+                player.zmqol_bclip = 0;
+                player notify( "zmqol_bclip_off" );
+                setdvar( "bottomless_clip", "0" );
+                player iprintln( "^1[zm_qol] bottomless clip OFF" );
+            }
+            else
+            {
+                player.zmqol_bclip = 1;
+                player thread zmqol_bottomless_clip_think();
+                setdvar( "bottomless_clip", "1" );
+                player iprintln( "^2[zm_qol] bottomless clip ON ^7- you never reload" );
+            }
+        }
+        else if ( cmd == "infiniteammo" || cmd == "infammo" )
+        {
+            //  v2.15.53 - the reserves-only half of the old .infammo. See the
+            //  note above zmqol_infinite_ammo_think() for why the two are
+            //  separate commands now. Same write-the-dvar-back rule as every
+            //  other toggle here.
             if ( isdefined( player.zmqol_infammo ) && player.zmqol_infammo )
             {
                 player.zmqol_infammo = 0;
@@ -6621,7 +7172,7 @@ zmqol_dev_command_listener()
                 player.zmqol_infammo = 1;
                 player thread zmqol_infinite_ammo_think();
                 setdvar( "infinite_ammo", "1" );
-                player iprintln( "^2[zm_qol] infinite ammo ON" );
+                player iprintln( "^2[zm_qol] infinite ammo ON ^7- reserves never empty, you still reload" );
             }
         }
         else if ( cmd == "thundergun" || cmd == "zeus" )
@@ -6749,8 +7300,8 @@ zmqol_dev_command_listener()
         else if ( cmd == "infinitesprint" || cmd == "infsprint" )
         {
             //  v1.97.0 - writes `infinite_sprint` back, same fix and the same
-            //  reason as .infammo directly above. It had the identical defect
-            //  and would have been the next command reported.
+            //  reason as .infammo / .bclip further up this listener. It had the
+            //  identical defect and would have been the next command reported.
             if ( isdefined( player.zmqol_infsprint ) && player.zmqol_infsprint )
             {
                 player.zmqol_infsprint = 0;
@@ -7958,7 +8509,7 @@ zmqol_help_lines()
     a_lines[a_lines.size] = "^3.give <weapon> [pap] ^7any gun on this map   ^3.give list ^7show/hide";
     a_lines[a_lines.size] = "^3.brutus^7/^3.panzer^7/^3.jumpingjacks ^7(amount) ^8- Mob / Origins / Die Rise";
     a_lines[a_lines.size] = "^3.machines ^7drop every remaining machine ^8- Nuketown";
-    a_lines[a_lines.size] = "^3.infammo ^7never run dry   ^3.infsprint ^7never tire   ^3.reload ^7refill";
+    a_lines[a_lines.size] = "^3.infammo ^7reserves   ^3.bclip ^7never reload   ^3.infsprint ^7never tire   ^3.reload ^7refill";
     //  v2.13.0 - .character folded onto this line rather than given its own,
     //  for the line budget noted above. It is the ONE command a non-host player
     //  needs to know exists, because the menu row cannot reach the server for
@@ -8371,6 +8922,28 @@ zmqol_fill_all_ammo()
     }
 }
 
+//  v2.15.53 - the same sweep as zmqol_fill_all_ammo() with every clip call
+//  removed, for INFINITE AMMO. givemaxammo() tops up the RESERVE and leaves the
+//  magazine alone, which is precisely stock Max Ammo's behaviour, so the reload
+//  the player asked to keep still plays - it just always has stock to draw from.
+zmqol_fill_all_reserves()
+{
+    a_weapons = self getweaponslist( 1 );
+
+    if ( !isdefined( a_weapons ) )
+        return;
+
+    foreach ( str_weapon in a_weapons )
+    {
+        self givemaxammo( str_weapon );
+
+        str_alt = weaponaltweaponname( str_weapon );
+
+        if ( isdefined( str_alt ) && str_alt != "none" )
+            self givemaxammo( str_alt );
+    }
+}
+
 //  Infinite sprint, for .infsprint / .infinitesprint.
 //
 //  specialty_unlimitedsprint is the engine's own "the sprint meter never empties"
@@ -8398,14 +8971,38 @@ zmqol_infinite_sprint_think()
     }
 }
 
-zmqol_infinite_ammo_think()
+// ============================================================================
+//  BOTTOMLESS CLIP vs INFINITE AMMO - TWO CHEATS, NOT ONE
+//
+//  User request 2026-09-14: *"keep the infinite ammo option that's just like
+//  bottomless clip basically, so rename that to bottomless clip... and then make
+//  a separate [row] called infinite ammo where you still have to reload, but
+//  your reserves are infinite, and so they're separated."*
+//
+//  🌟 THE SPLIT IS THE ENGINE'S OWN, AND IT COSTS NOTHING TO HONOUR. A T6 weapon
+//  carries two counters: the CLIP (what is in the gun) and the STOCK (the
+//  reserve). givemaxammo() fills only the stock - that is why grabbing a stock
+//  Max Ammo drop never tops up the magazine you are holding - and
+//  setweaponammoclip() is the separate call that fills the clip. The old single
+//  cheat did both, so the magazine was never observed empty and the reload never
+//  played. Dropping the clip call is therefore the whole of INFINITE AMMO:
+//
+//      BOTTOMLESS CLIP  stock + clip  ->  you never reload
+//      INFINITE AMMO    stock only    ->  you reload normally, forever
+//
+//  🛑 THEY ARE INDEPENDENT, AND BOTTOMLESS CLIP WINS WHEN BOTH ARE ON. Each has
+//  its own dvar, field, notify and thread, so neither can switch the other off.
+//  With both armed the clip refill simply happens as well, which is bottomless
+//  clip's behaviour - a superset, not a conflict, so no interlock is needed.
+// ============================================================================
+zmqol_bottomless_clip_think()
 {
     self endon( "disconnect" );
-    self endon( "zmqol_infammo_off" );
+    self endon( "zmqol_bclip_off" );
     level endon( "game_ended" );
 
     // The half-second sweep keeps stock, alt weapons and equipment topped up.
-    self thread zmqol_infinite_ammo_on_fire();
+    self thread zmqol_bottomless_clip_on_fire();
 
     for ( ;; )
     {
@@ -8414,8 +9011,26 @@ zmqol_infinite_ammo_think()
     }
 }
 
+//  Reserves only. No setweaponammoclip anywhere on this path and no
+//  "weapon_fired" subscriber either: the point of this cheat is that the reload
+//  still happens, so there is no 1-round-magazine race to win here - the sweep
+//  refills the stock the reload will draw from, and a half-second poll is far
+//  faster than any reload animation.
+zmqol_infinite_ammo_think()
+{
+    self endon( "disconnect" );
+    self endon( "zmqol_infammo_off" );
+    level endon( "game_ended" );
+
+    for ( ;; )
+    {
+        self zmqol_fill_all_reserves();
+        wait 0.5;
+    }
+}
+
 // ============================================================================
-//  zmqol_infinite_ammo_on_fire  -  🛑 A HALF-SECOND SWEEP CANNOT BEAT A 1-ROUND
+//  zmqol_bottomless_clip_on_fire  -  🛑 A HALF-SECOND SWEEP CANNOT BEAT A 1-ROUND
 //  MAGAZINE
 //
 //  User: "it works but sometimes for some weapons with low magazine counts like
@@ -8438,10 +9053,10 @@ zmqol_infinite_ammo_think()
 //  than the poll. When the thing you are correcting is edge-triggered, subscribe
 //  to the edge.
 // ============================================================================
-zmqol_infinite_ammo_on_fire()
+zmqol_bottomless_clip_on_fire()
 {
     self endon( "disconnect" );
-    self endon( "zmqol_infammo_off" );
+    self endon( "zmqol_bclip_off" );
     level endon( "game_ended" );
 
     for ( ;; )
@@ -10444,6 +11059,12 @@ zmqol_toggle_dvar_watch()
     if ( getdvar( "infinite_ammo" ) == "" )
         setdvar( "infinite_ammo", "0" );
 
+    //  v2.15.53 - BOTTOMLESS CLIP's own dvar. `bottomless_clip` appears in
+    //  neither the engine dvar dump nor zmqol_console_command_names(), so it is
+    //  free by the same check the godmode/ghostmode names were cleared by.
+    if ( getdvar( "bottomless_clip" ) == "" )
+        setdvar( "bottomless_clip", "0" );
+
     if ( getdvar( "infinite_sprint" ) == "" )
         setdvar( "infinite_sprint", "0" );
 
@@ -10513,6 +11134,25 @@ zmqol_toggle_dvar_watch()
             self notify( "zmqol_infammo_off" );
             if ( !b_first )
                 self iprintln( "^1[zm_qol] infinite ammo OFF" );
+        }
+
+        //  --- bottomless clip ---
+        b_want = getdvarintdefault( "bottomless_clip", 0 );
+        b_is = isdefined( self.zmqol_bclip ) && self.zmqol_bclip;
+
+        if ( b_want && !b_is )
+        {
+            self.zmqol_bclip = 1;
+            self thread zmqol_bottomless_clip_think();
+            if ( !b_first )
+                self iprintln( "^2[zm_qol] bottomless clip ON" );
+        }
+        else if ( !b_want && b_is )
+        {
+            self.zmqol_bclip = 0;
+            self notify( "zmqol_bclip_off" );
+            if ( !b_first )
+                self iprintln( "^1[zm_qol] bottomless clip OFF" );
         }
 
         //  --- infinite sprint ---
@@ -11787,6 +12427,44 @@ zmqol_stranded_zombie_probe()
             //  middle of a normal game. println() still reaches console_zm.log,
             //  which is where it gets read from anyway.
             println( "[zm_qol] STRANDED ZOMBIE stuck at " + str_at + " | spawn_point " + str_spawn );
+
+            //  2026-09-14 - AND NOW IT RESCUES. User, Power Station: one stuck
+            //  zombie held the round for minutes - "i had to wait like minutes
+            //  and then it eventually bled out". This is the same relocation the
+            //  no_bleedout rescue already uses (forceteleport to a live spawn
+            //  location near the players), applied the moment the probe says the
+            //  zombie is not making progress, instead of waiting out stock's
+            //  ~62 s assure_node cycle first. Gated on the same dvars, so
+            //  no_bleedout 0 keeps stock behaviour untouched, and skipped when a
+            //  player is within melee range - a zombie that is fighting is not
+            //  stuck.
+            if ( getdvarintdefault( "no_bleedout", 0 ) )
+            {
+                b_engaged = 0;
+                a_players = get_players();
+
+                foreach ( e_player in a_players )
+                {
+                    if ( distancesquared( ai.origin, e_player.origin ) < 4096 )
+                    {
+                        b_engaged = 1;
+                        break;
+                    }
+                }
+
+                if ( !b_engaged && getdvarintdefault( "no_bleedout_relocate", 1 ) && ai zmqol_no_bleedout_can_relocate() )
+                {
+                    if ( ai zmqol_relocate_zombie( 1 ) )
+                    {
+                        println( "[zm_qol] STRANDED ZOMBIE rescued - moved to a live spawn location" );
+
+                        //  Re-arm, so a zombie that lands somewhere bad is caught
+                        //  again 15 s later instead of the round stalling again.
+                        ai.zmqol_probe_org = ai.origin;
+                        ai.zmqol_probe_ticks = 0;
+                    }
+                }
+            }
         }
     }
 }
@@ -12482,6 +13160,62 @@ zmqol_register_divetonuke_visionset()
     //  via its own compiled copies where they win), the native registration is
     //  preserved by the name-dedup guards, so stock maps keep stock widths.
     maps\mp\_visionset_mgr::vsmgr_register_info( "visionset", "zm_perk_divetonuke", 9000, 400, 1, 1 );
+}
+
+// ============================================================================
+//  zmqol_arm_divetonuke_explosion  -  🛑 HOLDING PhD IS NOT ENOUGH. THE DIVE
+//  ONLY EXPLODES IF A PERK MACHINE HAPPENED TO ARM IT.
+//
+//  User, 2026-09-14: *"i have phd flopper and i just flopped ... and for some
+//  reason it didn't like explode"*.
+//
+//  🌟 THE POINTER IS THE WHOLE BUG, AND IT IS ONE ASSIGNMENT IN STOCK. The dive
+//  handler in stock _zm player code calls level.zombiemode_divetonuke_perk_func
+//  and does nothing at all when it is undefined - no error, no fx, exactly the
+//  silent flop reported. That pointer is assigned in ONE place,
+//  _zm_perk_divetonuke::init_divetonuke(), and the ONLY caller of init_divetonuke
+//  is divetonuke_perk_machine_think(). So the explosion is armed as a SIDE EFFECT
+//  of a PhD vending machine being processed, and never at all otherwise.
+//
+//  That is fine on a stock map where you can only get PhD by drinking at its
+//  machine. It is wrong everywhere this mod hands PhD out by another route:
+//  Wunderfizz (wunderfizz.gsc offers PhD on four maps), `.give phd`, GIVE PERKS,
+//  and every survival location that has no PhD machine to process. In all of
+//  those you hold specialty_flakjacket, you take the fall damage immunity - that
+//  part is a specialty and works - and the dive does nothing.
+//
+//  🛑 THE THREE ZOMBIE VARS AND THE FX ARE NOT OPTIONAL EXTRAS. divetonuke_explode
+//  reads level.zombie_vars["zombie_perk_divetonuke_radius"/min/max] and plays
+//  level._effect["divetonuke_groundhit"]. init_divetonuke sets all four next to
+//  the pointer, so arming the pointer without them would trade a silent flop for
+//  an undefined-array error on the first dive. All four move together or not at
+//  all.
+//
+//  📝 SAFE TO RUN TWICE. If a PhD machine does get processed later,
+//  init_divetonuke() re-assigns the same pointer, re-sets the same three vars and
+//  re-loads the same fx handle - all idempotent. The visionset it also registers
+//  is the one thing that is not, and that is already guarded by the name-dedup in
+//  zmqol_register_divetonuke_visionset() above.
+//
+//  Same five maps as the visionset twin, for the same reason: those are the maps
+//  perks() calls enable_divetonuke_perk_for_level() on. Origins is excluded there
+//  and stays excluded here - it arms its own via zm_tomb.
+// ============================================================================
+zmqol_arm_divetonuke_explosion()
+{
+    map = getDvar( "mapname" );
+
+    if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && map != "zm_prison" && map != "zm_buried" )
+        return;
+
+    level.zombiemode_divetonuke_perk_func = maps\mp\zombies\_zm_perk_divetonuke::divetonuke_explode;
+
+    set_zombie_var( "zombie_perk_divetonuke_radius", 300 );
+    set_zombie_var( "zombie_perk_divetonuke_min_damage", 1000 );
+    set_zombie_var( "zombie_perk_divetonuke_max_damage", 5000 );
+
+    if ( !isdefined( level._effect ) || !isdefined( level._effect["divetonuke_groundhit"] ) )
+        level._effect["divetonuke_groundhit"] = loadfx( "maps/zombie/fx_zmb_phdflopper_exp" );
 }
 
 // ============================================================================

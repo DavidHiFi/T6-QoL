@@ -208,6 +208,29 @@ float3 DecodeNormal(float3 v)
 // Hands, feet, legs and the attached head/eyes are outside it and do not
 // move. Zero amount = zero offset, so an actor that never swells renders
 // exactly as retail.
+//
+// 🛑 v2.16.2 - THE CENTRE IS EYE-RELATIVE. DO NOT "FIX" THIS TO WORLD SPACE.
+// v2.16.1 tried exactly that and it cost the user a boot. The reasoning was
+// sound - the wobble comes from comparing `wp`, which is rebuilt EVERY FRAME,
+// against a centre the client ramp only resends every 50 ms, so player
+// movement slid the ball across the body between updates. The fix attempted
+// was to reconstruct absolute world position with
+//     wp + inverseViewMatrix[3].xyz
+// so the eye would cancel. MEASURED IN GAME 2026-09-14: zombies stopped
+// inflating entirely. That row is not the camera position on this engine -
+// T6 stores these matrices transposed relative to this file's row-vector
+// mul(v, M) usage, so the translation is not in row 3 - and the centre landed
+// far enough away that every weight saturated to zero. The failure is silent
+// and total, exactly as predicted, which is the only reason it was cheap to
+// diagnose.
+//
+// 🌟 So the space stays eye-relative, the way v2.15.51 had it working, and
+// the staleness is attacked where it is actually cheap and safe: the client
+// ramp now resends the centre every frame instead of every 50 ms (zapgun.csc),
+// which cuts the lag to a single frame of player movement. If the residual
+// wobble ever needs to go to zero, the right move is to send the eye position
+// in its own mapped shader constant from script - NOT to guess at a matrix
+// row again.
 float3 SwellOffset(float3 wp, float3 n)
 {
     float amt = scriptVector3.x;
