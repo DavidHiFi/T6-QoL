@@ -1464,7 +1464,7 @@ CoD.OptionsSettings.QolNoArchive = {
 	godmode = true,
 	ghostmode = true,
 	infinite_ammo = true,
-	-- v2.15.52 - BOTTOMLESS CLIP, split out of INFINITE AMMO. Per-match state
+	-- v2.15.53 - BOTTOMLESS CLIP, split out of INFINITE AMMO. Per-match state
 	-- like every other row on this tab, so it is kept out of the archive too.
 	bottomless_clip = true,
 	infinite_sprint = true,
@@ -2378,11 +2378,11 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	-- mod's CHAT-COMMAND dvar channel, which blanks them the moment they are
 	-- written - so the v1.94.0 rows switched themselves straight back off. See
 	-- the long note in zmqol_toggle_dvar_watch() in quality_of_life.gsc.
-	--                                                 8 rows (v2.15.52: was 7)
+	--                                                 8 rows (v2.15.53: was 7)
 	T(QolCheatsButtons, LocalClientIndex, "GOD MODE",        "godmode",        "You cannot be damaged.")
 	T(QolCheatsButtons, LocalClientIndex, "GHOST",           "ghostmode",      "Zombies ignore you.")
 	-- ========================================================================
-	--  v2.15.52 - TWO ROWS, NOT ONE. User request 2026-09-14: the old INFINITE
+	--  v2.15.53 - TWO ROWS, NOT ONE. User request 2026-09-14: the old INFINITE
 	--  AMMO refilled the magazine as well as the reserve, so the reload never
 	--  played - that behaviour is BOTTOMLESS CLIP and keeps its own row. The new
 	--  INFINITE AMMO fills only the reserve, which is what stock Max Ammo does,
@@ -2557,7 +2557,7 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	-- v2.8.2 - ONE SHOT ONE KILL added to the always-present block.
 	-- v2.10.4 - Nuketown got its landmark list, so the pair is on all six maps
 	-- now and the row count is the same everywhere.
-	-- v2.15.52 - BOTTOMLESS CLIP split out of INFINITE AMMO: one more row.
+	-- v2.15.53 - BOTTOMLESS CLIP split out of INFINITE AMMO: one more row.
 	return QolCheatsContainer                        -- 15 total, on every map
 end
 

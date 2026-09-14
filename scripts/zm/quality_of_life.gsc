@@ -792,7 +792,7 @@ init()
     zmqol_discord_presence();   // mod name on the Discord profile (v2.12.2)
     zmqol_restore_perk_bottles_on_survival();
     zmqol_register_divetonuke_visionset();
-    zmqol_arm_divetonuke_explosion();   // v2.15.52 - PhD dive explodes without a machine
+    zmqol_arm_divetonuke_explosion();   // v2.15.53 - PhD dive explodes without a machine
     zmqol_register_vulture_visionset();
     zmqol_register_zombie_blood_visionsets();
     zmqol_dev_commands();
@@ -6628,7 +6628,7 @@ zmqol_dev_command_listener()
         }
         else if ( cmd == "infiniteammo" || cmd == "infammo" )
         {
-            //  v2.15.52 - the reserves-only half of the old .infammo. See the
+            //  v2.15.53 - the reserves-only half of the old .infammo. See the
             //  note above zmqol_infinite_ammo_think() for why the two are
             //  separate commands now. Same write-the-dvar-back rule as every
             //  other toggle here.
@@ -8394,7 +8394,7 @@ zmqol_fill_all_ammo()
     }
 }
 
-//  v2.15.52 - the same sweep as zmqol_fill_all_ammo() with every clip call
+//  v2.15.53 - the same sweep as zmqol_fill_all_ammo() with every clip call
 //  removed, for INFINITE AMMO. givemaxammo() tops up the RESERVE and leaves the
 //  magazine alone, which is precisely stock Max Ammo's behaviour, so the reload
 //  the player asked to keep still plays - it just always has stock to draw from.
@@ -10531,7 +10531,7 @@ zmqol_toggle_dvar_watch()
     if ( getdvar( "infinite_ammo" ) == "" )
         setdvar( "infinite_ammo", "0" );
 
-    //  v2.15.52 - BOTTOMLESS CLIP's own dvar. `bottomless_clip` appears in
+    //  v2.15.53 - BOTTOMLESS CLIP's own dvar. `bottomless_clip` appears in
     //  neither the engine dvar dump nor zmqol_console_command_names(), so it is
     //  free by the same check the godmode/ghostmode names were cleared by.
     if ( getdvar( "bottomless_clip" ) == "" )
