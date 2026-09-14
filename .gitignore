@@ -188,6 +188,14 @@ installer/Mod Files/mod.all.sabs
 # ============================================================================
 installer/Mod Files/reshade/reshade-shaders/
 
+# Portable installer build intermediates. The release executable itself is
+# tracked under installer/ so a release checkout is ready to run.
+installer-app/bin/
+installer-app/obj/
+portable-build/
+installer/*_cor3.dll
+installer/QualityOfLifeSeries.pdb
+
 # ============================================================================
 #  Desktop shortcuts (.lnk) are machine-local, not source.
 #

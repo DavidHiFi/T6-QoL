@@ -5,7 +5,7 @@ Black Ops II Zombies  ·  Plutonium T6
  INSTALL
  ─────────────────────────────────────────────────────────────
 
-   Windows      Double-click   Windows Install.bat
+   Windows      Double-click   QualityOfLifeSeries.exe
 
    Linux        No installer script - Wine/Proton/Lutris/Bottles users
                 install by hand. See "Install by hand" in the README
@@ -14,7 +14,7 @@ Black Ops II Zombies  ·  Plutonium T6
                 then copy the five mod.* files from "Mod Files"
                 into it.
 
-   Then pick what you want from the menu. That is the whole thing.
+   Then pick what you want in the app. That is the whole thing.
 
 
  BEFORE YOU START
@@ -24,17 +24,15 @@ Black Ops II Zombies  ·  Plutonium T6
 
    ·  Close Plutonium while you install, or files cannot be replaced.
 
-   ·  Windows 10 and 11 are ready as they are. The menu is drawn by
-      PowerShell 5.1, which those already include - there is nothing
-      for you to download. On older Windows, install Windows
-      Management Framework 5.1 first.
+   ·  Windows 10 and 11 are ready as they are. The app is portable and
+      includes its runtime. It does not need PowerShell or an installer.
 
 
  GOOD TO KNOW
  ─────────────────────────────────────────────────────────────
 
    ·  You never need to open anything in the "Mod Files" folder.
-      Windows Install.bat does all of it for you.
+      QualityOfLifeSeries.exe does all of it for you.
 
    ·  START MENU SHORTCUTS are an option in the menu. Pick it and
       you get two entries you can reach by pressing the Windows
