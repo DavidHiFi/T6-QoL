@@ -1007,9 +1007,10 @@ init()
     level thread nofog_onplayerconnect();
 
     // --- noperklimit ---
-    //  v1.99.26 - 0 = as many as this map offers (the behaviour since v1.55.4).
+    //  v2.15.50 - default 4 = the vanilla limit. 0 still means "as many as this
+    //  map offers" and is the lobby row's MAP MAX choice, now opt-in.
     //  Set from the pre-game lobby's PERK LIMIT row; read in remove_perk_limit().
-    create_dvar( "perk_limit", 0 );
+    create_dvar( "perk_limit", 4 );
     level thread remove_perk_limit();
     level thread perklimit_onplayerconnect();
 
@@ -4889,20 +4890,19 @@ remove_perk_limit()
     if ( isdefined( a_perks ) && a_perks.size > n_limit )
         n_limit = a_perks.size;
 
-    //  v1.99.26 - PERK LIMIT is now choosable from the pre-game lobby, user
-    //  request 2026-08-17.
+    //  v2.15.50 - PERK LIMIT is choosable from the pre-game lobby and defaults
+    //  to 4, the vanilla limit (user, 2026-09-14). Older builds ran MAP MAX by
+    //  default; that is now the opt-in first choice, value 0.
     //
-    //  🛑 0 MEANS "AS MANY AS THIS MAP OFFERS" AND IS THE DEFAULT, so the
-    //  behaviour above - and every bug fixed in the long comment above it - is
-    //  exactly unchanged unless somebody deliberately picks a number. Two
-    //  separate in-game bugs came from this value being wrong; a new option must
-    //  not become a third.
+    //  🛑 0 MEANS "AS MANY AS THIS MAP OFFERS". It is still supported exactly as
+    //  before - the long comment above is the record of the two in-game bugs
+    //  caused by a wrong number, and none of that logic changed.
     //
     //  📝 A chosen limit is NOT clamped up to 12. Picking 4 is the whole point of
     //  the option - it is how you play stock rules - so it is honoured as given.
     //  It IS clamped down to the derived maximum, because offering more slots
     //  than the map has perks would just be a number that can never be reached.
-    n_choice = getdvarintdefault( "perk_limit", 0 );
+    n_choice = getdvarintdefault( "perk_limit", 4 );
 
     if ( n_choice > 0 )
     {
@@ -5943,6 +5943,7 @@ zmqol_console_command_names()
     a[a.size] = "fog";          a[a.size] = "night";        a[a.size] = "nightmode";
     a[a.size] = "pack";         a[a.size] = "unpack";       a[a.size] = "reload";
     a[a.size] = "infammo";      a[a.size] = "infiniteammo";
+    a[a.size] = "bclip";        a[a.size] = "bottomlessclip";
     a[a.size] = "infsprint";    a[a.size] = "infinitesprint";
     a[a.size] = "giveperks";    a[a.size] = "removeperks";  a[a.size] = "nozmspawns";
     a[a.size] = "powerup";      a[a.size] = "powerups";     a[a.size] = "drop";
@@ -6584,7 +6585,7 @@ zmqol_dev_command_listener()
                 player iprintln( "^2[zm_qol] fly ON ^7- WASD to move, JUMP up, STANCE down, SPRINT boost" );
             }
         }
-        else if ( cmd == "infiniteammo" || cmd == "infammo" )
+        else if ( cmd == "bottomlessclip" || cmd == "bclip" )
         {
             //  🛑 v1.97.0 - THE DVAR IS WRITTEN BACK, AND WITHOUT THIS LINE THE
             //  COMMAND CANNOT WORK AT ALL.
@@ -6595,7 +6596,7 @@ zmqol_dev_command_listener()
             //  "infinite ammo OFF".
             //
             //  🌟 THE MECHANISM, EXACTLY. zmqol_toggle_dvar_watch() polls
-            //  `infinite_ammo` every 0.25s and drives self.zmqol_infammo from
+            //  `bottomless_clip` every 0.25s and drives self.zmqol_bclip from
             //  it. This branch set the FIELD and never the DVAR, so the very
             //  next poll saw want=0, is=1, and switched it straight back off -
             //  printing the OFF line the user photographed. The menu row was
@@ -6609,6 +6610,27 @@ zmqol_dev_command_listener()
             //  📝 The dvar is global while the field is per-player, so in co-op
             //  this turns it on for everyone - the same contract .god and
             //  .ghost already have, and this mod is a private-match mod.
+            if ( isdefined( player.zmqol_bclip ) && player.zmqol_bclip )
+            {
+                player.zmqol_bclip = 0;
+                player notify( "zmqol_bclip_off" );
+                setdvar( "bottomless_clip", "0" );
+                player iprintln( "^1[zm_qol] bottomless clip OFF" );
+            }
+            else
+            {
+                player.zmqol_bclip = 1;
+                player thread zmqol_bottomless_clip_think();
+                setdvar( "bottomless_clip", "1" );
+                player iprintln( "^2[zm_qol] bottomless clip ON ^7- you never reload" );
+            }
+        }
+        else if ( cmd == "infiniteammo" || cmd == "infammo" )
+        {
+            //  v2.15.52 - the reserves-only half of the old .infammo. See the
+            //  note above zmqol_infinite_ammo_think() for why the two are
+            //  separate commands now. Same write-the-dvar-back rule as every
+            //  other toggle here.
             if ( isdefined( player.zmqol_infammo ) && player.zmqol_infammo )
             {
                 player.zmqol_infammo = 0;
@@ -6621,7 +6643,7 @@ zmqol_dev_command_listener()
                 player.zmqol_infammo = 1;
                 player thread zmqol_infinite_ammo_think();
                 setdvar( "infinite_ammo", "1" );
-                player iprintln( "^2[zm_qol] infinite ammo ON" );
+                player iprintln( "^2[zm_qol] infinite ammo ON ^7- reserves never empty, you still reload" );
             }
         }
         else if ( cmd == "thundergun" || cmd == "zeus" )
@@ -6749,8 +6771,8 @@ zmqol_dev_command_listener()
         else if ( cmd == "infinitesprint" || cmd == "infsprint" )
         {
             //  v1.97.0 - writes `infinite_sprint` back, same fix and the same
-            //  reason as .infammo directly above. It had the identical defect
-            //  and would have been the next command reported.
+            //  reason as .infammo / .bclip further up this listener. It had the
+            //  identical defect and would have been the next command reported.
             if ( isdefined( player.zmqol_infsprint ) && player.zmqol_infsprint )
             {
                 player.zmqol_infsprint = 0;
@@ -7958,7 +7980,7 @@ zmqol_help_lines()
     a_lines[a_lines.size] = "^3.give <weapon> [pap] ^7any gun on this map   ^3.give list ^7show/hide";
     a_lines[a_lines.size] = "^3.brutus^7/^3.panzer^7/^3.jumpingjacks ^7(amount) ^8- Mob / Origins / Die Rise";
     a_lines[a_lines.size] = "^3.machines ^7drop every remaining machine ^8- Nuketown";
-    a_lines[a_lines.size] = "^3.infammo ^7never run dry   ^3.infsprint ^7never tire   ^3.reload ^7refill";
+    a_lines[a_lines.size] = "^3.infammo ^7reserves   ^3.bclip ^7never reload   ^3.infsprint ^7never tire   ^3.reload ^7refill";
     //  v2.13.0 - .character folded onto this line rather than given its own,
     //  for the line budget noted above. It is the ONE command a non-host player
     //  needs to know exists, because the menu row cannot reach the server for
@@ -8371,6 +8393,28 @@ zmqol_fill_all_ammo()
     }
 }
 
+//  v2.15.52 - the same sweep as zmqol_fill_all_ammo() with every clip call
+//  removed, for INFINITE AMMO. givemaxammo() tops up the RESERVE and leaves the
+//  magazine alone, which is precisely stock Max Ammo's behaviour, so the reload
+//  the player asked to keep still plays - it just always has stock to draw from.
+zmqol_fill_all_reserves()
+{
+    a_weapons = self getweaponslist( 1 );
+
+    if ( !isdefined( a_weapons ) )
+        return;
+
+    foreach ( str_weapon in a_weapons )
+    {
+        self givemaxammo( str_weapon );
+
+        str_alt = weaponaltweaponname( str_weapon );
+
+        if ( isdefined( str_alt ) && str_alt != "none" )
+            self givemaxammo( str_alt );
+    }
+}
+
 //  Infinite sprint, for .infsprint / .infinitesprint.
 //
 //  specialty_unlimitedsprint is the engine's own "the sprint meter never empties"
@@ -8398,14 +8442,38 @@ zmqol_infinite_sprint_think()
     }
 }
 
-zmqol_infinite_ammo_think()
+// ============================================================================
+//  BOTTOMLESS CLIP vs INFINITE AMMO - TWO CHEATS, NOT ONE
+//
+//  User request 2026-09-14: *"keep the infinite ammo option that's just like
+//  bottomless clip basically, so rename that to bottomless clip... and then make
+//  a separate [row] called infinite ammo where you still have to reload, but
+//  your reserves are infinite, and so they're separated."*
+//
+//  🌟 THE SPLIT IS THE ENGINE'S OWN, AND IT COSTS NOTHING TO HONOUR. A T6 weapon
+//  carries two counters: the CLIP (what is in the gun) and the STOCK (the
+//  reserve). givemaxammo() fills only the stock - that is why grabbing a stock
+//  Max Ammo drop never tops up the magazine you are holding - and
+//  setweaponammoclip() is the separate call that fills the clip. The old single
+//  cheat did both, so the magazine was never observed empty and the reload never
+//  played. Dropping the clip call is therefore the whole of INFINITE AMMO:
+//
+//      BOTTOMLESS CLIP  stock + clip  ->  you never reload
+//      INFINITE AMMO    stock only    ->  you reload normally, forever
+//
+//  🛑 THEY ARE INDEPENDENT, AND BOTTOMLESS CLIP WINS WHEN BOTH ARE ON. Each has
+//  its own dvar, field, notify and thread, so neither can switch the other off.
+//  With both armed the clip refill simply happens as well, which is bottomless
+//  clip's behaviour - a superset, not a conflict, so no interlock is needed.
+// ============================================================================
+zmqol_bottomless_clip_think()
 {
     self endon( "disconnect" );
-    self endon( "zmqol_infammo_off" );
+    self endon( "zmqol_bclip_off" );
     level endon( "game_ended" );
 
     // The half-second sweep keeps stock, alt weapons and equipment topped up.
-    self thread zmqol_infinite_ammo_on_fire();
+    self thread zmqol_bottomless_clip_on_fire();
 
     for ( ;; )
     {
@@ -8414,8 +8482,26 @@ zmqol_infinite_ammo_think()
     }
 }
 
+//  Reserves only. No setweaponammoclip anywhere on this path and no
+//  "weapon_fired" subscriber either: the point of this cheat is that the reload
+//  still happens, so there is no 1-round-magazine race to win here - the sweep
+//  refills the stock the reload will draw from, and a half-second poll is far
+//  faster than any reload animation.
+zmqol_infinite_ammo_think()
+{
+    self endon( "disconnect" );
+    self endon( "zmqol_infammo_off" );
+    level endon( "game_ended" );
+
+    for ( ;; )
+    {
+        self zmqol_fill_all_reserves();
+        wait 0.5;
+    }
+}
+
 // ============================================================================
-//  zmqol_infinite_ammo_on_fire  -  🛑 A HALF-SECOND SWEEP CANNOT BEAT A 1-ROUND
+//  zmqol_bottomless_clip_on_fire  -  🛑 A HALF-SECOND SWEEP CANNOT BEAT A 1-ROUND
 //  MAGAZINE
 //
 //  User: "it works but sometimes for some weapons with low magazine counts like
@@ -8438,10 +8524,10 @@ zmqol_infinite_ammo_think()
 //  than the poll. When the thing you are correcting is edge-triggered, subscribe
 //  to the edge.
 // ============================================================================
-zmqol_infinite_ammo_on_fire()
+zmqol_bottomless_clip_on_fire()
 {
     self endon( "disconnect" );
-    self endon( "zmqol_infammo_off" );
+    self endon( "zmqol_bclip_off" );
     level endon( "game_ended" );
 
     for ( ;; )
@@ -10444,6 +10530,12 @@ zmqol_toggle_dvar_watch()
     if ( getdvar( "infinite_ammo" ) == "" )
         setdvar( "infinite_ammo", "0" );
 
+    //  v2.15.52 - BOTTOMLESS CLIP's own dvar. `bottomless_clip` appears in
+    //  neither the engine dvar dump nor zmqol_console_command_names(), so it is
+    //  free by the same check the godmode/ghostmode names were cleared by.
+    if ( getdvar( "bottomless_clip" ) == "" )
+        setdvar( "bottomless_clip", "0" );
+
     if ( getdvar( "infinite_sprint" ) == "" )
         setdvar( "infinite_sprint", "0" );
 
@@ -10513,6 +10605,25 @@ zmqol_toggle_dvar_watch()
             self notify( "zmqol_infammo_off" );
             if ( !b_first )
                 self iprintln( "^1[zm_qol] infinite ammo OFF" );
+        }
+
+        //  --- bottomless clip ---
+        b_want = getdvarintdefault( "bottomless_clip", 0 );
+        b_is = isdefined( self.zmqol_bclip ) && self.zmqol_bclip;
+
+        if ( b_want && !b_is )
+        {
+            self.zmqol_bclip = 1;
+            self thread zmqol_bottomless_clip_think();
+            if ( !b_first )
+                self iprintln( "^2[zm_qol] bottomless clip ON" );
+        }
+        else if ( !b_want && b_is )
+        {
+            self.zmqol_bclip = 0;
+            self notify( "zmqol_bclip_off" );
+            if ( !b_first )
+                self iprintln( "^1[zm_qol] bottomless clip OFF" );
         }
 
         //  --- infinite sprint ---
@@ -11787,6 +11898,44 @@ zmqol_stranded_zombie_probe()
             //  middle of a normal game. println() still reaches console_zm.log,
             //  which is where it gets read from anyway.
             println( "[zm_qol] STRANDED ZOMBIE stuck at " + str_at + " | spawn_point " + str_spawn );
+
+            //  2026-09-14 - AND NOW IT RESCUES. User, Power Station: one stuck
+            //  zombie held the round for minutes - "i had to wait like minutes
+            //  and then it eventually bled out". This is the same relocation the
+            //  no_bleedout rescue already uses (forceteleport to a live spawn
+            //  location near the players), applied the moment the probe says the
+            //  zombie is not making progress, instead of waiting out stock's
+            //  ~62 s assure_node cycle first. Gated on the same dvars, so
+            //  no_bleedout 0 keeps stock behaviour untouched, and skipped when a
+            //  player is within melee range - a zombie that is fighting is not
+            //  stuck.
+            if ( getdvarintdefault( "no_bleedout", 0 ) )
+            {
+                b_engaged = 0;
+                a_players = get_players();
+
+                foreach ( e_player in a_players )
+                {
+                    if ( distancesquared( ai.origin, e_player.origin ) < 4096 )
+                    {
+                        b_engaged = 1;
+                        break;
+                    }
+                }
+
+                if ( !b_engaged && getdvarintdefault( "no_bleedout_relocate", 1 ) && ai zmqol_no_bleedout_can_relocate() )
+                {
+                    if ( ai zmqol_relocate_zombie( 1 ) )
+                    {
+                        println( "[zm_qol] STRANDED ZOMBIE rescued - moved to a live spawn location" );
+
+                        //  Re-arm, so a zombie that lands somewhere bad is caught
+                        //  again 15 s later instead of the round stalling again.
+                        ai.zmqol_probe_org = ai.origin;
+                        ai.zmqol_probe_ticks = 0;
+                    }
+                }
+            }
         }
     }
 }
