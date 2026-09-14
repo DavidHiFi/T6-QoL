@@ -1,6 +1,6 @@
 <#
 ================================================================================
-  Quality Of Life (zm_qol) - ReShade watchdog for Plutonium T6
+  Quality of Life Series - ReShade watchdog, shared by every Plutonium game
 
   Added 2026-08-26. Launched by "Play BO2 with ReShade.bat" in this same
   "Mod Files" folder (moved here 2026-09-05), by the Start menu shortcut
@@ -367,7 +367,7 @@ function Save-LiveEdits {
 }
 
 Write-Host ''
-Write-Host '  Quality Of Life - ReShade watchdog' -ForegroundColor Cyan
+Write-Host '  Quality of Life Series - ReShade watchdog' -ForegroundColor Cyan
 Write-Host '  ------------------------------------------------------------------' -ForegroundColor Cyan
 Write-Host '  Leave this window open the whole time you want ReShade to work.' -ForegroundColor Cyan
 Write-Host '  Plutonium clears ReShade out of its own folder every time it starts,' -ForegroundColor Cyan

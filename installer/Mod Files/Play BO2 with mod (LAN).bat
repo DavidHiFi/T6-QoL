@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem  Quality Of Life - one-click LAN launch, mod already loaded
+rem  Quality of Life Series - one-click LAN launch, Black Ops II, mod loaded
 rem
 rem  Added 2026-08-26. Double-click this to boot straight into BO2 Zombies
 rem  with the mod already running - no MODS menu, no manual pick. LAN /
@@ -15,7 +15,7 @@ rem  without it.
 rem ============================================================================
 
 chcp 65001 >nul 2>&1
-title Quality Of Life - LAN launch
+title Quality of Life Series - Black Ops II LAN launch
 cd /d "%~dp0"
 
 set "PS1=%~dp0lan-launch.ps1"

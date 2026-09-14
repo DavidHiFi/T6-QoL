@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem  Quality Of Life - ReShade watchdog launcher
+rem  Quality of Life Series - ReShade watchdog launcher
 rem
 rem  Added 2026-08-26. Double-click this INSTEAD OF opening Plutonium directly
 rem  when you want ReShade active. Leave the window it opens running for as
@@ -16,7 +16,7 @@ rem  will say so.
 rem ============================================================================
 
 chcp 65001 >nul 2>&1
-title Quality Of Life - ReShade watchdog
+title Quality of Life Series - ReShade watchdog
 cd /d "%~dp0"
 
 set "PS1=%~dp0reshade-watchdog.ps1"

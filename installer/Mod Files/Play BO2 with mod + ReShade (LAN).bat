@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem  Quality Of Life - one-click LAN launch, mod + ReShade watchdog
+rem  Quality of Life Series - one-click LAN launch, Black Ops II, mod + ReShade
 rem
 rem  Added 2026-08-26. Same as "Play BO2 with mod (LAN).bat" but also starts
 rem  the ReShade watchdog in its own window first, so ReShade is being
@@ -12,7 +12,7 @@ rem  at least once first ("Windows Install.bat" is one folder up).
 rem ============================================================================
 
 chcp 65001 >nul 2>&1
-title Quality Of Life - LAN launch + ReShade
+title Quality of Life Series - Black Ops II LAN launch + ReShade
 cd /d "%~dp0"
 
 set "PS1=%~dp0lan-launch.ps1"

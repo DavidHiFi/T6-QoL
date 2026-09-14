@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem  Quality Of Life - Black Ops II Zombies mod for Plutonium T6
+rem  Quality of Life Series - the Black Ops II Zombies entry, for Plutonium T6
 rem
 rem  Double-click this file. That is the whole install.
 rem
@@ -10,7 +10,7 @@ rem  nothing is left running afterwards, and no game file is ever touched.
 rem ============================================================================
 
 chcp 65001 >nul 2>&1
-title Quality Of Life - installer
+title Quality of Life Series - Black Ops II
 
 set "PS1=%~dp0Mod Files\qol-installer.ps1"
 

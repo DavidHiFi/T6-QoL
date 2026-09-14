@@ -1,5 +1,8 @@
-QUALITY OF LIFE
+QUALITY OF LIFE SERIES
 Black Ops II Zombies  ·  Plutonium T6
+
+This is the series' Black Ops II entry. World at War, Black Ops and
+Black Ops III get their own downloads, each with this same installer.
 
 
  INSTALL
@@ -40,8 +43,13 @@ Black Ops II Zombies  ·  Plutonium T6
       you get two entries you can reach by pressing the Windows
       key and typing:
 
-          Quality Of Life Mod         opens this installer
-          Plutonium ReShade Watcher   opens the ReShade helper
+          Quality Of Life Mod (Black Ops II)   opens this installer
+          Plutonium ReShade Watcher            opens the ReShade helper
+
+      Both go in one group called "Quality of Life Series", so the
+      other games in the series land beside them rather than adding
+      a folder of their own. The watcher is shared - there is only
+      ever one of it, whichever game you are playing.
 
       They are yours alone - no administrator rights - and the
       uninstall list takes them off again.

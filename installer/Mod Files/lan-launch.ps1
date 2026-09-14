@@ -1,6 +1,7 @@
 <#
 ================================================================================
-  Quality Of Life (zm_qol) - one-click LAN launch, mod already loaded
+  Quality of Life Series - one-click LAN launch for the Black Ops II entry
+  (zm_qol, T6), mod already loaded
 
   Added 2026-08-26. Launched by "Play BO2 with mod (LAN).bat" or
   "Play BO2 with mod + ReShade (LAN).bat" - both sit in this same "Mod
