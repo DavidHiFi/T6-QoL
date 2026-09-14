@@ -180,6 +180,36 @@ CoD.Class.ZmQolFastRestartPressed = function (IngameMenuWidget, ClientInstance)
 end
 
 CoD.Class.ZmQolInstantExitPressed = function (IngameMenuWidget, ClientInstance)
+	-- ========================================================================
+	-- v2.15.37 - leave the way stock leaves, minus the popup and the game-over.
+	--
+	-- The raw `disconnect` this used to be is the command the user asked for and
+	-- it stays the last line. What is new above it is the two things stock's own
+	-- END GAME does before it goes, taken from the patch_zm decompile of
+	-- ui_mp\t6\hud\endgamepopup.lua (CoD.EndGamePopup.YesButtonPressed /
+	-- FinishEndGame):
+	--
+	--   1. `Engine.SetDvar("cl_paused", 0)` on zombies - stock unpauses BEFORE
+	--      leaving. Disconnecting while still paused leaves the client mid-pause
+	--      as the frontend is rebuilt.
+	--   2. `Engine.UpdateStatsForQuit(controller, false)` - stock's stat flush on
+	--      a voluntary quit. Skipping it is why an INSTANT EXIT could lose the
+	--      round's stats where END GAME did not.
+	--
+	-- 🛑 DELIBERATELY NOT close_all_ingame_menus. Stock's popup calls it, but
+	-- v2.15.34 proved that call freezes THIS game when it runs next to a level
+	-- teardown, so the pause menu is left for the disconnect to tear down.
+	--
+	-- 🛡️ Both calls are guarded. A nil Engine function here would take the whole
+	-- pause menu down with it, and losing the pause menu is far worse than losing
+	-- a stat flush - the same reasoning as the CoD.InGameMenu guard below.
+	-- ========================================================================
+	if CoD.isZombie == true and Engine.SetDvar then
+		Engine.SetDvar("cl_paused", 0)
+	end
+	if Engine.UpdateStatsForQuit then
+		Engine.UpdateStatsForQuit(ClientInstance.controller, false)
+	end
 	Engine.Exec(ClientInstance.controller, "disconnect")
 end
 

@@ -187,6 +187,18 @@ disable_zombie_spawn_locations()
 	// this sticks. The probe thread below prints the result 3 s later.
 	zmqol_disable_spawn_location_at( "zone_pow", ( 10010, 7243, -561.3 ) );
 
+	// 2026-09-14 - the two spawn sources that are NOT the arena's own:
+	//   * zone_pri (Bus Depot). The replacement in replaced\zm_transit.gsc gives
+	//     the zone_trans_8 strip a connected edge to the arena so the stock
+	//     initial-zone fallback can no longer reach the Bus Depot - this is the
+	//     second lock on the same door. zone_pri is unreachable from the arena's
+	//     zones, so its dead spots are simply switched off for this location.
+	//   * any spawn location in any of the five arena zones that sits inside a
+	//     lava volume. Measured per spot with the game's own brush test, not an
+	//     origin guess; the sweep prints whatever it disables.
+	zmqol_disable_zone_spawn_locations( "zone_pri" );
+	zmqol_disable_lava_spawn_locations();
+
 	level thread zmqol_log_active_spawn_locations();
 }
 
@@ -211,6 +223,82 @@ zmqol_disable_spawn_location_at( str_zone, v_origin )
 	}
 
 	println( "[zm_qol] POWERSPAWN disable: " + str_zone + " " + v_origin + " -> " + n_hit + " location(s) disabled" );
+}
+
+zmqol_disable_zone_spawn_locations( str_zone )
+{
+	if ( !isdefined( level.zones ) || !isdefined( level.zones[str_zone] ) || !isdefined( level.zones[str_zone].spawn_locations ) )
+	{
+		println( "[zm_qol] POWERSPAWN zone off: " + str_zone + " has no spawn_locations" );
+		return;
+	}
+
+	zone = level.zones[str_zone];
+	n_off = 0;
+
+	for ( i = 0; i < zone.spawn_locations.size; i++ )
+	{
+		if ( isdefined( zone.spawn_locations[i].is_enabled ) && !zone.spawn_locations[i].is_enabled )
+			continue;
+
+		zone.spawn_locations[i].is_enabled = 0;
+		n_off++;
+	}
+
+	println( "[zm_qol] POWERSPAWN zone off: " + str_zone + " -> " + n_off + " location(s) disabled" );
+}
+
+zmqol_disable_lava_spawn_locations()
+{
+	a_volumes = getentarray( "lava_volume", "script_noteworthy" );
+
+	if ( !isdefined( a_volumes ) || a_volumes.size == 0 )
+	{
+		println( "[zm_qol] POWERSPAWN lava sweep: no lava volumes in this map - skipped" );
+		return;
+	}
+
+	a_zones = array( "zone_prr", "zone_pow", "zone_pow_warehouse", "zone_pcr", "zone_trans_8" );
+	n_off = 0;
+
+	foreach ( str_zone in a_zones )
+	{
+		if ( !isdefined( level.zones ) || !isdefined( level.zones[str_zone] ) || !isdefined( level.zones[str_zone].spawn_locations ) )
+			continue;
+
+		zone = level.zones[str_zone];
+
+		for ( i = 0; i < zone.spawn_locations.size; i++ )
+		{
+			s_loc = zone.spawn_locations[i];
+
+			if ( !isdefined( s_loc ) || !isdefined( s_loc.origin ) )
+				continue;
+
+			if ( isdefined( s_loc.is_enabled ) && !s_loc.is_enabled )
+				continue;
+
+			//  A spawn struct is not a solid entity, so the brush test is made
+			//  from a throwaway script_origin at the spot - the same call Die
+			//  Rise's classic script makes on one (zm_highrise_classic.gsc:409).
+			e_probe = spawn( "script_origin", s_loc.origin );
+
+			foreach ( v_volume in a_volumes )
+			{
+				if ( e_probe istouching( v_volume ) )
+				{
+					s_loc.is_enabled = 0;
+					n_off++;
+					println( "[zm_qol] POWERSPAWN lava: " + str_zone + " (" + int( s_loc.origin[0] ) + "," + int( s_loc.origin[1] ) + "," + int( s_loc.origin[2] ) + ") is inside lava - disabled" );
+					break;
+				}
+			}
+
+			e_probe delete();
+		}
+	}
+
+	println( "[zm_qol] POWERSPAWN lava sweep: " + a_volumes.size + " volume(s) checked, " + n_off + " location(s) disabled" );
 }
 
 // ============================================================================

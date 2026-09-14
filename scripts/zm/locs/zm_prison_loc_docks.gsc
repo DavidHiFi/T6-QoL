@@ -121,77 +121,14 @@ main()
 	scripts\zm\locs\loc_common::increase_pap_collision();
 	level thread scripts\zm\locs\loc_common::init();
 	level thread maps\mp\zm_alcatraz_traps::init_tower_trap_trigs();
-	level thread zmqol_docks_probe();   // TEMPORARY - remove once the docks bug is root-caused
 }
 
-// ============================================================================
-//  zm_qol TEMPORARY DIAGNOSTIC - delete once the Docks bug is understood.
-//
-//  Symptom (2026-08-02): on Docks survival the player spawns in, but their body
-//  model and weapon are invisible and zombies do no damage to them.
-//
-//  Those three together are the exact signature of the MotD afterlife state:
-//  _zm_afterlife::afterlife_enter() calls enableafterlife() (ghost - no body,
-//  ghost viewhands) and afterlife_player_damage_callback() returns 0 for every
-//  hit while self.afterlife is set. But nothing in the docks path *should* put
-//  the player there, and the log carries no round/player state at all, so this
-//  prints the state directly instead of guessing at it again.
-//
-//  Reads only - it changes no gameplay.
-// ============================================================================
-zmqol_docks_probe()
-{
-	level endon( "end_game" );
-
-	for ( i = 0; i < 8; i++ )
-	{
-		wait 5;
-
-		foreach ( player in getplayers() )
-		{
-			s = "[zm_qol] DOCKS t=" + ( ( i + 1 ) * 5 );
-			s += " org=" + player.origin;
-			s += " health=" + player.health;
-
-			if ( isdefined( player.afterlife ) )
-				s += " afterlife=" + player.afterlife;
-			else
-				s += " afterlife=UNDEF";
-
-			if ( isdefined( player.lives ) )
-				s += " lives=" + player.lives;
-			else
-				s += " lives=UNDEF";
-
-			if ( isdefined( player.characterindex ) )
-				s += " charidx=" + player.characterindex;
-			else
-				s += " charidx=UNDEF";
-
-			if ( isdefined( player.model ) )
-				s += " model=" + player.model;
-			else
-				s += " model=UNDEF";
-
-			s += " weap=" + player getcurrentweapon();
-
-			println( s );
-		}
-
-		z = "";
-		zone_names = array( "zone_dock", "zone_dock_gondola", "zone_studio", "zone_citadel_basement_building" );
-
-		foreach ( zone_name in zone_names )
-		{
-			if ( isdefined( level.zones ) && isdefined( level.zones[zone_name] ) )
-				z += zone_name + "=" + level.zones[zone_name].is_enabled + " ";
-			else
-				z += zone_name + "=NOZONE ";
-		}
-
-		println( "[zm_qol] DOCKS zones " + z );
-	}
-}
+//  📝 The v1.12.x zmqol_docks_probe() diagnostic that used to sit here was
+//  deleted before shipping. The Docks invisibility bug it measured is fixed at
+//  the source - replaced\zm_alcatraz_gamemodes.gsc points givecustomcharacters
+//  at maps\mp\zm_prison::init_characters, so the MotD grief models that a
+//  zstandard run never loads are no longer set. Reads-only probe, nothing
+//  gameplay depended on it.
 
 set_box_weapons()
 {

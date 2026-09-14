@@ -15,6 +15,16 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((446, -2712, 37), (0, 105, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((301, -2751, 37), (0, 105, 0), zone, 2);
 
+	// --- perk machine: Double Tap, Reimagined's own mapents position ----------
+	//  This mod ships no zm_tomb mapents, so the stock mapents' machines (all
+	//  tagged "zclassic_perks_tomb") never match "zstandard_church" and none
+	//  spawns here. Registering the struct from script is the same technique the
+	//  Borough and Crazy Place locations use. Origin/angles from Reimagined's
+	//  zm_tomb.d3dbsp (its church struct is tagged zstandard_perks_church).
+	//  Church deliberately has no Pack-a-Punch and no wall-buys, same as
+	//  Reimagined.
+	scripts\zm\replaced\utility::register_perk_struct( "specialty_rof", "zombie_vending_doubletap2", (165, -2417, 302), (0, 15, 0) );
+
 	level.struct_class_names["targetname"]["intermission"] = [];
 
 	intermission_cam = spawnStruct();
