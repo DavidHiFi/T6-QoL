@@ -232,14 +232,19 @@ zmqol_mp_weapons_init()
 	//  which is why it is not the precedent to copy here.)
 	//
 	//  🌟 AND THE CONCRETE NULL, read out of the shipped defs 2026-09-09:
-	//  addzombieboxweapon() stores getweaponmodel(weapon), and this mod's
-	//  weapons\zmouncingbetty_zm carries worldModel	6_wpn_none_world - the
-	//  placeholder, not a mesh. Stock's own claymore_zm (dumped from retail
-	//  zm_transit.ff) carries a REAL t6_wpn_claymore_stow and is still display 0
-	//  everywhere, so the stock rule is "no equipment in the spin table" outright;
-	//  the Betty just also supplied the null pointer that made it fatal instead
-	//  of merely wrong. Give the Betty a real world model before ever
-	//  reconsidering this 0.
+	//  addzombieboxweapon() stores getweaponmodel(weapon), and the Betty def
+	//  then carried the placeholder "t6_wpn_none_world" as its worldModel - not
+	//  a mesh. Stock's own claymore_zm (dumped from retail zm_transit.ff)
+	//  carries a REAL t6_wpn_claymore_stow and is still display 0 everywhere, so
+	//  the stock rule is "no equipment in the spin table" outright; the Betty
+	//  just also supplied the null pointer that made it fatal instead of merely
+	//  wrong.
+	//
+	//  📝 v2.15.52 - THE NULL IS GONE, AND THE 0 STILL STANDS. The def now
+	//  carries the real t6_wpn_bouncing_betty_world as its worldModel (the
+	//  placeholder was also drawing the mine upside down - see the banner in
+	//  bouncingbetty.gsc). This 0 never rested on the null, only on the
+	//  claymore_zm precedent above, so it does not change.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "bouncingbetty_zm", 0 );
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's

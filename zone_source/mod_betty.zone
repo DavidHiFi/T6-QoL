@@ -25,6 +25,16 @@
 //  it with the campaign TC6 mine's full held-mine anim family driving an EMPTY
 //  gun model (t6_wpn_none_view), the betty mesh attached to tag_weapon with
 //  offsets (X -5, pitch -90). The def now mirrors that scheme exactly.
+//
+//  v2.15.52 - THAT IS THE VIEW HALF ONLY. Reimagined applies the same carrier
+//  scheme to the WORLD half too, with attachWorldModelOffsetPitch1 180, and
+//  copying it drew the mine upside down everywhere the world model appears -
+//  the mystery box float model most visibly, on every map. The world half is
+//  the MP donor verbatim now (worldModel t6_wpn_bouncing_betty_world, no
+//  attach, no rotation); derivation in scripts\zm\bouncingbetty.gsc's banner.
+//  t6_wpn_none_world is no longer referenced by the def but stays declared
+//  below, for the same reason the four unused betty anims do: un-owning it
+//  costs a relink A/B for zero gain.
 //    - the 17 viewmodel_mine_tc6_* anims the def references exist in NO zombies
 //      fastfile - donor is so_cmp_afghanistan.ff, a NEW --load (carries the
 //      full set; verified by Unlinker --list 2026-09-01, and the three d2p
