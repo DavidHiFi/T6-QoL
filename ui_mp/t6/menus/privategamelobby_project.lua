@@ -662,20 +662,19 @@ CoD.PrivateGameLobby.Dvars[1].values[2] = 1
 --  settled before the match starts, because the server reads it once during map
 --  init (quality_of_life.gsc::remove_perk_limit).
 --
---  🛑 THE DEFAULT IS 0 AND 0 MEANS "AS MANY AS THIS MAP OFFERS". That is the
---  behaviour the mod has had since v1.55.4, so leaving this row alone changes
---  nothing. The comment above remove_perk_limit() records TWO separate in-game
---  bugs caused by this number being wrong (nine on Origins, eleven at the Diner
---  machine) - this option must not become a third, which is why it is opt-in
---  rather than a number that has to be correct out of the box.
+--  🛑 v2.15.50 - THE SHIPPING DEFAULT IS 4, THE VANILLA LIMIT. User, 2026-09-14:
+--  *"for perk limit it's always set to map max make sure that that's on default
+--  which is 4 ... so that by default when you install my mod that the perk limit
+--  is like normal and you can change it to be unlimited if the player wants and
+--  then also make sure that if you do change it, it's remembered if you restart
+--  the game"*. 0 (MAP MAX) is still the first choice and still means "as many as
+--  this map offers" - it is opt-in now, and the choice is saved. The persistence
+--  half is QolLobbyDvarPersist() below; the GSC default is quality_of_life.gsc
+--  init() + remove_perk_limit().
 --
 --  📝 12 is Black Ops II's real perk count and the highest fixed choice here.
 --  A map that somehow offers more is still reachable through MAP MAX; the
 --  server clamps a chosen number DOWN to what the map has, never up.
---  🌟 v1.99.94 - THE DEFAULT HERE IS 4, NOT 0, AND THAT IS THE RED CROSS. User,
---  2026-08-20: *"Make it so that MAP MAX option for perk limit in the pre-game
---  menu lobby screen also has an x to the left of it as this isn't stock/default
---  behaviour and is modified from the vanilla state of the perks limit."*
 --
 --  🛑 THIS TABLE NEVER WRITES A DVAR - it is COSMETIC ONLY, and that is measured,
 --  not assumed. `CoD.PrivateGameLobby.DvarDefaults` is read in exactly one place
@@ -724,6 +723,32 @@ CoD.PrivateGameLobby.Dvars[2].values[10] = 9
 CoD.PrivateGameLobby.Dvars[2].values[11] = 10
 CoD.PrivateGameLobby.Dvars[2].values[12] = 11
 CoD.PrivateGameLobby.Dvars[2].values[13] = 12
+
+-- ===========================================================================
+--  v2.15.50 - SEED AND SAVE THE CHOICE  (perk_limit)
+-- ===========================================================================
+--  The lobby is built at the main menu, before any map has loaded, so on a
+--  fresh install `perk_limit` does not exist yet when the row is built - and
+--  DvarLeftRightSelector auto-selects choice 1 (MAP MAX) as it builds, which
+--  WRITES 0. That is why the row always showed MAP MAX and the red cross.
+--
+--  `seta` creates the dvar with the archive flag when it is missing, so:
+--    fresh install -> perk_limit 4 is created (vanilla), row reads 4, no cross;
+--    changed row   -> the row's own Engine.SetDvar writes the new value and the
+--                     archive flag already on the dvar makes Plutonium's
+--                     exit-time writer save it; next launch reads it back.
+--  Same pattern as optionssettings.lua::QolArchive (v1.99.45), which is the
+--  in-game proof that archive-flag-on-the-dvar survives a restart.
+--  🛑 pcall: a throw while a menu is building takes the whole lobby with it.
+CoD.PrivateGameLobby.QolLobbyDvarPersist = function (DvarName, DvarDefault)
+	local Value = UIExpression.DvarString(nil, DvarName)
+	if Value == nil or Value == "" then
+		Value = tostring(DvarDefault)
+	end
+	pcall(function ()
+		Engine.Exec(nil, "seta " .. DvarName .. " \"" .. Value .. "\"")
+	end)
+end
 
 -- ===========================================================================
 --  MACHINE DROPS  -  Nuketown survival only, v1.99.63, user request 2026-08-19
@@ -1250,6 +1275,10 @@ CoD.PrivateGameLobby.PopulateButtons_Project_Zombie = function (PrivateGameLobby
 			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = { "zstandard", "zgrief" }
 		end
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.GameTypeSettings, "gts")
+		--  v2.15.50 - seed perk_limit BEFORE the row is built, or the selector
+		--  writes MAP MAX (0) on a fresh install and the row loses its saved
+		--  value on restart. See QolLobbyDvarPersist() above.
+		CoD.PrivateGameLobby.QolLobbyDvarPersist("perk_limit", 4)
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.Dvars, "dvar")
 		PrivateGameLobbyButtonPane:registerEventHandler("enable_sliding_zm", CoD.PrivateGameLobby.EnableSlidingZombie)
 		PrivateGameLobbyButtonPane.defaultFocusButton = PrivateGameLobbyButtonPane.body.startMatchButton

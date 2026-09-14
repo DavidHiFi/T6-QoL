@@ -1007,9 +1007,10 @@ init()
     level thread nofog_onplayerconnect();
 
     // --- noperklimit ---
-    //  v1.99.26 - 0 = as many as this map offers (the behaviour since v1.55.4).
+    //  v2.15.50 - default 4 = the vanilla limit. 0 still means "as many as this
+    //  map offers" and is the lobby row's MAP MAX choice, now opt-in.
     //  Set from the pre-game lobby's PERK LIMIT row; read in remove_perk_limit().
-    create_dvar( "perk_limit", 0 );
+    create_dvar( "perk_limit", 4 );
     level thread remove_perk_limit();
     level thread perklimit_onplayerconnect();
 
@@ -4889,20 +4890,19 @@ remove_perk_limit()
     if ( isdefined( a_perks ) && a_perks.size > n_limit )
         n_limit = a_perks.size;
 
-    //  v1.99.26 - PERK LIMIT is now choosable from the pre-game lobby, user
-    //  request 2026-08-17.
+    //  v2.15.50 - PERK LIMIT is choosable from the pre-game lobby and defaults
+    //  to 4, the vanilla limit (user, 2026-09-14). Older builds ran MAP MAX by
+    //  default; that is now the opt-in first choice, value 0.
     //
-    //  🛑 0 MEANS "AS MANY AS THIS MAP OFFERS" AND IS THE DEFAULT, so the
-    //  behaviour above - and every bug fixed in the long comment above it - is
-    //  exactly unchanged unless somebody deliberately picks a number. Two
-    //  separate in-game bugs came from this value being wrong; a new option must
-    //  not become a third.
+    //  🛑 0 MEANS "AS MANY AS THIS MAP OFFERS". It is still supported exactly as
+    //  before - the long comment above is the record of the two in-game bugs
+    //  caused by a wrong number, and none of that logic changed.
     //
     //  📝 A chosen limit is NOT clamped up to 12. Picking 4 is the whole point of
     //  the option - it is how you play stock rules - so it is honoured as given.
     //  It IS clamped down to the derived maximum, because offering more slots
     //  than the map has perks would just be a number that can never be reached.
-    n_choice = getdvarintdefault( "perk_limit", 0 );
+    n_choice = getdvarintdefault( "perk_limit", 4 );
 
     if ( n_choice > 0 )
     {
