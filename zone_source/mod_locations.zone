@@ -1595,6 +1595,19 @@ attachmentunique,au_peacekeeper_reflex
 //  BACK IN v2.14.30 (2026-09-08, user: "add back tunnel survival"). Both
 //  point at stock art (menu_zm_transit_zclassic_transit /
 //  loadscreen_transit_classic) supplied by the --load'ed retail zones.
+//
+//  CORNFIELD'S TWO CAME BACK THE SAME WAY in v2.16.8 (2026-09-15, user: "add
+//  cornfield to my mod"). Same deal as Tunnel: the JSON sources never left
+//  zone_assets\materials\, and both point at stock art already supplied by the
+//  retail zones - menu_zm_transit_zsurvival_transit and
+//  loadscreen_transit_standard_busdepot - so neither needs a new .iwi.
+//
+//  🛑 Cornfield needs NO xmodel line. Its play-area collision,
+//  zm_collision_transit_cornfield_survival, is in the game's own
+//  so_zsurvival_zm_transit.ff (verified with Unlinker --list, 2026-09-15), which
+//  TranZit survival loads, so the loc script's precachemodel resolves without
+//  mod.ff carrying a copy. Diner's equivalent is listed above only because it
+//  predates that check.
 // ============================================================================
 
 // --- lobby previews + loading screens for the restored locations.
@@ -1602,6 +1615,7 @@ attachmentunique,au_peacekeeper_reflex
 //     zone_assets\images\ (and build.bat syncs them into images\ for mod.iwd).
 material,menu_zm_transit_zsurvival_power
 material,menu_zm_transit_zsurvival_tunnel
+material,menu_zm_transit_zsurvival_cornfield
 material,menu_zm_highrise_zsurvival_shopping_mall
 material,menu_zm_highrise_zsurvival_dragon_rooftop
 material,menu_zm_highrise_zsurvival_sweatshop
@@ -1609,6 +1623,7 @@ material,menu_zm_buried_zsurvival_street
 material,menu_zm_prison_zsurvival_cellblock
 material,loadscreen_zm_transit_zstandard_power
 material,loadscreen_zm_transit_zstandard_tunnel
+material,loadscreen_zm_transit_zstandard_cornfield
 material,loadscreen_zm_highrise_zstandard_shopping_mall
 material,loadscreen_zm_highrise_zstandard_dragon_rooftop
 material,loadscreen_zm_highrise_zstandard_sweatshop

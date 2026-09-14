@@ -18885,6 +18885,8 @@ get_zone_name()
             name = "Farm";
         else if ( zone == "zone_trans_6" )
             name = "Farm";
+        else if ( zone == "zone_amb_cornfield" )
+            name = "Cornfield";
         else if ( zone == "zone_cornfield_prototype" )
             name = "Nacht";
         else if ( zone == "zone_trans_pow_ext1" )

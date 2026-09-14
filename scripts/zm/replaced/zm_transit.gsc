@@ -162,6 +162,38 @@ transit_zone_init()
             enable_zone( "zone_amb_tunnel" );
         }
 
+        // 🛑 Cornfield survival: the same island, restored in v2.16.8 (user,
+        // 2026-09-15: "add cornfield to my mod"). Cornfield is TWO zones, and
+        // both are needed:
+        //
+        //   zone_amb_cornfield        the field itself - 36 spawners
+        //   zone_cornfield_prototype  the Nacht der Untoten building - 8
+        //
+        // Stock puts BOTH in init_zones only under is_classic()
+        // (zm_transit.gsc:388 and the prototype by its adjacency edge), so in
+        // survival neither is ever created. The stock adjacency line above,
+        //     add_adjacent_zone( "zone_amb_cornfield", "zone_cornfield_prototype", "always_on" );
+        // joins them to each other but to nothing in the non-classic enabled
+        // set, so it cannot pull either one up on its own - exactly Tunnel's
+        // situation, not Power's. Enabling both is also what makes the loc
+        // script's disable_zombie_spawn_locations() meaningful: it switches off
+        // the field spawners west of x=9700, and a zone that was never enabled
+        // has nothing to switch off.
+        //
+        // Both volumes and their spawners are verified present in the stock
+        // mapents (info_volume + 36 and 8 `_spawners` structs), and the play
+        // area's collision model zm_collision_transit_cornfield_survival ships
+        // in the game's own so_zsurvival_zm_transit.ff, so the loc script's
+        // precache resolves without anything new in mod.ff.
+        if ( getdvar( "ui_zm_mapstartlocation" ) == "cornfield" )
+        {
+            zone_init( "zone_amb_cornfield" );
+            enable_zone( "zone_amb_cornfield" );
+
+            zone_init( "zone_cornfield_prototype" );
+            enable_zone( "zone_cornfield_prototype" );
+        }
+
         // 🛑 Power Station survival: instant death on spawn.
         //
         // Same mechanism as Tunnel, different symptom path. scripts\zm\locs\
