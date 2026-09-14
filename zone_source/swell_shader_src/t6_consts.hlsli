@@ -208,11 +208,34 @@ float3 DecodeNormal(float3 v)
 // Hands, feet, legs and the attached head/eyes are outside it and do not
 // move. Zero amount = zero offset, so an actor that never swells renders
 // exactly as retail.
+//
+// 🛑 v2.16.1 - THE CENTRE IS ABSOLUTE WORLD NOW, AND THAT IS THE WOBBLE FIX.
+// User, 2026-09-14: *"their body starts like wobbling and freaking out while
+// they're expanding"*. v2.15.51 compared two things measured at different
+// times: `wp` is rebuilt EVERY FRAME (the CPU skins zombies into eye-relative
+// space, so it moves the instant the camera does), while scriptVector3.yzw was
+// the stomach minus the eye, resent by the client ramp only every 50 ms. Walk
+// or strafe and the eye moves ~10 units between updates, so the ball slid
+// across the body frame to frame - and since the lag reverses when you stop,
+// it pulsed. Nothing was wrong with the shape; the two operands disagreed
+// about where the camera was.
+//
+// 🌟 Adding the camera back makes the eye CANCEL. inverseViewMatrix maps view
+// to world, and with this file's row-vector convention (mul(v, M)) its row 3
+// is the camera's world position, so wp + that is an absolute world position.
+// The ramp now sends J_SpineLower in plain world coordinates and the two
+// operands are in the same frame of reference at every instant, whatever the
+// camera did since the last tick. What is left is the corpse's own drift
+// between ticks, which is a slow float - smooth by construction.
+// Failure mode if this row is ever the wrong one: the centre lands far from
+// the body, every weight saturates to zero and the swell simply does not
+// happen. It cannot blow a zombie up.
 float3 SwellOffset(float3 wp, float3 n)
 {
     float amt = scriptVector3.x;
     float f = saturate(amt * 0.25);
-    float3 d = wp - scriptVector3.yzw;
+    float3 worldPos = wp + inverseViewMatrix[3].xyz;
+    float3 d = worldPos - scriptVector3.yzw;
     float dm = length(d * float3(1.0 / 30.0, 1.0 / 30.0, 1.0 / 22.0));
     float t = saturate(dm / lerp(0.7, 1.0, f));
     float w = 1.0 - t * t * (3.0 - 2.0 * t);
