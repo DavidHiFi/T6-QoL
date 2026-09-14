@@ -958,10 +958,32 @@ microwavegun_sizzle_death_ending()
 //  Own thread per corpse (the caller already threads the kill), and every step
 //  is isdefined-guarded so a corpse cleaned up mid-sizzle just stops.
 // ============================================================================
+//  🌟 v2.16.1 - THIS PATH NOW SWELLS AND FLOATS TOO, so every Wave Gun kill
+//  reads the same. User, 2026-09-14: *"sometimes they just kind of tap around
+//  and they don't float up in the air ... sometimes they float up after they
+//  tap around, but then they tap around and then they just explode and pop.
+//  make sure it's consistent."*
+//
+//  That inconsistency was this branch versus the anim branch, and the split is
+//  decided per kill a few lines up: a zombie mid-window-traversal, in the
+//  ceiling, a crawler with no sizzle-crawl state, or a dog takes
+//  instant_explode - and instant_explode used to sizzle for half a second and
+//  burst, with no rise and no swell. On TranZit a traversing zombie is common,
+//  which is exactly why it looked like a coin flip.
+//
+//  The float-up in the anim branch belongs to zm_death_sizzle, which this
+//  branch by definition does not have. So it is driven here instead: the
+//  corpse is already held rigid by nodeathragdoll, so a plain moveto lifts it
+//  in a straight smooth line, eased at both ends. The swell is Moon's own
+//  clientfield - the same one the "expand" notetrack raises - so the body
+//  inflates on the identical 2.5 s ramp rather than a second code path.
+//  Timings are matched to the anim branch on purpose: swell and rise together,
+//  then burst at the top.
 zmqol_mgun_microwave_burst()
 {
-    //  Keep the body still for the brief sizzle instead of ragdoll-flopping -
-    //  a microwaved zombie holds, then bursts. Safe: a plain field write.
+    //  Keep the body still for the sizzle instead of ragdoll-flopping - a
+    //  microwaved zombie holds, rises, then bursts. Safe: a plain field write,
+    //  and it is what makes the moveto below read as a lift and not a drag.
     self.nodeathragdoll = 1;
 
     self playsound( "wpn_mgun_dual_sizzle" );
@@ -972,9 +994,26 @@ zmqol_mgun_microwave_burst()
     if ( isdefined( self gettagorigin( "J_Eyeball_LE" ) ) )
         network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
 
-    //  0.5 s of microwave before the burst - long enough to read as a sizzle,
-    //  short enough that a fast-clearing round is not held up.
-    wait 0.5;
+    //  Start the swell on the same clientfield the notetrack uses, and mark it
+    //  seen so nothing else tries to cut the cycle short.
+    self.zmqol_mgun_expand_seen = 1;
+    self setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 );
+    self playsound( "wpn_mgun_impact_zombie" );
+
+    //  A short beat of microwave before the lift, so the rise reads as a
+    //  consequence of the sizzle rather than starting on the same frame.
+    wait 0.4;
+
+    if ( !isdefined( self ) )
+        return;
+
+    //  42 units over 1.6 s, eased in and out (0.45 s accelerate, 0.45 s
+    //  settle), which lands inside the 2.5 s swell rather than after it.
+    self moveto( self.origin + ( 0, 0, 42 ), 1.6, 0.45, 0.45 );
+
+    //  Hold for the rest of Moon's 2.5 s swell so the burst lands at the top
+    //  of the rise, at full size - the same place the anim branch bursts.
+    wait 2.1;
 
     if ( !isdefined( self ) )
         return;

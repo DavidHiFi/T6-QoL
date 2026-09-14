@@ -107,19 +107,23 @@ zmqol_mgun_client_bloat( localclientnum )
         if ( !isdefined( self ) )
             return;
 
-        //  v2.15.51: X is still BO1's amount (fraction * 4.0). YZW carry the
-        //  stomach (J_SpineLower) relative to the local viewer's eye. The
-        //  zombie shaders see eye-relative world positions (retail's fog code
-        //  measures length(worldPos) as the eye distance), so the centre of
-        //  the swell ball must be given in that space, and re-read every tick
-        //  because the sizzle death floats the corpse and the player moves.
+        //  X is BO1's amount (fraction * 4.0). YZW carry the stomach
+        //  (J_SpineLower) in PLAIN WORLD COORDINATES.
+        //
+        //  🛑 v2.16.1 - DO NOT SUBTRACT THE EYE HERE AGAIN. Until now this
+        //  line sent the stomach minus getlocalclienteyepos(), because the
+        //  zombie shaders see eye-relative positions. That was true but it
+        //  made the constant go stale the moment the player moved: the shader
+        //  rebuilds its side every frame and this ramp only resends every
+        //  50 ms, so the ball slid around the body and the user saw it wobble
+        //  and "freak out". SwellOffset now adds the camera back out of
+        //  inverseViewMatrix and compares in world space, so the eye cancels
+        //  exactly, every frame, no matter how fast the player moves.
         //  A rig without the tag uses its origin plus 42 units.
         v_center = self gettagorigin( "J_SpineLower" );
 
         if ( !isdefined( v_center ) )
             v_center = self.origin + ( 0, 0, 42 );
-
-        v_center = v_center - getlocalclienteyepos( localclientnum );
 
         self setshaderconstant( localclientnum, 0, bloat_fraction * 4.0, v_center[0], v_center[1], v_center[2] );
 

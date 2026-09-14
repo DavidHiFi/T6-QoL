@@ -89,9 +89,28 @@
 //  zone_source\zomswell_donor (the DLC5 binary copy) is no longer --load'ed:
 //  raw beats a loaded zone, but keeping both would invite a stale copy.
 //  The 53 MaximumSwell materials below keep pointing at these techsets.
+//  🛑 v2.16.1 - NO HEAD LAYER GOES THROUGH A SWELL SHADER ANY MORE.
+//  User, 2026-09-14: *"the zombies heads are disappearing ... don't destroy
+//  their heads"*. The eye techset below is built from retail
+//  pimp_shader_radiant_190f4788 / unlit_cheap_zombie_eyes_6a8c6a7c, and those
+//  two retail shaders take POSITION + COLOR + TEXCOORD and NO NORMAL - the
+//  swell rebuild had to ADD a NORMAL0 input to feed SwellOffset. A vertex
+//  shader that reads an input the head's own vertex buffer never binds is the
+//  one thing here that can make a draw vanish outright, which is exactly the
+//  symptom.
+//
+//  🌟 AND IT BOUGHT NOTHING. It was added in v2.15.46, when the swell was a
+//  uniform push and the head had to inflate with the body to stay attached.
+//  Since v2.15.51 the swell is a torso ball whose weight is ZERO outside an
+//  ellipsoid 30x30x22 around J_SpineLower - a head sits far outside that, so
+//  SwellOffset already returns 0 for every head vertex. Running the head
+//  through a modified shader to compute zero was pure risk.
+//  So: the eye techset is gone, and every head material (lit, _unlit, _u, _ub)
+//  is off this list and loads its retail definition from the map's own zone.
+//  Heads now render exactly as retail while the body swells. Do not re-add
+//  them without first proving the head's vertex decl actually binds a normal.
 techniqueset,mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
 techniqueset,mc_sw4_3d_char_skin_j92387z3_dlc5
-techniqueset,mc_sw4_3d_model_unlit_cheap_zombie_eyes_jq3e7eqw_zqswell
 
 //  ?? THE BLOOD IS RED AGAIN (2026-09-12). User: "the color of what the
 //  zombie spews out of its mouth is white for some reason it should be red".
@@ -146,13 +165,6 @@ image,c_zom_dlc0_zombie_head4_n
 // 53 zombie body/head materials with MaximumSwell
 material,mc/mtl_c_zom_brutus_body
 material,mc/mtl_c_zom_brutus_gloves
-material,mc/mtl_c_zom_brutus_head
-material,mc/mtl_c_zom_brutus_helmet
-material,mc/mtl_c_zom_chinese_zombie_head1
-material,mc/mtl_c_zom_chinese_zombie_head2
-material,mc/mtl_c_zom_chinese_zombie_head3
-material,mc/mtl_c_zom_chinese_zombie_head4
-material,mc/mtl_c_zom_chinese_zombie_helmet
 material,mc/mtl_c_zom_civ_shorts_body
 material,mc/mtl_c_zom_civ_shorts_body2
 material,mc/mtl_c_zom_civ_shorts_body3
@@ -161,11 +173,6 @@ material,mc/mtl_c_zom_civ_shorts_body5
 material,mc/mtl_c_zom_civ_shorts_body6
 material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_1
 material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_2
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask
 material,mc/mtl_c_zom_dlc0_zombie_solciv_body_1
 material,mc/mtl_c_zom_dlc0_zombie_soldier_body_1
 material,mc/mtl_c_zom_foot_spawn
@@ -178,15 +185,6 @@ material,mc/mtl_c_zom_leaper_body
 material,mc/mtl_c_zom_scientist_body
 material,mc/mtl_c_zom_soldier_body1
 material,mc/mtl_c_zom_vtn_nva1_body
-material,mc/mtl_c_zom_zombie_barbwire_head
-material,mc/mtl_c_zom_zombie_head_a
-material,mc/mtl_c_zom_zombie_head_k
-material,mc/mtl_c_zom_zombie_head_l
-material,mc/mtl_c_zom_zombie_head_n
-material,mc/mtl_c_zom_zombie_hellcatraz_head
-material,mc/mtl_c_zom_zombie_mask_head_device
-material,mc/mtl_c_zom_zombie_mask_head
-material,mc/mtl_c_zom_zombie_slackjaw_head
 material,mc/mtl_c_zom_zombie1_body01
 material,mc/mtl_c_zom_zombie1_body02
 material,mc/mtl_c_zom_zombie2_body01
@@ -207,40 +205,14 @@ material,mc/mtl_c_zom_zombie5_body03
 material,mc/mtl_c_zom_zombie8_body01
 material,mc/mtl_c_zom_zombie8_body02
 material,mc/mtl_c_zom_zombie8_body03
-material,mc/mtl_c_zom_zombie_head_d
-material,mc/mtl_c_zom_zombie_head_f
 
 //  The separate unlit and glowing-eye layers use their own vertex shaders.
 //  Pointing these materials at the swell eye techset keeps the whole head
 //  together during the 2.5-second normal expansion.
-material,mc/mtl_c_zom_chinese_zombie_head1_u
-material,mc/mtl_c_zom_chinese_zombie_head2_u
-material,mc/mtl_c_zom_chinese_zombie_head3_u
-material,mc/mtl_c_zom_chinese_zombie_head4_u
-material,mc/mtl_c_zom_zombie_barbwire_head_unlit
-material,mc/mtl_c_zom_zombie_head_a_unlit
-material,mc/mtl_c_zom_zombie_head_d_unlit
-material,mc/mtl_c_zom_zombie_head_f_unlit
-material,mc/mtl_c_zom_zombie_head_k_unlit
-material,mc/mtl_c_zom_zombie_head_l_unlit
-material,mc/mtl_c_zom_zombie_head_n_unlit
-material,mc/mtl_c_zom_zombie_hellcatraz_head_unlit
-material,mc/mtl_c_zom_zombie_mask_head_unlit
-material,mc/mtl_c_zom_zombie_slackjaw_head_unlit
 
 //  Nuketown head SWELL copies need the heads' UNLIT (_u) and blue-eye (_ub)
 //  materials too (v2.15.46). zm_nuked.ff is not a --load input, so like the
 //  25 images above they ship raw, dumped from zm_nuked.ff with the Unlinker.
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1_u
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1_ub
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2_u
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2_ub
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3_u
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3_ub
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4_u
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4_ub
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask_u
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask_ub
 image,~-gc_zom_dlc0_hazmat_zombie_mask_b_c
 image,~-gc_zom_dlc0_zombie_head1_b_c
 image,~-gc_zom_dlc0_zombie_head2_b_c
