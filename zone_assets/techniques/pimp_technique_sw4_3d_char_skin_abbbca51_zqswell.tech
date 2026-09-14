@@ -1,0 +1,23 @@
+{
+  stateMap "passthrough"; // TODO
+
+  vertexShader 4.0 "pimp_shader_sw4_3d_char_cloth_c4eff3ec_zqswell.hlsl"
+  {
+  }
+
+  pixelShader 4.0 "pimp_shader_sw4_3d_char_skin_a095816c.hlsl"
+  {
+    SpecularAndGloss = material.SpecularAndGloss;
+    Normal_Map = material.Normal_Map;
+    Diffuse_Map = material.Diffuse_Map;
+    Reflection_Amount = material.Reflection_Amount;
+    Diffuse_Normal_Height_Facing = material.Diffuse_Normal_Height_Facing;
+    Specular_Amount = material.Specular_Amount;
+  }
+
+  vertex.position = code.position;
+  vertex.color[0] = code.color;
+  vertex.texcoord[0] = code.texcoord[0];
+  vertex.normal = code.normal;
+  vertex.texcoord[2] = code.tangent;
+}

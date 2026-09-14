@@ -1,0 +1,243 @@
+// ============================================================================
+//  mod_wavegun_swell.zone  -  THE BODY SWELL OF MOON'S WAVE GUN  (v2.15.45)
+// ----------------------------------------------------------------------------
+//  This is the material half of the microwave sizzle death. The script half is
+//  in scripts/zm/zapgun.gsc (server: raises Moon's expand clientfield on the
+//  "expand" notetrack) and scripts/zm/zapgun.csc (client: Moon's
+//  microwavegun_bloat(), which maps shader constant 0 to "scriptVector3" and
+//  ramps its W from 0 to 0.5 over 2500 ms).
+//
+//  WHY MATERIALS. Moon's own zombie materials carry a MaximumSwell constant
+//  (literal 20,0,0,1); it is kept for parity with Moon's material authoring
+//  (the shader reads scriptVector3, the material constant is not consulted). MEASURED
+//  2026-09-12, this job: the DLC5 techsets
+//  mc_sw4_3d_char_cloth_4z8fq5wu_dlc5 / mc_sw4_3d_char_skin_j92387z3_dlc5
+//  dump byte-identical to the retail techsets mc_sw4_3d_char_cloth_4z8fq5wu /
+//  mc_sw4_3d_char_skin_j92387z3 already in mod.ff - every technique name is
+//  the same pimp_technique_sw4_3d_char_* - so the swell vertex shader is
+//  RETAIL. The only missing pieces were the material constant and the ramp.
+//
+//  WHAT SHIPS: 53 stock zombie body/head materials re-authored with
+//  MaximumSwell added, dumped from the maps' own zones and otherwise
+//  byte-for-byte what those zones already contained:
+//    so_zclassic_zm_transit.ff  31  (zombie1/2/3 bodies, heads k/l/n/a)
+//    zm_highrise.ff             14  (civ shorts, soldier, scientist, leaper,
+//                                    chinese heads, commander helmet)
+//    zm_prison.ff               17  (guard, inmate parts, vtn nva1, Brutus
+//                                    body/gloves/head/helmet, mask heads,
+//                                    barbwire/hellcatraz/slackjaw heads)
+//    zm_nuked.ff                11  (hazmat bodies 1/2, heads 1-4 + mask,
+//                                    soldier/solciv bodies)  [counted below]
+//  Player-character materials are deliberately NOT included: the client ramp
+//  only ever runs for actors that get the clientfield, and keeping it that way
+//  means a hit player can never deform.
+//
+//  NUKETOWN'S 25 IMAGES. zm_nuked.ff is not one of build_ff.bat's --load
+//  inputs (its zombie set reaches no other map), so the image dependencies of
+//  its 11 materials cannot resolve from a loaded fastfile. They ship raw here
+//  (extracted from zm_nuked.ff with Unlinker --image-format IWI) and are
+//  declared by name; pack_iwd.ps1 copies zone_assets\images into mod.iwd's
+//  images\ for the runtime pixels. The one shared name,
+//  c_gen_arm_rim_mask_norim_c, is NOT declared - it already resolves from the
+//  donor, and re-declaring it would only risk stomping it.
+//
+//  THE MATERIALS POINT AT THE *_dlc5 TECHSETS, which this zone now builds
+//  FROM RAW (see below); their pimp_technique_* sub-assets and shader
+//  binaries ship in zone_assets	echniques and zone_assets\shader_bin.
+//
+//  ?? DO NOT ADD THE BURIED/ORIGINS FAMILIES. The gun is gated off on those
+//  two maps (zapgun.gsc/zapgun.csc), their actor clientfield budgets are full
+//  (32/32 and 31/32), and their zombie materials already live in mod.ff.
+// ============================================================================
+
+// ============================================================================
+//  THE SWELL IS A VERTEX SHADER (v2.15.49) - the route Treyarch used on Moon.
+// ----------------------------------------------------------------------------
+//  User, 2026-09-13: the pre-scaled model steps "look like stop motion... the
+//  body swells up, they don't just get larger overall." BO1's
+//  pimp_shader_sw4_3d_char_cloth_bloat vertex shader does exactly one thing
+//  more than the plain one: after the world transform it adds
+//      worldPos += worldNormal * scriptVector3.x
+//  and the client ramps scriptVector3.x from 0 to 4.0 over 2.5 s. Every
+//  vertex moves out along its own normal, so the body inflates in place.
+//
+//  DLC5's T6 port never carried that over: its two zombie techsets embed the
+//  RETAIL vertex shader (measured 2026-09-12, byte-identical DXBC, no
+//  scriptVector in the constant tables), which is why the shader ramp did
+//  nothing here and the model-swap detour was built. This build compiles the
+//  two techsets FROM RAW (zone_assets\techsets, \techniques, \shader_bin):
+//  every technique is DLC5's own, renamed *_zqswell, with the three vertex
+//  shaders replaced by ours (zone_source\swell_shader_src, built with fxc):
+//    pimp_shader_sw4_3d_char_cloth_53938792_zqswell   lit           (+bloat)
+//    pimp_shader_sw4_3d_char_cloth_c4eff3ec_zqswell   lit + shadow  (+bloat)
+//    pimp_shader_transformonly_d4f4e04b_zqswell       depth/shadowmap (+bloat,
+//                                                     reads NORMAL so the
+//                                                     shadow inflates too)
+//  The HLSL reproduces retail's DXBC instruction for instruction (constant
+//  buffer layouts copied from the retail reflection with packoffset), so the
+//  only difference the GPU sees is the one mad on scriptVector3. The 44 pixel
+//  shaders are DLC5's bytes, unchanged. The Linker (v0.32 and v0.33 agree,
+//  identical output) reflects scriptVector3 out of the DXBC and emits it as a
+//  code vertex constant, which is what mapshaderconstant()/setshaderconstant()
+//  write at runtime (stock uses the same path for the zombie eye glow).
+//
+//  zone_source\zomswell_donor (the DLC5 binary copy) is no longer --load'ed:
+//  raw beats a loaded zone, but keeping both would invite a stale copy.
+//  The 53 MaximumSwell materials below keep pointing at these techsets.
+techniqueset,mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
+techniqueset,mc_sw4_3d_char_skin_j92387z3_dlc5
+techniqueset,mc_sw4_3d_model_unlit_cheap_zombie_eyes_jq3e7eqw_zqswell
+
+//  ?? THE BLOOD IS RED AGAIN (2026-09-12). User: "the color of what the
+//  zombie spews out of its mouth is white for some reason it should be red".
+//  Cause: the wavegun donor copied the fx' material names into mod.ff as bare
+//  REFERENCES ("material, ,gfx_fxt_bio_bloodburst"). mod.ff resolves first at
+//  runtime, and a data-less reference wins the name lookup, so the fx drew with
+//  no material (white). Declaring the five names forces the Linker to take the
+//  real definitions out of common_zm.ff, which owns all five and loads on every
+//  map - the exact assets Treyarch's own blood fx use.
+material,gfx_fxt_bio_bloodburst
+material,gfx_fxt_bio_bloodburst_b_ds64
+material,gfx_fxt_bio_bloodburst_c_ds64
+material,gfx_fxt_bio_blooddrops_ds64
+material,gfx_fxt_bio_bloodgush_ds64
+//  v2.15.49: the SAME defect, three more names. fx_sizzle_blood_eyes and
+//  fx_sizzle_mist also reference these, and the wavegun donor carried them as
+//  data-less references too; mod_base.zone no longer lists them, so these
+//  declarations pull common_zm's real assets. Moon's eye-blood fx drew as a
+//  white sparkle stream while its particle-cloud material had no data.
+material,gfx_fxt_env_dust_mote_pcloud_blend
+material,gfx_fxt_smk_gen_z10
+xmodel,fx_axis_createfx
+//  ...and the image behind gfx_fxt_light_hot_add (the beam's hot glow), which
+//  the donor inventory also carried data-less. common_zm owns it.
+image,fxt_light_hot
+// Nuketown image payloads (25) - see header
+image,~-gc_zom_dlc0_hazmat_zombie_body_1_c
+image,~-gc_zom_dlc0_hazmat_zombie_body_2_c
+image,~-gc_zom_dlc0_hazmat_zombie_mask_c
+image,~-gc_zom_dlc0_solciv_zombie_body_1_c
+image,~-gc_zom_dlc0_soldier_zombie_body_1_c
+image,~-gc_zom_dlc0_zombie_head1_c
+image,~-gc_zom_dlc0_zombie_head2_c
+image,~-gc_zom_dlc0_zombie_head3_c
+image,~-gc_zom_dlc0_zombie_head4_c
+image,~~-gc_zom_dlc0_hazmat_zombie_~47de35f4
+image,~~-gc_zom_dlc0_hazmat_zombie_~56115f4b
+image,~~-gc_zom_dlc0_solciv_zombie_~a99face7
+image,~~-gc_zom_dlc0_soldier_zombie~b2a8c465
+image,~~-gc_zom_dlc0_zombie_head1_s~bae2da89
+image,~~-gc_zom_dlc0_zombie_head2_s~d40de205
+image,~~-gc_zom_dlc0_zombie_head3_s~c74e6240
+image,~~-gc_zom_dlc0_zombie_head4_s~8ea4d789
+image,c_zom_dlc0_hazmat_zombie_body_n
+image,c_zom_dlc0_hazmat_zombie_mask_n
+image,c_zom_dlc0_solciv_zombie_body_n
+image,c_zom_dlc0_soldier_zombie_body_n
+image,c_zom_dlc0_zombie_head1_n
+image,c_zom_dlc0_zombie_head2_n
+image,c_zom_dlc0_zombie_head3_n
+image,c_zom_dlc0_zombie_head4_n
+// 53 zombie body/head materials with MaximumSwell
+material,mc/mtl_c_zom_brutus_body
+material,mc/mtl_c_zom_brutus_gloves
+material,mc/mtl_c_zom_brutus_head
+material,mc/mtl_c_zom_brutus_helmet
+material,mc/mtl_c_zom_chinese_zombie_head1
+material,mc/mtl_c_zom_chinese_zombie_head2
+material,mc/mtl_c_zom_chinese_zombie_head3
+material,mc/mtl_c_zom_chinese_zombie_head4
+material,mc/mtl_c_zom_chinese_zombie_helmet
+material,mc/mtl_c_zom_civ_shorts_body
+material,mc/mtl_c_zom_civ_shorts_body2
+material,mc/mtl_c_zom_civ_shorts_body3
+material,mc/mtl_c_zom_civ_shorts_body4
+material,mc/mtl_c_zom_civ_shorts_body5
+material,mc/mtl_c_zom_civ_shorts_body6
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_1
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_2
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask
+material,mc/mtl_c_zom_dlc0_zombie_solciv_body_1
+material,mc/mtl_c_zom_dlc0_zombie_soldier_body_1
+material,mc/mtl_c_zom_foot_spawn
+material,mc/mtl_c_zom_guard_body
+material,mc/mtl_c_zom_inmate_barechest
+material,mc/mtl_c_zom_inmate_details
+material,mc/mtl_c_zom_inmate_legs
+material,mc/mtl_c_zom_inmate_shirt
+material,mc/mtl_c_zom_leaper_body
+material,mc/mtl_c_zom_scientist_body
+material,mc/mtl_c_zom_soldier_body1
+material,mc/mtl_c_zom_vtn_nva1_body
+material,mc/mtl_c_zom_zombie_barbwire_head
+material,mc/mtl_c_zom_zombie_head_a
+material,mc/mtl_c_zom_zombie_head_k
+material,mc/mtl_c_zom_zombie_head_l
+material,mc/mtl_c_zom_zombie_head_n
+material,mc/mtl_c_zom_zombie_hellcatraz_head
+material,mc/mtl_c_zom_zombie_mask_head_device
+material,mc/mtl_c_zom_zombie_mask_head
+material,mc/mtl_c_zom_zombie_slackjaw_head
+material,mc/mtl_c_zom_zombie1_body01
+material,mc/mtl_c_zom_zombie1_body02
+material,mc/mtl_c_zom_zombie2_body01
+material,mc/mtl_c_zom_zombie2_body02
+material,mc/mtl_c_zom_zombie2_body03
+material,mc/mtl_c_zom_zombie3_body01
+material,mc/mtl_c_zom_zombie3_body02
+material,mc/mtl_c_zom_zombie3_body03
+material,mc/mtl_c_zom_zombie3_body04
+material,mc/mtl_c_zom_zombie3_body05
+//  v2.15.49: TranZit SURVIVAL's own families (Town/Farm/Bus Depot spawn
+//  zombie5/zombie8 bodies and the female heads d/f), dumped from
+//  so_zsurvival_zm_transit.ff and re-authored the same way. Without these a
+//  survival zombie keeps the map's retail material and never swells.
+material,mc/mtl_c_zom_zombie5_body01
+material,mc/mtl_c_zom_zombie5_body02
+material,mc/mtl_c_zom_zombie5_body03
+material,mc/mtl_c_zom_zombie8_body01
+material,mc/mtl_c_zom_zombie8_body02
+material,mc/mtl_c_zom_zombie8_body03
+material,mc/mtl_c_zom_zombie_head_d
+material,mc/mtl_c_zom_zombie_head_f
+
+//  The separate unlit and glowing-eye layers use their own vertex shaders.
+//  Pointing these materials at the swell eye techset keeps the whole head
+//  together during the 2.5-second normal expansion.
+material,mc/mtl_c_zom_chinese_zombie_head1_u
+material,mc/mtl_c_zom_chinese_zombie_head2_u
+material,mc/mtl_c_zom_chinese_zombie_head3_u
+material,mc/mtl_c_zom_chinese_zombie_head4_u
+material,mc/mtl_c_zom_zombie_barbwire_head_unlit
+material,mc/mtl_c_zom_zombie_head_a_unlit
+material,mc/mtl_c_zom_zombie_head_d_unlit
+material,mc/mtl_c_zom_zombie_head_f_unlit
+material,mc/mtl_c_zom_zombie_head_k_unlit
+material,mc/mtl_c_zom_zombie_head_l_unlit
+material,mc/mtl_c_zom_zombie_head_n_unlit
+material,mc/mtl_c_zom_zombie_hellcatraz_head_unlit
+material,mc/mtl_c_zom_zombie_mask_head_unlit
+material,mc/mtl_c_zom_zombie_slackjaw_head_unlit
+
+//  Nuketown head SWELL copies need the heads' UNLIT (_u) and blue-eye (_ub)
+//  materials too (v2.15.46). zm_nuked.ff is not a --load input, so like the
+//  25 images above they ship raw, dumped from zm_nuked.ff with the Unlinker.
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_1_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_2_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_3_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_4_ub
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask_u
+material,mc/mtl_c_zom_dlc0_zombie_hazmat_head_mask_ub
+image,~-gc_zom_dlc0_hazmat_zombie_mask_b_c
+image,~-gc_zom_dlc0_zombie_head1_b_c
+image,~-gc_zom_dlc0_zombie_head2_b_c
+image,~-gc_zom_dlc0_zombie_head3_b_c
+image,~-gc_zom_dlc0_zombie_head4_b_c

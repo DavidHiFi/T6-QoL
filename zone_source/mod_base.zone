@@ -164,7 +164,6 @@ material,,mc/gfx_crater_dirt
 material,,gfx_fxt_spark_pcloud_01
 material,,gfx_fxt_spark_pcloud_02
 material,,gfx_fxt_debris_gib_metal_ds16
-material,,gfx_fxt_env_dust_mote_pcloud_blend
 techniqueset,,effect_w77q49e8
 image,,fxt_smk_def_2
 material,gfx_fxt_smk_def_2_z200
@@ -1182,7 +1181,6 @@ camo,camo_mc96
 // ============================================================================
 weapon,c96_zm
 techniqueset,,effect_775wj8ww
-image,,fxt_light_hot
 material,gfx_fxt_light_hot_add_eo5
 techniqueset,effect_50q42feu
 material,gfx_fxt_fire_flame_vert_d_z0
@@ -1956,7 +1954,6 @@ techniqueset,,effect_7104842q
 techniqueset,,effect_5f6f0490
 techniqueset,,wc_lit_sm_b0c0n0s0_w16w6e35
 techniqueset,,effect_32z8zqf9
-xmodel,,fx_axis_createfx
 xanim,viewmodel_m4m203_knife_melee_1
 xanim,viewmodel_m4m203_knife_melee_2
 rawfile,rumble/defaultweapon_melee
@@ -1980,11 +1977,6 @@ xmodel,viewmodel_hands_cloth
 weapon,syrette_zm
 techniqueset,,mc_projecteddecal_27zq5445
 xmodel,,fx_decal_character_blood
-material,,gfx_fxt_bio_blooddrops_ds64
-material,,gfx_fxt_bio_bloodgush_ds64
-material,,gfx_fxt_bio_bloodburst
-material,,gfx_fxt_bio_bloodburst_b_ds64
-material,,gfx_fxt_smk_gen_z10
 xanim,viewmodel_m1911_dw_right_idle
 xanim,viewmodel_m1911_dw_right_idle_empty
 xanim,viewmodel_m1911_dw_right_fire

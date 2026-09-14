@@ -90,6 +90,18 @@ init()
     //  maps read it - a registration is not a behaviour, and the four readers
     //  are each behind stock's own is_sidequest_allowed( "zclassic" ) gate.
     qol_opt_dvar( "solo_ee",               "0" );
+    //  STARTING PISTOL, the pre-game lobby row (user, 2026-09-11). 0 = DEFAULT
+    //  (this map's own pistol), 1 = M1911, 2 = MAUSER (c96_zm), 3 = TAC-45
+    //  (fnp45_zm). Registered here only so it shows up in console autocomplete
+    //  and holds a real value on the first open of a lobby; the row itself lives
+    //  in ui_mp\t6\menus\privategamelobby_project.lua and the behaviour lives in
+    //  qol_opt_starting_pistol() / qol_opt_starting_pistol_player() below.
+    //
+    //  🛑 qol_opt_dvar() only writes when the dvar is EMPTY, which is what
+    //  makes this safe to run on every map: the lobby writes starting_pistol
+    //  before the level loads, and seeding it unconditionally here would throw
+    //  that choice away on the way into the match.
+    qol_opt_dvar( "starting_pistol",       "0" );
     //  v1.99.91 - the ADVANCED tab's FOG row and the .fog command both write
     //  this; quality_of_life::zmqol_fog_dvar_watch() carries it to r_fog. It
     //  exists because r_fog is cheat-protected and therefore never archived,
@@ -520,6 +532,7 @@ init()
     level thread qol_opt_move_speed();
     level thread qol_opt_roundcounter_master();
     level thread qol_opt_connect_loop();
+    level thread qol_opt_starting_pistol();
 
     //  ------------------------------------------------------------------
     //  TARGET ASSIST - v1.99.34, user request 2026-08-17. The lobby's TARGET
@@ -934,6 +947,7 @@ qol_opt_player_init()
         self thread qol_opt_voice_lines();
         self thread qol_opt_night_mode();
         self thread qol_opt_character();
+        self thread qol_opt_starting_pistol_player();
         self thread qol_opt_hud_watcher();
         self thread qol_opt_crosshair();
         self thread qol_opt_third_person();
@@ -1790,6 +1804,155 @@ qol_opt_character()
 
         wait 0.5;
     }
+}
+
+// ============================================================================
+//  qol_opt_starting_pistol  -  STARTING PISTOL lobby row (user, 2026-09-11)
+//
+//  The lobby row (ui_mp\t6\menus\privategamelobby_project.lua, QolStartingPistol,
+//  rendered above CHARACTER on every map and mode) writes `starting_pistol`:
+//      0 = DEFAULT - this map's own pistol, stock behaviour, the shipped default
+//      1 = M1911   (m1911_zm)   2 = MAUSER (c96_zm)   3 = TAC-45 (fnp45_zm)
+//
+//  🌟 TWO HALVES, because neither half alone covers every spawn path. The level
+//  half repoints level.start_weapon (plus the three laststand pistol vars stock
+//  derives from the same choice) before the first spawn, so the spawn itself,
+//  Who's Who revives, Turned/Grief respawns and the downed pistol all hand over
+//  the wanted gun through stock's own give_start_weapon(). The player half is
+//  the safety net: on first spawn it checks what is actually in the player's
+//  hands and swaps if the level half missed (init ordering is not something
+//  this project owns, so it is not bet on). Both are idempotent and both
+//  no-op on 0, so DEFAULT is byte-for-byte stock.
+//
+//  🛑 NO NEW PRECACHE SLOTS. m1911 is stock on every map and c96 is stock on
+//  Origins plus this mod's per-map includes on the other five (each map's own
+//  scripts\zm\<map>\ file, base and upgraded), so options 1-2 are always
+//  resolvable. The Tac-45 rides in the MP-weapons box pool
+//  (quality_of_life.gsc::zmqol_mp_weapons_init); if that pool is off the gun
+//  was never precached, so asking for it falls back to stock with a log line
+//  rather than handing over a weapon that does not exist. Origins' precache
+//  ceiling (v2.15.3) is why nothing is precached here to "make sure".
+//
+//  🛑 ROOT SCRIPT, NO MAP REFERENCES (AI_CONTEXT rule 2): only weapon names,
+//  the dvar and level vars. Nothing here names a map, so it loads everywhere.
+//
+//  📝 CO-OP: `starting_pistol` is a server dvar, so the lobby row is the host's
+//  choice for the whole team - the same standing limitation the CHARACTER row
+//  carries (its per-player path needed the chat channel; this has none).
+// ============================================================================
+qol_opt_starting_pistol_name( n_choice )
+{
+    if ( n_choice == 1 )
+        return "m1911_zm";
+    if ( n_choice == 2 )
+        return "c96_zm";
+    if ( n_choice == 3 )
+        return "fnp45_zm";
+    return undefined;
+}
+
+qol_opt_starting_pistol_upgraded( str_base )
+{
+    if ( str_base == "c96_zm" )
+        return "c96_upgraded_zm";
+    if ( str_base == "fnp45_zm" )
+        return "fnp45_upgraded_zm";
+    return "m1911_upgraded_zm";
+}
+
+//  Mapping plus the include check. Returns the weapon to spawn with, or
+//  undefined for DEFAULT / out-of-range / not-included (all three mean stock).
+qol_opt_starting_pistol_validated()
+{
+    str_want = qol_opt_starting_pistol_name( getdvarintdefault( "starting_pistol", 0 ) );
+
+    if ( !isdefined( str_want ) )
+        return undefined;
+
+    if ( !isdefined( level.zombie_include_weapons ) || !isdefined( level.zombie_include_weapons[str_want] ) )
+    {
+        println( "[zm_qol] starting pistol: " + str_want + " is not included on this map - left stock" );
+        return undefined;
+    }
+
+    return str_want;
+}
+
+qol_opt_starting_pistol()
+{
+    level endon( "end_game" );
+
+    //  initial_players_connected fires after every map init - including
+    //  Origins' custom_add_weapons override of level.start_weapon - and before
+    //  the first spawn, which is exactly the window this needs.
+    flag_wait( "initial_players_connected" );
+
+    if ( !isdefined( level.start_weapon ) )
+        return;
+
+    str_want = qol_opt_starting_pistol_validated();
+
+    if ( !isdefined( str_want ) || level.start_weapon == str_want )
+        return;
+
+    level.start_weapon = str_want;
+    level.laststandpistol = str_want;
+    level.default_laststandpistol = str_want;
+    level.default_solo_laststandpistol = qol_opt_starting_pistol_upgraded( str_want );
+
+    println( "[zm_qol] starting pistol: spawn and laststand repointed at " + str_want );
+}
+
+//  Safety net, first spawn only - the caller (qol_opt_player_init) starts this
+//  once, on the first spawned_player, so no waittill here: the player is
+//  already spawning and stock's pistol is either here or a moment away.
+qol_opt_starting_pistol_player()
+{
+    self endon( "disconnect" );
+    level endon( "end_game" );
+
+    str_want = qol_opt_starting_pistol_validated();
+
+    if ( !isdefined( str_want ) )
+        return;
+
+    //  Wait for stock's pistol to arrive (up to 2s, same polling shape as the
+    //  Who's Who knife watch). If the level half already repointed the spawn,
+    //  the wanted pistol is what arrives and the first check returns.
+    n_wait = 0;
+
+    for ( ;; )
+    {
+        if ( self hasweapon( str_want ) )
+            return;
+
+        if ( isdefined( level.start_weapon ) && level.start_weapon != str_want && self hasweapon( level.start_weapon ) )
+            break;
+
+        n_wait++;
+
+        if ( n_wait >= 40 )
+            return;
+
+        wait 0.05;
+    }
+
+    //  🛑 STOCK AMMO, NOT MAX - drain the shared pool first (user, 2026-09-11:
+    //  option pistols spawned with full reserves). The C96 and the M1911 share
+    //  ONE ammo pool (both defs: ammoName ".45acp m1911", measured) and
+    //  takeweapon leaves the pool behind, so swapping onto a pool that still
+    //  holds the stock pistol's rounds overfills the new gun. Zeroing the pool
+    //  before the take puts giveweapon+givestartammo on the exact same empty
+    //  pool a clean stock spawn starts from - so the result is byte-for-byte
+    //  stock spawn ammo whatever those two builtins' add-vs-set semantics are.
+    //  Harmless when the pool is not shared (Tac-45) or already empty.
+    self setweaponammostock( level.start_weapon, 0 );
+    self takeweapon( level.start_weapon );
+    self giveweapon( str_want );
+    self givestartammo( str_want );
+    self switchtoweapon( str_want );
+
+    println( "[zm_qol] starting pistol: swapped spawn pistol for " + str_want );
 }
 
 // ----------------------------------------------------------------------------

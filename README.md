@@ -4,9 +4,9 @@
 
 # Quality Of Life
 
-**An extensive overhaul mod for Call of Duty: Black Ops II - Zombies on [Plutonium](https://plutonium.pw).**
+**A major overhaul for Call of Duty: Black Ops II Zombies on [Plutonium](https://plutonium.pw).**
 
-Almost all Campaign weapons and every single Multiplayer weapon in the Mystery Box, 4 wonder weapons ported straight from the unreleased DLC5, bonus Survival maps, and a user-friendly Settings menu that you can configure to your heart's content in-game.
+Adds almost every Campaign and Multiplayer weapon to the Mystery Box, four unreleased DLC5 wonder weapons, bonus Survival maps, and an in-game Settings menu.
 
 <a href="https://github.com/DavidHiFi/T6-QoL/releases/latest">
 <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20DOWNLOAD%20LATEST%20RELEASE-2EA043?style=for-the-badge&labelColor=161B22" alt="Download the latest release" height="42">
@@ -31,9 +31,9 @@ Install Plutonium and run it once so its folders exist, then close it.
 3. Choose **INSTALL → The mod** and confirm.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
-Arrow keys to move, **Enter** to choose, **Q** to quit. The mod install needs no admin rights and leaves nothing running. Mod files go inside Plutonium's folder; the optional Start menu shortcuts go in your user Start menu. The installer can also fetch the optional extras: the HD texture and custom sound packs, controller icons, ReShade, backups, and a full uninstaller.
+Use the arrow keys to move, **Enter** to choose, and **Q** to quit. No admin rights are needed. The installer can also add texture and sound packs, controller icons, ReShade, backups, Start menu shortcuts, and an uninstaller.
 
-**Start menu shortcuts** are one of its options — pick it and you can reach **Quality Of Life Mod** (this installer) and **Plutonium ReShade Watcher** by pressing the Windows key and typing. They point at the folder you unzipped to, so keep it somewhere you're happy to leave it; the uninstall list removes them again.
+The optional Start menu shortcuts open the installer and ReShade Watcher. They point to the extracted folder, so do not move or delete it while using them.
 
 ### Standalone downloads
 
@@ -41,8 +41,8 @@ Neither needs the mod installed:
 
 | Download | Size | What it is |
 |---|---|---|
-| [**HD Texture Pack**](https://github.com/DavidHiFi/T6-QoL/releases/latest/download/HD.Texture.Pack.zip) | 525 MB | Higher-resolution textures, animated Pack-a-Punch camo, and much more. Unzip and drop the `images` folder into `%LOCALAPPDATA%\Plutonium\storage\t6\`. |
-| [**Controller Icons**](https://github.com/DavidHiFi/T6-QoL/releases/latest/download/Controller.Icons.Pack.zip) | 184 KB | PlayStation 5, Nintendo Switch and Xbox One button prompts. Pick one of the three folders inside and copy the `.iwi` files into `%LOCALAPPDATA%\Plutonium\storage\t6\images\`. |
+| [**HD Texture Pack**](https://github.com/DavidHiFi/T6-QoL/releases/download/v2.15.44/HD.Texture.Pack.zip) | 525 MB | Higher-resolution textures, animated Pack-a-Punch camo, and much more. Unzip and drop the `images` folder into `%LOCALAPPDATA%\Plutonium\storage\t6\`. |
+| [**Controller Icons**](https://github.com/DavidHiFi/T6-QoL/releases/download/v2.15.44/Controller.Icons.Pack.zip) | 184 KB | PlayStation 5, Nintendo Switch and Xbox One button prompts. Pick one of the three folders inside and copy the `.iwi` files into `%LOCALAPPDATA%\Plutonium\storage\t6\images\`. |
 
 <details>
 <summary><b>Install the mod by hand (Windows and Linux)</b></summary>
@@ -63,7 +63,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 ## Notes
 
 > [!IMPORTANT]
-> **Plutonium deletes ReShade every time it starts** — it clears anything it doesn't recognise out of its own `bin` folder. Launch with **`Play BO2 with ReShade.bat`** (inside `Mod Files`, or as the **Plutonium ReShade Watcher** Start menu shortcut) and leave its window open while you play; it puts ReShade back each time. Closing the window uninstalls nothing.
+> **Plutonium removes ReShade when it starts.** Launch with **`Play BO2 with ReShade.bat`** or the **Plutonium ReShade Watcher** shortcut, then leave its window open while playing.
 
 > [!NOTE]
 > **Still in beta.** Some of the newest features haven't had a full play-through yet. Anything that turns out broken gets fixed or pulled.
@@ -71,7 +71,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 > **Cloning the repo does not give you a playable mod** — `mod.iwd` is a build output and isn't tracked in git. Use the release.
 
 > [!WARNING]
-> **Known issue.** Choosing **INSTANT EXIT** straight after a **FAST RESTART** can drop the game to a `LUI_ERROR` dialog. The fault is inside Plutonium's own `MainMenuOG.lua`, which this mod neither ships nor overrides, so it can't be fixed from the mod's side. Leaving the match with Escape → INSTANT EXIT on its own is unaffected.
+> **Known issue.** Using **INSTANT EXIT** straight after **FAST RESTART** can cause a `LUI_ERROR`. This comes from Plutonium's `MainMenuOG.lua`, not the mod. **INSTANT EXIT** works normally otherwise.
 
 ---
 
@@ -101,16 +101,11 @@ Use a `.`, `!` or `/` prefix, or bind them to keys. Type `.help` in game for the
 
 ## Building from source
 
-For script and menu changes, run `build.bat offline` to repack and verify the five
-mod files locally. This does not compile scripts or install anything. `build.bat`
-without arguments also deploys the mod, refreshes the installer bundle, and
-reconciles global Plutonium overrides; review its output for skipped copies or
-preserved conflicts.
+Run `build.bat offline` to repack and verify script or menu changes without
+installing them. Run `build.bat` to build, deploy, and update the installer.
 
-Asset changes use `build_ff.bat` and the existing legacy OpenAssetTools setup;
-they can require untracked asset sources and donor files. The root `mod.zone` is
-an unused empty legacy file; `zone_source/mod.zone` is the active fastfile recipe.
-A successful pack or link does not establish startup or gameplay compatibility.
+Build assets with `build_ff.bat`. It uses `zone_source/mod.zone` and may need
+untracked source assets or donor files. A successful build still needs in-game testing.
 
 ## Contribute To Support Development
 
@@ -151,22 +146,21 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * L96A1 — Pack-a-Punches into the **L115 Isolator**
   * Browning HP — Pack-a-Punches into **Bap**
   * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
-  * All four are in the Mystery Box on every map except Origins. Origins runs out of weapon
-    precache slots — adding these four stopped the map loading at all — so it keeps the box it had.
+  * All four appear on every map except Origins, which lacks enough weapon precache slots.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
   * The Python loads all six rounds at once, the way its Pack-a-Punched version always has.
 
 * **Bouncing Betties:**
-  * The multiplayer proximity mine, in the Mystery Box on every map. You can only carry one kind of mine at a time: pulling Betties from the box replaces your Claymores, buying Claymores replaces your Betties, and both use the same equipment button.
+  * Multiplayer proximity mines appear in the Mystery Box on every map. Betties and Claymores replace each other and share the equipment button.
 
 * **Jet Gun clean-up:**
-  * It's carried as a normal primary that cycles with your other guns instead of living in an equipment slot, so it costs a real weapon slot and respects Mule Kick. Still overheats, never breaks.
+  * The Jet Gun uses a normal weapon slot and works with Mule Kick. It still overheats but no longer breaks.
 
 * **Pack-a-Punchable Sliquifier:**
-  * Die Rise's Sliquifier can be Pack-a-Punched. Treyarch built the upgraded gun, called it the **Sl1qu1f13r** and left it in the game files without ever connecting it to the machine.
-  * The packed one kills at any round. The goo and every zombie the chain reaches die however much health they have, so it never falls off. The unpacked Sliquifier is exactly as it is in the stock game.
+  * Die Rise's Sliquifier can be upgraded into Treyarch's unused **Sl1qu1f13r**.
+  * The upgrade kills at any round. The standard Sliquifier is unchanged.
 
 ---
 
@@ -198,7 +192,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * A **BETTER SPEED COLA** switch on the GAME tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
 
 * **Solo Easter Eggs:**
-  * A **SOLO EASTER EGGS** switch in the pre-game lobby on TranZit, Die Rise, Buried, Origins and Mob of the Dead. Turn it on and the main quest scales to however many players are actually in the lobby, instead of always demanding four. On Mob of the Dead that means the Final Flight can be boarded alone, and finishing it gives you Pop Goes the Weasel — which ending you get still depends on whether you are playing as the Weasel, exactly as the game decides it for a full team. Off by default, and the row is only shown on those five maps in Classic — never on Survival or Grief.
+  * The **SOLO EASTER EGGS** option scales the main quests on TranZit, Die Rise, Buried, Origins, and Mob of the Dead to the current player count. It is off by default and only appears in Classic mode.
 
 * **Instant Pack-a-Punch:**
   * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War - Zombies. It can be turned on or off in the settings menu.
@@ -214,19 +208,19 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Every Pack-a-Punched gun gets the *Dark Matter* animated camo on all six maps; switch it off and each map uses its own stock PaP camo. The textures ship in the [HD Texture Pack](#standalone-downloads), so install that for the option to do anything.
 
 * **Ray Gun skin:**
-  * Black Ops II quietly ships two different Ray Guns. Buried and Origins got a remade model with new textures; Green Run, Die Rise, Nuketown and Mob of the Dead kept the older Black Ops 1 one. The Pack-a-Punched Ray Gun now wears Buried's on Green Run, Die Rise and Nuketown, and so does the Ray Gun you see in the box, lying on the floor and in other players' hands.
+  * Green Run, Die Rise, and Nuketown use the newer Ray Gun model for the upgraded gun, Mystery Box preview, dropped weapons, and other players.
 
 * **Timers and counters:**
   * Game and round timers with configurable colours, plus a Cold War round counter.
 
 * **Health bar:**
-  * A green bar in a grey box, bottom left, that turns yellow once you take damage and red when the next zombie hit would down you, with your health as a number beside it. Carrying a shield adds its own bar above and its remaining health next to yours.
+  * A health bar changes from green to yellow after damage and red near death. A second bar shows shield health.
 
 * **Subtitles:**
-  * A **SUBTITLES** row on the HUD tab (OFF / SUBTITLES / SUBTITLES + NAMES) puts spoken lines on screen as text, on all six maps, solo and co-op: your own character in white, every other voice in grey, and the NAMES setting puts the speaker's name in front of every displayed chunk. That is every voice, not just the characters: the announcer (power-ups, the box, the dog rounds), Maxis and Samantha (Origins' radios and generators included), Richtofen in Stuhlinger's head, Brutus, the bus driver, the TVs and radios, the ghost, and Die Rise's whispering zombies. Lines that play at the same time stack on two rows, with older lines below newer ones; when an older line fades, the newer line slides down (on Nuketown that includes Marlton in the bunker). The text was machine-transcribed from the game's own audio, so the odd word can be off. The quest lines the maps play outside the normal dialogue system (the Origins Samantha intro and Richtofen exchanges, Mob's chair, free-fall and showdown lines, Buried's answers to Richtofen) are covered too; Maxis, Samantha and the Richtofen voice in Stuhlinger's head are treated as separate speakers.
+  * The HUD menu can show subtitles with optional speaker names on every map in solo and co-op. It covers characters, announcers, radios, quest dialogue, and other map voices. Overlapping lines stack on screen. The text was machine-transcribed, so some words may be wrong.
 
 * **Scoreboard crew emblems:**
-  * The scoreboard shows the crew that belongs to the map you're on, in Classic and Survival alike. Origins and its Crazy Place get the Primis emblem, Buried and Borough get Buried's, Mob of the Dead and Cell Block get the inmates', and Die Rise and its three Survival locations get their own. Green Run and Nuketown keep the TranZit survivors in Classic; in Survival they show CIA or CDC to match the character you picked. Before this, every DLC map drew a missing-texture checkerboard there instead.
+  * The scoreboard shows the correct crew emblem for each map and mode instead of a missing texture.
 
 * **Hitmarkers:**
   * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.
@@ -270,7 +264,7 @@ Built on [**Plutonium**](https://plutonium.pw), with **OpenAssetTools** and **xe
 
 **Disclaimers/Other Information:**
 
-This mod's code is mostly made using **Claude Code AI**; however, **ANY** and **ALL** artwork is human-made. I understand how controversial the usage of AI in any form is perceived to be, and that this will come as a disappointment to some; any criticism is understandable — I am not a coder, nor have I ever claimed to be. This project's initial intention was for it to be used by me, and me only. I have decided to open this project up as I understand that this could be quite resourceful.
+Most of this mod's code was developed with several **AI coding agents**, including Claude Code, Codex, and OpenCode. No single AI agent made the project. All artwork is human-made. I originally built the mod for personal use and later released it for others to use and improve.
 
 <div align="center">
 <br>

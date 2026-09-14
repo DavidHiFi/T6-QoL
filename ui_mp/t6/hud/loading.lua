@@ -766,6 +766,14 @@ end
 CoD.Loading.StartLoading = function (f8_arg0, f8_arg1)
 	local f8_local0 = CoD.Loading.GetZMLoadingMapName()
 	local f8_local1 = Dvar.ls_maplocation:get()
+	-- zm_qol - Nuketown's white location line. The engine's ls_maplocation
+	-- reads "NUKETOWN" (Treyarch's own start-location row says so), doubling
+	-- the orange title. The map is the Nevada test site, as the MP loading
+	-- screen has always said. Scoped to zm_nuked only; every other map keeps
+	-- the engine value exactly as before.
+	if CoD.isZombie == true and UIExpression.DvarString(nil, "ui_mapname") == "zm_nuked" then
+		f8_local1 = "NEVADA, USA"
+	end
 	local f8_local2 = Dvar.ls_gametype:get()
 	-- Direct CLI map changes can leave ls_gametype carrying the previous map's
 	-- display text. ui_gametype already contains the mode being loaded.

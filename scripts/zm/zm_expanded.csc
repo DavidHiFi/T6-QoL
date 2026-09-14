@@ -564,7 +564,7 @@ struct_class_init()
 //
 //  🛑 EXACT TWIN of scripts\zm\locs\zm_tomb_loc_crazy_place.gsc::
 //  zmqol_add_wallbuy(). Four guns on the four pillars of Origins' elemental
-//  chamber, at BO2-Reimagined's own mapents coordinates.
+//  chamber, at BO2-Reimagined's own mapents coordinates (v2.14.0).
 //
 //  This is not cosmetic and it is not optional. _zm_weapons registers ONE
 //  "world" clientfield per spawned wall-buy, named "<weapon>_<origin>", on the
@@ -588,7 +588,6 @@ zmqol_add_crazy_place_wallbuys()
 	zmqol_add_crazy_place_wallbuy( "scar_zm",        "t6_wpn_ar_scarh_world",     ( 10104, -8142, -383 ), ( 0, 225, 0 ) );
 	zmqol_add_crazy_place_wallbuy( "mg08_zm",        "t6_wpn_zmb_mg08_world",     ( 10104, -7670, -383 ), ( 0, 135, 0 ) );
 	zmqol_add_crazy_place_wallbuy( "ksg_zm",         "t6_wpn_shotty_ksg_world",   ( 10576, -7670, -383 ), ( 0, 45, 0 ) );
-
 	println( "[zm_qol] CLIENT crazy place: 4 wallbuy struct pair(s) added" );
 }
 

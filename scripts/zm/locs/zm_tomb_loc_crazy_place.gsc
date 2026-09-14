@@ -184,6 +184,8 @@ struct_init()
 	zmqol_add_wallbuy( "scar_zm",        "t6_wpn_ar_scarh_world",     (10104, -8142, -383), (0, 225, 0) );
 	zmqol_add_wallbuy( "mg08_zm",        "t6_wpn_zmb_mg08_world",     (10104, -7670, -383), (0, 135, 0) );
 	zmqol_add_wallbuy( "ksg_zm",         "t6_wpn_shotty_ksg_world",   (10576, -7670, -383), (0, 45, 0) );
+
+
 }
 
 // ============================================================================
@@ -456,6 +458,9 @@ main()
 	//  through the pointer, never by a qualified reference - that file loads on
 	//  every map and this one only on Origins (ERROR_CATALOGUE §3).
 	level.zmqol_box_here_func = ::zmqol_cp_box_here;
+	//  `.wallhere` (v2.15.42) - the wall-buy measurement probe below, same
+	//  pointer shape.
+	level.zmqol_wall_here_func = ::zmqol_cp_wall_here;
 	level thread pap_fx();
 	level thread set_ee_ending();
 	level thread scripts\zm\locs\loc_common::init();
@@ -977,7 +982,74 @@ zmqol_cp_box_here( player )
 	zmqol_cp_place_box( s_chest, e_zb, v_at, n_out );
 
 	player iprintln( "^2[zm_qol] box ^7at x " + int( v_at[0] ) + "  y " + int( v_at[1] ) + "  z " + int( v_at[2] ) + "  ^2front yaw ^7" + n_out + " ^7(prompt + light stay put until restart)" );
-	println( "[zm_qol] BOXHERE zm_tomb crazy place: box at (" + v_at[0] + ", " + v_at[1] + ", " + v_at[2] + ") front yaw " + n_out + " (struct yaw " + int( s_chest.angles[1] ) + ", zbarrier yaw " + int( e_zb.angles[1] ) + ") - player stood at (" + int( player.origin[0] ) + "," + int( player.origin[1] ) + "," + int( player.origin[2] ) + ") yaw " + n_face );
+	println( "[zm_qol] BOXHERE zm_tomb crazy place: box at (" + v_at[0] + ", " + v_at[1] + ", " + v_at[2] + ") front yaw " + n_out + " (struct yaw " + int( s_chest.angles[1] ) + ", zbarrier yaw " + int( e_zb.angles[1] ) + ") - player stood at (" + int( player.origin[0] ) + "," + int( player.origin[1] ) + "," + int( player.origin[2] ) + ") facing " + n_face );
+}
+
+// ============================================================================
+//  zmqol_cp_wall_here  -  `.wallhere`: measure a future wall-buy spot live
+//  and print the numbers to bake.                                   (v2.15.42)
+//
+//  Stand where you would BUY the gun, face the wall at buy height, type
+//  .wallhere. It traces the face from buy height (feet + 45) along your yaw,
+//  pulls 2 units back off the surface, sets the origin at feet + 30 (the
+//  canonical stock height: twenty zm_tomb wall-buys audited against nearest
+//  pathnodes sit +21..+39 over walkable floor), and faces it along the wall
+//  normal back at you. Measurement only - wall-buy structs are load-time, so
+//  nothing moves or appears until the numbers below are baked into
+//  struct_init() AND the zm_expanded.csc twin and the map is reloaded.
+//  A zombie wandering through the trace spoils one reading - just retype it.
+// ============================================================================
+zmqol_cp_wall_here( player )
+{
+	v_ang = player getplayerangles();
+	n_face = int( v_ang[1] );
+
+	while ( n_face < 0 )
+		n_face += 360;
+	while ( n_face >= 360 )
+		n_face -= 360;
+
+	v_f = anglestoforward( ( 0, n_face, 0 ) );
+	v_from = player.origin + ( 0, 0, 45 );
+	v_to = v_from + ( v_f[0] * 400, v_f[1] * 400, 0 );
+
+	trace = bullettrace( v_from, v_to, 0, undefined );
+
+	if ( trace["fraction"] >= 1 )
+	{
+		player iprintln( "^1[zm_qol] .wallhere ^7- no wall within 400" );
+		return;
+	}
+
+	v_hit = trace["position"];
+	n_dist = int( distance( v_from, v_hit ) );
+
+	if ( !isdefined( trace["normal"] ) )
+	{
+		player iprintln( "^1[zm_qol] .wallhere ^7- wall hit but no normal, retype it" );
+		return;
+	}
+
+	v_flat = ( trace["normal"][0], trace["normal"][1], 0 );
+
+	if ( length( v_flat ) < 0.1 )
+	{
+		player iprintln( "^1[zm_qol] .wallhere ^7- wall normal is vertical, retype it" );
+		return;
+	}
+
+	n_out = int( vectortoangles( vectornormalize( v_flat ) )[1] );
+
+	while ( n_out < 0 )
+		n_out += 360;
+	while ( n_out >= 360 )
+		n_out -= 360;
+
+	v_n = vectornormalize( v_flat );
+	v_at = ( v_hit[0] + v_n[0] * 2, v_hit[1] + v_n[1] * 2, player.origin[2] + 30 );
+
+	player iprintln( "^2[zm_qol] wallbuy ^7at x " + int( v_at[0] ) + "  y " + int( v_at[1] ) + "  z " + int( v_at[2] ) + "  ^2yaw ^7" + n_out + " ^7(wall " + n_dist + " out - bake + reload, nothing moves live)" );
+	println( "[zm_qol] WALLHERE zm_tomb crazy place: wallbuy at (" + v_at[0] + ", " + v_at[1] + ", " + v_at[2] + ") yaw " + n_out + " - player stood at (" + int( player.origin[0] ) + "," + int( player.origin[1] ) + "," + int( player.origin[2] ) + ") facing " + n_face + ", wall " + n_dist + " out" );
 }
 
 // ============================================================================

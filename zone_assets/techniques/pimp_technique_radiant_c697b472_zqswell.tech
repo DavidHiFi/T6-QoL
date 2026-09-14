@@ -1,0 +1,14 @@
+{
+  stateMap "passthrough"; // TODO
+
+  vertexShader 4.0 "pimp_shader_radiant_4f5f7224.hlsl"
+  {
+  }
+
+  pixelShader 4.0 "pimp_shader_radiant_109e2eb0.hlsl"
+  {
+  }
+
+  vertex.position = code.position;
+  vertex.color[0] = code.color;
+}

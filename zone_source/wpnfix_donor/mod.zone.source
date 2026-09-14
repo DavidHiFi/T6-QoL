@@ -10,7 +10,26 @@
 // ============================================================================
 >game,T6
 
-weapon,m1911_zm
+//  m1911_zm IS DELIBERATELY NOT HERE (it was, until the starting-pistol
+//  fix). User report: on Origins the M1911 fires the Mauser's shot. Retail's
+//  m1911_zm asks for wpn_1911_fire_plr, and that alias is MAP-DEPENDENT:
+//  zmb_tomb points it at wpn_mauser_fire, every other map bank at
+//  wpn_fnp45_fire_plr. Treyarch could share the name because retail never
+//  lets the M1911 onto Origins; this mod's starting-pistol row does. Same
+//  shape as the v2.8.9 Mauser fix, same direction: let
+//  zone_source\base\mod.ff supply m1911_zm, whose fire aliases are the
+//  UNSHARED wpn_m1911_fire_{plr,npc}, and declare that family in mod.all
+//  (fnp45 shot for plr, fiveseven shot for npc - Treyarch's own mapping off
+//  Origins). Measured: the donor's m1911_zm differs from the retail copy this
+//  donor used to supply in exactly 2 fields (the two fire aliases), so
+//  nothing else about the gun changes. The two upgraded halves STAY here on
+//  retail's wpn_1911_*_pap names - Mustang & Sally are untouched everywhere.
+//  Side effect, stated plainly: the M1911 now reads mod.all's shot on every
+//  map. That shot IS the pack's remaster - its bytes were extracted out of the
+//  pack's own cmn_root bank into sound\wpn\pistol\m1911\ - so the pack's M1911
+//  plays through the M1911 on all six maps including Origins. Reversible in
+//  one line (put weapon,m1911_zm back below and drop the 11 rows) - but that
+//  restores the Mauser shot on Origins.
 weapon,m1911_upgraded_zm
 weapon,m1911lh_upgraded_zm
 

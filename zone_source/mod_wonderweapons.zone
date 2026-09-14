@@ -130,14 +130,16 @@ script,scripts/zm/thundergun.csc
 //  DEPLOYED, NOT BOOTED - if Diner dies at load with 0x80000003 and no script
 //  error, THIS is the first suspect: comment the eight lines and relink.
 // ============================================================================
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animtrees/zm_transit_basic.atr
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animstatedefs/zm_transit_basic.asd
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animtrees/zm_nuked_basic.atr
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animstatedefs/zm_nuked_basic.asd
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animtrees/zm_highrise_basic.atr
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animstatedefs/zm_highrise_basic.asd
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animtrees/zm_prison_basic.atr
-// v2.10.6 REVERTED (BG_AnimStateDef_Parse error, see below): rawfile,animstatedefs/zm_prison_basic.asd
+// Stock retail files plus only the two DLC5 Moon Wave Gun states. Matching
+// server/client AIType overrides provide the twelve referenced animations.
+rawfile,animtrees/zm_transit_basic.atr
+rawfile,animstatedefs/zm_transit_basic.asd
+rawfile,animtrees/zm_nuked_basic.atr
+rawfile,animstatedefs/zm_nuked_basic.asd
+rawfile,animtrees/zm_highrise_basic.atr
+rawfile,animstatedefs/zm_highrise_basic.asd
+rawfile,animtrees/zm_prison_basic.atr
+rawfile,animstatedefs/zm_prison_basic.asd
 // still NOT shipped (guns gated off there): zm_tomb_basic, zm_buried_basic
 // ============================================================================
 //  🛑 v2.10.6 - REVERTED. BOOTED 2026-09-02 and the map refused to load with:

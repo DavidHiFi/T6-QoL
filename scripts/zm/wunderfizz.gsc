@@ -2388,6 +2388,10 @@ wunderfizz(origin, angles, model, cost, perks, trig, wunderfizzBottle )
 							self.zmqol_wf_cycling = 0;
 							if((self.uses >= RandomIntRange(3,7)) && (level.wunderfizz_locations > 1))
 							{
+								// Refund this spin because the bear moves the machine instead
+								// of dispensing a perk. Use the score helper so the HUD and
+								// score state update through the same path as the Mystery Box.
+								player maps\mp\zombies\_zm_score::add_to_player_score( cost, 0 );
 								//  v1.56.3 - the REAL bear bottle, not the teddy prop.
 								//  Stock Origins does exactly this at
 								//  _zm_perk_random.gsc:356. The model was pulled

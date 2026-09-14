@@ -107,6 +107,11 @@ main()
     replaceFunc( maps\mp\zombies\_zm_perk_random::init_machines,        ::zmqol_tomb_no_native_wunderfizz );
     replaceFunc( maps\mp\zombies\_zm_perk_random::start_random_machine, ::zmqol_tomb_no_native_wunderfizz );
 
+    // Crazy Place Survival has no Origins challenge chests or quest path. Do
+    // not register the four Origins challenge stats, HUD, rewards, or milestone
+    // sound there. Classic Origins keeps the stock initializer below.
+    replaceFunc( maps\mp\zm_tomb_challenges::challenges_init, ::zmqol_tomb_challenges_init );
+
     //  v1.59.2 - MP40 wall-buys hand out the ADJUSTABLE STOCK version.
     //  THREADED, and it waits for the wall-buy stubs to exist - the v1.59.1
     //  version ran inline here and found zero structs. See the function.
@@ -160,8 +165,63 @@ main()
     replaceFunc( maps\mp\zm_tomb_capture_zones::recapture_round_tracker,    scripts\zm\replaced\zm_tomb_capture_zones::recapture_round_tracker );
     replaceFunc( maps\mp\zm_tomb_capture_zones::all_zones_captured_vo,      scripts\zm\replaced\zm_tomb_capture_zones::all_zones_captured_vo );
 
+    // ========================================================================
+    //  ORIGINS SURVIVAL - the four chamber walls rise instead of snapping.
+    //
+    //  User, 2026-09-12: *"the walls just kind of disappear, they just
+    //  instantly disappear ... make it so that the walls fly up and then
+    //  disappear"*. Stock zm_tomb_chamber::inits raises every "chamber_wall"
+    //  1000 units with moveto( up_origin, 0.05 ) - a 50ms snap that nobody
+    //  sees from the classic Excavation Site spawn, but that the Crazy Place
+    //  survival spawn watches from the middle of the chamber.
+    //
+    //  The replacement is stock inits verbatim, one branch added: outside
+    //  classic the same walls fly to the same up_origin over 2s (echoing
+    //  stock's own move_wall_up timing shape) and connect paths when they
+    //  arrive. Classic Origins takes the stock 0.05s snap byte for byte.
+    //
+    //  📝 Registered in main(), not init(), for the reason at the top of this
+    //  function: inits() is threaded at map-init, so a replaceFunc in init()
+    //  would land after it had already run.
+    // ========================================================================
+    replaceFunc( maps\mp\zm_tomb_chamber::inits, scripts\zm\replaced\zm_tomb_chamber::inits );
+
     // Must run in main(), before the map registers its own clientfields.
     zmqol_register_survival_clientfields();
+}
+
+zmqol_tomb_challenges_init()
+{
+    //  Survival locations have no challenge chests, boards, or quest path, so
+    //  no milestone can ever complete here. Classic Origins keeps the stock
+    //  stat table through the normal pointer.
+    if ( !is_classic() )
+        level.challenges_add_stats = ::zmqol_tomb_challenges_survival_stats;
+    else
+        level.challenges_add_stats = maps\mp\zm_tomb_challenges::tomb_challenges_add_stats;
+
+    maps\mp\zombies\_zm_challenges::init();
+}
+
+//  Survival stat table: the same four stats in the same order (add_stat names
+//  challenge_complete_1..4 by position), but with goals no run can reach and
+//  no reward or tracker threads, so the medal drum never plays and no free
+//  packed weapon, max ammo, or perk is handed out.
+//
+//  The table must still exist. Stock init registers the four
+//  challenge_complete_N clientfields and the client registers its half
+//  unconditionally, so skipping init outright disconnects survival with
+//  EXE_CLIENT_FIELD_MISMATCH. The stock connect and spawn handlers run
+//  against these stats and find nothing awarded, which is the correct state.
+//
+//  add_stat is qualified because this file does not include _zm_challenges;
+//  an unqualified call would not resolve here.
+zmqol_tomb_challenges_survival_stats()
+{
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_headshots", 0, &"ZM_TOMB_CH1", 2000000000 );
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_zone_captures", 0, &"ZM_TOMB_CH2", 2000000000 );
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_points_spent", 0, &"ZM_TOMB_CH3", 2000000000 );
+    maps\mp\zombies\_zm_challenges::add_stat( "zc_boxes_filled", 1, &"ZM_TOMB_CHT", 2000000000 );
 }
 
 // ============================================================================

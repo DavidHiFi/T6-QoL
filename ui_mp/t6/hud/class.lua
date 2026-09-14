@@ -95,6 +95,9 @@ end
 
 CoD.Class.OptionsButtonPressed = function (IngameMenuWidget, ClientInstance)
 	IngameMenuWidget:saveState()
+	if ZmQolInstallParentOptionsMenu then
+		ZmQolInstallParentOptionsMenu()
+	end
 	IngameMenuWidget:openMenu("OptionsMenu", ClientInstance.controller)
 	IngameMenuWidget:close()
 end
@@ -144,21 +147,35 @@ end
 -- 📝 If a future Plutonium update reintroduces the crash, this is the row to
 -- pull again; map_restart (RESTART GAME) is the crash-free full-reload fallback.
 CoD.Class.ZmQolFastRestartPressed = function (IngameMenuWidget, ClientInstance)
-	-- v2.15.35 - close the pause menu, then restart, so one click does both.
+	-- ========================================================================
+	-- 🛑 v2.15.40 - BACK TO ONE EXEC AND NOTHING ELSE (the v2.15.12 shape).
+	-- The v2.15.37 story below is kept for the record, but its premise was
+	-- wrong and its fix did not hold.
 	--
-	-- 🛑 USE button_prompt_back. NOT close_all_ingame_menus, and NOT the
-	-- RestartGamePopup. v2.15.34 tried CoD.InGameMenu.CloseAllInGameMenus here
-	-- and the user's game FROZE outright - character stood there holding the
-	-- Mauser, audio dead, no restart, no way back. That is the exact failure the
-	-- v1.99.87 note above describes: a restart that does not complete while the
-	-- UI is torn down or busy-blocked leaves the game hung. button_prompt_back is
-	-- the same close Resume uses a few lines below, it is a plain menu close, and
-	-- the user confirmed on 2026-09-10 that FAST RESTART with it restarts AND
-	-- closes the menu in one click with no spamming.
-	IngameMenuWidget:processEvent({
-		name = "button_prompt_back",
-		controller = ClientInstance.controller
-	})
+	-- What happened on 2026-09-11: FAST RESTART pressed from this row on
+	-- Nuketown survival round 3 hard-crashed the process with an access
+	-- violation (0xC0000005; last GSC pos maps/mp/_visionset_mgr::monitor,
+	-- 'type undefined is not an int' - teardown fallout, not the cause).
+	-- No LUI_ERROR dialog, no later INSTANT EXIT involved: the row itself
+	-- kills the game.
+	--
+	-- That refutes v2.15.37's core premise, stated below, that Engine.Exec
+	-- QUEUES the restart to end of frame: if the teardown really ran after
+	-- the close had finished, there would be nothing left to race. The
+	-- restart evidently tears the level down synchronously enough that the
+	-- menu close in the same handler runs on a dying UI - the same
+	-- same-frame teardown+UI race as v2.15.36 (orphaned transition) and
+	-- v2.15.34 (CloseAllInGameMenus freeze), third verse. The 2026-09-09
+	-- clean re-test is consistent with it: that restart was sent from the
+	-- console with NO menu open at all, so there was nothing to race.
+	--
+	-- So per v2.15.37's own fallback instruction, the processEvent close is
+	-- deleted. The pause menu stays open over the restarting match; one
+	-- back-press closes it once the restart has completed. One extra click,
+	-- zero same-frame races - and this is a previously SHIPPED shape
+	-- (v2.15.12), not a new invention. (v2.15.36/37's full notes live in
+	-- git history, not here.)
+	-- ========================================================================
 	Engine.Exec(ClientInstance.controller, "fast_restart")
 end
 

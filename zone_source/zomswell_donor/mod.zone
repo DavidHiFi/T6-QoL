@@ -1,0 +1,20 @@
+// Call Of Duty: Black Ops II
+>game,T6
+
+// zomswell_donor - the two DLC5 ZOMBIE SWELL TECH SETS, copied verbatim out of
+// Zombies Declassified BETA 1 zm_moon.ff (the patched OAT in tools\oat-dlc5
+// reads that dev zone; the stock Linker cannot - see how_this_was_built.txt).
+//
+// WHY THIS EXISTS (measured 2026-09-12):
+// The Wave Gun body swell is a VERTEX SHADER on Moon's zombie techsets, not a
+// script trick. Retail's mc_sw4_3d_char_cloth_4z8fq5wu embeds
+//     vertexShader 4.0 "pimp_shader_sw4_3d_phong_emissive_alcatraz_b7d697d7.hlsl"
+// for its lit-spot technique, while DLC5's ..._dlc5 embeds
+//     vertexShader 4.0 "pimp_shader_sw4_3d_char_cloth_53938792.hlsl"
+// (pixel shader identical; every other field identical). The technique NAME is
+// the same on both sides - only the embedded shader differs - so the retail
+// techset can never swell no matter how the material is authored. These two
+// techsets are the shader half; mod_wavegun_swell.zone's MaximumSwell
+// materials are the data half.
+techniqueset,mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
+techniqueset,mc_sw4_3d_char_skin_j92387z3_dlc5
