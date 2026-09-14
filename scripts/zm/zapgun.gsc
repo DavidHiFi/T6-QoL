@@ -765,6 +765,8 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             else s_why = "fallback:no-sizzle-asd";
         }
         println( "[zm_qol] zapgun branch: " + s_why + " animname=" + self.animname );
+        self zmqol_mgun_log_attaches( "at-kill" );
+        self thread zmqol_mgun_attach_probe();
 
         if ( instant_explode )
         {
@@ -820,6 +822,55 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
                 println( "[zm_qol] zapgun: sizzle death anim '" + self.deathanim + "' on " + self.animname );
         }
     }
+}
+
+// ============================================================================
+//  zmqol_mgun_log_attaches  -  IS THE HEAD GONE, OR JUST NOT DRAWN? (v2.16.5)
+// ----------------------------------------------------------------------------
+//  Three fixes have now been aimed at the heads coming off during a Wave Gun
+//  kill and the user still sees it, so this stops guessing and measures the
+//  one thing that splits the problem in half.
+//
+//  A zombie's head is a MODEL ATTACHED to the actor. So:
+//    * if the attach count DROPS across the death, something is detaching it -
+//      a gib, a model swap, script - and the fix is on the server;
+//    * if the count HOLDS and the head is still invisible, nothing removed it
+//      and it is a RENDER failure - material or vertex shader - which points
+//      straight back at the head materials taken off the swell techsets in
+//      v2.16.1, and the fix is to put them back.
+//
+//  Those two have opposite fixes, which is exactly why guessing has cost three
+//  builds. Sampled at the kill, at "expand", and again after the swell has run,
+//  because the moment it changes is as informative as the fact that it did.
+//  Remove once the answer is known.
+// ============================================================================
+//  Samples the attach list across the whole death without depending on a
+//  notetrack arriving - "expand" is the only one that reliably does, and if
+//  the head goes after it this still catches it.
+zmqol_mgun_attach_probe()
+{
+    self endon( "death" );
+
+    wait 0.5;
+    self zmqol_mgun_log_attaches( "t+0.5" );
+    wait 1.0;
+    self zmqol_mgun_log_attaches( "t+1.5" );
+    wait 1.0;
+    self zmqol_mgun_log_attaches( "t+2.5" );
+}
+
+zmqol_mgun_log_attaches( str_when )
+{
+    if ( !isdefined( self ) )
+        return;
+
+    n = self getattachsize();
+    s = "";
+
+    for ( i = 0; i < n; i++ )
+        s = s + " " + self getattachmodelname( i );
+
+    println( "[zm_qol] zapgun attach " + str_when + ": count=" + n + s );
 }
 
 //  The server-side twin of Moon's client expand response: the sizzle mist at
