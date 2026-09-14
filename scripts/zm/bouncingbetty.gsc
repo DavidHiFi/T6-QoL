@@ -6,6 +6,35 @@
 //  betty needs to be an addition, not a replacement... claymores need to be the
 //  same as usual.")
 //
+//  🌟 v2.15.52 - THE MINE IS THE RIGHT WAY UP. Reported 2026-09-14 from the
+//  Crazy Place: the Betty the mystery box offers floated upside down. It was
+//  not the box and not that map - it was this weapon's WORLD presentation, so
+//  it was wrong on all six maps and everywhere the world model is drawn (the
+//  box float model, the third-person hands, the back).
+//
+//  The def was carrying BO2-Reimagined's scheme verbatim on BOTH halves:
+//      worldModel                   t6_wpn_none_world      (an empty carrier)
+//      attachWorldModel1            t6_wpn_bouncing_betty_world
+//      attachWorldModelTag1         tag_weapon
+//      attachWorldModelOffsetPitch1 180                    <- the flip
+//  That 180 is a half-turn about pitch, and the box's float model is built by
+//  _zm_magicbox.gsc:1318 -> _zm_utility::spawn_weapon_model() ->
+//  useweaponmodel(), the engine call that resolves the attach chain - so the
+//  carrier's attachment came through rotated, mesh and all.
+//
+//  The world half is now the MP donor verbatim instead (bouncingbetty_mp, in
+//  T6-Data-Archive: worldModel t6_wpn_bouncing_betty_world, no attach, no
+//  rotation), which is the one configuration with a proven-correct orientation
+//  - it is the same mesh at identity that zmqol_betty_plant_* already plants
+//  upright via setmodel() below. Clearing the world attach also retires the
+//  null worldModel the v2.14.27 box crash was traced through; see the note in
+//  zm_expanded.csc, which keeps its display-table 0 regardless.
+//
+//  🛑 THE VIEW HALF IS DELIBERATELY UNTOUCHED. gunModel stays t6_wpn_none_view
+//  with the mesh attached at tag_weapon (X -5, pitch -90): that is the v2.9.25
+//  held-mine presentation, and the MP donor cannot be copied there - it ships
+//  no held-mine viewmodel anims. Only the WORLD half was ever wrong.
+//
 //  🛑 THAT DIRECTIVE WAS REVERSED BY THE USER ON 2026-09-04 (v2.11.20):
 //  "make sure that you can't have both claymores and bouncing betties at the
 //  same time, if you have claymores for example and then spin the mystery box
