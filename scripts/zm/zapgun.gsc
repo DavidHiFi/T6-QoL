@@ -416,10 +416,26 @@ microwavegun_fired( upgraded )
     //  reads it elsewhere (zombie_eye_glow_stop), so setting it on a live
     //  zombie would be a lie with side effects.
     // ------------------------------------------------------------------------
+    //  🛑 v2.16.6 - AND head_gibbed TOO, OR THE HEAD STILL COMES OFF.
+    //
+    //  The v2.16.5 attach probe answered it: every kill logged the head model
+    //  at the kill and c_zom_*_g_behead half a second later. That swap is
+    //  stock's zombie_head_gib() - detach the head, attach torsodmg5 - and it
+    //  runs AFTER death from zombie_death_event() whenever the attacker has
+    //  the multikill_headshots (Head Popper) perma-perk, which this mod's
+    //  perma_perks option grants to everyone. zombie_head_gib() never reads
+    //  no_gib; the only thing that stops it is self.head_gibbed already set.
+    //  Setting it on a zombie that dies on the next dodamage has no other
+    //  effect: head_gibbed is read by head_should_gib, zombie_head_gib, the
+    //  Electric Cherry tesla gib and _zm_turned's spawn-point pick, all of
+    //  which are exactly the things a corpse must not do.
     for ( i = 0; i < shot.enemies.size; i++ )
     {
         if ( isdefined( shot.enemies[i] ) )
+        {
             shot.enemies[i].no_gib = 1;
+            shot.enemies[i].head_gibbed = 1;
+        }
     }
 
     for ( i = 0; i < shot.enemies.size; i++ )
@@ -692,6 +708,7 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
 
     self.no_gib = 1;
     self.gibbed = 1;
+    self.head_gibbed = 1;   // v2.16.6 - blocks the post-death perma-perk head gib, see microwavegun_fired()
     self dodamage( self.health + 666, player.origin, player );
 
     if ( self.health <= 0 )
@@ -765,8 +782,11 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             else s_why = "fallback:no-sizzle-asd";
         }
         println( "[zm_qol] zapgun branch: " + s_why + " animname=" + self.animname );
-        self zmqol_mgun_log_attaches( "at-kill" );
-        self thread zmqol_mgun_attach_probe();
+        if ( getdvarintdefault( "zmqol_mgun_debug", 0 ) )
+        {
+            self zmqol_mgun_log_attaches( "at-kill" );
+            self thread zmqol_mgun_attach_probe();
+        }
 
         if ( instant_explode )
         {
@@ -842,7 +862,11 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
 //  Those two have opposite fixes, which is exactly why guessing has cost three
 //  builds. Sampled at the kill, at "expand", and again after the swell has run,
 //  because the moment it changes is as informative as the fact that it did.
-//  Remove once the answer is known.
+//
+//  ANSWERED 2026-09-14 (v2.16.6): count held at 1 but the model went from
+//  c_zom_zombie_head_* to c_zom_zombie2_body01_g_behead within 0.5 s - the
+//  head was detached by stock's zombie_head_gib() after death (Head Popper
+//  perma-perk). Kept behind zmqol_mgun_debug 1 as the regression check.
 // ============================================================================
 //  Samples the attach list across the whole death without depending on a
 //  notetrack arriving - "expand" is the only one that reliably does, and if
