@@ -388,6 +388,40 @@ microwavegun_fired( upgraded )
     self microwavegun_get_enemies_in_range( upgraded, 0, shot );
     self microwavegun_get_enemies_in_range( upgraded, 1, shot );
 
+    // ------------------------------------------------------------------------
+    //  🛑 v2.16.4 - NO-GIB IS SET HERE, BEFORE ANY WAIT, OR HEADS POP.
+    //
+    //  User, 2026-09-14, three builds running: "their heads are still popping".
+    //  It was never the swell, the materials or the shader - it is stock's
+    //  ordinary head gib, and the mod was marking no_gib too late to stop it.
+    //
+    //  MEASURED in retail _zm_spawner.gsc: the gib decision runs inside the
+    //  damage override, which fires BEFORE any registered zombie damage
+    //  callback (check_zombie_damage_callbacks is further down the same chain).
+    //  zombie_should_gib() is the gate and it honours self.no_gib; if it
+    //  passes, head_should_gib() decides, and for grenade-type damage that is
+    //      distance( point, self gettagorigin( "j_head" ) ) > 55
+    //  - anywhere within FIFTY-FIVE units of the head pops it. That is most of
+    //  a torso, which is why it looked random rather than like a headshot.
+    //
+    //  microwavegun_sizzle_zombie() does set no_gib, but it is threaded per
+    //  target through microwavegun_network_choke(), which waits three network
+    //  frames every tenth target. Anything the shot damages before its own
+    //  thread is reached is still gibbable. Marking the whole list up front,
+    //  with no wait between building it and marking it, closes that window.
+    //
+    //  no_gib alone is the correct flag: it is what zombie_should_gib reads,
+    //  and it stops the head gib by stopping gibbing. Deliberately NOT
+    //  self.head_gibbed - that means "the head has already come off" and stock
+    //  reads it elsewhere (zombie_eye_glow_stop), so setting it on a live
+    //  zombie would be a lie with side effects.
+    // ------------------------------------------------------------------------
+    for ( i = 0; i < shot.enemies.size; i++ )
+    {
+        if ( isdefined( shot.enemies[i] ) )
+            shot.enemies[i].no_gib = 1;
+    }
+
     for ( i = 0; i < shot.enemies.size; i++ )
     {
         microwavegun_network_choke( shot );
