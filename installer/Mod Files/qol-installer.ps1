@@ -1,8 +1,12 @@
 ﻿<#
 ================================================================================
-  Quality Of Life (zm_qol) - installer for Plutonium T6 (Black Ops II)
+  Quality of Life Series Launcher - the installer for the Quality of Life mods.
 
-  Launched by "Install Quality Of Life.bat". Windows PowerShell 5.1, which every
+  This copy ships the Black Ops II Zombies mod (zm_qol) for Plutonium T6. The
+  same launcher carries the series on the other Plutonium games (T4 / T5 / T7),
+  so the window, the Start menu and the docs all carry the series name.
+
+  Launched by "Windows Install.bat". Windows PowerShell 5.1, which every
   Windows 10/11 machine already has - nothing to install.
 
   Nothing here touches a game file. Everything is written under
@@ -32,7 +36,19 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 # ------------------------------------------------------------------ context --
 $REPO    = 'DavidHiFi/T6-QoL'
 $MODID   = 'zm_qol'
-$MODNAME = 'Quality Of Life'
+# ---------------------------------------------------------------------------
+#  2026-09-14 - THE BRAND IS THE SERIES, NOT ONE GAME.
+#
+#  This launcher ships with every Quality of Life project, so the window, the
+#  Start menu group and the docs are named for the series. $MODNAME is the one
+#  string that still names the MOD rather than the launcher: it must match the
+#  "name" field in mod.json, because that is what the game's own Mods menu
+#  shows. Rename the launcher freely; leave $MODNAME alone.
+# ---------------------------------------------------------------------------
+$SERIES   = 'Quality of Life Series'
+$LAUNCHER = 'Quality of Life Series Launcher'
+$MODNAME  = 'Quality Of Life'
+$TITLEBAR = '   QUALITY OF LIFE SERIES LAUNCHER'
 $MODFILES = @('mod.ff','mod.iwd','mod.json','mod.all.sabl','mod.all.sabs')
 $SOUNDFILES = @('cmn_root.all.sabl','zmb_code_post_gfx.all.sabs','zmb_common.english.sabs','zmb_alcatraz.all.sabl','zmb_tomb.all.sabl')
 
@@ -82,7 +98,7 @@ if ($Root) {
         $PROGRAMS = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
     }
 }
-$SMDIR = Join-Path $PROGRAMS $MODNAME
+$SMDIR = Join-Path $PROGRAMS $SERIES
 
 $script:Log = New-Object System.Collections.Generic.List[string]
 
@@ -249,7 +265,7 @@ function Draw-Header {
     Write-Host ''
     Write-Host '   ╔══════════════════════════════════════════════════════════════════╗' -ForegroundColor $C.Frame
     Write-Host '   ║' -ForegroundColor $C.Frame -NoNewline
-    Write-Host ('   QUALITY OF LIFE'.PadRight(66)) -ForegroundColor $C.Title -NoNewline
+    Write-Host ($TITLEBAR.PadRight(66)) -ForegroundColor $C.Title -NoNewline
     Write-Host '║' -ForegroundColor $C.Frame
     Write-Host '   ║' -ForegroundColor $C.Frame -NoNewline
     $s = '   ' + $Sub
@@ -331,7 +347,7 @@ function Show-Menu {
 
         $L += ,@( @{ t = ''; c = $C.Text } )
         $L += ,@( @{ t = '   ╔' + ('═' * $inner) + '╗'; c = $C.Frame } )
-        $L += ,@( @{ t = '   ║'; c = $C.Frame }, @{ t = ('   QUALITY OF LIFE'.PadRight($inner)); c = $C.Title }, @{ t = '║'; c = $C.Frame } )
+        $L += ,@( @{ t = '   ║'; c = $C.Frame }, @{ t = ($TITLEBAR.PadRight($inner)); c = $C.Title }, @{ t = '║'; c = $C.Frame } )
         $s = '   ' + $Sub
         if ($s.Length -gt $inner) { $s = $s.Substring(0, $inner) }
         $L += ,@( @{ t = '   ║'; c = $C.Frame }, @{ t = $s.PadRight($inner); c = $C.Dim }, @{ t = '║'; c = $C.Frame } )
@@ -1288,6 +1304,36 @@ function Move-OldDualsense {
     } catch { Write-Log "could not migrate the dualsense names: $_" 'warn' }
 }
 
+# ---------------------------------------------------------------------------
+#  2026-09-14 - THE START MENU GROUP RENAMED WITH THE BRAND. It used to be
+#  "Quality Of Life" holding a "Quality Of Life Mod" entry; both carry the
+#  series name now. Anyone who added the old shortcuts is moved across once,
+#  so their Start menu keeps working entries and "Remove the Start menu
+#  shortcuts" still finds them through the manifest. An existing new-name
+#  group is never overwritten, and an old group is never deleted - only
+#  renamed - so nothing of the player's can be lost here.
+# ---------------------------------------------------------------------------
+function Move-OldStartMenu {
+    $old = Join-Path $PROGRAMS 'Quality Of Life'
+    if (-not (Test-Path -LiteralPath $old)) { return }
+    if (Test-Path -LiteralPath $SMDIR) { return }
+    if ($DryRun) { return }
+    try {
+        Move-Item -LiteralPath $old -Destination $SMDIR -Force
+        $oldLnk = 'Quality Of Life Mod.lnk'
+        $newLnk = "$LAUNCHER.lnk"
+        if ((Test-Path -LiteralPath (Join-Path $SMDIR $oldLnk)) -and
+            -not (Test-Path -LiteralPath (Join-Path $SMDIR $newLnk))) {
+            Move-Item -LiteralPath (Join-Path $SMDIR $oldLnk) -Destination (Join-Path $SMDIR $newLnk) -Force
+        }
+        $man = @(Read-Manifest 'shortcuts')
+        if ($man -contains $oldLnk) {
+            Write-Manifest 'shortcuts' @($man | ForEach-Object { if ($_ -eq $oldLnk) { $newLnk } else { $_ } })
+        }
+        Write-Log 'migrated the Start menu group to the series name'
+    } catch { Write-Log "could not migrate the Start menu group: $_" 'warn' }
+}
+
 # Backups used to live in _zm_qol_installer\backups. Move any across, once, so
 # nobody loses one to the new layout.
 function Move-OldBackups {
@@ -2232,8 +2278,8 @@ function Act-PlayLan {
         Pause-Key; return
     }
     $intro = @(
-        "Boots BO2 Zombies straight in, with Quality Of Life already loaded - no",
-        "MODS menu, no manual pick.",
+        "Boots BO2 Zombies straight in, with the Quality of Life mod already",
+        "loaded - no MODS menu, no manual pick.",
         '',
         "~LAN / offline only this session: no online servers, no stats. Solo and",
         "~custom games work exactly as normal. For an online game, start Plutonium",
@@ -2420,8 +2466,8 @@ function Act-RemoveController {
 #  start menu"*, with an .ico named for each.
 #
 #  Two .lnk files in one program group, the way every other Windows app does it:
-#      Start Menu\Programs\Quality Of Life\Quality Of Life Mod.lnk
-#      Start Menu\Programs\Quality Of Life\Plutonium ReShade Watcher.lnk
+#      Start Menu\Programs\Quality of Life Series\Quality of Life Series Launcher.lnk
+#      Start Menu\Programs\Quality of Life Series\Plutonium ReShade Watcher.lnk
 #  Start-menu search matches the FILE NAME, so those two names are the whole
 #  feature and must not be "tidied" into something shorter.
 #
@@ -2442,13 +2488,13 @@ function Act-RemoveController {
 # =============================================================================
 $SHORTCUTS = @(
     @{ Key   = 'mod'
-       File  = 'Quality Of Life Mod.lnk'
-       Label = 'Quality Of Life Mod'
+       File  = "$LAUNCHER.lnk"
+       Label = $LAUNCHER
        Bat   = 'Windows Install.bat'
        InParent = $true          # it sits next to "Mod Files", not inside it
        Ps1   = 'qol-installer.ps1'
        Icon  = 'qol_installer.ico'
-       Desc  = 'Install, update or remove the Quality Of Life mod for Black Ops II Zombies' },
+       Desc  = 'The Quality of Life Series launcher - install, update or remove the mods' },
     @{ Key   = 'reshade'
        File  = 'Plutonium ReShade Watcher.lnk'
        Label = 'Plutonium ReShade Watcher'
@@ -2564,8 +2610,8 @@ function Act-InstallShortcuts {
         "Adds shortcuts to your Start menu, in a group called `"$group`", so",
         "~pressing the Windows key and typing the name opens them:",
         '',
-        "~   Quality Of Life Mod         -  this installer",
-        "~   Plutonium ReShade Watcher   -  the ReShade helper",
+        "~   Quality of Life Series Launcher   -  this installer",
+        "~   Plutonium ReShade Watcher         -  the ReShade helper",
         '',
         "~They are yours only, so nothing needs administrator rights, and the",
         "~uninstall list takes them off again.",
@@ -2577,7 +2623,7 @@ function Act-InstallShortcuts {
 
     $items = @(
         @{ Key='both';    Label='Add both';                         Status='recommended'; StatusColour=$C.Good },
-        @{ Key='mod';     Label='Just  Quality Of Life Mod' },
+        @{ Key='mod';     Label='Just  Quality of Life Series Launcher' },
         @{ Key='reshade'; Label='Just  Plutonium ReShade Watcher' },
         @{ Key='back';    Label='Cancel' }
     )
@@ -3506,7 +3552,7 @@ function Main-Menu {
             @{ Key='controller';Section='INSTALL'; Label='Controller icons';      Status=$st.Controller; StatusColour=$dsColour
                Hint='Swaps the on-screen button prompts to PlayStation, Xbox or Switch. Pick one.' },
             @{ Key='shortcuts';Section='INSTALL'; Label='Start menu shortcuts';   Status=$st.Shortcuts; StatusColour=$scColour
-               Hint='Puts "Quality Of Life Mod" and "Plutonium ReShade Watcher" in your Start menu.' },
+               Hint='Puts "Quality of Life Series Launcher" and "Plutonium ReShade Watcher" in your Start menu.' },
 
             @{ Key='playlan';Section='PLAY';       Label='Play now (LAN, mod already loaded)'
                Hint='One click, straight into Zombies with the mod running.' },
@@ -3552,6 +3598,7 @@ Write-Log "--- installer started (dryrun=$DryRun) ---"
 Enable-Vt
 Move-OldBackups
 Move-OldDualsense
+Move-OldStartMenu
 
 if ($Action) {
     switch ($Action) {

@@ -1,5 +1,8 @@
-QUALITY OF LIFE
+QUALITY OF LIFE SERIES LAUNCHER
 Black Ops II Zombies  ·  Plutonium T6
+
+One launcher for the whole Quality of Life series. This copy installs the
+Black Ops II Zombies mod; the T4, T5 and T7 releases use the same menu.
 
 
  INSTALL
@@ -40,8 +43,8 @@ Black Ops II Zombies  ·  Plutonium T6
       you get two entries you can reach by pressing the Windows
       key and typing:
 
-          Quality Of Life Mod         opens this installer
-          Plutonium ReShade Watcher   opens the ReShade helper
+          Quality of Life Series Launcher   opens this installer
+          Plutonium ReShade Watcher         opens the ReShade helper
 
       They are yours alone - no administrator rights - and the
       uninstall list takes them off again.
