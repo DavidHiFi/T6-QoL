@@ -209,33 +209,33 @@ float3 DecodeNormal(float3 v)
 // move. Zero amount = zero offset, so an actor that never swells renders
 // exactly as retail.
 //
-// 🛑 v2.16.1 - THE CENTRE IS ABSOLUTE WORLD NOW, AND THAT IS THE WOBBLE FIX.
-// User, 2026-09-14: *"their body starts like wobbling and freaking out while
-// they're expanding"*. v2.15.51 compared two things measured at different
-// times: `wp` is rebuilt EVERY FRAME (the CPU skins zombies into eye-relative
-// space, so it moves the instant the camera does), while scriptVector3.yzw was
-// the stomach minus the eye, resent by the client ramp only every 50 ms. Walk
-// or strafe and the eye moves ~10 units between updates, so the ball slid
-// across the body frame to frame - and since the lag reverses when you stop,
-// it pulsed. Nothing was wrong with the shape; the two operands disagreed
-// about where the camera was.
+// 🛑 v2.16.2 - THE CENTRE IS EYE-RELATIVE. DO NOT "FIX" THIS TO WORLD SPACE.
+// v2.16.1 tried exactly that and it cost the user a boot. The reasoning was
+// sound - the wobble comes from comparing `wp`, which is rebuilt EVERY FRAME,
+// against a centre the client ramp only resends every 50 ms, so player
+// movement slid the ball across the body between updates. The fix attempted
+// was to reconstruct absolute world position with
+//     wp + inverseViewMatrix[3].xyz
+// so the eye would cancel. MEASURED IN GAME 2026-09-14: zombies stopped
+// inflating entirely. That row is not the camera position on this engine -
+// T6 stores these matrices transposed relative to this file's row-vector
+// mul(v, M) usage, so the translation is not in row 3 - and the centre landed
+// far enough away that every weight saturated to zero. The failure is silent
+// and total, exactly as predicted, which is the only reason it was cheap to
+// diagnose.
 //
-// 🌟 Adding the camera back makes the eye CANCEL. inverseViewMatrix maps view
-// to world, and with this file's row-vector convention (mul(v, M)) its row 3
-// is the camera's world position, so wp + that is an absolute world position.
-// The ramp now sends J_SpineLower in plain world coordinates and the two
-// operands are in the same frame of reference at every instant, whatever the
-// camera did since the last tick. What is left is the corpse's own drift
-// between ticks, which is a slow float - smooth by construction.
-// Failure mode if this row is ever the wrong one: the centre lands far from
-// the body, every weight saturates to zero and the swell simply does not
-// happen. It cannot blow a zombie up.
+// 🌟 So the space stays eye-relative, the way v2.15.51 had it working, and
+// the staleness is attacked where it is actually cheap and safe: the client
+// ramp now resends the centre every frame instead of every 50 ms (zapgun.csc),
+// which cuts the lag to a single frame of player movement. If the residual
+// wobble ever needs to go to zero, the right move is to send the eye position
+// in its own mapped shader constant from script - NOT to guess at a matrix
+// row again.
 float3 SwellOffset(float3 wp, float3 n)
 {
     float amt = scriptVector3.x;
     float f = saturate(amt * 0.25);
-    float3 worldPos = wp + inverseViewMatrix[3].xyz;
-    float3 d = worldPos - scriptVector3.yzw;
+    float3 d = wp - scriptVector3.yzw;
     float dm = length(d * float3(1.0 / 30.0, 1.0 / 30.0, 1.0 / 22.0));
     float t = saturate(dm / lerp(0.7, 1.0, f));
     float w = 1.0 - t * t * (3.0 - 2.0 * t);

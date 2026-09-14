@@ -108,28 +108,36 @@ zmqol_mgun_client_bloat( localclientnum )
             return;
 
         //  X is BO1's amount (fraction * 4.0). YZW carry the stomach
-        //  (J_SpineLower) in PLAIN WORLD COORDINATES.
+        //  (J_SpineLower) RELATIVE TO THE LOCAL VIEWER'S EYE, because the
+        //  zombie shaders see eye-relative world positions (retail's fog code
+        //  measures length(worldPos) as the eye distance).
         //
-        //  🛑 v2.16.1 - DO NOT SUBTRACT THE EYE HERE AGAIN. Until now this
-        //  line sent the stomach minus getlocalclienteyepos(), because the
-        //  zombie shaders see eye-relative positions. That was true but it
-        //  made the constant go stale the moment the player moved: the shader
-        //  rebuilds its side every frame and this ramp only resends every
-        //  50 ms, so the ball slid around the body and the user saw it wobble
-        //  and "freak out". SwellOffset now adds the camera back out of
-        //  inverseViewMatrix and compares in world space, so the eye cancels
-        //  exactly, every frame, no matter how fast the player moves.
+        //  🛑 v2.16.2 - THE EYE SUBTRACTION IS LOAD-BEARING. v2.16.1 removed
+        //  it and had SwellOffset reconstruct world space from
+        //  inverseViewMatrix instead; measured in game, zombies stopped
+        //  inflating at all, because that matrix row is not the camera
+        //  position on this engine. Restored. See the banner on SwellOffset
+        //  in t6_consts.hlsli before touching either half again - they are one
+        //  change in two files and must always agree about the space.
         //  A rig without the tag uses its origin plus 42 units.
         v_center = self gettagorigin( "J_SpineLower" );
 
         if ( !isdefined( v_center ) )
             v_center = self.origin + ( 0, 0, 42 );
 
+        v_center = v_center - getlocalclienteyepos( localclientnum );
+
         self setshaderconstant( localclientnum, 0, bloat_fraction * 4.0, v_center[0], v_center[1], v_center[2] );
 
         if ( bloat_fraction >= bloat_max_fraction )
             break;
 
-        waitrealtime( 0.05 );
+        //  🌟 v2.16.2 - RESEND EVERY FRAME, NOT EVERY 50 ms. This is the safe
+        //  half of the wobble fix. The shader rebuilds its side of the
+        //  comparison every frame, so at 50 ms the centre was up to three
+        //  frames stale and a strafing player dragged the ball across the
+        //  body. One frame of lag is small enough not to read as motion.
+        //  Cheap: one setshaderconstant on one dying actor, for 2.5 s.
+        waitrealtime( 0.016 );
     }
 }
