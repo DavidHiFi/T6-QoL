@@ -711,6 +711,27 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             instant_explode = 1;
         }
 
+        //  🌟 v2.16.3 - SAY WHICH BRANCH, EVERY KILL, WITHOUT A DVAR.
+        //  The user reports the float-up happening "half the time", and which
+        //  half is decided right here. Two guesses have already been spent on
+        //  this; one line in the log settles it instead. Deliberately NOT
+        //  gated on zmqol_mgun_debug: the dvar cannot be set without sending a
+        //  console command into the user's live game, and the whole point is
+        //  to read this back from a session they played normally. One line per
+        //  Wave Gun kill, in the same [zm_qol] shape as everything else here.
+        //  Remove once the split is known.
+        s_why = "anim";
+        if ( instant_explode )
+        {
+            s_why = "fallback";
+            if ( self.isdog ) s_why = "fallback:dog";
+            else if ( is_true( self.is_traversing ) ) s_why = "fallback:traversing";
+            else if ( is_true( self.in_the_ceiling ) ) s_why = "fallback:ceiling";
+            else if ( !self.has_legs ) s_why = "fallback:crawler-no-asd";
+            else s_why = "fallback:no-sizzle-asd";
+        }
+        println( "[zm_qol] zapgun branch: " + s_why + " animname=" + self.animname );
+
         if ( instant_explode )
         {
             //  Moon: setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 )
@@ -1000,20 +1021,25 @@ zmqol_mgun_microwave_burst()
     self setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 );
     self playsound( "wpn_mgun_impact_zombie" );
 
-    //  A short beat of microwave before the lift, so the rise reads as a
-    //  consequence of the sizzle rather than starting on the same frame.
-    wait 0.4;
-
-    if ( !isdefined( self ) )
-        return;
-
-    //  42 units over 1.6 s, eased in and out (0.45 s accelerate, 0.45 s
-    //  settle), which lands inside the 2.5 s swell rather than after it.
-    self moveto( self.origin + ( 0, 0, 42 ), 1.6, 0.45, 0.45 );
-
-    //  Hold for the rest of Moon's 2.5 s swell so the burst lands at the top
-    //  of the rise, at full size - the same place the anim branch bursts.
-    wait 2.1;
+    //  🛑 v2.16.3 - NO moveto ON AN ACTOR. v2.16.2 lifted the corpse with
+    //  `self moveto( self.origin + (0,0,42), 1.6, 0.45, 0.45 )` and the user
+    //  reported two things at once on that build: heads popping off, and the
+    //  rise only happening about half the time. Both are the one mistake.
+    //  bouncingbetty.gsc:670 already wrote the rule down for a neighbouring
+    //  case - "a planted grenade entity cannot be moveto'd - which is exactly
+    //  why MP spawns its minemover" - and an AI is the same class: it owns its
+    //  own movement, so the move is fought or dropped (the rise that only
+    //  sometimes lands) and the head, a separate model riding a tag, desyncs
+    //  from a body being shoved from underneath (the popping).
+    //
+    //  The float is NOT reimplemented here with a stand-in mover. The engine
+    //  already floats corpses correctly in the anim branch, and the honest way
+    //  to make the rise consistent is to get more kills INTO that branch
+    //  rather than to hand-roll a second rise that has to look identical. The
+    //  print below is what decides which, with evidence instead of a guess.
+    //  The swell above stays: it is Moon's own clientfield and the user
+    //  confirmed inflation working.
+    wait 2.5;
 
     if ( !isdefined( self ) )
         return;
