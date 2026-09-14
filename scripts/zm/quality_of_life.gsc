@@ -792,6 +792,7 @@ init()
     zmqol_discord_presence();   // mod name on the Discord profile (v2.12.2)
     zmqol_restore_perk_bottles_on_survival();
     zmqol_register_divetonuke_visionset();
+    zmqol_arm_divetonuke_explosion();   // v2.15.52 - PhD dive explodes without a machine
     zmqol_register_vulture_visionset();
     zmqol_register_zombie_blood_visionsets();
     zmqol_dev_commands();
@@ -12631,6 +12632,62 @@ zmqol_register_divetonuke_visionset()
     //  via its own compiled copies where they win), the native registration is
     //  preserved by the name-dedup guards, so stock maps keep stock widths.
     maps\mp\_visionset_mgr::vsmgr_register_info( "visionset", "zm_perk_divetonuke", 9000, 400, 1, 1 );
+}
+
+// ============================================================================
+//  zmqol_arm_divetonuke_explosion  -  🛑 HOLDING PhD IS NOT ENOUGH. THE DIVE
+//  ONLY EXPLODES IF A PERK MACHINE HAPPENED TO ARM IT.
+//
+//  User, 2026-09-14: *"i have phd flopper and i just flopped ... and for some
+//  reason it didn't like explode"*.
+//
+//  🌟 THE POINTER IS THE WHOLE BUG, AND IT IS ONE ASSIGNMENT IN STOCK. The dive
+//  handler in stock _zm player code calls level.zombiemode_divetonuke_perk_func
+//  and does nothing at all when it is undefined - no error, no fx, exactly the
+//  silent flop reported. That pointer is assigned in ONE place,
+//  _zm_perk_divetonuke::init_divetonuke(), and the ONLY caller of init_divetonuke
+//  is divetonuke_perk_machine_think(). So the explosion is armed as a SIDE EFFECT
+//  of a PhD vending machine being processed, and never at all otherwise.
+//
+//  That is fine on a stock map where you can only get PhD by drinking at its
+//  machine. It is wrong everywhere this mod hands PhD out by another route:
+//  Wunderfizz (wunderfizz.gsc offers PhD on four maps), `.give phd`, GIVE PERKS,
+//  and every survival location that has no PhD machine to process. In all of
+//  those you hold specialty_flakjacket, you take the fall damage immunity - that
+//  part is a specialty and works - and the dive does nothing.
+//
+//  🛑 THE THREE ZOMBIE VARS AND THE FX ARE NOT OPTIONAL EXTRAS. divetonuke_explode
+//  reads level.zombie_vars["zombie_perk_divetonuke_radius"/min/max] and plays
+//  level._effect["divetonuke_groundhit"]. init_divetonuke sets all four next to
+//  the pointer, so arming the pointer without them would trade a silent flop for
+//  an undefined-array error on the first dive. All four move together or not at
+//  all.
+//
+//  📝 SAFE TO RUN TWICE. If a PhD machine does get processed later,
+//  init_divetonuke() re-assigns the same pointer, re-sets the same three vars and
+//  re-loads the same fx handle - all idempotent. The visionset it also registers
+//  is the one thing that is not, and that is already guarded by the name-dedup in
+//  zmqol_register_divetonuke_visionset() above.
+//
+//  Same five maps as the visionset twin, for the same reason: those are the maps
+//  perks() calls enable_divetonuke_perk_for_level() on. Origins is excluded there
+//  and stays excluded here - it arms its own via zm_tomb.
+// ============================================================================
+zmqol_arm_divetonuke_explosion()
+{
+    map = getDvar( "mapname" );
+
+    if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && map != "zm_prison" && map != "zm_buried" )
+        return;
+
+    level.zombiemode_divetonuke_perk_func = maps\mp\zombies\_zm_perk_divetonuke::divetonuke_explode;
+
+    set_zombie_var( "zombie_perk_divetonuke_radius", 300 );
+    set_zombie_var( "zombie_perk_divetonuke_min_damage", 1000 );
+    set_zombie_var( "zombie_perk_divetonuke_max_damage", 5000 );
+
+    if ( !isdefined( level._effect ) || !isdefined( level._effect["divetonuke_groundhit"] ) )
+        level._effect["divetonuke_groundhit"] = loadfx( "maps/zombie/fx_zmb_phdflopper_exp" );
 }
 
 // ============================================================================
