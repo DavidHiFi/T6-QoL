@@ -49,6 +49,30 @@ $SERIES   = 'Quality of Life Series'
 $LAUNCHER = 'Quality of Life Series Launcher'
 $MODNAME  = 'Quality Of Life'
 $TITLEBAR = '   QUALITY OF LIFE SERIES LAUNCHER'
+# ---------------------------------------------------------------------------
+#  2026-09-14 - THE GAME LIST, AND WHY IT IS FIRST NOW.
+#
+#  The launcher is the series' one entry point, so the first screen is the
+#  GAME, not the mod. T6 (Black Ops II) is the only one with a mod so far;
+#  T4, T5 and T7 open a short "not started" note until their projects exist
+#  (github.com/DavidHiFi/T4-QoL, T5-QoL and T7-QoL).
+#
+#  The names follow Plutonium's own config.json on this PC, which is the only
+#  mapping that decides where a game's files actually live:
+#      t4 = World at War   t5 = Black Ops   t6 = Black Ops II
+#  T7 is Black Ops III, which is not a Plutonium client - it links to its own
+#  project and deliberately does not claim a Plutonium path.
+#
+#  Ready=$false is the whole of "empty": the row is still shown, because the
+#  shape of the series is useful to see, and it opens Show-EmptyGame instead
+#  of a menu with nothing in it.
+# ---------------------------------------------------------------------------
+$GAMES = [ordered]@{
+    t4 = @{ Name = 'World at War';  System = 'T4'; Repo = 'DavidHiFi/T4-QoL'; Ready = $false; Sub = 'World at War  ·  Plutonium T4' }
+    t5 = @{ Name = 'Black Ops';     System = 'T5'; Repo = 'DavidHiFi/T5-QoL'; Ready = $false; Sub = 'Black Ops  ·  Plutonium T5' }
+    t6 = @{ Name = 'Black Ops II';  System = 'T6'; Repo = 'DavidHiFi/T6-QoL'; Ready = $true;  Sub = 'Black Ops II  ·  Plutonium T6' }
+    t7 = @{ Name = 'Black Ops III'; System = 'T7'; Repo = 'DavidHiFi/T7-QoL'; Ready = $false; Sub = 'Black Ops III  ·  T7' }
+}
 $MODFILES = @('mod.ff','mod.iwd','mod.json','mod.all.sabl','mod.all.sabs')
 $SOUNDFILES = @('cmn_root.all.sabl','zmb_code_post_gfx.all.sabs','zmb_common.english.sabs','zmb_alcatraz.all.sabl','zmb_tomb.all.sabl')
 
@@ -322,7 +346,8 @@ function Show-Menu {
         [string] $Sub,
         [array]  $Items,
         [string] $Footer = '   ↑ ↓  move      ENTER  choose      ESC  back',
-        [string[]] $Intro = @()
+        [string[]] $Intro = @(),
+        [int]    $Start = 0
     )
 
     #  🛑 HEADLESS MEANS NO MENUS AT ALL. -Action drives the installer from the
@@ -337,6 +362,12 @@ function Show-Menu {
     for ($i = 0; $i -lt $Items.Count; $i++) { if (-not $Items[$i].Disabled) { $pickable += $i } }
     if ($pickable.Count -eq 0) { return $null }
     $cur = $pickable[0]
+
+    #  2026-09-14 - -Start names the ITEM index the menu opens on, so the game
+    #  list can land on the game that actually has a mod without reordering the
+    #  list. An index that is missing or not selectable falls back to the first
+    #  pickable row rather than throwing.
+    if ($Start -gt 0 -and ($pickable -contains $Start)) { $cur = $Start }
 
     #  Builds the ENTIRE frame, top to bottom, for the current selection.
     #  Rebuilt per keypress so there is only ever one description of the screen.
@@ -3457,7 +3488,7 @@ function Remove-Menu {
             @{ Key='rmod';    Label='Remove the mod';               Status=$st.Mod;     StatusColour=$modColour
                Hint='Deletes the mod. Your saved menu settings and stats are kept.' },
             @{ Key='back';    Label='Back'
-               Hint='Returns to the main menu. Nothing is removed.' }
+               Hint='Returns to the Black Ops II menu. Nothing is removed.' }
         )
 
         $sel = Show-Menu 'Uninstall' $items -Intro $intro
@@ -3475,23 +3506,34 @@ function Remove-Menu {
     }
 }
 
-function Main-Menu {
+# ---------------------------------------------------------------------------
+#  A game with no mod yet. The row exists so the shape of the series is on the
+#  first screen, and this is what it opens - a plain answer, not an empty menu.
+# ---------------------------------------------------------------------------
+function Show-EmptyGame {
+    param([string] $Key)
+    $g = $GAMES[$Key]
+    Draw-Header $g.Sub
+    Say "There is no Quality of Life mod for $($g.Name) yet." $C.Text
+    Say "Development has not started; Black Ops II is the current focus." $C.Dim
+    if ($g.Repo) { Say "Its home will be github.com/$($g.Repo)." $C.Dim }
+    Pause-Key
+}
+
+# ---------------------------------------------------------------------------
+#  T6 - BLACK OPS II. Every row this installer shipped before the game list
+#  existed lives here unchanged. The rows that are not about Black Ops II -
+#  ReShade, the ReShade watchdog and the Start menu shortcuts - moved up to
+#  the main screen, because they serve every game in the series.
+# ---------------------------------------------------------------------------
+function T6-Menu {
     while ($true) {
         $st = Get-Status
-        $sub = 'Quality of Life Series  ·  Plutonium'
-        $intro = @()
-        if (-not (Test-Path $PLUTO)) {
-            $intro += "!⚠️   Plutonium was not found on this PC."
-            $intro += "~     Install it and run it once, then come back."
-            $intro += ''
-        } elseif (Test-PlutoRunning) {
-            $intro += "!⚠️   Plutonium is running right now - close it first, or files"
-            $intro += "!     cannot be replaced."
-            $intro += ''
-        }
 
+        $intro = @()
         #  The black-screen warning. Loud, because the symptom points at the mod
         #  and the cause is one saved graphics value - see Repair-BadAaSamples.
+        #  It lives on this screen because  The mod  is a row here.
         if (Test-BadAaSamples) {
             $intro += "!⚠️   A SAVED GRAPHICS SETTING WILL BLACK-SCREEN THE GAME."
             $intro += "!     16x anti-aliasing was written by an older build of this mod"
@@ -3503,11 +3545,7 @@ function Main-Menu {
         $modColour = $C.Dim; if ($st.ModOn) { $modColour = $C.Good }
         $imgColour = $C.Dim; if ($st.ImagesOn) { $imgColour = $C.Good }
         $sndColour = $C.Dim; if ($st.SoundsOn) { $sndColour = $C.Good }
-        $rshColour = $C.Dim; if ($st.ReShadeOn) { $rshColour = $C.Good }
-        if ($st.ReShadeGone) { $rshColour = $C.Warn }   # v2.2.7 - a record with no files is not "installed"
         $dsColour  = $C.Dim; if ($st.ControllerOn) { $dsColour = $C.Good }
-        $scColour  = $C.Dim; if ($st.ShortcutsOn) { $scColour = $C.Good }
-        if ($st.ShortcutsBroken) { $scColour = $C.Warn }   # same rule as ReShade above
 
         # -------------------------------------------------------------------
         #  v2.2.6 - EVERY ROW NOW SAYS WHAT IT DOES, IN ONE PLAIN SENTENCE.
@@ -3540,30 +3578,92 @@ function Main-Menu {
         # -------------------------------------------------------------------
         $items = @(
             @{ Key='all';    Section='INSTALL';   Label='EVERYTHING - the whole package'; Status='mod + textures + sounds'; StatusColour=$C.Title
-               Hint='Runs the three installs below in order. Controller icons and ReShade stay your choice.' },
+               Hint='Runs the three installs below in order. Controller icons stay your choice.' },
             @{ Key='mod';    Section='INSTALL';   Label='The mod';               Status=$st.Mod;     StatusColour=$modColour
                Hint='Installs Quality Of Life. This is the only part you actually need.' },
             @{ Key='images'; Section='INSTALL';   Label='HD texture pack';       Status=$st.Images;  StatusColour=$imgColour
                Hint='Sharper weapon, perk and world textures. Optional, and it replaces any you already had.' },
             @{ Key='sounds'; Section='INSTALL';   Label='Custom sounds';         Status=$st.Sounds;  StatusColour=$sndColour
                Hint='Remastered weapon audio. Optional. Your real game files are never touched.' },
-            @{ Key='reshade';Section='INSTALL';   Label='ReShade';               Status=$st.ReShade; StatusColour=$rshColour
-               Hint='Improves the visuals for every Plutonium game - BO1, MW3, WaW and BO2.' },
             @{ Key='controller';Section='INSTALL'; Label='Controller icons';      Status=$st.Controller; StatusColour=$dsColour
                Hint='Swaps the on-screen button prompts to PlayStation, Xbox or Switch. Pick one.' },
-            @{ Key='shortcuts';Section='INSTALL'; Label='Start menu shortcuts';   Status=$st.Shortcuts; StatusColour=$scColour
-               Hint='Puts "Quality of Life Series Launcher" and "Plutonium ReShade Watcher" in your Start menu.' },
 
             @{ Key='playlan';Section='PLAY';       Label='Play now (LAN, mod already loaded)'
                Hint='One click, straight into Zombies with the mod running.' },
-            @{ Key='watchdog';Section='PLAY';      Label='Start ReShade watchdog only'
-               Hint='Starts just the ReShade watchdog, without launching the game. Run this if you start Plutonium yourself.' },
 
             @{ Key='remove';  Section='REMOVE';   Label='Uninstall something'; Status=$st.RemoveHint; StatusColour=$C.Dim
                Hint='Opens the uninstall list: everything at once, or one part on its own.' },
 
             @{ Key='backups'; Section='BACKUP';   Label='Back up / restore my own files'; Status=$st.Backups; StatusColour=$st.BackupsColour
                Hint='Copies YOUR textures, sounds and ReShade aside first - or puts them back later.' },
+
+            @{ Key='back';    Label='Back to the game list'
+               Hint='Returns to the game list. Nothing is removed.' }
+        )
+
+        $sel = Show-Menu $GAMES['t6'].Sub $items -Intro $intro -Footer '   ↑ ↓  move      ENTER  choose      ESC  back'
+        if (-not $sel -or $sel.Key -eq 'back') { return }
+
+        switch ($sel.Key) {
+            'all'      { Act-InstallEverything }
+            'mod'      { Act-InstallMod }
+            'images'   { Act-InstallImages }
+            'sounds'   { Act-InstallSounds }
+            'controller' { Act-InstallController }
+            'playlan'  { Act-PlayLan }
+            'remove'   { Remove-Menu }
+            'backups'  { Act-Backups }
+        }
+    }
+}
+
+function Main-Menu {
+    while ($true) {
+        $st = Get-Status
+        $sub = 'Quality of Life Series  ·  Plutonium'
+        $intro = @()
+        if (-not (Test-Path $PLUTO)) {
+            $intro += "!⚠️   Plutonium was not found on this PC."
+            $intro += "~     Install it and run it once, then come back."
+            $intro += ''
+        } elseif (Test-PlutoRunning) {
+            $intro += "!⚠️   Plutonium is running right now - close it first, or files"
+            $intro += "!     cannot be replaced."
+            $intro += ''
+        }
+
+        $rshColour = $C.Dim; if ($st.ReShadeOn) { $rshColour = $C.Good }
+        if ($st.ReShadeGone) { $rshColour = $C.Warn }   # v2.2.7 - a record with no files is not "installed"
+        $scColour  = $C.Dim; if ($st.ShortcutsOn) { $scColour = $C.Good }
+        if ($st.ShortcutsBroken) { $scColour = $C.Warn }   # same rule as ReShade above
+
+        #  Game rows come from $GAMES. The T6 row carries the one-line status
+        #  the old front screen used and opens the full Black Ops II menu; the
+        #  other three say plainly that there is nothing there yet.
+        $items = @()
+        $startT6 = -1
+        foreach ($k in $GAMES.Keys) {
+            $g = $GAMES[$k]
+            $status = 'nothing yet'
+            $colour = $C.Dim
+            $hint   = 'Nothing to install yet - development has not started.'
+            if ($g.Ready) {
+                $status = $st.RemoveHint
+                if ($st.RemoveHint -ne 'nothing installed') { $colour = $C.Good }
+                $hint = "Opens the $($g.Name) mod list: install, play, uninstall and backups."
+            }
+            if ($k -eq 't6') { $startT6 = $items.Count }
+            $items += @{ Key=$k; Section='GAMES'; Label="$($g.Name) ($($g.System))"; Status=$status; StatusColour=$colour
+                         Hint=$hint }
+        }
+
+        $items += @(
+            @{ Key='reshade';  Section='SERIES'; Label='ReShade';               Status=$st.ReShade; StatusColour=$rshColour
+               Hint='Improves the visuals for every Plutonium game - BO1, MW3, WaW and BO2.' },
+            @{ Key='watchdog'; Section='SERIES'; Label='Start ReShade watchdog only'
+               Hint='Starts just the ReShade watchdog, without launching the game. Run this if you start Plutonium yourself.' },
+            @{ Key='shortcuts';Section='SERIES'; Label='Start menu shortcuts';   Status=$st.Shortcuts; StatusColour=$scColour
+               Hint='Puts "Quality of Life Series Launcher" and "Plutonium ReShade Watcher" in your Start menu.' },
 
             @{ Key='update';  Section='MORE';     Label='Check for a newer version'
                Hint='Asks GitHub whether a newer release exists, and can download it for you.' },
@@ -3573,21 +3673,17 @@ function Main-Menu {
                Hint='Closes this installer. Nothing is undone.' }
         )
 
-        $sel = Show-Menu $sub $items -Intro $intro -Footer '   ↑ ↓  move      ENTER  choose      Q  quit'
+        $sel = Show-Menu $sub $items -Intro $intro -Footer '   ↑ ↓  move      ENTER  choose      Q  quit' -Start $startT6
         if (-not $sel -or $sel.Key -eq 'quit') { return }
 
         switch ($sel.Key) {
-            'all'      { Act-InstallEverything }
-            'mod'      { Act-InstallMod }
-            'images'   { Act-InstallImages }
-            'sounds'   { Act-InstallSounds }
+            't4'       { Show-EmptyGame 't4' }
+            't5'       { Show-EmptyGame 't5' }
+            't6'       { T6-Menu }
+            't7'       { Show-EmptyGame 't7' }
             'reshade'  { Act-InstallReShade }
-            'controller' { Act-InstallController }
-            'shortcuts' { Act-InstallShortcuts }
-            'playlan'  { Act-PlayLan }
             'watchdog' { Act-StartWatchdog }
-            'remove'   { Remove-Menu }
-            'backups'  { Act-Backups }
+            'shortcuts' { Act-InstallShortcuts }
             'update'   { Act-CheckUpdate }
             'details'  { Act-Details }
         }
