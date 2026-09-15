@@ -10,7 +10,14 @@ gameplay checks. These are local development references, not release payloads.
   2026-09-11): create the `fix/...` branch before editing, commit only that
   issue's files, push it to `origin`. Never stack issues on one branch.
 - The five mod files are `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, and
-  `mod.all.sabs`. Raw GSC/Lua sources are packed into `mod.iwd`.
+  `mod.all.sabs`. Raw GSC/Lua sources are packed into `mod.iwd`. A build that
+  ships extra files alongside these (a bundled custom map, say) is off the
+  mainline — check what put them there before treating it as the norm.
+- `scripts/zm/quality_of_life.gsc` is ON A COMPILED-BYTECODE CEILING. Adding
+  code to it breaks unrelated functions with `Unresolved external` at map load,
+  and the symbol the engine names is never the one you touched. Put new
+  behaviour in its own raw script under `scripts/zm/` that installs itself from
+  its own `init()`. Full rule and measurements: workspace `AGENTS.md` item 1b.
 - `build.bat offline` packs and verifies locally. `build.bat` without arguments
   also installs and reconciles global Plutonium overrides. Do not run deployment
   during an offline audit.
