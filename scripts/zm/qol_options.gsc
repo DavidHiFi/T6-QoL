@@ -403,6 +403,15 @@ init()
     //  second, live in both directions.
     qol_opt_dvar( "knife_lunge", "1" );
 
+    //  v2.16.14 - NO MUD SLOWDOWN, user request 2026-09-15, the GAME 3 tab.
+    //  OFF (0) = stock: Origins' mud drags you to 0.6 move speed (0.7 with
+    //  Stamin-Up). ON (1) = full speed in mud, and the struggle VO and squelch
+    //  loop go with it. Applied by emptying the map's own list of mud volumes -
+    //  see scripts\zm\zm_tomb\qol_no_mud_slow.gsc for why that seam and not a
+    //  replaceFunc on the monitor. Origins-only because mud is Origins-only,
+    //  survival and grief locations included; live in both directions.
+    qol_opt_dvar( "no_mud_slow", "0" );
+
     //  v2.7.2 - 3 HIT DOWN, user request 2026-08-28, the PATCHES tab. OFF =
     //  stock. Read on every zombie melee hit by
     //  quality_of_life.gsc::zmqol_three_hit_down_scale(), chained through the
