@@ -10,6 +10,55 @@
 --  path with raw\ at rank 3. The gate below is belt-and-braces for anyone whose
 --  raw\ folder still holds a copy from an older build.
 -- ============================================================================
+-- ============================================================================
+--  zm_qol v2.17.1 - LUI EVENT GUARD INSTALLER (hard fix; full story in
+--  ui\t6\codroot.lua and in the workspace AGENTS.md "LUI wedge" section).
+--
+--  ui\t6\codroot.lua is required at BOOT, before this mod is on the search
+--  path, so the hardened copy shipped there only takes effect if something
+--  re-requires it. THIS file is on the post-load frontend reload (its "Loaded
+--  menu file:" line appears twice in console_zm.log, once at boot and once
+--  after loadmod), so the install below is what makes the guard live.
+--
+--  Both event paths - immediate (LUI.CoDRoot.ProcessEvent) and queued
+--  ("process_events" -> ProcessEvents) - call LUI.CoDRoot.ProcessEventNow
+--  through the table at call time, so re-pointing that one entry covers the
+--  whole frontend. A handler that throws is caught, logged as
+--      [zm_qol] LUI GUARD: event '<name>' handler failed: <error>
+--  and dropped. Without this the panic reaches the engine as
+--  LUI_ERROR: Error processing event: process_events, the Havok Lua VM dies
+--  and the game is wedged (only a full quit recovers). This is a BACKSTOP:
+--  the server death or menu-exit that queues the bad event must never happen
+--  either - see the AGENTS.md rules.
+-- ============================================================================
+if LUI ~= nil and LUI.CoDRoot ~= nil then
+	local ZmQolGuardInner = function (Root, Event)
+		Root:propagateEvent(Event)
+		return LUI.UIElement.processEvent(Root, Event)
+	end
+
+	local ZmQolGuardDispatch = function (Root, Event)
+		if Event == nil then
+			DebugPrint("[zm_qol] LUI GUARD: nil event dropped")
+			return nil
+		end
+		if Event.name ~= "process_events" then
+			Engine.EventProcessed()
+		end
+		Engine.PIXBeginEvent(tostring(Event.name))
+		local Ok, Err = pcall(ZmQolGuardInner, Root, Event)
+		Engine.PIXEndEvent()
+		if not Ok then
+			DebugPrint("[zm_qol] LUI GUARD: event '" .. tostring(Event.name) .. "' handler failed: " .. tostring(Err))
+		end
+		return nil
+	end
+
+	LUI.CoDRoot.ZmQolGuardInner = ZmQolGuardInner
+	LUI.CoDRoot.ProcessEventNow = ZmQolGuardDispatch
+	DebugPrint("[zm_qol] LUI event guard installed")
+end
+
 function ZmQolLobbyModLoaded()
 	local Ok, Value = pcall(function () return Dvar.fs_game:get() end)
 
