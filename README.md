@@ -26,6 +26,19 @@ Adds almost every Campaign and Multiplayer weapon to the Mystery Box, four unrel
 
 Install Plutonium and run it once so its folders exist, then close it.
 
+
+### With the mod manager
+
+[**Quality of Life Series**](https://github.com/DavidHiFi/QualityOfLifeSeries) is a small app that installs, updates and removes this mod for you, and manages every other mod in your Plutonium folders as well.
+
+1. [Download it](https://github.com/DavidHiFi/QualityOfLifeSeries/releases/latest) - the setup installs it like any other program, or the portable zip runs as-is.
+2. Open it and go to **Black Ops II (T6)**.
+3. Choose **The mod → Install**, or **EVERYTHING** to add the HD textures and custom sounds in one go.
+4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
+
+It backs up anything it replaces, keeps your saved menu settings across updates, and tells you when a newer release is out.
+
+### With the release installer
 1. [Download the latest release](https://github.com/DavidHiFi/T6-QoL/releases/latest) and unzip it anywhere.
 2. Run **`Windows Install.bat`**.
 3. Choose **INSTALL → The mod** and confirm.
