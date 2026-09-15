@@ -779,6 +779,16 @@ internal sealed class MainForm : Form
         page.Controls.Add(Card("Player name", settings.PlayerName.Trim().Length > 0 ? $"The name the game shows. Now: {settings.PlayerName.Trim()}" : "Not set - the game shows \"Player\" in LAN sessions.", settings.PlayerName.Trim().Length > 0 ? "set" : "not set", "Change", async () => { var name = await AskText("What name should the game show?", settings.PlayerName); if (name is not null) { settings.PlayerName = name.Trim(); settings.Save(); } }, false, ShowSettings));
         page.Controls.Add(Card("Minimize to the tray", "Keeps the app in the notification area when you minimize it.", settings.Tray ? "on" : "off", settings.Tray ? "Turn off" : "Turn on", () => { SetTray(!settings.Tray); return Task.CompletedTask; }, false, ShowSettings));
 
+        page.Controls.Add(Caption("BACKUP AND TRANSFER"));
+        var cfgFiles = Directory.Exists(service.CfgDir) ? Directory.EnumerateFiles(service.CfgDir).Count() : 0;
+        page.Controls.Add(Card("Export settings",
+            "Your theme and app options, plus the mod's in-game settings - key binds, graphics and the menu's toggles - in one file.",
+            cfgFiles == 0 ? "app only" : cfgFiles == 1 ? "app + 1 mod file" : $"app + {cfgFiles} mod files",
+            "Export", ExportSettings, false, ShowSettings));
+        page.Controls.Add(Card("Import settings",
+            "Brings them back from a file you exported, on this PC or another one.",
+            "", "Import", ImportSettings, false, ShowSettings));
+
         page.Controls.Add(Caption("THIS PC"));
         var installedAt = Setup.InstalledAt;
         if (installedAt is null)
@@ -789,6 +799,82 @@ internal sealed class MainForm : Form
             page.Controls.Add(Card("Start menu entry", "An entry under a \"Quality of Life Series\" group.", Setup.HasStartMenu ? "on" : "off", Setup.HasStartMenu ? "Turn off" : "Turn on", () => { Setup.SetStartMenu(!Setup.HasStartMenu); return Task.CompletedTask; }, false, ShowSettings));
             page.Controls.Add(Card("Desktop shortcut", "A shortcut to this app on your desktop.", Setup.HasDesktop ? "on" : "off", Setup.HasDesktop ? "Turn off" : "Turn on", () => { Setup.SetDesktop(!Setup.HasDesktop); return Task.CompletedTask; }, false, ShowSettings));
         }
+    }
+
+    private async Task ExportSettings()
+    {
+        using var pick = new SaveFileDialog
+        {
+            Title = "Export settings",
+            FileName = SettingsTransfer.SuggestedName(),
+            Filter = $"Quality of Life settings (*{SettingsTransfer.Extension})|*{SettingsTransfer.Extension}|Zip archive (*.zip)|*.zip",
+            OverwritePrompt = true
+        };
+        if (pick.ShowDialog(this) != DialogResult.OK) return;
+
+        var summary = SettingsTransfer.Export(pick.FileName, settings, service);
+        settings.LastExport = pick.FileName; settings.Save();
+        await Tell(summary.ModFiles == 0
+            ? $"Exported your app options.\n\nThe mod has no saved settings on this PC yet, so there were none to include.\n\n{pick.FileName}"
+            : $"Exported your app options and {summary.ModFiles} of the mod's setting file(s).\n\n{pick.FileName}");
+    }
+
+    private async Task ImportSettings()
+    {
+        using var pick = new OpenFileDialog
+        {
+            Title = "Import settings",
+            Filter = $"Quality of Life settings (*{SettingsTransfer.Extension};*.zip)|*{SettingsTransfer.Extension};*.zip|All files (*.*)|*.*"
+        };
+        // Offer back the file you last exported - nearly always the one you want.
+        if (settings.LastExport.Length > 0 && File.Exists(settings.LastExport))
+        {
+            pick.InitialDirectory = Path.GetDirectoryName(settings.LastExport);
+            pick.FileName = Path.GetFileName(settings.LastExport);
+        }
+        if (pick.ShowDialog(this) != DialogResult.OK) return;
+
+        // Say what is in the file and what it will replace before touching anything.
+        var found = SettingsTransfer.Peek(pick.FileName);
+        var what = new List<string>();
+        if (found.HasApp) what.Add("your theme and app options");
+        if (found.ModFiles > 0) what.Add($"{found.ModFiles} of the mod's setting file(s)");
+        if (what.Count == 0) { await Tell("That file has nothing in it to import."); return; }
+
+        var when = found.Exported.Length > 0 ? $"\n\nExported {found.Exported}" + (found.FromVersion.Length > 0 ? $" from v{found.FromVersion}" : "") : "";
+
+        // The app's own options are this app's file and import fine at any time. The mod's config
+        // are files the game rewrites when it closes, so writing them under a running game would
+        // either be overwritten or read half-written. Offer the safe half rather than refusing.
+        var appOnly = false;
+        if (found.ModFiles > 0 && service.GetStatus().PlutoniumRunning)
+        {
+            var choice = await Choose(
+                $"Plutonium is running.\n\nYour theme and app options can be imported now - they are this app's own file.\n\n"
+                + $"The mod's {found.ModFiles} in-game setting file(s) cannot: the game rewrites those when it closes, so importing them now would just be overwritten.",
+                ("Import the app options now", "app", true),
+                ("Cancel - I will close Plutonium first", "cancel", false));
+            if (choice is null or "cancel") return;
+            appOnly = true;
+        }
+        else if (!await Ask($"Import {string.Join(" and ", what)}?\n\nThis replaces what is on this PC now.{when}", "Import", "Cancel")) return;
+
+        var imported = SettingsTransfer.Import(pick.FileName, service, out var modFiles, appOnly);
+        if (imported is not null)
+        {
+            settings.Theme = imported.Theme;
+            settings.PlayerName = imported.PlayerName;
+            settings.AutoUpdate = imported.AutoUpdate;
+            settings.MinimizedHintShown = imported.MinimizedHintShown;
+            settings.Save();
+            SetTray(imported.Tray);
+            ApplyTheme(CurrentTheme(settings), true);
+        }
+        await Tell(modFiles > 0
+            ? $"Imported. Your app options and {modFiles} of the mod's setting file(s) are back."
+            : appOnly
+                ? $"Imported your app options.\n\nThe mod's {found.ModFiles} setting file(s) were left alone - close Plutonium and import again to restore those too."
+                : "Imported. Your app options are back.");
     }
 
     private FlowLayoutPanel ThemeGrid(FlowLayoutPanel page, Palette current)

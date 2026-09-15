@@ -12,6 +12,8 @@ internal sealed class AppSettings
     [JsonPropertyName("autoUpdate")] public bool AutoUpdate { get; set; } = true;
     [JsonPropertyName("tray")] public bool Tray { get; set; }
     [JsonPropertyName("minimizedHintShown")] public bool MinimizedHintShown { get; set; }
+    /// <summary>Where settings were last exported, so importing offers that file back.</summary>
+    [JsonPropertyName("lastExport")] public string LastExport { get; set; } = "";
 
     private static string? resolved;
     private static string Location

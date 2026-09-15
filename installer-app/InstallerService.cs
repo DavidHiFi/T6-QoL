@@ -255,7 +255,7 @@ internal sealed class InstallerService
 
     private string ManifestStatus(string name, string missing, string present) => File.Exists(System.IO.Path.Combine(State, $"installed-{name}.txt")) ? present : missing;
     private bool IsPlutoniumRunning() => new[] { "plutonium-launcher-win32", "plutonium-bootstrapper-win32", "t6zm", "t6mp" }.Any(n => Process.GetProcessesByName(n).Length > 0);
-    private void Guard() { if (!SkipRunningCheck && IsPlutoniumRunning()) throw new InvalidOperationException("Close Plutonium before changing installed files."); }
+    internal void Guard() { if (!SkipRunningCheck && IsPlutoniumRunning()) throw new InvalidOperationException("Close Plutonium before changing installed files."); }
     internal void Log(string text) { Directory.CreateDirectory(State); File.AppendAllText(LogFile, $"{DateTime.Now:h:mm:ss tt}  {text}{Environment.NewLine}"); }
 
     internal string ReadModVersion()
