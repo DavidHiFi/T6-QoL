@@ -1762,14 +1762,23 @@ if zmQolMapListOk then
 		end
 
 		local gametypeTable = CoD.SelectMapListZombie.GameModes
-		local gametypeIndex = CoD.SelectMapListZombie.GetKeyValueIndex(gametypeTable, "ui_gametype", gametype)
+		local customMapIndex = CoD.SelectMapListZombie.GetKeyValueIndex(CoD.SelectMapListZombie.CustomMaps, "ui_mapname", map)
+		local isCustomMap = UIExpression.DvarBool(nil, "party_solo") == 0
+			and CoD.SelectMapListZombie.CustomMaps[customMapIndex].ui_mapname == map
+		local gametypeIndex
 		local mapTable = {}
 		local mapIndex = 1
 
-		if gametype == "zclassic" then
+		if isCustomMap then
+			gametypeIndex = CoD.SelectMapListZombie.GetKeyValueIndex(gametypeTable, "ui_zm_gamemodegroup", "zcustommaps")
+			mapTable = CoD.SelectMapListZombie.CustomMaps
+			mapIndex = customMapIndex
+		elseif gametype == "zclassic" then
+			gametypeIndex = CoD.SelectMapListZombie.GetKeyValueIndex(gametypeTable, "ui_gametype", gametype)
 			mapTable = CoD.SelectMapListZombie.Maps
 			mapIndex = CoD.SelectMapListZombie.GetKeyValueIndex(mapTable, "ui_mapname", map)
 		else
+			gametypeIndex = CoD.SelectMapListZombie.GetKeyValueIndex(gametypeTable, "ui_gametype", gametype)
 			mapTable = CoD.SelectMapListZombie.Locations
 			mapIndex = CoD.SelectMapListZombie.GetKeyValueIndex(mapTable, "ui_zm_mapstartlocation", location)
 		end

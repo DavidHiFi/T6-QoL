@@ -5,7 +5,7 @@ REM ------------------------------------------------------------
 REM  Display name lives in mod.json ("Quality Of Life"); the folder / mod id
 REM  stays zm_qol because that is what Plutonium keys the install off.
 REM  Edit any script under scripts\zm\ then double-click this.
-REM  Rebuilds mod.iwd and writes all 5 mod files to:
+REM  Rebuilds mod.iwd and writes the mod files to:
 REM    1) a send-ready copy:  <project>\build\zm_qol\
 REM    2) your Plutonium mods folder (skipped if Plutonium isn't installed)
 REM    3) installer\Mod Files\ - so the installer can never reinstall a stale
@@ -24,7 +24,7 @@ REM  was a duplicate download for every player. The authoritative alias rows
 REM  (Pan, Duck and RandomizeType - the three fields the inherited mod.all copies
 REM  had lost) now live in soundbank\mod.all.aliases.additions.csv.
 REM  See zone_source\mod_base.zone for the evidence that it was a duplicate.
-set "FILES=mod.ff mod.iwd mod.json mod.all.sabl mod.all.sabs"
+set "FILES=mod.ff mod.iwd mod.json mod.all.sabl mod.all.sabs zm_octagonal.ff octagonal.iwd"
 
 REM  OPTFILES is now EMPTY, and cmn_root.all.sabl is deliberately not in it.
 REM
@@ -123,7 +123,7 @@ echo [2/9] Repacking mod.iwd from raw folders...
 if errorlevel 1 goto packfail
 
 echo.
-echo [3/9] Verifying all 5 source files are present...
+echo [3/9] Verifying all source files are present...
 for %%F in (%FILES%) do (
     if exist "%~dp0%%F" ( echo    [ok] %%F ) else ( echo    [MISSING] %%F & goto missing )
 )

@@ -85,6 +85,14 @@ images/*.iwi
 !images/specialty_zomblood_zombies.iwi
 !images/specialty_firesale_zombies.iwi
 
+# Octagonal Ascension's map card, blurred transition card, mode card and
+# signpost icon. These are mod-owned pixels and a fresh checkout needs them to
+# render the Custom Maps route instead of a missing-material placeholder.
+!images/menu_zm_map_octagonal.iwi
+!images/menu_zm_map_octagonal_blur.iwi
+!images/menu_zm_map_octagonal_zclassic.iwi
+!images/menu_zm_map_signpost_octagonal.iwi
+
 # 🛑 v2.15.6 - THE L96A1'S TEN IMAGES, same rule as the two above: the mod's own
 # assets, and the gun is BROKEN without them. mod.ff carries only the image
 # HEADERS (every image in it dumps as "Could not find data" - the pixels always
@@ -161,6 +169,8 @@ installer/Mod Files/mod.iwd
 installer/Mod Files/mod.json
 installer/Mod Files/mod.all.sabl
 installer/Mod Files/mod.all.sabs
+installer/Mod Files/zm_octagonal.ff
+installer/Mod Files/octagonal.iwd
 
 # ============================================================================
 #  v2.2.0 - THE FULL RESHADE SHADER COLLECTION IS NOT TRACKED.

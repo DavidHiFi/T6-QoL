@@ -76,6 +76,10 @@ CoD.SelectMapListZombie.GameModes[2] = {
 	ui_gametype = "zstandard",
 }
 CoD.SelectMapListZombie.GameModes[3] = {
+	ui_zm_gamemodegroup = "zcustommaps",
+	ui_gametype = "zstandard",
+}
+CoD.SelectMapListZombie.GameModes[4] = {
 	ui_zm_gamemodegroup = "zencounter",
 	ui_gametype = "zgrief",
 }
@@ -129,6 +133,13 @@ local ZmQolAddLoc = function (List, MapName, StartLocation, DisplayName)
 		ui_zm_mapstartlocation = StartLocation,
 		name = DisplayName,
 	}
+end
+
+CoD.SelectMapListZombie.CustomMaps = {}
+ZmQolAddLoc(CoD.SelectMapListZombie.CustomMaps, "zm_octagonal", "octagonal", "OCTAGONAL ASCENSION")
+
+local ZmQolIsCustomMaps = function ()
+	return UIExpression.DvarString(nil, "ui_zm_gamemodegroup") == "zcustommaps"
 end
 
 CoD.SelectMapListZombie.Locations = {}
@@ -210,7 +221,10 @@ local function gameModeListSelectionClickedEventHandler(self, event)
 		local mapTable = {}
 		local mapIndex = 1
 
-		if gameTable[index].ui_gametype == "zclassic" then
+		if gameTable[index].ui_zm_gamemodegroup == "zcustommaps" then
+			mapTable = CoD.SelectMapListZombie.CustomMaps
+			mapIndex = 1
+		elseif gameTable[index].ui_gametype == "zclassic" then
 			mapTable = CoD.SelectMapListZombie.Maps
 			mapIndex = CoD.SelectMapListZombie.GetKeyValueIndex(mapTable, "ui_mapname", map)
 		else
@@ -256,7 +270,9 @@ local function gameModeListCreateButtonMutables(controller, mutables)
 end
 
 local function gameModeListGetButtonData(controller, index, mutables, self)
-	if CoD.SelectMapListZombie.GameModes[index].ui_gametype == "zclassic" then
+	if CoD.SelectMapListZombie.GameModes[index].ui_zm_gamemodegroup == "zcustommaps" then
+		mutables.text:setText("CUSTOM MAPS")
+	elseif CoD.SelectMapListZombie.GameModes[index].ui_gametype == "zclassic" then
 		mutables.text:setText(UIExpression.ToUpper(nil, Engine.Localize("MPUI_ZCLASSIC")))
 	else
 		mutables.text:setText(Engine.Localize(UIExpression.TableLookup(nil, CoD.gametypesTable, 0, 0, 1, CoD.SelectMapListZombie.GameModes[index].ui_gametype, 2)))
@@ -278,7 +294,7 @@ function LUI.createMenu.SelectGameModeListZM(controller)
 	listBox:setTopBottom(true, false, 75, 75 + 530)
 	listBox:addScrollBar()
 
-	local index = CoD.SelectMapListZombie.GetKeyValueIndex(CoD.SelectMapListZombie.GameModes, "ui_gametype", UIExpression.DvarString(nil, "ui_gametype"))
+	local index = CoD.SelectMapListZombie.GetKeyValueIndex(CoD.SelectMapListZombie.GameModes, "ui_zm_gamemodegroup", UIExpression.DvarString(nil, "ui_zm_gamemodegroup"))
 
 	if UIExpression.DvarBool(nil, "party_solo") == 1 then
 		listBox:setTotalItems(2, index)
@@ -300,7 +316,9 @@ local function mapListSelectionClickedEventHandler(self, event)
 	if index ~= nil then
 		local mapTable = CoD.SelectMapListZombie.Maps
 
-		if UIExpression.DvarString(nil, "ui_gametype") ~= "zclassic" then
+		if ZmQolIsCustomMaps() then
+			mapTable = CoD.SelectMapListZombie.CustomMaps
+		elseif UIExpression.DvarString(nil, "ui_gametype") ~= "zclassic" then
 			mapTable = CoD.SelectMapListZombie.GetLocations(UIExpression.DvarString(nil, "ui_gametype"))
 		end
 
@@ -340,7 +358,9 @@ local function mapListCreateButtonMutables(controller, mutables)
 end
 
 local function mapListGetButtonData(controller, index, mutables, self)
-	if UIExpression.DvarString(nil, "ui_gametype") == "zclassic" then
+	if ZmQolIsCustomMaps() then
+		mutables.text:setText(CoD.SelectMapListZombie.CustomMaps[index].name)
+	elseif UIExpression.DvarString(nil, "ui_gametype") == "zclassic" then
 		mutables.text:setText(CoD.GetZombieGameTypeDescription(CoD.Zombie.GAMETYPE_ZCLASSIC, CoD.SelectMapListZombie.Maps[index].ui_mapname))
 	else
 		-- Hardcoded name, not a stringtable lookup - see the header note.
@@ -363,7 +383,10 @@ function LUI.createMenu.SelectMapListZM(controller)
 	listBox:setTopBottom(true, false, 75, 75 + 530)
 	listBox:addScrollBar()
 
-	if UIExpression.DvarString(nil, "ui_gametype") == "zclassic" then
+	if ZmQolIsCustomMaps() then
+		local index = CoD.SelectMapListZombie.GetKeyValueIndex(CoD.SelectMapListZombie.CustomMaps, "ui_mapname", UIExpression.DvarString(nil, "ui_mapname"))
+		listBox:setTotalItems(#CoD.SelectMapListZombie.CustomMaps, index)
+	elseif UIExpression.DvarString(nil, "ui_gametype") == "zclassic" then
 		local index = CoD.SelectMapListZombie.GetKeyValueIndex(CoD.SelectMapListZombie.Maps, "ui_mapname", UIExpression.DvarString(nil, "ui_mapname"))
 		listBox:setTotalItems(#CoD.SelectMapListZombie.Maps, index)
 	else

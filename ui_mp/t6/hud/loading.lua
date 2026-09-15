@@ -737,6 +737,7 @@ function CoD.Loading.GetZMLoadingMapName()
 	-- Rise locations are absent; diner/cellblock/street have rows). crazy_place
 	-- is absent for the same reason - Origins has no survival row of any kind.
 	local ZmQolLocationTitles = {
+		octagonal      = "OCTAGONAL ASCENSION",
 		power          = "POWER STATION",
 		tunnel         = "TUNNEL",
 		shopping_mall  = "SHOPPING MALL",

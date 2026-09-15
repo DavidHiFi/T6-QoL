@@ -177,6 +177,7 @@ end
 -- resolving through the table below). crazy_place is absent too - Origins has
 -- no survival row of any kind in the stock table.
 local ZmQolLocationNames = {
+	octagonal      = "Octagonal Ascension",
 	power          = "Power Station",
 	tunnel         = "Tunnel",
 	shopping_mall  = "Shopping Mall",

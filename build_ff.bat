@@ -470,6 +470,7 @@ REM  target "REM".
 "%OAT_BASE%\Linker.exe" ^
   --load "%PROJ%\zone_source\wpnfix_donor\mod.ff" ^
   --load "%PROJ%\zone_source\base\mod.ff" ^
+  --load "%PROJ%\zone_source\octagonal_donor\mod.ff" ^
   --load "%PROJ%\zone_source\raygun_donor\mod.ff" ^
   --load "%BO2_DIR%\zone\all\ui_zm.ff" ^
   --load "%BO2_DIR%\zone\all\zm_prison.ff" ^

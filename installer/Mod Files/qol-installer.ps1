@@ -33,7 +33,7 @@ try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 $REPO    = 'DavidHiFi/T6-QoL'
 $MODID   = 'zm_qol'
 $MODNAME = 'Quality Of Life'
-$MODFILES = @('mod.ff','mod.iwd','mod.json','mod.all.sabl','mod.all.sabs')
+$MODFILES = @('mod.ff','mod.iwd','mod.json','mod.all.sabl','mod.all.sabs','zm_octagonal.ff','octagonal.iwd')
 $SOUNDFILES = @('cmn_root.all.sabl','zmb_code_post_gfx.all.sabs','zmb_common.english.sabs','zmb_alcatraz.all.sabl','zmb_tomb.all.sabl')
 
 $HERE = Split-Path -Parent $MyInvocation.MyCommand.Path
