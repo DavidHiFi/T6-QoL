@@ -391,7 +391,9 @@ internal sealed class MainForm : Form
         var row = new Row();
         row.Title.Text = title;
         row.Description.Text = description;
-        row.Status.Text = status;
+        // A Label wraps rather than ellipsises, and a long status turns one row into three.
+        // Cap it here so no caller can break the layout; the full text stays on the tooltip.
+        row.Status.Text = status.Length > 30 ? status[..29] + "…" : status;
         row.Status.ForeColor = StatusGood(status) ? Green : Overlay2;
         row.Button.Text = button;
         row.Button.BackColor = primary ? Teal : Surface1;
@@ -607,7 +609,13 @@ internal sealed class MainForm : Form
     private void ShowUninstall()
     {
         currentPage = ShowUninstall;
-        var s = service.GetStatus(); Clear("Uninstall", "Only files recorded by this installer are removed"); Select("Uninstall"); footer.Text = PageFooter(s); var cards = Cards();
+        var s = service.GetStatus();
+        Clear("Remove mods", "Take a Quality of Life install apart, or remove any mod from any game");
+        Select("Remove mods"); footer.Text = PageFooter(s);
+        var page = Page();
+
+        // The Quality of Life parts only exist for Black Ops II today, so say so instead of
+        // letting the page read as though it covered every game.
         var parts = new[]
         {
             ("The mod", "mod", s.Mod, "The five mod files under storage\\t6\\mods. Your saved menu settings stay."),
@@ -617,9 +625,20 @@ internal sealed class MainForm : Form
             ("ReShade", "reshade", s.ReShade, "The ReShade DLL, presets and shader collection.")
         };
         var installed = parts.Count(p => StatusGood(p.Item3));
-        cards.Controls.Add(Card("Remove everything", "Every part below plus the Start menu shortcuts. Your saved menu settings are kept.", installed == 1 ? "1 part installed" : $"{installed} parts installed", "Remove all", RemoveEverything, true, ShowUninstall));
+        page.Controls.Add(Caption("BLACK OPS II (T6)  •  QUALITY OF LIFE"));
+        page.Controls.Add(Card("Remove everything", "Every part below plus the Start menu shortcuts. Your saved menu settings are kept.", installed == 1 ? "1 part installed" : $"{installed} parts installed", "Remove all", RemoveEverything, true, ShowUninstall));
         foreach (var item in parts)
-            cards.Controls.Add(Card(item.Item1, item.Item4 + " A backup can be put back.", item.Item3, "Remove", async () => { if (await Ask($"Remove {item.Item1}?")) service.Remove(item.Item2, service.HasBackup(item.Item2) && await Ask("Put your backup back after removal?", "Restore it", "Just remove"), Reporter()); }, false, ShowUninstall));
+            page.Controls.Add(Card(item.Item1, item.Item4 + " A backup can be put back.", item.Item3, "Remove", async () => { if (await Ask($"Remove {item.Item1}?")) service.Remove(item.Item2, service.HasBackup(item.Item2) && await Ask("Put your backup back after removal?", "Restore it", "Just remove"), Reporter()); }, false, ShowUninstall));
+
+        page.Controls.Add(Caption("ANY OTHER MOD"));
+        foreach (var (game, system, name) in PlutoGames)
+        {
+            var count = service.CountMods(game);
+            var g = game; var sys = system; var n = name;
+            page.Controls.Add(Card($"{name} ({system})", $"Remove any of the mods in this game's folder, one at a time.", count == 0 ? "none" : count == 1 ? "1 mod" : $"{count} mods",
+                count == 0 ? "Nothing to remove" : "Open list",
+                count == 0 ? () => Task.CompletedTask : () => { ShowMods(g, sys, n); return Task.CompletedTask; }));
+        }
     }
 
     private void ShowBackups()
@@ -631,7 +650,7 @@ internal sealed class MainForm : Form
             var status = b.Exists ? $"{b.When:d MMM yyyy}" : b.LiveFiles == 0 ? "nothing to back up" : $"{b.LiveFiles} files now";
             cards.Controls.Add(Card(b.Label, "Kept separately from the mod, so an install can never be the reason you lose them.", status, "Manage", () => { ShowBackupOne(b.Kind); return Task.CompletedTask; }));
         }
-        cards.Controls.Add(Card("Open backup folder", "View, copy, or archive your saved files in Explorer.", service.Backups, "Open folder", () => { service.OpenFolder(service.Backups); return Task.CompletedTask; }, true));
+        cards.Controls.Add(Card("Open backup folder", service.Backups, "", "Open folder", () => { service.OpenFolder(service.Backups); return Task.CompletedTask; }, true));
     }
 
     private void ShowBackupOne(string kind)
@@ -713,12 +732,25 @@ internal sealed class MainForm : Form
     private void ShowDetails()
     {
         currentPage = ShowDetails;
-        Clear("Details and log", "Installed paths and recorded actions"); Select("Details and log"); footer.Text = PageFooter(service.GetStatus()); var cards = Cards();
-        cards.Controls.Add(Card("Installer log", "Opens the action log in your default text editor.", "installer.log", "Open log", () => { service.OpenLog(); return Task.CompletedTask; }, true));
-        cards.Controls.Add(Card("Plutonium storage", "Opens Plutonium's storage folder - every game version lives under it.", "storage", "Open folder", () => { service.OpenFolder(service.Storage); return Task.CompletedTask; }));
-        cards.Controls.Add(Card("T6 storage (this mod)", "Opens the Black Ops II folder under storage where this mod is installed.", "storage\\t6", "Open folder", () => { service.OpenFolder(service.T6); return Task.CompletedTask; }));
-        cards.Controls.Add(Card("Start menu group", "Where the two shortcuts live, if you added them.", "Programs", "Open folder", () => { service.OpenFolder(service.StartMenuDir); return Task.CompletedTask; }));
-        cards.Controls.Add(Card("Settings file", "Where this app remembers your theme and options.", "settings.json", "Open folder", () => { service.OpenFolder(Path.GetDirectoryName(AppSettings.FilePath)!); return Task.CompletedTask; }));
+        Clear("Details and log", "Where everything lives, and what this app has done"); Select("Details and log"); footer.Text = PageFooter(service.GetStatus());
+        var page = Page();
+
+        page.Controls.Add(Caption("PLUTONIUM"));
+        page.Controls.Add(Card("Storage", service.Storage, "", "Open folder", () => { service.OpenFolder(service.Storage); return Task.CompletedTask; }, true));
+        // One row per game rather than a single T6 shortcut - this app manages all of them.
+        foreach (var (game, system, name) in PlutoGames)
+        {
+            var dir = service.StorageFor(game);
+            var g = game;
+            page.Controls.Add(Card($"{name} ({system})", dir, Directory.Exists(dir) ? "" : "not there yet", "Open folder", () => { service.OpenFolder(service.StorageFor(g)); return Task.CompletedTask; }));
+        }
+
+        page.Controls.Add(Caption("THIS APP"));
+        page.Controls.Add(Card("Installer log", "Every install, update and removal this app has recorded.", "installer.log", "Open log", () => { service.OpenLog(); return Task.CompletedTask; }));
+        page.Controls.Add(Card("Settings file", AppSettings.FilePath, "", "Open folder", () => { service.OpenFolder(Path.GetDirectoryName(AppSettings.FilePath)!); return Task.CompletedTask; }));
+        page.Controls.Add(Card("Start menu group", Setup.StartMenuDir, Setup.HasStartMenu ? "added" : "not added", "Open folder", () => { service.OpenFolder(Setup.StartMenuDir); return Task.CompletedTask; }));
+        var at = Setup.InstalledAt;
+        page.Controls.Add(Card("Program folder", at ?? AppContext.BaseDirectory, at is null ? "portable" : "installed", "Open folder", () => { service.OpenFolder(at ?? AppContext.BaseDirectory); return Task.CompletedTask; }));
     }
     private void ShowAbout()
     {
