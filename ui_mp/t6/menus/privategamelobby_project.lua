@@ -202,6 +202,9 @@ if CoD.MapInfoImage ~= nil and CoD.MapInfoImage.ZombieUpdate ~= nil and CoD.MapI
 		--  Stock's gametypestable.csv has no cornfield survival row, so the
 		--  stock lookup above hands back "" - exactly the case this table covers.
 		cornfield      = "CORNFIELD",
+		--  v2.17.0 - Maze (Buried). Buried's only stock survival row is
+		--  street/Borough, so maze needs this line for the same reason.
+		maze           = "MAZE",
 	}
 
 	CoD.MapInfoImage.ZombieUpdate = function (Widget, MapName, GameType)

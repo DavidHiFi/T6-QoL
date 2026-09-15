@@ -51,6 +51,33 @@ init()
 	// Without this, Borough survival has no wallbuys. Grief is untouched: it
 	// already matches.
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "street", ::street_struct_init);
+
+	// ========================================================================
+	//  v2.17.0 - MAZE (Buried's hedge maze), restored.
+	//
+	//  Cut in v1.15.0 with the rest of the ported locations. The loc script
+	//  never left scripts\zm\locs\ and already carries its zm_qol adaptation
+	//  (precache list populated, _zm_race_utility include dropped because that
+	//  script is in no fastfile, zone_mansion guarded).
+	//
+	//  🌟 UNLIKE BOROUGH, MAZE NEEDS NO RE-TAGGING struct_init OF ITS OWN.
+	//  Borough's wallbuys are tagged "zgrief_street" only, which is why
+	//  street_struct_init above exists. This mod's own zm_buried.d3dbsp already
+	//  carries 21 "zstandard_maze" + 4 "zstandard_perks_maze" entities - the
+	//  same counts as BO2-Reimagined's copy - so the stock match works and the
+	//  loc script's own struct_init is all that is required.
+	//
+	//  Box and Wunderfizz are both already inside the arena and needed no new
+	//  placement: maze_treasure_chest_init() pins level.chests to maze_chest1 /
+	//  maze_chest2 (both present in the mapents) and starts the box at one of
+	//  them, and the mod's Buried Wunderfizz at (4910,725,2) sits 148 units
+	//  from an arena spawn point.
+	// ========================================================================
+	add_map_location_gamemode("zstandard", "maze", scripts\zm\locs\zm_buried_loc_maze::precache, scripts\zm\locs\zm_buried_loc_maze::main);
+	add_map_location_gamemode("zgrief", "maze", scripts\zm\locs\zm_buried_loc_maze::precache, scripts\zm\locs\zm_buried_loc_maze::main);
+
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "maze", scripts\zm\locs\zm_buried_loc_maze::struct_init);
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "maze", scripts\zm\locs\zm_buried_loc_maze::struct_init);
 }
 
 // See loc_common::enable_wallbuys for why re-tagging has to happen here, in a

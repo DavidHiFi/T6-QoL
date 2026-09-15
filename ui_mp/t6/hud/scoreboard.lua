@@ -186,6 +186,8 @@ local ZmQolLocationNames = {
 	-- v2.16.10 - cornfield joined them when the location was registered
 	-- (v2.16.8) and was missed in all three of these tables at the time.
 	cornfield      = "Cornfield",
+	-- v2.17.0 - Maze (Buried), registered in the same change.
+	maze           = "Maze",
 }
 
 function GetMapDisplayName()

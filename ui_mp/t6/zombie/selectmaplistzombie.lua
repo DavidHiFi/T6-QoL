@@ -156,6 +156,12 @@ if ZmQolDinerAllowed then
 	-- scripts/zm/replaced/zm_tomb_gamemodes.gsc, which registers crazy_place on
 	-- zstandard and zgrief.
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_tomb",     "crazy_place",    "THE CRAZY PLACE") -- added by this mod
+	-- v2.17.0: Buried's hedge maze. Server half is
+	-- scripts/zm/replaced/zm_buried_gamemodes.gsc, which registers maze on
+	-- zstandard and zgrief. Unlike Borough, the maze entities in this mod's own
+	-- zm_buried.d3dbsp are already tagged zstandard_maze, so no re-tagging
+	-- struct_init is needed beyond the loc script's own.
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_buried",   "maze",           "MAZE")            -- added by this mod
 end
 
 CoD.SelectMapListZombie.GriefLocations = {}
