@@ -849,11 +849,53 @@ internal sealed class MainForm : Form
         var at = Setup.InstalledAt;
         page.Controls.Add(Card("Program folder", at ?? AppContext.BaseDirectory, at is null ? "portable" : "installed", "Open folder", () => { service.OpenFolder(at ?? AppContext.BaseDirectory); return Task.CompletedTask; }));
     }
+    /// <summary>
+    /// Text that wraps and grows instead of being cut off. A Row gives one ellipsised line, which
+    /// is right for a setting and wrong for a description.
+    /// </summary>
+    private Label Paragraph(string text)
+    {
+        var label = new Label
+        {
+            AutoSize = false,
+            Text = text,
+            Font = F(9.5f),
+            ForeColor = Subtext0,
+            BackColor = Base,
+            UseMnemonic = false,
+            Margin = new Padding(Dp(this, 2), 0, Dp(this, 2), Dp(this, 12))
+        };
+        void Grow()
+        {
+            var room = Math.Max(Dp(label, 120), label.Width - Dp(label, 6));
+            label.Height = TextRenderer.MeasureText(label.Text, label.Font, new Size(room, 0), TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl).Height + Dp(label, 4);
+        }
+        label.Resize += (_, _) => Grow();
+        Grow();
+        return label;
+    }
+
     private void ShowAbout()
     {
         currentPage = ShowAbout;
-        Clear("About", $"Mod manager  •  v{service.ProductVersion}"); Select("About"); footer.Text = PageFooter(service.GetStatus()); var cards = Cards();
-        cards.Controls.Add(Card("Quality of Life Series", "A mod manager for the Quality of Life mods on Plutonium - install, update, launch and remove. MIT licensed.", "MIT", "Open", () => { service.OpenReleases(); return Task.CompletedTask; }, true));
+        Clear("About", $"Mod manager  •  v{service.ProductVersion}"); Select("About"); footer.Text = PageFooter(service.GetStatus());
+        var page = Page();
+
+        page.Controls.Add(Paragraph(
+            "A mod manager for Plutonium. It installs, updates, launches and removes mods for World at War, "
+            + "Black Ops and Black Ops II, and keeps a backup of anything it replaces, so nothing it does is one-way.\n\n"
+            + "Free and open source under the MIT licence. The Quality of Life mods themselves are a separate "
+            + "project with its own releases, which is why the two are checked for updates separately."));
+
+        page.Controls.Add(Caption("PROJECTS"));
+        page.Controls.Add(Card("This app", InstallerService.ToolRepoUrl, $"v{service.ProductVersion}", "Open", () => { service.OpenUrl(InstallerService.ToolRepoUrl); return Task.CompletedTask; }, true));
+        page.Controls.Add(Card("Quality of Life for Black Ops II", InstallerService.ModRepoUrl, "the mod", "Open", () => { service.OpenUrl(InstallerService.ModRepoUrl); return Task.CompletedTask; }));
+        page.Controls.Add(Card("Licence", "MIT - use it, change it, ship it.", "MIT", "Read", () => { service.OpenUrl(InstallerService.ToolRepoUrl + "/blob/main/LICENSE"); return Task.CompletedTask; }));
+
+        page.Controls.Add(Caption("CREDITS"));
+        page.Controls.Add(Paragraph(
+            "Plutonium is by the Plutonium team - plutonium.pw. ReShade is by crosire, redistributed under its "
+            + "own licence. The Quality of Life mods, and this app, are by DavidHiFi."));
     }
 
     private void ShowGame(string game, string system, string name)

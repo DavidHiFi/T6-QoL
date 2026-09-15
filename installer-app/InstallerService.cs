@@ -38,6 +38,8 @@ internal sealed class InstallerService
     internal const string WatcherShortcut = "Plutonium ReShade Watcher.lnk";
     private const string Repo = "DavidHiFi/T6-QoL";
     private const string ToolRepo = "DavidHiFi/QualityOfLifeSeries";
+    internal const string ModRepoUrl = "https://github.com/" + Repo;
+    internal const string ToolRepoUrl = "https://github.com/" + ToolRepo;
 
     private readonly HttpClient http = new();
     private string? updateZipUrl;
