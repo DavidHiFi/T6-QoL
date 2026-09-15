@@ -1634,7 +1634,7 @@ end
 --  past both ends of its container, over the tab strip above and the ESC
 --  prompt below. That is the whole of the reported "scuffed-ness".
 --
---  The mod's own tabs, as of v2.14.28: GAME 1 15.0, GAME 2 14.0, GAME 3 3.0,
+--  The mod's own tabs, as of v2.16.14: GAME 1 14.0, GAME 2 14.0, GAME 3 4.0,
 --  HUD 15.0 (v2.14.16, full), CHEATS 14.0. (GAME 1 and GAME 2 are the tabs called GAME and
 --  PATCHES before v2.12.5; both were already at the ceiling, which is why
 --  GAME 3 exists.) The stock tabs this file also builds: ADVANCED 15.0 (full).
@@ -2283,7 +2283,7 @@ end
 --  from the user's own overflow screenshots. A 16th row on either one is the
 --  reported bug, not a risk of it.
 --
---  📝 ROOM LEFT: 12 more rows (v2.14.28) before this tab reaches the same ceiling. When
+--  📝 ROOM LEFT: 11 more rows (v2.16.14) before this tab reaches the same ceiling. When
 --  the next option needs a home, it belongs here rather than on GAME 1 or 2.
 --
 --  📝 The label reads NO DENIZENS rather than DENIZENS so that ENABLED is the
@@ -2324,6 +2324,23 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	--  second, by qol_options.gsc::qol_opt_knife_lunge().
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "KNIFE LUNGE", "knife_lunge", "The melee charge that pulls you onto a zombie. Disable it to knife in place.")
+
+	-- ========================================================================
+	--  v2.16.14 - NO MUD SLOWDOWN. User request 2026-09-15: *"a lot of people
+	--  hate that the mud slows you down in origins, add an option so that the
+	--  mud doesn't affect you in origins and any maps so even the survival maps
+	--  as well, that way players can run their normal speed and walk their
+	--  normal speed in mud."* ENABLED is the state that changes something, the
+	--  same way NO DENIZENS and NO LAVA DAMAGE read.
+	--
+	--  📝 "AND ANY MAPS" IS ALREADY COVERED BY AN ORIGINS-ONLY FILE, and that
+	--  is not a shortcut. Mud exists on exactly one map: the stock dump has a
+	--  single "player_slow_area" line, in zm_tomb. Every Origins survival and
+	--  grief location runs that same map script, so the one row reaches all of
+	--  them. Applied by scripts\zm\zm_tomb\qol_no_mud_slow.gsc, live in both
+	--  directions mid-match.
+	-- ========================================================================
+	T(QolGame3Buttons, LocalClientIndex, "NO MUD SLOWDOWN", "no_mud_slow", "Origins mud no longer drags you down. Run and walk at full speed through it.")
 
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.

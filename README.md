@@ -248,6 +248,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Knife lunge:**
   * A **KNIFE LUNGE** switch on the GAME 3 tab. On is the normal game. Off removes the melee charge that pulls you onto a zombie, so you knife where you stand.
 
+* **Mud:**
+  * A **NO MUD SLOWDOWN** switch on the GAME 3 tab. Turn it on and Origins mud stops dragging you down — you run and walk through it at full speed, in the main map and in every Origins survival and grief location.
+
 * **Extras:**
   * Native "Tap to Interact" controller support under the standard Gamepad menu, and a tailored *Cinematic Colour Grading* ReShade preset.
 
