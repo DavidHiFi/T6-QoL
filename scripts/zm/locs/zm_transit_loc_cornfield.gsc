@@ -149,6 +149,12 @@ precache()
 	//  loaded on every zombies map and costs mod.ff nothing. Same line Tunnel
 	//  has carried since v2.14.30, for the same reason.
 	precachemodel( "collision_geo_32x32x32_standard" );
+
+	//  v2.16.13 - what the box STANDS on (zmqol_cornfield_box_bricks).
+	//  zm_transit.ff OWNS this model - parsed\retail_lists\zm_transit.list.txt
+	//  line 3792, "xmodel, p_glo_cinder_block" - so nothing is added to mod.ff.
+	//  Same line Tunnel has carried since v2.14.32.
+	precachemodel( "p_glo_cinder_block" );
 }
 
 main()
@@ -253,36 +259,170 @@ treasure_chest_init()
 //  above, which is the measurement that should have warned against (10900,-150)
 //  in the first place.
 //
-//  🛑 THE Z IS STILL TRACED, NOT COPIED. Reimagined's -179 floats in their own
-//  map - that is exactly why their _zm_reimagined::spawn_mystery_box_blocks_
-//  and_collision() stacks cinder blocks under this chest and the tunnel one.
-//  Tracing the floor puts the box ON the ground instead, so no blocks are
-//  needed (p6_anim_zm_magic_box measures z 0..19.2 - its underside IS its
-//  origin). The ray starts 200 above the seed and runs 400 down.
+//  🛑 THE Z IS TRACED ACROSS THE WHOLE FOOTPRINT, NOT AT ONE POINT.
+//
+//  v2.16.12 traced a single ray at the box's centre and sat the box on whatever
+//  it hit. User, 2026-09-15, with a screenshot of the box in the Nacht
+//  building: *"move it up a little bit, because right now it's too far into the
+//  ground - the right side of the box is like in the ground ... it just needs to
+//  be pushed upwards so it's not clipping into the ground as much."*
+//
+//  A centre trace cannot do this. p6_anim_zm_magic_box is ~96 units long
+//  (-47.8..+47.8 along its forward) and the dirt under it is not level, so the
+//  centre's floor height buries whichever end sits on higher ground. The fix is
+//  to trace SIX columns along the box's length and take the HIGHEST floor of
+//  them: the box then rests on the high point and every other column has air
+//  under it, which is the gap the cinder blocks below fill.
+//
+//  🌟 AND YES, THERE ARE BRICKS - the user remembered correctly: *"doesn't it
+//  have like bricks underneath it that hold the box up? i could have sworn."*
+//  Reimagined's _zm_reimagined::spawn_mystery_box_blocks_and_collision() stacks
+//  four p_glo_cinder_block_big under BOTH their tunnel_chest and their
+//  cornfield_chest, and this mod's own Tunnel has carried a stock-block version
+//  since v2.14.32. Cornfield shipped without them in v2.16.12 on the reasoning that a
+//  floor trace made them unnecessary. It did not, and they are back - see
+//  zmqol_cornfield_box_bricks().
 //
 //  The three dvars are for live tuning only - set them before the map loads.
 //  They default to the shipped position, so a normal boot reads nothing.
+//  zmqol_cornfield_box_lift is a final nudge on top of the traced height, for
+//  the same reason Tunnel keeps one: the ground is the ground.
 // ============================================================================
-zmqol_cornfield_box_origin()
+zmqol_cornfield_box_origin( n_yaw )
 {
 	n_x = getdvarintdefault( "zmqol_cornfield_box_x", 13337 );
 	n_y = getdvarintdefault( "zmqol_cornfield_box_y", 72 );
 
 	v_seed = ( n_x, n_y, -179 );
+	v_fwd  = anglestoforward( ( 0, n_yaw, 0 ) );
 
-	trace = bullettrace( v_seed + ( 0, 0, 200 ), v_seed - ( 0, 0, 200 ), 0, undefined );
+	//  Along the box's own length, the same six columns the bricks use.
+	a_along = array( 40, 24, 8, -8, -24, -40 );
 
-	if ( trace["fraction"] >= 1 )
+	n_high = undefined;
+	s_floors = "";
+
+	for ( i = 0; i < a_along.size; i++ )
 	{
-		println( "[zm_qol] cornfield box: NO floor found at (" + n_x + "," + n_y + ") - using the seed height " + v_seed[2] );
+		v_col = ( v_seed[0] + v_fwd[0] * a_along[i], v_seed[1] + v_fwd[1] * a_along[i], v_seed[2] );
+
+		trace = bullettrace( v_col + ( 0, 0, 200 ), v_col - ( 0, 0, 200 ), 0, undefined );
+
+		if ( trace["fraction"] >= 1 )
+		{
+			s_floors = s_floors + " none";
+			continue;
+		}
+
+		n_floor = trace["position"][2];
+		s_floors = s_floors + " " + int( n_floor );
+
+		if ( !isdefined( n_high ) || n_floor > n_high )
+			n_high = n_floor;
+	}
+
+	if ( !isdefined( n_high ) )
+	{
+		println( "[zm_qol] cornfield box: NO floor under any column at (" + n_x + "," + n_y + ") - using the seed height " + int( v_seed[2] ) );
 		return v_seed;
 	}
 
-	v_at = ( n_x, n_y, trace["position"][2] );
+	n_lift = getdvarintdefault( "zmqol_cornfield_box_lift", 2 );
 
-	println( "[zm_qol] cornfield box: floor at (" + n_x + "," + n_y + ") is " + int( v_at[2] ) + " (seed was " + int( v_seed[2] ) + ")" );
+	v_at = ( n_x, n_y, n_high + n_lift );
+
+	println( "[zm_qol] cornfield box: floor per column:" + s_floors + "  -> highest " + int( n_high ) + " + lift " + n_lift + " = z " + int( v_at[2] ) );
 
 	return v_at;
+}
+
+// ============================================================================
+//  zmqol_cornfield_box_bricks  -  the box stands on cinder blocks, not in the
+//                                 dirt.                             (v2.16.13)
+//
+//  Same shape as zmqol_tunnel_box_bricks, which booted 2026-09-09, and the same
+//  thing Reimagined does under their own copy of this chest. Six columns along
+//  the box's length; each one bullettraces ITS OWN floor and stacks as many
+//  8-high courses as that column needs, so a sloped or rubble-strewn floor gets
+//  a stepped stack rather than a flat one and the bottom course beds INTO the
+//  ground instead of hovering over it.
+//
+//  MEASURED (v2.14.32 session, Unlinker GLB dump, lod0 accessor bounds - those
+//  GLBs are Y-UP, checked against com_trafficcone01 in the same dump):
+//      p_glo_cinder_block   16 long x 8 HIGH x 8 deep, centred on its origin
+//      p6_anim_zm_magic_box +-47.8 along forward, -12.3..+14.3 along right,
+//                           0..19.2 up - so the box's UNDERSIDE is its origin's
+//                           z exactly, and everything below it is air.
+//
+//  This mod uses the STOCK p_glo_cinder_block, not Reimagined's 1.5x rescale:
+//  that model is theirs, shipped raw in their model_export\, and is in no retail
+//  fastfile. The stock one is owned by zm_transit.ff, so it costs mod.ff
+//  nothing - the same reasoning Tunnel's copy records.
+// ============================================================================
+zmqol_cornfield_box_bricks( v_box, n_yaw )
+{
+	v_fwd = anglestoforward( ( 0, n_yaw, 0 ) );
+	v_rgt = anglestoright( ( 0, n_yaw, 0 ) );
+
+	a_along  = array( 40, 24, 8, -8, -24, -40 );
+	a_jitter = array( -7, 5, -3, 8, -6, 4 );
+
+	if ( isdefined( level.zmqol_cornfield_bricks ) )
+		return;
+
+	level.zmqol_cornfield_bricks = [];
+
+	s_floors = "";
+	n_blind = 0;
+
+	for ( i = 0; i < a_along.size; i++ )
+	{
+		//  +1 along right is the box's own width centre (-12.3..+14.3), the same
+		//  offset its collision clips use.
+		v_col = v_box + ( v_fwd[0] * a_along[i], v_fwd[1] * a_along[i], 0 ) + ( v_rgt[0], v_rgt[1], 0 );
+
+		trace = bullettrace( v_col - ( 0, 0, 2 ), v_col - ( 0, 0, 160 ), 0, undefined );
+
+		if ( trace["fraction"] < 1 )
+		{
+			n_floor = trace["position"][2];
+			s_floors = s_floors + " " + int( n_floor );
+		}
+		else
+		{
+			//  No floor within 160 units. Do not build a tower into a hole: one
+			//  course, so the box is not bare, and say so in the log.
+			n_floor = v_box[2] - 8;
+			n_blind++;
+			s_floors = s_floors + " none";
+		}
+
+		//  Courses, rounded UP so the bottom one beds into the ground. int()
+		//  truncates and T6 has no integer ceil worth trusting here, hence +7.99.
+		n_courses = int( ( ( v_box[2] - n_floor ) + 7.99 ) / 8 );
+
+		if ( n_courses < 1 )
+			n_courses = 1;
+
+		if ( n_courses > 4 )
+			n_courses = 4;
+
+		for ( c = 0; c < n_courses; c++ )
+		{
+			brick = spawn( "script_model", v_col - ( 0, 0, 4 + c * 8 ) );
+			brick.angles = ( 0, n_yaw + 90 + a_jitter[i] + c * 3, 0 );
+			brick setmodel( "p_glo_cinder_block" );
+			brick.script_noteworthy = "zmqol_cornfield_box_brick";
+			level.zmqol_cornfield_bricks[ level.zmqol_cornfield_bricks.size ] = brick;
+		}
+	}
+
+	s_blind = "";
+
+	if ( n_blind > 0 )
+		s_blind = "  (" + n_blind + " column(s) found NO floor within 160)";
+
+	println( "[zm_qol] cornfield box bricks: " + level.zmqol_cornfield_bricks.size + " cinder blocks under a box at z " + int( v_box[2] ) + " - floor per column:" + s_floors + s_blind );
 }
 
 // ============================================================================
@@ -297,9 +437,12 @@ zmqol_cornfield_box_origin()
 // ============================================================================
 zmqol_cornfield_bring_chest_in()
 {
-	v_box = zmqol_cornfield_box_origin();
 	//  180 is Reimagined's own angle for this chest, from the same struct.
 	n_yaw = getdvarintdefault( "zmqol_cornfield_box_yaw", 180 );
+
+	//  The yaw is needed BEFORE the origin: the height comes from six columns
+	//  traced along the box's own length, which depends on which way it faces.
+	v_box = zmqol_cornfield_box_origin( n_yaw );
 
 	s_chest = undefined;
 
@@ -343,6 +486,7 @@ zmqol_cornfield_bring_chest_in()
 	e_zb.origin = v_box;
 	e_zb.angles = ( 0, n_yaw, 0 );
 
+	zmqol_cornfield_box_bricks( v_box, n_yaw );
 	zmqol_cornfield_box_collision( v_box, n_yaw );
 
 	println( "[zm_qol] cornfield box: " + s_chest.script_noteworthy + " moved from (" + int( v_was[0] ) + "," + int( v_was[1] ) + "," + int( v_was[2] ) + ") to (" + int( v_box[0] ) + "," + int( v_box[1] ) + "," + int( v_box[2] ) + ") yaw " + n_yaw + " - zbarrier reads back at (" + int( e_zb.origin[0] ) + "," + int( e_zb.origin[1] ) + "," + int( e_zb.origin[2] ) + ")" );
