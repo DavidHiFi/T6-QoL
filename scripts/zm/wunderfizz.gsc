@@ -874,11 +874,35 @@ setupWunderfizz()
     	//  user asked to avoid, so pitch and roll stay 0 whatever the bus beside
     	//  it is doing.
     	//
-    	//  MOVED 60 UNITS -X from (10550,-282), which is "left" for a player
-    	//  approaching from the spawns to the south and facing the machine. That
-    	//  also opens the gap to the microbus rather than closing it: the bus
-    	//  lies along yaw 138.9 from (10477.7,-364.5), so -X is away from its
-    	//  long axis, not into it.
+    	//  MOVED 82 UNITS +Y from (10550,-282). "Left" is +Y here, and that is
+    	//  reconstructed from the user's screenshot rather than assumed: for the
+    	//  wreck to sit at the right-hand frame edge the camera has to be near
+    	//  (10325,-84) looking ESE, which is the spawn cluster at (10331,-227) /
+    	//  (10384,-192). Walking east from there, the player's left is +Y.
+    	//
+    	//  🛑 AN EARLIER PASS MOVED 60 UNITS -X AND THAT WAS WRONG TWICE OVER.
+    	//  It was not "left" - -X is roughly back the way that player came - and
+    	//  the claim in its commit message that -X "opens the gap to the microbus
+    	//  rather than closing it" was simply false. The bus lies along yaw 138.9
+    	//  from (10477.7,-364.5), so its right axis is (0.658, 0.753) and -X has
+    	//  a component straight along it. Projected onto the bus's own axes:
+    	//
+    	//        seed              centre   off the flank   along the length
+    	//        (10550,-282)      109.7        109.7             -0.2
+    	//        (10490,-282)       83.4         70.3             45.0   <- wrong
+    	//        (10550,-200)      177.9        170.0             52.3   <- here
+    	//
+    	//  Microbus half-width is ~40-45 and this machine's half-depth ~28, so
+    	//  anything under ~70 off the flank while within ~120 along the length is
+    	//  touching it. The -X seed sat on roughly zero air - the same failure the
+    	//  user photographed with the Speed Cola machine wedged between two cars,
+    	//  and the reason that block in zm_transit_loc_cornfield.gsc now says to
+    	//  check placements against init_barriers() and the wrecks, not just
+    	//  against empty space in the mapents.
+    	//
+    	//  +Y also lands mid-cell in the map's 128-unit pathnode grid (78-103
+    	//  units from the four nodes at x 10496/10624, y -128/-256), so it stands
+    	//  in no zombie lane.
     	//
     	//  No snap_yaw: there is no wall within reach in an open field and the
     	//  snap would log "found no wall" and change nothing.
@@ -886,8 +910,8 @@ setupWunderfizz()
     	//  The three dvars are for live tuning only - set them before the map
     	//  loads. They default to the shipped position, so a normal boot reads
     	//  nothing.
-    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_cf_x", 10490 ),
-    	                getdvarintdefault( "zmqol_wf_cf_y", -282 ),
+    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_cf_x", 10550 ),
+    	                getdvarintdefault( "zmqol_wf_cf_y", -200 ),
     	                -216 ),
     	              ( 0, getdvarintdefault( "zmqol_wf_cf_yaw", 0 ), 0 ),
     	              zmqol_wf_machine_model() );
