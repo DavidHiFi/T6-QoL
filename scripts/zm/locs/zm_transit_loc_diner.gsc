@@ -1985,10 +1985,36 @@ zmqol_diner_dog_init()
 
     println( "[zm_qol] diner dogs: " + level.zmqol_diner_dog_locs.size + " in-arena dog location(s) snapshotted" );
 
-    //  🛑 ONLY TAKE THE POINTER IF THERE IS SOMETHING TO FALL BACK ON. With an
-    //  empty snapshot this function would be strictly worse than stock's.
+    //  ========================================================================
+    //  🛑 v2.16.8 - THE PICKER IS NOW THE GENERIC GROUND-SPAWN ONE, NOT
+    //  zmqol_dog_spawn_diner_logic().
+    //
+    //  User, 2026-09-14: *"the spawns are really buggy, one just spawned inside
+    //  of the car and then it just disappeared ... just use spawns on top of
+    //  where zombies would spawn from from the ground or something like that"*,
+    //  and *"get hellhounds working for diner ... every single map"*.
+    //
+    //  Both pickers below choose from level.enemy_dog_locations - the map's
+    //  `dog_location` structs. The pruning pass above only removes the ones
+    //  OUTSIDE the arena; a struct the level designer tagged on top of a vehicle
+    //  INSIDE the arena survives it, and this file's own 2026-08-20 report - "a
+    //  dog on the wrecked truck north of the diner" - is exactly that. Arena
+    //  pruning cannot fix a bad point that is legitimately in the arena.
+    //
+    //  scripts\zm\quality_of_life::zmqol_dog_spawn_logic() picks from
+    //  level.zombie_spawn_locations first - the points the ordinary zombies rise
+    //  from, which are ground level by construction and already filtered by
+    //  _zm_zonemgr to enabled zones - and only falls back to the dog structs.
+    //  That is what the user asked for, so Diner uses it too.
+    //
+    //  🌟 EVERYTHING ELSE DINER-ONLY STAYS. The arena pruning above, the
+    //  snapshot just built, and both watchdogs below are untouched: the snapshot
+    //  is still this map's last-resort list (the generic picker reads
+    //  level.zmqol_diner_dog_locs for exactly that), and the garage watchdog
+    //  handles a choke point no other location has.
+    //  ========================================================================
     if ( level.zmqol_diner_dog_locs.size > 0 )
-        level.dog_spawn_func = ::zmqol_dog_spawn_diner_logic;
+        level.dog_spawn_func = scripts\zm\quality_of_life::zmqol_dog_spawn_logic;
 
     level thread zmqol_diner_dog_watchdog();
     level thread zmqol_diner_dog_garage_watchdog();
