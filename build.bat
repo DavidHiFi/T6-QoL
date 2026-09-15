@@ -93,9 +93,48 @@ REM  24 attachWorldModelOffset{Pitch,Yaw,Roll}1-8 fields are '0' on every gun in
 REM  this project, Reimagined's own working files omit them, and dropping them
 REM  saves exactly 720 bytes.
 set "WPN_OK="
-echo [0/9] Pre-flight: raw weapon file size ceiling (20480 bytes)...
+echo [0/9] Pre-flight 1 of 2: raw weapon file size ceiling (20480 bytes)...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$d=Join-Path $env:PROJ_DIR0 'weapons\zm'; if(-not (Test-Path -LiteralPath $d)){ Write-Host '    [skip] no weapons\zm folder'; exit 0 }; $ok=$env:WPN_OK -split ' '; $bad=@(); Get-ChildItem -LiteralPath $d -File | ForEach-Object { if($_.Length -ge 20480){ if($ok -contains $_.Name){ Write-Host ('    [known] ' + $_.Name + ' ' + $_.Length + ' B - over the limit on purpose, the map supplies its own') } else { $bad += ($_.Name + ' ' + $_.Length + ' B'); Write-Host ('    [OVER]  ' + $_.Name + ' ' + $_.Length + ' B') } } }; if($bad.Count -gt 0){ Write-Host ''; Write-Host '    This weapon will NOT load and will crash the game if a .csc include_weapon()s'; Write-Host '    it for the box. Trim it below 20480 before building.'; exit 1 }; Write-Host '    [ok] every raw weapon file is under the ceiling'"
 if errorlevel 1 goto wpnfail
+
+REM ----------------------------------------------------------------------------
+REM  [0/9] PRE-FLIGHT 2 OF 2 - FASTFILE ASSET OWNERSHIP
+REM
+REM  mod.ff loads BEFORE every stock map zone. Most asset types survive both
+REM  zones owning the same name - mod.ff's copy quietly wins, which is the
+REM  v1.62.7 Electric Cherry trap build_ff.bat documents. A few types do not
+REM  survive it at all:
+REM
+REM      COM_ERROR: Attempting to override asset 'zmcore_basicwoodbarrier'
+REM                 from zone 'mod' with zone 'zm_tomb'
+REM
+REM  That shipped in v2.17.1, when the Octagonal Ascension release's whole mod.ff
+REM  - 2,687 assets, 2,299 of them names a stock map zone also owns - was pasted
+REM  into ours. Origins would not boot. The payload is in zm_octagonal.ff now
+REM  (see build_octagonal_map.bat); this refuses to package if any of it, or
+REM  anything else of an unproven type, comes back into the shared fastfile.
+REM
+REM  Needs python and a one-off index of the stock zones:
+REM      python zone_ownership_gate.py --rebuild-index
+REM  Without either it warns and carries on rather than blocking a build on a
+REM  machine that has no python; a FAILED gate always stops.
+REM ----------------------------------------------------------------------------
+echo.
+echo [0/9] Pre-flight 2 of 2: fastfile asset ownership...
+set "GATE_PY="
+if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "GATE_PY=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if not defined GATE_PY for /f "delims=" %%P in ('where python 2^>nul') do if not defined GATE_PY set "GATE_PY=%%P"
+if not defined GATE_PY (
+    echo    [warn] python not found - ownership gate SKIPPED, not passed.
+) else (
+    if not exist "%~dp0zone_source\_stock_zone_index\zm_tomb.txt" (
+        echo    [warn] no stock zone index - ownership gate SKIPPED, not passed.
+        echo           Build it once:  python zone_ownership_gate.py --rebuild-index
+    ) else (
+        "%GATE_PY%" "%~dp0zone_ownership_gate.py"
+        if errorlevel 1 goto gatefail
+    )
+)
 
 REM  v2.11.8 (user, 2026-09-04): the nine camo_zmb_dlc2* textures are NEVER copied into
 REM  images\ (= mod.iwd). They are the ZM Dark Matter animated Pack-a-Punch camo, and
@@ -300,6 +339,22 @@ exit /b 0
 color C
 echo.
 echo   FAILED to pack mod.iwd (see the PowerShell error above).
+if not defined OFFLINE pause
+exit /b 1
+
+:gatefail
+color C
+echo.
+echo   BUILD STOPPED: mod.ff owns an asset a stock map zone owns too, on a type
+echo   this mod has never shipped an override of. The map zone loads second and
+echo   the engine refuses it:
+echo.
+echo     COM_ERROR: Attempting to override asset '...' from zone 'mod' with
+echo                zone 'zm_tomb'
+echo.
+echo   Move it into the fastfile of whatever actually needs it - a custom map's
+echo   payload belongs in that map's own .ff - or drop it and let the stock zone
+echo   supply it. Fix zone_source\, re-run build_ff.bat, then build again.
 if not defined OFFLINE pause
 exit /b 1
 

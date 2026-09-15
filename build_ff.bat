@@ -463,6 +463,28 @@ REM  three of which exist in NO retail fastfile at all. Being last, first-load-
 REM  wins means it can only supply a name that nothing above it offers, so no
 REM  shared asset changes owner. A/B the asset list if this ever moves.
 REM
+REM  🌟 zone_source\octagonal_donor\mod.ff is the Octagonal Ascension release's
+REM  own fastfile, and it is AT THE TAIL for the same reason - it is the widest
+REM  donor in this list by far, 6,263 assets, because a standalone map mod has
+REM  to carry everything its map needs.
+REM
+REM  🔴 IT WAS FIRST ADDED IN THIRD POSITION AND THE A/B CAUGHT IT IMMEDIATELY.
+REM  With nothing extra declared, four assets appeared that had always shipped
+REM  as unresolved references and let the map's own zone supply them at runtime:
+REM
+REM      material    mc/mtl_ray_gun_battery
+REM      image       ~-gbattery_c  +  ~~-gbattery_c-rgb&~-rbattery_~e651cafc
+REM      techniqueset mc_lit_sm_r0c0s0_2qwz6e5q
+REM
+REM  The Ray Gun's battery, re-owned globally from a custom map's donor - the
+REM  exact shape of the v1.62.7 Electric Cherry bug. At the tail the delta is
+REM  exactly the 19 assets mod_custom_maps.zone declares and nothing else.
+REM
+REM  🛑 mod_custom_maps.zone declares ONLY the frontend half of the Custom Maps
+REM  route. The map's gameplay payload is in zm_octagonal.ff. Putting any of it
+REM  back here is what made Origins unbootable in v2.17.1; run
+REM  zone_ownership_gate.py after any change to that zone.
+REM
 REM  🛑 Do NOT put REM lines between the caret-continued --load arguments below.
 REM  cmd does not treat them as comments there - they are passed to the Linker as
 REM  arguments, and it fails with: Could not find zone definition file for
@@ -470,7 +492,6 @@ REM  target "REM".
 "%OAT_BASE%\Linker.exe" ^
   --load "%PROJ%\zone_source\wpnfix_donor\mod.ff" ^
   --load "%PROJ%\zone_source\base\mod.ff" ^
-  --load "%PROJ%\zone_source\octagonal_donor\mod.ff" ^
   --load "%PROJ%\zone_source\raygun_donor\mod.ff" ^
   --load "%BO2_DIR%\zone\all\ui_zm.ff" ^
   --load "%BO2_DIR%\zone\all\zm_prison.ff" ^
@@ -505,6 +526,7 @@ REM  target "REM".
   --load "%BO2_DIR%\zone\all\code_post_gfx_zm.ff" ^
   --load "%BO2_DIR%\zone\all\dlc1_load_zm.ff" ^
   --load "%PROJ%\zone_source\refreshed_donor\mod.ff" ^
+  --load "%PROJ%\zone_source\octagonal_donor\mod.ff" ^
   --base-folder "%PROJ%" ^
   --add-asset-search-path "%PROJ%\zone_assets" ^
   --add-source-search-path "%PROJ%\zone_source" ^

@@ -210,3 +210,9 @@ installer/Mod Files/reshade/reshade-shaders/
 
 # Local VS Code workspace settings — per-machine, not part of the mod.
 .vscode/
+
+# The ownership gate's cached Unlinker --list dumps of the six stock map zones
+# (zone_ownership_gate.py --rebuild-index). ~40k lines of derived data from the
+# player's own Black Ops II install - rebuildable in a minute, and not ours to
+# redistribute.
+zone_source/_stock_zone_index/
