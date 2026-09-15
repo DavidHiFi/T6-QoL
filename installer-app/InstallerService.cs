@@ -583,8 +583,14 @@ internal sealed class InstallerService
     {
         updateZipUrl = updateZipName = appZipUrl = appZipName = null;
         var lines = new List<string>();
-        bool reached = false, modUpdate = false, appUpdate = false;
+        bool reached = false, modUpdate = false, appUpdate = false, throttled = false;
         string modTag = "", appTag = "";
+
+        // GitHub allows 60 unauthenticated calls an hour per address. On a shared or carrier-grade
+        // NAT connection that runs out without anything being wrong, and "check your connection"
+        // would send the user hunting for a fault that is not there.
+        static bool RateLimited(Exception ex) =>
+            ex is HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.TooManyRequests };
 
         var modCurrent = ReadModVersion().TrimStart('v');
         try
@@ -618,7 +624,8 @@ internal sealed class InstallerService
         catch (Exception ex)
         {
             Log($"mod update check failed: {ex.Message}");
-            lines.Add("Mod: could not reach its releases.");
+            throttled |= RateLimited(ex);
+            lines.Add(RateLimited(ex) ? "Mod: GitHub is rate-limiting this connection." : "Mod: could not reach its releases.");
         }
 
         var appCurrent = ProductVersion;
@@ -638,7 +645,8 @@ internal sealed class InstallerService
         catch (Exception ex)
         {
             Log($"app update check failed: {ex.Message}");
-            lines.Add("This app: could not reach its releases.");
+            throttled |= RateLimited(ex);
+            lines.Add(RateLimited(ex) ? "This app: GitHub is rate-limiting this connection." : "This app: could not reach its releases.");
         }
 
         var canMod = modUpdate && updateZipUrl is not null;
@@ -648,7 +656,9 @@ internal sealed class InstallerService
         if (appUpdate && !canApp) lines.Add("The app release has no package attached yet.");
 
         Log($"update check: modTag={modTag} mod={modCurrent} modUpdate={modUpdate}/{canMod}; appTag={appTag} app={appCurrent} appUpdate={appUpdate}/{canApp}");
-        if (!reached) return new(false, "Could not reach GitHub. Check your connection and try again.", "", "", false, false, false, false);
+        if (!reached) return new(false, throttled
+            ? "GitHub is rate-limiting this connection - it allows 60 checks an hour. Try again in a few minutes."
+            : "Could not reach GitHub. Check your connection and try again.", "", "", false, false, false, false);
         return new(true, string.Join(Environment.NewLine, lines), modTag, appTag, modUpdate, appUpdate, canMod, canApp);
     }
 

@@ -473,6 +473,14 @@ internal sealed class MainForm : Form
     private void Rebuild() => currentPage();
 
     private Panel? overlay;
+    private Action? dismissOverlay;
+
+    /// <summary>Escape backs out of any overlay, the same as choosing nothing.</summary>
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Escape && overlay is not null && dismissOverlay is { } cancel) { cancel(); return true; }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
 
     // A dimmed snapshot of the page, not an opaque panel: the page stays readable behind the question
     // instead of going blank.
@@ -561,7 +569,9 @@ internal sealed class MainForm : Form
         scrim.Controls.Add(card);
         CentreCard(scrim, card);
         content.Controls.Add(scrim); scrim.BringToFront();
+        dismissOverlay = () => tcs.TrySetResult(null);
         var result = await tcs.Task;
+        dismissOverlay = null;
         content.Controls.Remove(scrim); scrim.Dispose(); overlay = null; busy = wasBusy;
         return result;
     }
@@ -779,14 +789,31 @@ internal sealed class MainForm : Form
     private FlowLayoutPanel ThemeGrid(FlowLayoutPanel page, Palette current)
     {
         var grid = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Base, AutoSize = false, Margin = new Padding(0, 2, 0, 6), Padding = new Padding(0), Width = Math.Max(420, page.ClientSize.Width - 8) };
+        // Real buttons, not clickable panels: a panel cannot be tabbed to, activated with the
+        // keyboard, or reached by a screen reader, and the swatch is painted rather than being a
+        // second control that swallows the click.
         foreach (var theme in Palettes.All)
         {
-            var chip = new RoundedPanel { Width = 196, Height = 42, Margin = new Padding(0, 0, 10, 10), Radius = 10, BackColor = Surface0, BorderColor = theme.Key == current.Key ? Teal : Surface0, HoverBorderColor = Surface1, Cursor = Cursors.Hand };
-            var dot = new RoundedPanel { Location = new Point(12, 13), Size = new Size(16, 16), Radius = 8, BackColor = theme.Accent, BorderColor = theme.Accent, Cursor = Cursors.Hand };
-            var name = new Label { AutoSize = false, Bounds = new Rectangle(38, 11, 146, 20), AutoEllipsis = true, Text = theme.Name, Font = F(9), ForeColor = theme.Key == current.Key ? Ink : Subtext0, BackColor = Surface0, Cursor = Cursors.Hand };
-            void Pick() { settings.Theme = theme.Key; settings.Save(); ApplyTheme(theme, true); }
-            chip.Click += (_, _) => Pick(); name.Click += (_, _) => Pick(); dot.Click += (_, _) => Pick();
-            tips.SetToolTip(name, theme.Name); chip.Controls.Add(dot); chip.Controls.Add(name);
+            var chosen = theme.Key == current.Key;
+            var chip = new RoundButton
+            {
+                Width = 196,
+                Height = 42,
+                Margin = new Padding(0, 0, 10, 10),
+                Radius = 10,
+                Text = theme.Name,
+                Dot = theme.Accent,
+                BackColor = Surface0,
+                HoverColor = Surface1,
+                ForeColor = chosen ? Ink : Subtext0,
+                BorderColor = chosen ? Teal : Color.Empty,
+                Font = F(9),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            var pick = theme;
+            chip.Click += (_, _) => { settings.Theme = pick.Key; settings.Save(); ApplyTheme(pick, true); };
+            tips.SetToolTip(chip, theme.Note);
             grid.Controls.Add(chip);
         }
         void LayoutGrid()
@@ -1111,7 +1138,9 @@ internal sealed class MainForm : Form
         scrim.Controls.Add(card);
         CentreCard(scrim, card);
         content.Controls.Add(scrim); scrim.BringToFront(); box.Focus(); box.SelectAll();
+        dismissOverlay = () => tcs.TrySetResult(null);
         var result = await tcs.Task;
+        dismissOverlay = null;
         content.Controls.Remove(scrim); scrim.Dispose(); overlay = null; busy = wasBusy;
         return result;
     }

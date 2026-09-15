@@ -54,6 +54,9 @@ internal sealed class RoundButton : Button
     internal Color HoverColor { get; set; }
     internal Color SelectedColor { get; set; }
     internal Color SelectedForeColor { get; set; }
+    /// <summary>A colour swatch drawn before the text - used by the theme picker.</summary>
+    internal Color Dot { get; set; } = Color.Empty;
+    internal Color BorderColor { get; set; } = Color.Empty;
     internal bool Selected { get; set; }
     private bool hover;
 
@@ -74,10 +77,23 @@ internal sealed class RoundButton : Button
         using (var brush = new SolidBrush(Enabled ? fill : Blend(fill, Parent?.BackColor ?? fill, 0.45f)))
             e.Graphics.FillPath(brush, path);
 
+        if (BorderColor != Color.Empty)
+        {
+            using var pen = new Pen(BorderColor, 1.4f);
+            e.Graphics.DrawPath(pen, path);
+        }
+
         var fore = Selected ? SelectedForeColor : ForeColor;
         if (!Enabled) fore = Blend(fore, Parent?.BackColor ?? fore, 0.45f);
         var inset = Ui.Dp(this, 14);
         var x = Padding.Left + inset;
+        if (Dot != Color.Empty)
+        {
+            var d = Ui.Dp(this, 14);
+            using var swatch = new SolidBrush(Dot);
+            e.Graphics.FillEllipse(swatch, x, (Height - d) / 2, d, d);
+            x += d + Ui.Dp(this, 10);
+        }
         if (Glyph.Length > 0)
         {
             var gw = Ui.Dp(this, 20);
