@@ -4,6 +4,8 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationUseCompatibleTextRendering>false</ApplicationUseCompatibleTextRendering>
     <Nullable>enable</Nullable>
     <AssemblyName>QualityOfLifeSeries</AssemblyName>
     <RootNamespace>QolSeriesInstaller</RootNamespace>

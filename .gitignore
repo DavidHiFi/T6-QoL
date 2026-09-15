@@ -208,3 +208,13 @@ installer/QualityOfLifeSeries.pdb
 
 # Local VS Code workspace settings — per-machine, not part of the mod.
 .vscode/
+
+# The installer app writes settings.json beside its own exe at runtime - user state, not source.
+installer/settings.json
+
+# Published setup bundle. It ships as a GitHub release asset, not in the tree.
+dist/
+
+# .NET build output for the setup project (the installer-app rules above cover its own).
+setup/bin/
+setup/obj/
