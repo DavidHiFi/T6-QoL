@@ -24,6 +24,13 @@ precache( ai_index )
     dummy_anim_ref = %ai_zombie_crawl_microwave_death_walking_a;
     dummy_anim_ref = %ai_zombie_crawl_microwave_death_walking_b;
     dummy_anim_ref = %ai_zombie_crawl_microwave_death_walking_c;
+    dummy_anim_ref = %ai_zombie_freeze_death_a;
+    dummy_anim_ref = %ai_zombie_freeze_death_b;
+    dummy_anim_ref = %ai_zombie_freeze_death_c;
+    dummy_anim_ref = %ai_zombie_freeze_death_d;
+    dummy_anim_ref = %ai_zombie_freeze_death_e;
+    dummy_anim_ref = %ai_zombie_crawl_freeze_death_01;
+    dummy_anim_ref = %ai_zombie_crawl_freeze_death_02;
     character\clientscripts\c_zom_zombie_soldier::precache();
     usefootsteptable( ai_index, "default_ai" );
     precacheanimstatedef( ai_index, #animtree, "zm_highrise_basic" );
