@@ -601,7 +601,13 @@ zmqol_dog_spawn_logic( dog_array, favorite_enemy )
     if ( !isdefined( loc ) )
         loc = zmqol_dog_pick_from( level.enemy_dog_locations, 90000, 2250000, 0 );
 
-    //  Pass 4 - the init snapshot, no distance test.
+    //  Pass 4 - the init snapshot, no distance test. On a map a location script
+    //  owns, that script's own snapshot is the better list - Diner's is pruned
+    //  to its arena - so prefer it when it exists (v2.16.8, when Diner started
+    //  using this picker instead of its own).
+    if ( !isdefined( loc ) )
+        loc = zmqol_dog_pick_from( level.zmqol_diner_dog_locs, 0, 0, 0 );
+
     if ( !isdefined( loc ) )
         loc = zmqol_dog_pick_from( level.zmqol_dog_locs, 0, 0, 0 );
 
@@ -18885,6 +18891,8 @@ get_zone_name()
             name = "Farm";
         else if ( zone == "zone_trans_6" )
             name = "Farm";
+        else if ( zone == "zone_amb_cornfield" )
+            name = "Cornfield";
         else if ( zone == "zone_cornfield_prototype" )
             name = "Nacht";
         else if ( zone == "zone_trans_pow_ext1" )
