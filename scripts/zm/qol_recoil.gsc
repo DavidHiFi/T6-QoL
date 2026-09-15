@@ -76,10 +76,44 @@ zmqol_recoil_pairs()
     return a;
 }
 
+//  ============================================================================
+//  🛑 DISABLED IN CODE, 2026-09-15, AND THE REASON IS MEASURED, NOT GUESSED.
+//
+//  Turning the row off crashed the game on every map load. TWO crashes, both
+//  deterministic, both ending on the same weapon, the second with no file
+//  changes of any kind during the run:
+//
+//    Exception Code: 0xC0000005
+//    last gsc error message 'unknown weapon titus6_explosive_dart_upgraded_zm'
+//    gsc callstack: quality_of_life::zmqol_include_variant
+//                   quality_of_life::zmqol_mp_weapons_init
+//
+//  🌟 THIS MOD IS ALREADY AT THE ENGINE'S WEAPON-ASSET CEILING. The twenty
+//  twins precached below are twenty assets this mod has no room for, and the
+//  pool runs out partway through zmqol_mp_weapons_init(). The gun it dies on -
+//  titus6_explosive_dart_upgraded_zm - is NOT one of ours and is NOT the cause:
+//  it is simply whatever was being registered when the pool ran dry. Exactly
+//  the same trap as the quality_of_life.gsc bytecode ceiling, where the named
+//  symbol is never the culprit. Do not go and "fix" the Titus.
+//
+//  So the whole "ship both and swap" design is sound in every respect except
+//  the one that matters here: it needs +20 weapon slots, and there are none.
+//  Making it work needs slots FREED, or the recoil files chosen before the
+//  game starts (installer/Optionals), not a bigger weapon list.
+//
+//  The early return below is deliberate and must stay until that is solved.
+//  Everything under it is kept, working and reviewed, for whoever picks it up.
+//  ============================================================================
 init()
 {
-    //  Default 1. The row is off-by-default in the sense that matters: 1 is
-    //  what the mod does today, and nothing below this line runs.
+    //  🛑 HARD OFF. Not a dvar read - the archived dvar is exactly what put a
+    //  player into a crash loop, because prenerf_recoil=0 persists across
+    //  launches and every subsequent map load died. Nothing below runs.
+    return;
+
+    //  Everything past here is unreachable by design. It is kept rather than
+    //  deleted because it is complete and reviewed, and the only thing wrong
+    //  with it is that the weapon pool has no room - see the banner above.
     if ( getdvarintdefault( "prenerf_recoil", 1 ) )
         return;
 
@@ -116,22 +150,16 @@ zmqol_recoil_late_register()
 {
     flag_wait( "initial_blackscreen_passed" );
 
-    level.zmqol_recoil_swap = [];
-    pairs = zmqol_recoil_pairs();
-
-    foreach ( base, twin in pairs )
-    {
-        //  A twin is only live if this map actually registered its base gun.
-        //  On a map that never offers the HAMR there is nothing to substitute
-        //  and nothing is written.
-        if ( !isdefined( level.zombie_weapons ) || !isdefined( level.zombie_weapons[ base ] ) )
-            continue;
-
-        level.zmqol_recoil_swap[ base ] = twin;
-    }
-
-    if ( level.zmqol_recoil_swap.size == 0 )
-        return;
+    //  🛑 EVERY PAIR IS LIVE, NOT JUST THE ONES IN THIS MAP'S BOX. An earlier
+    //  cut gated this on level.zombie_weapons[base] being registered, which
+    //  looked tidy and was wrong: all twenty twins are precached above, and a
+    //  gun can reach the player without ever being a box entry on this map -
+    //  the mod's own .give command is the obvious one, and Town is exactly the
+    //  survival map where a family like the Type 25 may not be registered at
+    //  all. Gating the swap on box registration made the row silently do
+    //  nothing for those guns. The PaP clone below is still gated, because
+    //  THAT genuinely needs a base registration to copy.
+    level.zmqol_recoil_swap = zmqol_recoil_pairs();
 
     zmqol_recoil_register();
     level thread zmqol_recoil_onplayerconnect();

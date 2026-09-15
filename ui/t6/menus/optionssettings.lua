@@ -2367,7 +2367,13 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	--  be precached before the first frame, so a flip lands on the next map
 	--  load. See the banner in scripts\zm\qol_recoil.gsc for the whole of it.
 	-- ========================================================================
-	T(QolGame3Buttons, LocalClientIndex, "PRE-NERF RECOIL", "prenerf_recoil", "Treyarch's launch-day recoil. Disable for the patched values. Applies on next map load.")
+	--  🛑 THE ROW IS GONE, 2026-09-15, and it must not come back until the
+	--  weapon-slot problem is solved. Turning it off crashed every map load:
+	--  the twenty post-patch twins are twenty weapon assets this mod has no
+	--  room for, and the pool ran dry inside zmqol_mp_weapons_init(). Because
+	--  the dvar ARCHIVES, one flip put the game into a crash loop that survived
+	--  restarts. A row that can do that is worse than no row.
+	--  T(QolGame3Buttons, LocalClientIndex, "PRE-NERF RECOIL", "prenerf_recoil", "...")
 
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.
