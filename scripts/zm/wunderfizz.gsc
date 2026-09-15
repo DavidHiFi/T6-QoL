@@ -863,11 +863,32 @@ setupWunderfizz()
     	//  pushed over to the left a little bit ... make sure it's squared up and
     	//  its back is to the cornfield, right now it's on an angle."*
     	//
-    	//  Placement yaw 0 puts the machine's FRONT on yaw 270 - front =
-    	//  placement yaw - 90, the convention zmqol_wf_wall_snap documents - so
-    	//  it faces due south, down the field towards the Pack-a-Punch at
-    	//  (10460,-564) and the spawn cluster, with its BACK squarely into the
-    	//  corn to the north. A player walking up from the spawns meets its face.
+    	//  🛑 AND YAW 0 WAS STILL THE WRONG SQUARE ANGLE. User, 2026-09-15, with
+    	//  a third screenshot: *"it's on its side right now, it's on the wrong
+    	//  angle. you've got to line it up properly with its back to the cornfield
+    	//  hedges."* Square was right; which square face points at the player was
+    	//  not.
+    	//
+    	//  🌟 THE PLAYER COMES FROM THE WEST, and three independent things in the
+    	//  user's own screenshots agree on it:
+    	//    - the survival spawn cluster this arena registers is (10331,-227) /
+    	//      (10384,-192), due WEST of the machine at (10550,-200);
+    	//    - in their shot the microbus - which sits south-west at
+    	//      (10477.7,-364.5) - appears at the RIGHT frame edge, and south is
+    	//      on your right only when you are facing east;
+    	//    - their earlier "move it left" resolved to +Y, and +Y is left only
+    	//      when facing east.
+    	//  Facing east, the corn wall behind the machine is the one to its EAST.
+    	//
+    	//  So the front must face WEST: front = 180, and placement yaw = front +
+    	//  90 = 270. Front = placement yaw - 90 is the convention
+    	//  zmqol_wf_wall_snap documents, and it is corroborated by the Nuketown
+    	//  machine above - placement yaw 162 there, and that block's own
+    	//  clearance arithmetic treats the machine as facing ~66.
+    	//
+    	//  Yaw 0 put the front on 270 (south). Square to the world, but presenting
+    	//  its narrow side to everyone walking in from the spawns - exactly what
+    	//  "it's on its side" describes.
     	//
     	//  Flat in the other two axes as well. The wrecks in this field sit at up
     	//  to 99 degrees of roll and matching one would be the "weird angle" the
@@ -913,7 +934,7 @@ setupWunderfizz()
     	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_cf_x", 10550 ),
     	                getdvarintdefault( "zmqol_wf_cf_y", -200 ),
     	                -216 ),
-    	              ( 0, getdvarintdefault( "zmqol_wf_cf_yaw", 0 ), 0 ),
+    	              ( 0, getdvarintdefault( "zmqol_wf_cf_yaw", 270 ), 0 ),
     	              zmqol_wf_machine_model() );
     	level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_floor = 1;
     	//  ====================================================================
