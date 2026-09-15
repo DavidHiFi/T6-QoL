@@ -743,6 +743,9 @@ function CoD.Loading.GetZMLoadingMapName()
 		dragon_rooftop = "DRAGON ROOFTOP",
 		sweatshop      = "SWEATSHOP",
 		crazy_place    = "THE CRAZY PLACE",
+		-- v2.16.10 - cornfield, missed when the location was registered in
+		-- v2.16.8. Without it the loading screen falls back to the map name.
+		cornfield      = "CORNFIELD",
 	}
 	if ZmQolLocationTitles[location] ~= nil then
 		return ZmQolLocationTitles[location]
