@@ -128,6 +128,22 @@ echo   Staging current .csc sources into zone_assets ...
 "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$proj='%PROJ%'; $n=0; @('scripts','clientscripts') | ForEach-Object { Get-ChildItem -LiteralPath (Join-Path $proj $_) -Recurse -Filter *.csc -ErrorAction SilentlyContinue } | ForEach-Object { $rel=$_.FullName.Substring($proj.Length+1); $dst=Join-Path (Join-Path $proj 'zone_assets') $rel; $dir=Split-Path $dst -Parent; if(-not (Test-Path -LiteralPath $dir)){ New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Copy-Item -LiteralPath $_.FullName -Destination $dst -Force; Write-Host ('    [stage] ' + $rel); $n++ }; Write-Host ('    ' + $n + ' client script(s) staged')"
 if errorlevel 1 ( echo   ERROR: could not stage .csc sources. & exit /b 1 )
 
+REM --- stage the aitype overrides ----------------------------------------------
+REM  Same asset-search-path rule as the .csc block above, and the reason the
+REM  Winter's Howl freeze deaths never worked. aitype\ holds stock decompiles with
+REM  the seven T5 freeze anims added to reference_anims_from_animtree(); without
+REM  staging, the Linker never looks at them and pulls Treyarch's compiled script
+REM  out of so_zsurvival_zm_transit instead - the log says it plainly:
+REM      Loaded script "aitype/zm_transit_basic_01.gsc" (src: so_zsurvival_zm_transit)
+REM  so the .asd gained a zm_death_freeze_t5 state whose anims were in no aitype's
+REM  list, which is exactly the BG_AnimStateDef_Parse failure v2.10.6 hit and read
+REM  as "not restorable". It is restorable; the source just has to be reachable.
+REM  zm_transit_basic_09 is in no fastfile we --load, so before this it was a hard
+REM  "Missing asset" - staging is the only way it resolves at all.
+echo   Staging aitype overrides into zone_assets ...
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "$proj='%PROJ%'; $n=0; Get-ChildItem -LiteralPath (Join-Path $proj 'aitype') -Recurse -Include *.gsc,*.csc -ErrorAction SilentlyContinue | ForEach-Object { $rel=$_.FullName.Substring($proj.Length+1); $dst=Join-Path (Join-Path $proj 'zone_assets') $rel; $dir=Split-Path $dst -Parent; if(-not (Test-Path -LiteralPath $dir)){ New-Item -ItemType Directory -Path $dir -Force | Out-Null }; Copy-Item -LiteralPath $_.FullName -Destination $dst -Force; Write-Host ('    [stage] ' + $rel); $n++ }; Write-Host ('    ' + $n + ' aitype script(s) staged')"
+if errorlevel 1 ( echo   ERROR: could not stage aitype sources. & exit /b 1 )
+
 REM --- stage the sound bank source --------------------------------------------
 REM  A T6 sound alias is built from a 60-column CSV plus the WAV/FLAC it names in
 REM  its FileSource column. To add ONE alias the Linker still has to rebuild the
