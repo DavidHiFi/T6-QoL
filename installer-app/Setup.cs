@@ -146,6 +146,23 @@ internal static class Setup
     internal static void SetStartMenu(bool on) => SetShortcut(StartMenuLink, Path.Combine(InstalledAt ?? AppContext.BaseDirectory, ExeName), InstalledAt ?? AppContext.BaseDirectory, on);
     internal static void SetDesktop(bool on) => SetShortcut(DesktopLink, Path.Combine(InstalledAt ?? AppContext.BaseDirectory, ExeName), InstalledAt ?? AppContext.BaseDirectory, on);
 
+    /// <summary>
+    /// Keeps the Apps &amp; features entry honest. A self-update replaces the exe in place and knows
+    /// nothing about the registry, so the recorded version drifts from the one actually installed.
+    /// </summary>
+    internal static void RefreshRegistration()
+    {
+        try
+        {
+            if (InstalledAt is not { } at) return;
+            if (!Same(at, AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))) return;
+            using var key = Registry.CurrentUser.OpenSubKey(Key);
+            if (key?.GetValue("DisplayVersion") as string == Version) return;
+            Register(at);
+        }
+        catch { }
+    }
+
     private static void Register(string target)
     {
         using var key = Registry.CurrentUser.CreateSubKey(Key);

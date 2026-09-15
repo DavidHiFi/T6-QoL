@@ -108,6 +108,7 @@ internal sealed class MainForm : Form
         content.Resize += (_, _) => FitColumn();
         Controls.Add(content); Controls.Add(side); Controls.Add(footer);
         Application.AddMessageFilter(new WheelRouter(this));
+        Setup.RefreshRegistration();
         ApplyTheme(CurrentTheme(settings), false);
         SetTray(settings.Tray, false);
         ShowHome();
