@@ -299,4 +299,38 @@ LANG_ENGLISH        "The Pig"
 REFERENCE           WEAPON_BROWNINGHP_UPGRADED
 LANG_ENGLISH        "Bap"
 
+// ============================================================================
+//  v2.17.2 - THE CUSTOM MAPS ROUTE'S FIVE ENGINE-SIDE STRINGS.
+//
+//  zone_assets\zm\mapstable.csv and gametypestable.csv name these five refs on
+//  the zm_octagonal rows, and NO fastfile defines them - not Black Ops II's, and
+//  not the Octagonal Ascension release's own, whose only localize asset is
+//  ZM_PRISON_PERK_CHERRY. Without them the globe, the map description and the
+//  start-location confirm screen print the raw token.
+//
+//  The map list itself does not need them: selectmaplistzombie.lua passes
+//  "OCTAGONAL ASCENSION" to ZmQolAddLoc as literal text. These are for the
+//  screens the ENGINE draws from the tables.
+//
+//  Wording follows retail's own shape for these refs, read out of en_patch_zm:
+//  ZMUI_<map> is the place name ("Excavation Site 64"), _CAPS is the start
+//  location in caps ("NUKETOWN"), ZMUI_DESC_MAP_<map> is one line of flavour.
+//  The facts in both descriptions are the 1.2beta release notes' own.
+// ============================================================================
+
+REFERENCE           ZMUI_OCTAGONAL
+LANG_ENGLISH        "Octagonal Ascension"
+
+REFERENCE           ZMUI_OCTAGONAL_CAPS
+LANG_ENGLISH        "OCTAGONAL ASCENSION"
+
+REFERENCE           ZMUI_OCTAGONAL_LOC
+LANG_ENGLISH        "Octagonal Ascension"
+
+REFERENCE           ZMUI_DESC_MAP_OCTAGONAL
+LANG_ENGLISH        "Eight walls, no corners to run to. Wiiucoop's custom map, with a fire zombie on your heels and a way out for 50,000 points."
+
+REFERENCE           ZMUI_OCTAGONAL_DESC
+LANG_ENGLISH        "Sprinters from the opening round and spawns that never stop. Buy the ending, or see how far the octagon lets you go."
+
 ENDMARKER

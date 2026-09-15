@@ -49,12 +49,38 @@
 image,loadscreen
 
 // 🛑 BOTH TABLES ARE REQUIRED AND BOTH ARE SUPERSETS OF THE RETAIL ROWS.
-//  gametypestable.csv carries the start-location entry (section 5) and the one
-//  row per gametype it is selectable under (section 6); mapstable.csv carries
-//  the globe pin. patch_zm owns both and loads BEFORE mod.ff, so overriding
-//  them here is the supported direction. A duplicate or missing index in
-//  either is a guaranteed COM_ERROR, and a missing globe row is a nil lookup
-//  in CoD.GameGlobeZombie.MoveToExpectedMap() on every return to the lobby.
+//  gametypestable.csv carries the start-location entry (section 5) and one row
+//  per gametype it is selectable under (section 6); mapstable.csv carries the
+//  globe pin. patch_zm owns both and loads BEFORE mod.ff, so overriding them
+//  here is the supported direction. A duplicate or missing index in either is a
+//  guaranteed COM_ERROR, and a missing globe row is a nil lookup in
+//  CoD.GameGlobeZombie.MoveToExpectedMap() on every return to the lobby.
+//
+//  🛑 THEY ARE STAGED AS REAL CSV IN zone_assets\zm\, NOT RESOLVED FROM A DONOR.
+//
+//  That is deliberate and both of the obvious alternatives are wrong. The
+//  Linker takes a declared asset from the asset search path FIRST and only
+//  falls back to a --load'ed fastfile, so staging them settles which rows ship
+//  no matter where a donor sits in the load order. Measured, because two
+//  different donors offer this name and BOTH are wrong:
+//
+//    zone_source\octagonal_donor\mod.ff   retail + the zm_octagonal rows, and
+//                                         nothing else
+//    zone_source\refreshed_donor\mod.ff   Reimagined's own table: 28 start
+//                                         locations and its gametype names
+//                                         (zsr, zrace, zcontain, zmeat,
+//                                         zturned), NO zm_octagonal
+//
+//  With the octagonal donor loaded early the build shipped Reimagined's rows
+//  nowhere and octagonal's fine; with it at the tail, refreshed_donor won and
+//  the built mod.ff came out with maxnum_map,7 and no octagonal row at all -
+//  i.e. the Custom Maps route silently did not exist. Neither donor is the
+//  answer: the file in zone_assets\zm\ is retail's table plus the zm_octagonal
+//  rows, which is a strict superset of what the game uses today.
+//
+//  The five ZMUI_OCTAGONAL* refs those rows name are defined in
+//  zone_assets\english\localizedstrings\mod.str - no fastfile anywhere defines
+//  them, including the release's own.
 stringtable,zm/gametypestable.csv
 stringtable,zm/mapstable.csv
 
