@@ -23,6 +23,22 @@ internal static class Program
             return;
         }
 
+        // Settings transfer from the command line, for scripted backups and for moving a setup
+        // between machines without opening the window.
+        if (Value(args, "--export-settings") is { } exportTo)
+        {
+            var summary = SettingsTransfer.Export(exportTo, AppSettings.Load(), service);
+            Console.WriteLine($"Exported to {exportTo} (app options + {summary.ModFiles} mod setting file(s))");
+            return;
+        }
+        if (Value(args, "--import-settings") is { } importFrom)
+        {
+            var imported = SettingsTransfer.Import(importFrom, service, out var restored, Has(args, "--app-only"));
+            if (imported is not null) imported.Save();
+            Console.WriteLine($"Imported from {importFrom} (app options={imported is not null}, {restored} mod setting file(s))");
+            return;
+        }
+
         ApplicationConfiguration.Initialize();
 
         if (Has(args, "--uninstall"))
@@ -42,6 +58,13 @@ internal static class Program
     }
 
     private static bool Has(string[] args, string flag) => args.Contains(flag, StringComparer.OrdinalIgnoreCase);
+
+    private static string? Value(string[] args, string flag)
+    {
+        for (var i = 0; i < args.Length - 1; i++)
+            if (args[i].Equals(flag, StringComparison.OrdinalIgnoreCase)) return args[i + 1];
+        return null;
+    }
 
     private static bool NamedAsSetup() =>
         Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "").EndsWith("Setup", StringComparison.OrdinalIgnoreCase);
