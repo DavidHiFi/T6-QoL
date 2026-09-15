@@ -1770,7 +1770,7 @@ if zmQolMapListOk then
 		local mapIndex = 1
 
 		if isCustomMap then
-			gametypeIndex = CoD.SelectMapListZombie.GetKeyValueIndex(gametypeTable, "ui_zm_gamemodegroup", "zcustommaps")
+			gametypeIndex = 3
 			mapTable = CoD.SelectMapListZombie.CustomMaps
 			mapIndex = customMapIndex
 		elseif gametype == "zclassic" then
@@ -1784,6 +1784,7 @@ if zmQolMapListOk then
 		end
 
 		Engine.SetDvar("ui_zm_gamemodegroup", gametypeTable[gametypeIndex].ui_zm_gamemodegroup)
+		Engine.SetDvar("zmqol_ui_custommaps", isCustomMap and 1 or 0)
 		Engine.SetGametype(gametypeTable[gametypeIndex].ui_gametype)
 		Engine.SetDvar("ui_mapname", mapTable[mapIndex].ui_mapname)
 		Engine.SetDvar("ui_zm_mapstartlocation", mapTable[mapIndex].ui_zm_mapstartlocation)
