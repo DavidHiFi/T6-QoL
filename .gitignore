@@ -85,13 +85,19 @@ images/*.iwi
 !images/specialty_zomblood_zombies.iwi
 !images/specialty_firesale_zombies.iwi
 
-# Octagonal Ascension's map card, blurred transition card, mode card and
-# signpost icon. These are mod-owned pixels and a fresh checkout needs them to
-# render the Custom Maps route instead of a missing-material placeholder.
+# Octagonal Ascension's map card, blurred transition card, mode card, signpost
+# icon and loading screen. These are mod-owned pixels and a fresh checkout needs
+# them to render the Custom Maps route instead of a missing-material placeholder.
+# 🛑 loadscreen.iwi belongs here for the SAME reason as the other four and was
+# missed the first time: mod.ff carries the image HEADER for `loadscreen` and no
+# other fastfile on a zombies map owns that name, so without these bytes in
+# mod.iwd the custom map's loading screen draws BLACK. Byte-identical to the
+# 1.2beta release's own copy (md5 d6326cdc50376a14f878ecfeb3dbb02b).
 !images/menu_zm_map_octagonal.iwi
 !images/menu_zm_map_octagonal_blur.iwi
 !images/menu_zm_map_octagonal_zclassic.iwi
 !images/menu_zm_map_signpost_octagonal.iwi
+!images/loadscreen.iwi
 
 # 🛑 v2.15.6 - THE L96A1'S TEN IMAGES, same rule as the two above: the mod's own
 # assets, and the gun is BROKEN without them. mod.ff carries only the image
