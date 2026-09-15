@@ -32,97 +32,11 @@ internal sealed class MainForm : Form
     private static Color Sky = Color.FromArgb(108, 176, 255);
     private static Color Green = Color.FromArgb(109, 205, 138);
 
-    // A machine-wide FontSubstitutes entry can silently redirect "Segoe UI" to something else
-    // (a monospace nerd font, on at least one machine), and GDI honours that while GDI+ does not -
-    // so the family reports as Segoe UI while every label draws in the substitute. Pick a family
-    // that survives the round trip instead of changing the user's registry.
-    private static readonly string UiFamily = ResolveUiFamily();
+    private static Font F(float size, bool bold = false) => Ui.F(size, bold);
+    private static int Dp(Control c, int value) => Ui.Dp(c, value);
 
-    private static string ResolveUiFamily()
-    {
-        string[] candidates = ["Segoe UI", "Segoe UI Variable Text", "Tahoma", "Verdana", "Arial"];
-        var installed = new HashSet<string>(FontFamily.Families.Select(f => f.Name), StringComparer.OrdinalIgnoreCase);
-        var swapped = SubstitutedFamilies();
-        foreach (var name in candidates)
-            if (installed.Contains(name) && !swapped.Contains(name) && !LooksMonospaced(name)) return name;
-        return SystemFonts.MessageBoxFont?.FontFamily.Name ?? "Tahoma";
-    }
 
-    private static HashSet<string> SubstitutedFamilies()
-    {
-        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        try
-        {
-            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes");
-            foreach (var value in key?.GetValueNames() ?? [])
-            {
-                var from = value.Split(',')[0].Trim();
-                var to = ((key!.GetValue(value) as string) ?? "").Split(',')[0].Trim();
-                if (from.Length > 0 && to.Length > 0 && !from.Equals(to, StringComparison.OrdinalIgnoreCase)) set.Add(from);
-            }
-        }
-        catch { }
-        return set;
-    }
-
-    private static bool LooksMonospaced(string family)
-    {
-        try
-        {
-            using var probe = new Font(family, 10f, FontStyle.Regular, GraphicsUnit.Point);
-            return TextRenderer.MeasureText("iiiiiiii", probe).Width == TextRenderer.MeasureText("WWWWWWWW", probe).Width;
-        }
-        catch { return true; }
-    }
-
-    private static Font F(float size, bool bold = false) => new(UiFamily, size, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Point);
-
-    // Every hand-placed bound goes through this, so the layout survives 125% and 150% displays.
-    private static int Dp(Control c, int value) => (int)Math.Round(value * c.DeviceDpi / 96.0);
-
-    private sealed record Palette(string Key, string Name, string Note, bool Dark, Color Window, Color Side, Color Base, Color Card, Color CardHover, Color Line, Color LineHover, Color Caption, Color Muted, Color Sub, Color Ink, Color Accent, Color AccentHover, Color AccentText, Color Secondary, Color SecondaryHover, Color Good);
-
-    private static readonly Palette[] Themes =
-    [
-        new("classic", "Classic Dark", "A plain, classic dark grey look.", true,
-            Color.FromArgb(20, 21, 24), Color.FromArgb(21, 22, 26), Color.FromArgb(26, 27, 32), Color.FromArgb(35, 37, 43), Color.FromArgb(41, 44, 51), Color.FromArgb(35, 37, 43), Color.FromArgb(58, 62, 71),
-            Color.FromArgb(122, 128, 139), Color.FromArgb(154, 160, 172), Color.FromArgb(178, 184, 196), Color.FromArgb(232, 234, 238), Color.FromArgb(79, 156, 249), Color.FromArgb(108, 176, 255), Color.FromArgb(12, 22, 36), Color.FromArgb(47, 50, 58), Color.FromArgb(57, 61, 70), Color.FromArgb(109, 205, 138)),
-        new("oled", "OLED Black", "True black for OLED screens.", true,
-            Color.FromArgb(0, 0, 0), Color.FromArgb(0, 0, 0), Color.FromArgb(4, 4, 6), Color.FromArgb(12, 12, 15), Color.FromArgb(18, 18, 22), Color.FromArgb(12, 12, 15), Color.FromArgb(30, 30, 36),
-            Color.FromArgb(120, 126, 138), Color.FromArgb(150, 156, 168), Color.FromArgb(176, 182, 194), Color.FromArgb(233, 235, 239), Color.FromArgb(45, 212, 191), Color.FromArgb(94, 234, 212), Color.FromArgb(4, 26, 24), Color.FromArgb(24, 24, 29), Color.FromArgb(34, 34, 40), Color.FromArgb(110, 231, 159)),
-        new("mocha", "Catppuccin Mocha", "The warm, pastel dark theme.", true,
-            Color.FromArgb(17, 17, 27), Color.FromArgb(24, 24, 37), Color.FromArgb(30, 30, 46), Color.FromArgb(49, 50, 68), Color.FromArgb(58, 60, 82), Color.FromArgb(49, 50, 68), Color.FromArgb(69, 71, 90),
-            Color.FromArgb(108, 112, 134), Color.FromArgb(147, 153, 178), Color.FromArgb(166, 173, 200), Color.FromArgb(205, 214, 244), Color.FromArgb(148, 226, 213), Color.FromArgb(137, 220, 235), Color.FromArgb(17, 17, 27), Color.FromArgb(69, 71, 90), Color.FromArgb(88, 91, 112), Color.FromArgb(166, 227, 161)),
-        new("macchiato", "Catppuccin Macchiato", "A slightly brighter pastel dark.", true,
-            Color.FromArgb(24, 25, 38), Color.FromArgb(30, 32, 48), Color.FromArgb(36, 39, 58), Color.FromArgb(54, 58, 79), Color.FromArgb(64, 68, 92), Color.FromArgb(54, 58, 79), Color.FromArgb(73, 78, 102),
-            Color.FromArgb(110, 115, 141), Color.FromArgb(149, 154, 183), Color.FromArgb(165, 173, 203), Color.FromArgb(202, 211, 245), Color.FromArgb(139, 213, 202), Color.FromArgb(125, 196, 228), Color.FromArgb(24, 25, 38), Color.FromArgb(73, 78, 102), Color.FromArgb(91, 96, 120), Color.FromArgb(166, 218, 149)),
-        new("frappe", "Catppuccin Frappe", "A muted, low-contrast pastel dark.", true,
-            Color.FromArgb(35, 38, 52), Color.FromArgb(41, 44, 60), Color.FromArgb(48, 52, 70), Color.FromArgb(65, 69, 89), Color.FromArgb(76, 80, 102), Color.FromArgb(65, 69, 89), Color.FromArgb(85, 90, 112),
-            Color.FromArgb(115, 121, 148), Color.FromArgb(156, 160, 188), Color.FromArgb(173, 179, 206), Color.FromArgb(198, 208, 245), Color.FromArgb(129, 200, 190), Color.FromArgb(133, 193, 220), Color.FromArgb(35, 38, 52), Color.FromArgb(85, 90, 112), Color.FromArgb(98, 104, 128), Color.FromArgb(166, 209, 137)),
-        new("latte", "Catppuccin Latte", "A soft light theme.", false,
-            Color.FromArgb(220, 224, 232), Color.FromArgb(230, 233, 239), Color.FromArgb(239, 241, 245), Color.FromArgb(255, 255, 255), Color.FromArgb(244, 246, 250), Color.FromArgb(188, 192, 204), Color.FromArgb(172, 176, 190),
-            Color.FromArgb(140, 143, 160), Color.FromArgb(124, 127, 147), Color.FromArgb(92, 95, 119), Color.FromArgb(76, 79, 105), Color.FromArgb(23, 146, 153), Color.FromArgb(32, 159, 181), Color.FromArgb(255, 255, 255), Color.FromArgb(220, 224, 232), Color.FromArgb(204, 208, 218), Color.FromArgb(64, 160, 43)),
-        new("t3-chat", "T3 Chat", "T3 Code's T3 Chat palette.", true,
-            Color.FromArgb(25, 20, 30), Color.FromArgb(25, 20, 30), Color.FromArgb(31, 26, 36), Color.FromArgb(47, 43, 52), Color.FromArgb(55, 50, 60), Color.FromArgb(59, 55, 64), Color.FromArgb(72, 68, 77),
-            Color.FromArgb(129, 126, 133), Color.FromArgb(166, 164, 169), Color.FromArgb(201, 199, 204), Color.FromArgb(249, 248, 251), Color.FromArgb(163, 0, 76), Color.FromArgb(180, 46, 108), Color.FromArgb(255, 255, 255), Color.FromArgb(62, 57, 66), Color.FromArgb(72, 68, 77), Color.FromArgb(118, 207, 138)),
-        new("t3-chat-light", "T3 Chat Light", "T3 Code's light palette.", false,
-            Color.FromArgb(243, 237, 243), Color.FromArgb(243, 237, 243), Color.FromArgb(253, 247, 253), Color.FromArgb(255, 255, 255), Color.FromArgb(254, 251, 254), Color.FromArgb(225, 211, 226), Color.FromArgb(208, 189, 209),
-            Color.FromArgb(175, 147, 177), Color.FromArgb(146, 109, 148), Color.FromArgb(118, 73, 121), Color.FromArgb(80, 24, 84), Color.FromArgb(219, 39, 119), Color.FromArgb(180, 32, 98), Color.FromArgb(255, 255, 255), Color.FromArgb(241, 231, 241), Color.FromArgb(232, 220, 233), Color.FromArgb(41, 134, 70)),
-        new("grove", "T3 Grove", "T3 Code's green palette.", true,
-            Color.FromArgb(21, 34, 27), Color.FromArgb(21, 34, 27), Color.FromArgb(27, 40, 33), Color.FromArgb(44, 56, 50), Color.FromArgb(52, 63, 57), Color.FromArgb(57, 67, 62), Color.FromArgb(70, 80, 75),
-            Color.FromArgb(130, 134, 133), Color.FromArgb(168, 170, 171), Color.FromArgb(205, 204, 206), Color.FromArgb(255, 250, 255), Color.FromArgb(105, 214, 154), Color.FromArgb(132, 221, 172), Color.FromArgb(10, 12, 14), Color.FromArgb(59, 69, 64), Color.FromArgb(70, 80, 75), Color.FromArgb(118, 207, 138)),
-        new("ocean", "T3 Ocean", "T3 Code's blue palette.", true,
-            Color.FromArgb(17, 27, 37), Color.FromArgb(17, 27, 37), Color.FromArgb(23, 33, 43), Color.FromArgb(40, 49, 59), Color.FromArgb(49, 57, 66), Color.FromArgb(53, 61, 71), Color.FromArgb(67, 74, 83),
-            Color.FromArgb(127, 131, 138), Color.FromArgb(167, 168, 174), Color.FromArgb(204, 202, 208), Color.FromArgb(255, 250, 255), Color.FromArgb(112, 185, 238), Color.FromArgb(138, 198, 241), Color.FromArgb(10, 12, 14), Color.FromArgb(55, 63, 73), Color.FromArgb(67, 74, 83), Color.FromArgb(118, 207, 138)),
-        new("ember", "T3 Ember", "T3 Code's warm palette.", true,
-            Color.FromArgb(35, 24, 20), Color.FromArgb(35, 24, 20), Color.FromArgb(41, 30, 26), Color.FromArgb(57, 46, 43), Color.FromArgb(65, 54, 51), Color.FromArgb(69, 59, 56), Color.FromArgb(82, 72, 70),
-            Color.FromArgb(137, 129, 129), Color.FromArgb(174, 166, 168), Color.FromArgb(208, 202, 205), Color.FromArgb(255, 250, 255), Color.FromArgb(240, 154, 100), Color.FromArgb(243, 172, 128), Color.FromArgb(10, 12, 14), Color.FromArgb(71, 61, 58), Color.FromArgb(82, 72, 70), Color.FromArgb(118, 207, 138)),
-        new("iris", "T3 Iris", "T3 Code's purple palette.", true,
-            Color.FromArgb(23, 19, 35), Color.FromArgb(23, 19, 35), Color.FromArgb(29, 25, 41), Color.FromArgb(46, 42, 57), Color.FromArgb(54, 50, 65), Color.FromArgb(58, 54, 69), Color.FromArgb(72, 68, 82),
-            Color.FromArgb(131, 126, 137), Color.FromArgb(169, 164, 174), Color.FromArgb(205, 200, 208), Color.FromArgb(255, 250, 255), Color.FromArgb(157, 125, 242), Color.FromArgb(175, 148, 244), Color.FromArgb(10, 12, 14), Color.FromArgb(61, 56, 71), Color.FromArgb(72, 68, 82), Color.FromArgb(118, 207, 138))
-    ];
-
-    private static Palette CurrentTheme(AppSettings settings) => Themes.FirstOrDefault(t => t.Key == settings.Theme) ?? Themes[0];
+    private static Palette CurrentTheme(AppSettings settings) => Palettes.ByKey(settings.Theme);
 
     private void ApplyTheme(Palette p, bool rebuild)
     {
@@ -199,9 +113,9 @@ internal sealed class MainForm : Form
     private Control Brand()
     {
         brandPanel = new Panel { Dock = DockStyle.Top, Height = Dp(this, 74), BackColor = Mantle };
-        brandMark = new LogoMark { Location = new Point(Dp(this, 6), Dp(this, 4)), Size = new Size(Dp(this, 38), Dp(this, 38)), Radius = 10, BackColor = Surface0, BorderColor = Surface0, Glyph = "\uE7FC", Artwork = artwork };
+        brandMark = new LogoMark { Location = new Point(Dp(this, 6), Dp(this, 4)), Size = new Size(Dp(this, 38), Dp(this, 38)), Radius = 10, BackColor = Surface0, BorderColor = Surface0, Glyph = "\uE7FC", GlyphColor = Teal, Artwork = artwork };
         brandName = new Label { Location = new Point(Dp(this, 54), Dp(this, 5)), AutoSize = true, Text = "Quality of Life", Font = F(10.5f, true), ForeColor = Ink, BackColor = Mantle, UseMnemonic = false };
-        brandSub = new Label { Location = new Point(Dp(this, 54), Dp(this, 26)), AutoSize = true, Text = "Portable installer", Font = F(8), ForeColor = Overlay0, BackColor = Mantle, UseMnemonic = false };
+        brandSub = new Label { Location = new Point(Dp(this, 54), Dp(this, 26)), AutoSize = true, Text = "Mod manager", Font = F(8), ForeColor = Overlay0, BackColor = Mantle, UseMnemonic = false };
         brandPanel.Controls.Add(brandMark); brandPanel.Controls.Add(brandName); brandPanel.Controls.Add(brandSub); return brandPanel;
     }
 
@@ -381,7 +295,7 @@ internal sealed class MainForm : Form
     private Panel Hero(string title, string installed, string missing, string button, Func<Task> action)
     {
         var hero = new RoundedPanel { Radius = 12, Margin = new Padding(0, 0, 0, 10), BackColor = Surface0, BorderColor = Surface0, HoverBorderColor = Surface0, Padding = new Padding(0) };
-        var mark = new LogoMark { Radius = 10, BackColor = Surface1, BorderColor = Surface1, Glyph = "\uE7FC", Artwork = artwork };
+        var mark = new LogoMark { Radius = 10, BackColor = Surface1, BorderColor = Surface1, Glyph = "\uE7FC", GlyphColor = Teal, Artwork = artwork };
         var head = new Label { AutoSize = false, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.MiddleLeft, Text = title, ForeColor = Ink, Font = F(13, true), BackColor = Surface0 };
         var line1 = new Label { AutoSize = false, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.MiddleLeft, Text = installed, ForeColor = installed.StartsWith("Nothing") ? Overlay2 : Green, Font = F(9), BackColor = Surface0 };
         var line2 = new Label { AutoSize = false, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.MiddleLeft, Text = missing, ForeColor = missing.StartsWith("Everything") ? Green : Overlay2, Font = F(9), BackColor = Surface0 };
@@ -686,19 +600,30 @@ internal sealed class MainForm : Form
         var page = Page();
         page.Controls.Add(Caption("THEME"));
         page.Controls.Add(ThemeGrid(page, current));
-        page.Controls.Add(Card("Reset to default", $"Go back to {Themes[0].Name}.", CurrentTheme(settings).Key == Themes[0].Key ? "in use" : "available", "Use default", () => { settings.Theme = Themes[0].Key; settings.Save(); ApplyTheme(Themes[0], true); return Task.CompletedTask; }, false, ShowSettings));
+        page.Controls.Add(Card("Reset to default", $"Go back to {Palettes.Default.Name}.", CurrentTheme(settings).Key == Palettes.Default.Key ? "in use" : "available", "Use default", () => { settings.Theme = Palettes.Default.Key; settings.Save(); ApplyTheme(Palettes.Default, true); return Task.CompletedTask; }, false, ShowSettings));
         page.Controls.Add(Caption("UPDATES"));
         page.Controls.Add(Card("Check for updates", "Checks GitHub for a newer mod release and a newer version of this app.", "github.com/DavidHiFi/T6-QoL", "Check now", CheckUpdates, false, ShowSettings));
         page.Controls.Add(Card("Automatic update checks", "Asks GitHub for a newer release every time this app opens.", settings.AutoUpdate ? "on" : "off", settings.AutoUpdate ? "Turn off" : "Turn on", () => { settings.AutoUpdate = !settings.AutoUpdate; settings.Save(); return Task.CompletedTask; }, false, ShowSettings));
         page.Controls.Add(Caption("APP"));
         page.Controls.Add(Card("Player name", settings.PlayerName.Trim().Length > 0 ? $"The name the game shows. Now: {settings.PlayerName.Trim()}" : "Not set - the game shows \"Player\" in LAN sessions.", settings.PlayerName.Trim().Length > 0 ? "set" : "not set", "Change", async () => { var name = await AskText("What name should the game show?", settings.PlayerName); if (name is not null) { settings.PlayerName = name.Trim(); settings.Save(); } }, false, ShowSettings));
         page.Controls.Add(Card("Minimize to the tray", "Keeps the app in the notification area when you minimize it.", settings.Tray ? "on" : "off", settings.Tray ? "Turn off" : "Turn on", () => { SetTray(!settings.Tray); return Task.CompletedTask; }, false, ShowSettings));
+
+        page.Controls.Add(Caption("THIS PC"));
+        var installedAt = Setup.InstalledAt;
+        if (installedAt is null)
+            page.Controls.Add(Card("Install on this PC", "Copies the app into your profile and adds it to the Start menu and Apps & features. You are running it portable right now.", "portable", "Install", () => { Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--setup") { UseShellExecute = true }); return Task.CompletedTask; }, false, ShowSettings));
+        else
+        {
+            page.Controls.Add(Card("Installed on this PC", $"The app lives in {installedAt}. Removing it leaves your mods in Plutonium untouched.", "installed", "Uninstall", () => { Process.Start(new ProcessStartInfo(Path.Combine(installedAt, Setup.ExeName), "--uninstall") { UseShellExecute = true }); return Task.CompletedTask; }, false, ShowSettings));
+            page.Controls.Add(Card("Start menu entry", "An entry under a \"Quality of Life Series\" group.", Setup.HasStartMenu ? "on" : "off", Setup.HasStartMenu ? "Turn off" : "Turn on", () => { Setup.SetStartMenu(!Setup.HasStartMenu); return Task.CompletedTask; }, false, ShowSettings));
+            page.Controls.Add(Card("Desktop shortcut", "A shortcut to this app on your desktop.", Setup.HasDesktop ? "on" : "off", Setup.HasDesktop ? "Turn off" : "Turn on", () => { Setup.SetDesktop(!Setup.HasDesktop); return Task.CompletedTask; }, false, ShowSettings));
+        }
     }
 
     private FlowLayoutPanel ThemeGrid(FlowLayoutPanel page, Palette current)
     {
         var grid = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Base, AutoSize = false, Margin = new Padding(0, 2, 0, 6), Padding = new Padding(0), Width = Math.Max(420, page.ClientSize.Width - 8) };
-        foreach (var theme in Themes)
+        foreach (var theme in Palettes.All)
         {
             var chip = new RoundedPanel { Width = 196, Height = 42, Margin = new Padding(0, 0, 10, 10), Radius = 10, BackColor = Surface0, BorderColor = theme.Key == current.Key ? Teal : Surface0, HoverBorderColor = Surface1, Cursor = Cursors.Hand };
             var dot = new RoundedPanel { Location = new Point(12, 13), Size = new Size(16, 16), Radius = 8, BackColor = theme.Accent, BorderColor = theme.Accent, Cursor = Cursors.Hand };
@@ -731,8 +656,8 @@ internal sealed class MainForm : Form
     private void ShowAbout()
     {
         currentPage = ShowAbout;
-        Clear("About", $"Portable installer  •  v{service.ProductVersion}"); Select("About"); footer.Text = PageFooter(service.GetStatus()); var cards = Cards();
-        cards.Controls.Add(Card("Quality of Life Series", "A native, self-contained Windows installer for the Quality of Life mods. MIT licensed.", "MIT", "Open", () => { service.OpenReleases(); return Task.CompletedTask; }, true));
+        Clear("About", $"Mod manager  •  v{service.ProductVersion}"); Select("About"); footer.Text = PageFooter(service.GetStatus()); var cards = Cards();
+        cards.Controls.Add(Card("Quality of Life Series", "A mod manager for the Quality of Life mods on Plutonium - install, update, launch and remove. MIT licensed.", "MIT", "Open", () => { service.OpenReleases(); return Task.CompletedTask; }, true));
     }
 
     private void ShowGame(string game, string system, string name)
@@ -757,24 +682,23 @@ internal sealed class MainForm : Form
         var page = Page();
         page.Controls.Add(Caption($"INSTALLED ({mods.Count})"));
         if (mods.Count == 0)
-            page.Controls.Add(Card("Nothing installed", "No mods are installed for this game yet. Install one from a .zip or a mod file.", "empty", "Install", () => { InstallModFromFile(game, system, gameName); return Task.CompletedTask; }, true, () => ShowMods(game, system, gameName)));
+            page.Controls.Add(Card("Nothing installed", "No mods are installed for this game yet. Install one from a .zip or a mod file.", "empty", "Install", () => InstallModFromFile(game), true, () => ShowMods(game, system, gameName)));
         foreach (var mod in mods)
             page.Controls.Add(Card(mod.Name, $"{mod.Version}{(mod.Version.Length > 0 ? "  •  " : "")}{mod.Path}", InstallerService.FormatSize(mod.Bytes), "Remove", async () => { if (await Ask($"Remove {mod.Name}?")) service.RemoveModFolder(game, mod.Path, Reporter()); }, false, () => ShowMods(game, system, gameName)));
         page.Controls.Add(Caption("ADD"));
-        page.Controls.Add(Card("Install a mod from a file", "Pick a .zip or a mod .ff/.iwd file. It is copied into this game's mods folder.", "zip or file", "Choose file", () => { InstallModFromFile(game, system, gameName); return Task.CompletedTask; }, true, () => ShowMods(game, system, gameName)));
+        page.Controls.Add(Card("Install a mod from a file", "Pick a .zip or a mod .ff/.iwd file. It is copied into this game's mods folder.", "zip or file", "Choose file", () => InstallModFromFile(game), true, () => ShowMods(game, system, gameName)));
         page.Controls.Add(Card("Open mods folder", "Where Plutonium looks for this game's mods.", "mods", "Open folder", () => { service.OpenFolder(service.ModsDir(game)); return Task.CompletedTask; }));
         page.Controls.Add(Card($"Back to {gameName}", "Returns to the game screen. Nothing is changed.", "back", "Back", () => { if (game == "t6") ShowT6(); else ShowGame(game, system, gameName); return Task.CompletedTask; }));
     }
 
-    private async Task InstallModFromFile(string game, string system, string gameName)
+    // Run() already owns the busy flag, the error dialog and the page refresh - this only picks
+    // the file and returns the task so Run can await it. Guarding busy in here as well meant the
+    // picker opened and the install then silently did nothing.
+    private async Task InstallModFromFile(string game)
     {
         using var pick = new OpenFileDialog { Title = "Pick a mod file", Filter = "Mod files (*.zip;*.ff;*.iwd)|*.zip;*.ff;*.iwd|All files (*.*)|*.*" };
-        if (pick.ShowDialog(this) != DialogResult.OK || busy) return;
-        busy = true; footer.Text = "Working...";
-        try { await service.InstallModFromFileAsync(game, pick.FileName, Reporter()); footer.Text = "Installed " + Path.GetFileName(pick.FileName); }
-        catch (Exception ex) { footer.Text = "Stopped"; await Tell("That did not work:\n\n" + ex.Message); }
-        finally { busy = false; }
-        ShowMods(game, system, gameName);
+        if (pick.ShowDialog(this) != DialogResult.OK) return;
+        await service.InstallModFromFileAsync(game, pick.FileName, Reporter());
     }
 
     private void LaunchGame(string game, string play, bool lan, bool watchdog)
@@ -943,45 +867,6 @@ internal sealed class MainForm : Form
     [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
     [DllImport("uxtheme.dll", CharSet = CharSet.Unicode)] private static extern int SetWindowTheme(IntPtr hwnd, string? subApp, string? subId);
 
-    private class RoundedPanel : Panel
-    {
-        internal int Radius { get; set; } = 16;
-        internal Color BorderColor { get; set; } = Surface1;
-        internal Color HoverBorderColor { get; set; } = Surface2;
-        internal Color HoverFill { get; set; }
-        private bool hover;
-        internal RoundedPanel()
-        {
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            MouseEnter += (_, _) => { hover = true; Invalidate(); };
-            MouseLeave += (_, _) => { hover = false; Invalidate(); };
-        }
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            e.Graphics.Clear(Parent?.BackColor ?? BackColor);
-            using var path = RoundedPath(new Rectangle(0, 0, Width - 1, Height - 1), Radius);
-            using var fill = new SolidBrush(hover && HoverFill != Color.Empty ? HoverFill : BackColor);
-            e.Graphics.FillPath(fill, path);
-            if (BorderColor != BackColor || hover)
-            {
-                using var pen = new Pen(hover ? HoverBorderColor : BorderColor, 1.1f);
-                e.Graphics.DrawPath(pen, path);
-            }
-        }
-        internal static GraphicsPath RoundedPath(Rectangle r, int radius)
-        {
-            var path = new GraphicsPath();
-            var d = Math.Min(radius * 2, Math.Min(r.Width, r.Height));
-            path.AddArc(r.X, r.Y, d, d, 180, 90);
-            path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
-            path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
-            path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
-    }
-
     private sealed class Row : RoundedPanel
     {
         internal readonly Label Title = new();
@@ -1024,67 +909,4 @@ internal sealed class MainForm : Form
         }
     }
 
-    private sealed class LogoMark : RoundedPanel
-    {
-        internal string Glyph { get; set; } = "";
-        internal Image? Artwork { get; set; }
-        private static readonly Font Icon = new("Segoe MDL2 Assets", 14, FontStyle.Regular, GraphicsUnit.Point);
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            if (Artwork is not null)
-            {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-                using var path = RoundedPath(new Rectangle(0, 0, Width, Height), Radius);
-                var state = e.Graphics.Save();
-                e.Graphics.SetClip(path);
-                e.Graphics.DrawImage(Artwork, new Rectangle(0, 0, Width, Height));
-                e.Graphics.Restore(state);
-                return;
-            }
-            TextRenderer.DrawText(e.Graphics, Glyph, Icon, ClientRectangle, Teal, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
-        }
-    }
-
-    private sealed class RoundButton : Button
-    {
-        internal int Radius { get; set; } = 12;
-        internal string Glyph { get; set; } = "";
-        internal Color HoverColor { get; set; }
-        internal Color SelectedColor { get; set; }
-        internal Color SelectedForeColor { get; set; }
-        internal bool Selected { get; set; }
-        private bool hover;
-        internal RoundButton()
-        {
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-            FlatStyle = FlatStyle.Flat; FlatAppearance.BorderSize = 0;
-            MouseEnter += (_, _) => { hover = true; Invalidate(); };
-            MouseLeave += (_, _) => { hover = false; Invalidate(); };
-        }
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            e.Graphics.Clear(Parent?.BackColor ?? BackColor);
-            var fill = Selected ? SelectedColor : hover && HoverColor != Color.Empty ? HoverColor : BackColor;
-            using var path = RoundedPanel.RoundedPath(new Rectangle(0, 0, Width - 1, Height - 1), Radius);
-            using var brush = new SolidBrush(fill);
-            e.Graphics.FillPath(brush, path);
-            var fore = Selected ? SelectedForeColor : ForeColor;
-            var inset = Dp(this, 14);
-            var x = Padding.Left + inset;
-            if (Glyph.Length > 0)
-            {
-                var gw = Dp(this, 20);
-                TextRenderer.DrawText(e.Graphics, Glyph, GlyphFont, new Rectangle(x, 0, gw, Height), fore, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
-                x += gw + Dp(this, 8);
-            }
-            var centred = Glyph.Length == 0 && TextAlign is ContentAlignment.MiddleCenter or ContentAlignment.TopCenter or ContentAlignment.BottomCenter;
-            var align = centred ? TextFormatFlags.HorizontalCenter : TextFormatFlags.Left;
-            var box = centred ? new Rectangle(inset, 0, Width - inset * 2, Height) : new Rectangle(x, 0, Width - x - inset, Height);
-            TextRenderer.DrawText(e.Graphics, Text, Font, box, fore, align | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
-        }
-        private Font? glyphFont;
-        private Font GlyphFont => glyphFont ??= new Font("Segoe MDL2 Assets", 11, FontStyle.Regular, GraphicsUnit.Point);
-    }
 }

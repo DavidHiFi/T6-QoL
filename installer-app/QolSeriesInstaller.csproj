@@ -19,4 +19,17 @@
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>none</DebugType>
   </PropertyGroup>
+
+  <!--
+    The support files (icon, launch scripts, ReShade presets and DLL - about 4 MB) are zipped into
+    the exe, so one downloaded file is a complete program. Payload.Unpack writes them back out.
+  -->
+  <Target Name="PackPayload" BeforeTargets="PrepareForBuild">
+    <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)\..\installer\Mod Files"
+                  DestinationFile="$(IntermediateOutputPath)ModFiles.zip"
+                  Overwrite="true" />
+    <ItemGroup>
+      <EmbeddedResource Include="$(IntermediateOutputPath)ModFiles.zip" LogicalName="ModFiles.zip" />
+    </ItemGroup>
+  </Target>
 </Project>

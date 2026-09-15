@@ -45,7 +45,9 @@ internal sealed class InstallerService
     private string? appZipUrl;
     private string? appZipName;
 
-    internal readonly string Payload = System.IO.Path.Combine(AppContext.BaseDirectory, "Mod Files");
+    // Resolved rather than assumed: the support files ride inside the exe and are unpacked beside
+    // it, or into the profile when the exe sits somewhere unwritable.
+    internal readonly string Payload = QolSeriesInstaller.Payload.Dir;
     internal readonly string Pluto = RootOverride.Length > 0 ? RootOverride : System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Plutonium");
     internal string T6 => System.IO.Path.Combine(Pluto, "storage", "t6");
     internal string Storage => Directory.Exists(System.IO.Path.Combine(Pluto, "storage")) ? System.IO.Path.Combine(Pluto, "storage") : Pluto;
