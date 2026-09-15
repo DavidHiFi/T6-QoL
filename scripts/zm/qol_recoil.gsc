@@ -187,6 +187,12 @@ zmqol_recoil_register()
             //  is_weapon_upgraded() and get_base_weapon_name() are both table
             //  lookups against this array (_zm_weapons.gsc:1892, :1976), so
             //  registering here is what makes the twin read as "upgraded".
+            //  Guarded: add_zombie_weapon() creates the array, but a map that
+            //  registered nothing would leave it undefined and the write would
+            //  throw rather than quietly do nothing.
+            if ( !isdefined( level.zombie_weapons_upgraded ) )
+                level.zombie_weapons_upgraded = [];
+
             level.zombie_weapons_upgraded[ upgraded ] = twin;
         }
 
@@ -222,6 +228,13 @@ zmqol_recoil_player_watch()
         wait 0.5;
 
         if ( !isdefined( self ) || !isalive( self ) )
+            continue;
+
+        //  🛑 NOT WHILE DOWNED. In last stand the player is holding a pistol
+        //  the game handed them and their real weapons are held aside; a
+        //  take/give in that state is how you lose a gun for the rest of the
+        //  match. The next tick after the revive picks it up anyway.
+        if ( isdefined( self.laststand ) && self.laststand )
             continue;
 
         //  Re-read every tick. If the player turns the row back ON mid-match
