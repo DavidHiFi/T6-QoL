@@ -131,7 +131,12 @@ internal sealed class LogoMark : RoundedPanel
             using var path = RoundedPath(new Rectangle(0, 0, Width, Height), Radius);
             var state = e.Graphics.Save();
             e.Graphics.SetClip(path);
-            e.Graphics.DrawImage(Artwork, new Rectangle(0, 0, Width, Height));
+            // Fill the tile and crop the overhang, rather than squashing a 16:9 banner into a
+            // square. The centre of a piece of cover art is the part worth showing.
+            var scale = Math.Max((float)Width / Artwork.Width, (float)Height / Artwork.Height);
+            var w = Artwork.Width * scale;
+            var h = Artwork.Height * scale;
+            e.Graphics.DrawImage(Artwork, new RectangleF((Width - w) / 2f, (Height - h) / 2f, w, h));
             e.Graphics.Restore(state);
             return;
         }

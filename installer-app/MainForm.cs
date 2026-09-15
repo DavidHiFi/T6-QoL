@@ -89,12 +89,14 @@ internal sealed class MainForm : Form
         // mod, then the app's own settings. Mod-level and app-level never share a group.
         side.Controls.Add(NavItem("\uE946", "About", ShowAbout));
         side.Controls.Add(NavItem("\uE8A5", "Details and log", ShowDetails));
+        side.Controls.Add(NavItem("\uE9D9", "Requirements", ShowRequirements));
         side.Controls.Add(NavItem("\uE713", "Settings", ShowSettings));
         side.Controls.Add(Section("APP"));
         side.Controls.Add(NavItem("\uE74D", "Remove mods", ShowUninstall));
         side.Controls.Add(NavItem("\uE8B7", "Backups", ShowBackups));
         side.Controls.Add(NavItem("\uE790", "ReShade", ShowReShade));
         side.Controls.Add(NavItem("\uE8B9", "Installed mods", ShowAllMods));
+        side.Controls.Add(NavItem("\uE721", "Browse mods", ShowBrowse));
         side.Controls.Add(Section("MODS"));
         side.Controls.Add(NavItem("\uE7FC", "Black Ops III (T7)", () => ShowEmptyGame("Black Ops III", "T7")));
         side.Controls.Add(NavItem("\uE7FC", "Black Ops II (T6)", ShowT6));
@@ -590,6 +592,9 @@ internal sealed class MainForm : Form
             cards.Controls.Add(Card($"Mod update {pendingCheck.ModTag}", "A newer release is on GitHub. It updates the five mod files and keeps your settings.", "update available", "Install update", async () => { await service.InstallUpdateAsync(Reporter()); await Tell("Installed. Your settings were kept."); }, true, ShowHome));
         if (pendingCheck is { CanInstallApp: true })
             cards.Controls.Add(Card($"App update {pendingCheck.AppTag}", "A newer version of this tool is on GitHub.", "update available", "Update app", async () => { if (await Ask("The app will close, update itself, and open again.", "Update now", "Not now")) { await service.InstallAppUpdateAsync(Reporter()); Application.Exit(); } }, true, ShowHome));
+        var shortfall = Requirements.Missing(service);
+        if (shortfall > 0)
+            cards.Controls.Add(Card("Missing requirements", "Something the games need is not installed on this PC yet. Nothing is installed for you - this just shows what and where.", shortfall == 1 ? "1 missing" : $"{shortfall} missing", "Review", () => { ShowRequirements(); return Task.CompletedTask; }, true));
         cards.Controls.Add(Card("World at War (T4)", "Play World at War through Plutonium, online or LAN.", "no mod yet", "Open", () => { ShowGame("t4", "T4", "World at War"); return Task.CompletedTask; }));
         cards.Controls.Add(Card("Black Ops (T5)", "Play Black Ops through Plutonium, online or LAN.", "no mod yet", "Open", () => { ShowGame("t5", "T5", "Black Ops"); return Task.CompletedTask; }));
         cards.Controls.Add(Card("Black Ops III (T7)", "No Quality of Life mod yet - Black Ops II is the current focus.", "nothing yet", "About", () => Tell("There is no Quality of Life mod for Black Ops III yet.\n\nDevelopment has not started; Black Ops II is the current focus.\n\nIts home will be github.com/DavidHiFi/T7-QoL.")));
@@ -873,6 +878,184 @@ internal sealed class MainForm : Form
         label.Resize += (_, _) => Grow();
         Grow();
         return label;
+    }
+
+    private IReadOnlyList<CatalogMod> catalog = [];
+    private bool catalogLoaded;
+    private string browseFilter = "all";
+
+    /// <summary>
+    /// Community mods, with a preview and a one-click install where the package is something this
+    /// app can place itself. Anything that installs outside the mods folder links out instead of
+    /// pretending it can be handled here.
+    /// </summary>
+    private void ShowBrowse()
+    {
+        currentPage = ShowBrowse;
+        Clear("Browse mods", "Community mods for Plutonium");
+        Select("Browse mods"); footer.Text = PageFooter(service.GetStatus());
+        var page = Page();
+
+        if (!catalogLoaded)
+        {
+            catalogLoaded = true;
+            catalog = Catalog.Bundled();
+            _ = RefreshCatalogAsync();
+        }
+
+        // Filter by game. "All" included so there is always a way back to everything.
+        var filters = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, WrapContents = true, AutoSize = false, Height = Dp(this, 44), BackColor = Base, Margin = new Padding(0, 0, 0, Dp(this, 6)), Padding = new Padding(0) };
+        foreach (var (key, label) in new[] { ("all", "All"), ("t4", "World at War"), ("t5", "Black Ops"), ("t6", "Black Ops II") })
+        {
+            var on = browseFilter == key;
+            var k = key;
+            var count = key == "all" ? catalog.Count : catalog.Count(m => m.Game == key);
+            var chip = new RoundButton
+            {
+                Height = Dp(this, 32),
+                Width = Dp(this, 150),
+                Margin = new Padding(0, 0, Dp(this, 8), 0),
+                Radius = Dp(this, 16),
+                Text = $"{label}  ({count})",
+                BackColor = on ? Teal : Surface1,
+                HoverColor = on ? Sky : Surface2,
+                ForeColor = on ? Crust : Ink,
+                Font = F(8.5f, true),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            chip.Click += (_, _) => { browseFilter = k; ShowBrowse(); };
+            filters.Controls.Add(chip);
+        }
+        page.Controls.Add(filters);
+
+        var shown = catalog.Where(m => browseFilter == "all" || m.Game == browseFilter).ToList();
+        if (shown.Count == 0)
+        {
+            page.Controls.Add(Card("Nothing here yet", "No community mods are listed for this game.", "", "Refresh", async () => { await RefreshCatalogAsync(); }, false, ShowBrowse));
+            return;
+        }
+
+        foreach (var mod in shown)
+        {
+            var m = mod;
+            var installed = service.GetInstalledMods(m.Game).Any(i => i.Name.Equals(m.Name, StringComparison.OrdinalIgnoreCase));
+            page.Controls.Add(BrowseCard(m, installed));
+        }
+
+        page.Controls.Add(Caption("LIST"));
+        page.Controls.Add(Card("Refresh the list", "Fetches the current list from GitHub. A copy ships inside the app, so this page works offline too.", "", "Refresh", async () => { await RefreshCatalogAsync(); }, false, ShowBrowse));
+    }
+
+    private async Task RefreshCatalogAsync()
+    {
+        try
+        {
+            var live = await Catalog.LoadAsync(service.Http);
+            if (live.Count > 0) { catalog = live; if (ReferenceEquals(currentPage, (Action)ShowBrowse)) Rebuild(); }
+        }
+        catch { }
+    }
+
+    /// <summary>A row with room for preview art, the author and the tags.</summary>
+    private Control BrowseCard(CatalogMod mod, bool installed)
+    {
+        var card = new RoundedPanel { Height = Dp(this, 104), Margin = new Padding(0, 0, 0, Dp(this, 8)), Radius = 10, BackColor = Surface0, BorderColor = Surface0, HoverBorderColor = Surface0, HoverFill = Color.Empty };
+        var shot = new LogoMark { Radius = 8, BackColor = Surface1, BorderColor = Surface1, Glyph = "", GlyphColor = Overlay2, Artwork = ImageCache.Ready(mod.Image) };
+        var title = new Label { AutoSize = false, Font = F(11, true), ForeColor = Ink, BackColor = Surface0, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.MiddleLeft, Text = mod.Name };
+        var by = new Label { AutoSize = false, Font = F(8.5f), ForeColor = Overlay2, BackColor = Surface0, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.MiddleLeft, Text = $"{mod.Author}  •  v{mod.Version}  •  {mod.Size}  •  {string.Join(" · ", mod.Tags)}" };
+        var blurb = new Label { AutoSize = false, Font = F(9), ForeColor = Subtext0, BackColor = Surface0, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.TopLeft, Text = mod.Summary };
+        var action = new RoundButton { Radius = 15, Font = F(8.5f, true), Cursor = Cursors.Hand, TextAlign = ContentAlignment.MiddleCenter };
+        var page = new RoundButton { Radius = 15, Font = F(8.5f, true), Cursor = Cursors.Hand, TextAlign = ContentAlignment.MiddleCenter, Text = "Page", BackColor = Surface1, HoverColor = Surface2, ForeColor = Ink };
+        page.Click += (_, _) => service.OpenUrl(mod.Url);
+
+        if (installed)
+        {
+            action.Text = "Installed"; action.Enabled = false;
+            action.BackColor = Surface1; action.ForeColor = Overlay2;
+        }
+        else if (mod.Installable)
+        {
+            action.Text = "Install"; action.BackColor = Teal; action.HoverColor = Sky; action.ForeColor = Crust;
+            action.Click += async (_, _) => await Run(async () =>
+            {
+                if (!await Ask($"Install {mod.Name}?\n\n{mod.Size} will be downloaded from GitHub into {mod.Game.ToUpperInvariant()}'s mods folder.", "Install", "Not now")) return;
+                await service.InstallCatalogModAsync(mod, Reporter());
+                await Tell($"{mod.Name} is installed.");
+            }, action, ShowBrowse);
+        }
+        else
+        {
+            action.Text = "Get it"; action.BackColor = Surface1; action.HoverColor = Surface2; action.ForeColor = Ink;
+            action.Click += (_, _) => service.OpenUrl(mod.Url);
+        }
+
+        card.Controls.Add(shot); card.Controls.Add(title); card.Controls.Add(by); card.Controls.Add(blurb);
+        card.Controls.Add(action); card.Controls.Add(page);
+        tips.SetToolTip(blurb, mod.Summary);
+
+        void LayoutCard()
+        {
+            int pad = Dp(card, 14), gap = Dp(card, 8);
+            var art = Dp(card, 76);
+            shot.Bounds = new Rectangle(pad, (card.Height - art) / 2, Dp(card, 128), art);
+            var left = shot.Right + Dp(card, 14);
+            var bw = Dp(card, 104);
+            action.Bounds = new Rectangle(card.Width - pad - bw, Dp(card, 22), bw, Dp(card, 30));
+            page.Bounds = new Rectangle(card.Width - pad - bw, action.Bottom + gap, bw, Dp(card, 28));
+            var room = Math.Max(Dp(card, 80), action.Left - Dp(card, 14) - left);
+            title.Bounds = new Rectangle(left, Dp(card, 14), room, Dp(card, 24));
+            by.Bounds = new Rectangle(left, Dp(card, 38), room, Dp(card, 18));
+            blurb.Bounds = new Rectangle(left, Dp(card, 58), room, Dp(card, 34));
+        }
+        card.Resize += (_, _) => LayoutCard();
+        LayoutCard();
+
+        // Fetch the art in the background and slot it in when it lands.
+        if (mod.Image.Length > 0 && shot.Artwork is null)
+            _ = ImageCache.FetchAsync(mod.Image, service.Http).ContinueWith(t =>
+            {
+                if (t.Result is null || shot.IsDisposed) return;
+                try { shot.BeginInvoke(() => { shot.Artwork = t.Result; shot.Invalidate(); }); } catch { }
+            }, TaskScheduler.Default);
+
+        return card;
+    }
+
+    /// <summary>
+    /// What the games need from Windows. This app carries its own runtime, so nothing here is
+    /// about the app - and anything already satisfied is stated once and left alone.
+    /// </summary>
+    private void ShowRequirements()
+    {
+        currentPage = ShowRequirements;
+        var items = Requirements.Check(service);
+        var missing = items.Count(r => !r.Present);
+        Clear("Requirements", missing == 0 ? "Everything the games need is already here" : missing == 1 ? "1 thing is missing" : $"{missing} things are missing");
+        Select("Requirements"); footer.Text = PageFooter(service.GetStatus());
+        var page = Page();
+
+        page.Controls.Add(Paragraph(
+            "These are what Plutonium, the games and ReShade need from Windows. This app is not one of them - "
+            + "it carries its own runtime, so it needs nothing installed to run.\n\n"
+            + "Nothing here is installed for you. Where something is missing, the button opens Microsoft's own "
+            + "download page for it."));
+
+        foreach (var item in items)
+        {
+            var r = item;
+            page.Controls.Add(Card(
+                r.Name,
+                r.Why + "  •  " + r.Detail,
+                r.Present ? "installed" : "missing",
+                r.Present ? "Recheck" : "Get it",
+                () =>
+                {
+                    if (!r.Present && r.Url is { } url) service.OpenUrl(url);
+                    return Task.CompletedTask;
+                },
+                !r.Present, ShowRequirements));
+        }
     }
 
     private void ShowAbout()

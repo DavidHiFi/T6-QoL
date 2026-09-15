@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "updated": "2026-09-15",
+  "note": "Community mods the app can browse. A copy of this ships inside the exe; the app refreshes it from this file on GitHub, so mods can be added here without releasing a new build.",
+  "mods": [
+    {
+      "id": "t6-quality-of-life",
+      "name": "Quality of Life",
+      "game": "t6",
+      "author": "DavidHiFi",
+      "version": "2.15.51",
+      "size": "326 MB",
+      "summary": "Quality of life changes for Black Ops II Zombies - menus, HUD, weapons and fixes, all toggleable in game.",
+      "image": "https://github.com/user-attachments/assets/32a1cfbd-7ece-4a91-9690-82691bed24b1",
+      "repo": "DavidHiFi/T6-QoL",
+      "asset": "Quality.Of.Life.Mod",
+      "install": "mods",
+      "url": "https://github.com/DavidHiFi/T6-QoL",
+      "tags": ["Zombies", "Quality of life"]
+    },
+    {
+      "id": "t6-octagonal-ascension",
+      "name": "Octagonal Ascension BO2 REMAKE",
+      "game": "t6",
+      "author": "HD ERICK GAMES",
+      "version": "1.2",
+      "size": "143 MB",
+      "summary": "A Black Ops II remake of Ascension.",
+      "image": "https://i.imgur.com/Y0deAOH.jpeg",
+      "repo": "cll-mods/Octagonal-Ascension",
+      "asset": "pack.zip",
+      "install": "mods",
+      "url": "https://github.com/cll-mods/Octagonal-Ascension/",
+      "tags": ["Zombies", "Custom map"]
+    },
+    {
+      "id": "t6-zombies-declassified",
+      "name": "Zombies Declassified BETA 2",
+      "game": "t6",
+      "author": "Logo2K",
+      "version": "2.0",
+      "size": "9.0 GB",
+      "summary": "A PC port of the cancelled DLC5 expansion. Installs outside the mods folder, so it is downloaded from its own page rather than by this app.",
+      "image": "https://i.ytimg.com/vi/8Tt5d6tu-7Y/maxresdefault.jpg",
+      "repo": "Logo-2K/zombies-declassified",
+      "asset": "",
+      "install": "external",
+      "url": "https://github.com/Logo-2K/zombies-declassified/",
+      "tags": ["Zombies", "DLC5", "Large"]
+    }
+  ]
+}

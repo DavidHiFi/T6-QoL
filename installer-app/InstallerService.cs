@@ -111,6 +111,44 @@ internal sealed class InstallerService
         Log($"removed mod folder {full}");
     }
 
+    internal HttpClient Http => http;
+
+    /// <summary>
+    /// Fetches a catalogue mod's package from its GitHub release and installs it into that game's
+    /// mods folder, using the same path as installing from a file you picked yourself.
+    /// </summary>
+    internal async Task InstallCatalogModAsync(CatalogMod mod, IProgress<string> progress)
+    {
+        Guard();
+        if (!mod.Installable) throw new InvalidOperationException($"{mod.Name} installs outside the mods folder, so it is downloaded from its own page.");
+
+        progress.Report($"Asking GitHub for {mod.Name}");
+        using var doc = JsonDocument.Parse(await http.GetStringAsync($"https://api.github.com/repos/{mod.Repo}/releases/latest"));
+        string? url = null, name = null;
+        foreach (var (assetName, assetUrl) in Zips(doc.RootElement))
+        {
+            // Prefer the asset the catalogue names; fall back to the only zip there is.
+            if (mod.Asset.Length > 0 && !assetName.Contains(mod.Asset, StringComparison.OrdinalIgnoreCase)) continue;
+            url = assetUrl; name = assetName; break;
+        }
+        if (url is null) foreach (var (assetName, assetUrl) in Zips(doc.RootElement)) { url = assetUrl; name = assetName; break; }
+        if (url is null || name is null) throw new InvalidOperationException($"The latest {mod.Name} release has no package attached.");
+
+        var temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "qol-catalog", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temp);
+        var zip = System.IO.Path.Combine(temp, name);
+        try
+        {
+            progress.Report($"Downloading {name}");
+            await using (var output = File.Create(zip))
+                await (await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead)).Content.CopyToAsync(output);
+            progress.Report($"Installing {mod.Name}");
+            await InstallModFromFileAsync(mod.Game, zip, progress);
+            Log($"installed catalogue mod {mod.Id} from {name}");
+        }
+        finally { try { Directory.Delete(temp, true); } catch { } }
+    }
+
     internal async Task InstallModFromFileAsync(string game, string file, IProgress<string> progress)
     {
         Guard();
@@ -119,18 +157,44 @@ internal sealed class InstallerService
         var ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
         if (ext == ".zip")
         {
-            var target = System.IO.Path.Combine(mods, System.IO.Path.GetFileNameWithoutExtension(file));
-            if (Directory.Exists(target)) throw new InvalidOperationException($"{System.IO.Path.GetFileName(target)} is already installed - remove it first.");
-            Directory.CreateDirectory(target);
-            ZipFile.ExtractToDirectory(file, target);
-            var entries = Directory.EnumerateDirectories(target).ToList();
-            if (!File.Exists(System.IO.Path.Combine(target, "mod.json")) && entries.Count == 1 && File.Exists(System.IO.Path.Combine(entries[0], "mod.json")))
+            // Mod packages come in three shapes: the mod folder's own contents at the root, a
+            // single folder holding them, or a whole Plutonium tree with the mod buried at
+            // storage\<game>\mods\<name>. Unpack somewhere neutral and work out which, rather than
+            // dropping the archive in as-is and leaving a folder called "pack" with no mod in it.
+            var staging = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "qol-unzip", Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(staging);
+            try
             {
-                foreach (var entry in Directory.EnumerateFileSystemEntries(entries[0])) Directory.Move(entry, System.IO.Path.Combine(target, System.IO.Path.GetFileName(entry)));
-                Directory.Delete(entries[0]);
+                progress.Report("Unpacking");
+                ZipFile.ExtractToDirectory(file, staging);
+
+                var sources = new List<string>();
+                var buried = System.IO.Path.Combine("storage", game, "mods");
+                foreach (var dir in Directory.EnumerateDirectories(staging, "mods", SearchOption.AllDirectories))
+                {
+                    if (!System.IO.Path.GetFullPath(dir).Replace('/', '\\').Contains(buried, StringComparison.OrdinalIgnoreCase)) continue;
+                    sources.AddRange(Directory.EnumerateDirectories(dir).Where(d => File.Exists(System.IO.Path.Combine(d, "mod.json"))));
+                }
+                if (sources.Count == 0)
+                {
+                    if (File.Exists(System.IO.Path.Combine(staging, "mod.json"))) sources.Add(staging);
+                    else sources.AddRange(Directory.EnumerateDirectories(staging).Where(d => File.Exists(System.IO.Path.Combine(d, "mod.json"))));
+                }
+                // Nothing identifiable: fall back to the old behaviour so odd packages still land.
+                if (sources.Count == 0) sources.Add(staging);
+
+                foreach (var source in sources)
+                {
+                    var name = source == staging ? System.IO.Path.GetFileNameWithoutExtension(file) : System.IO.Path.GetFileName(source);
+                    var target = System.IO.Path.Combine(mods, name);
+                    if (Directory.Exists(target)) throw new InvalidOperationException($"{name} is already installed - remove it first.");
+                    progress.Report($"Installing {name}");
+                    CopyTree(source, target);
+                    Log($"installed mod from {file} into {target}");
+                }
+                progress.Report($"Installed {string.Join(", ", sources.Select(s => s == staging ? System.IO.Path.GetFileNameWithoutExtension(file) : System.IO.Path.GetFileName(s)))}");
             }
-            progress.Report($"Installed {System.IO.Path.GetFileNameWithoutExtension(file)}");
-            Log($"installed mod from {file} into {target}");
+            finally { try { Directory.Delete(staging, true); } catch { } }
         }
         else if (new[] { ".ff", ".iwd", ".sabl", ".sabs", ".json" }.Contains(ext))
         {
@@ -143,6 +207,15 @@ internal sealed class InstallerService
         else throw new InvalidOperationException("Pick a .zip or a mod .ff/.iwd file.");
         await Task.CompletedTask;
     }
+    private static void CopyTree(string from, string to)
+    {
+        Directory.CreateDirectory(to);
+        foreach (var dir in Directory.EnumerateDirectories(from, "*", SearchOption.AllDirectories))
+            Directory.CreateDirectory(System.IO.Path.Combine(to, System.IO.Path.GetRelativePath(from, dir)));
+        foreach (var f in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
+            File.Copy(f, System.IO.Path.Combine(to, System.IO.Path.GetRelativePath(from, f)), true);
+    }
+
     internal string ModDir => System.IO.Path.Combine(T6, "mods", "zm_qol");
     internal string CfgDir => System.IO.Path.Combine(T6, "players", "mods", "zm_qol");
     internal string Images => System.IO.Path.Combine(T6, "images");

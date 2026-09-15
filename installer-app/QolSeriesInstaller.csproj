@@ -10,7 +10,7 @@
     <AssemblyName>QualityOfLifeSeries</AssemblyName>
     <RootNamespace>QolSeriesInstaller</RootNamespace>
     <ApplicationIcon>..\installer\Mod Files\qol_installer.ico</ApplicationIcon>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <SelfContained>true</SelfContained>
@@ -24,6 +24,10 @@
     The support files (icon, launch scripts, ReShade presets and DLL - about 4 MB) are zipped into
     the exe, so one downloaded file is a complete program. Payload.Unpack writes them back out.
   -->
+  <ItemGroup>
+    <EmbeddedResource Include="catalog.json" LogicalName="catalog.json" />
+  </ItemGroup>
+
   <Target Name="PackPayload" BeforeTargets="PrepareForBuild">
     <!-- obj\ does not exist yet on a clean clone, and ZipDirectory will not create it. -->
     <MakeDir Directories="$(IntermediateOutputPath)" />

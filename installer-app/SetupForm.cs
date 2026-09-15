@@ -174,8 +174,15 @@ internal sealed class SetupForm : Form
             }
             await Task.Run(() => Setup.Install(target, startMenu.On, desktop.On, report));
 
-            status.Text = "Installed.";
-            status.ForeColor = p.Good;
+            // Say it once, here, rather than letting someone find out when a game will not start.
+            // Nothing is installed on their behalf; the app's Requirements page has the detail.
+            var short_ = Requirements.Missing(new InstallerService());
+            status.Text = short_ == 0
+                ? "Installed."
+                : short_ == 1
+                    ? "Installed. One thing the games need is missing - see Requirements in the app."
+                    : $"Installed. {short_} things the games need are missing - see Requirements in the app.";
+            status.ForeColor = short_ == 0 ? p.Good : p.Ink;
             primary.Text = "Open Quality of Life Series";
             primary.BackColor = p.Good; primary.HoverColor = p.Good; primary.ForeColor = p.AccentText;
             secondary.Text = "Close";
