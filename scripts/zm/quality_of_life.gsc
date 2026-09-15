@@ -377,6 +377,46 @@ zmqol_enable_dog_rounds()
     //  lost. Stock has no guard; this hook refuses to start a round it cannot
     //  populate and says so in the log instead.
     //  ========================================================================
+    //  ------------------------------------------------------------------
+    //  v2.16.9 - PARKED ON THE MOD'S OWN SURVIVAL LOCATIONS.
+    //  User, 2026-09-15, live on Tunnel at round 2: *"they're spawning
+    //  outside of the tunnel, like inside of the tunnel through the walls,
+    //  none in the actual playable area ... if they do manage to get to me
+    //  they'll run at me, start attacking me for like 15 seconds, and then
+    //  just teleport away or despawn ... then run through the walls and
+    //  glitch the hell out."* Then: *"make sure the option to enable
+    //  hellhounds is disabled on maps that don't work with it, just keep it
+    //  on the regular maps that are in the base game that already have
+    //  hellhounds that work normally."*
+    //
+    //  The despawn is the engine deleting an actor it cannot path: the four
+    //  locations below are survival arenas this mod adds to maps whose zone
+    //  data was never authored for dog rounds, so the spawn list legitimately
+    //  contains points outside the arena's walls. This is not fixable by
+    //  filtering the list here. The proper fix needs the placement validation
+    //  that v2.16.9 prototyped, and that cannot ship in THIS file: it is on a
+    //  compiled-bytecode ceiling (see item 1b in H:\Plutonium\AGENTS.md), and
+    //  +944 bytes of code took 14 unrelated imports down with it. When the
+    //  work resumes, it belongs in its own raw script under scripts\zm\.
+    //
+    //  Stock dog maps are untouched and keep stock behaviour. Bus Depot is
+    //  deliberately NOT named: its location token is not confirmed here, so
+    //  the test denies the four known mod locations rather than allow-listing
+    //  stock ones, and no stock start can be switched off by accident.
+    //  ------------------------------------------------------------------
+    //  Only the four survival arenas this mod adds to zm_transit need naming.
+    //  The mod's other added locations live on zm_highrise, zm_prison, zm_tomb
+    //  and zm_buried, none of which ship a zombie_dog_spawner, so the existing
+    //  guard below already turns dog rounds off there. Nothing stock is named,
+    //  so no base-game start can be switched off by accident.
+    s_dog_loc = getdvar( "ui_zm_mapstartlocation" );
+
+    if ( s_dog_loc == "tunnel" || s_dog_loc == "diner" || s_dog_loc == "cornfield" || s_dog_loc == "power" )
+    {
+        println( "[zm_qol] hellhounds: location has no authored dog arena - dog rounds left off" );
+        return;
+    }
+
     if ( !isdefined( level.dog_spawners ) || level.dog_spawners.size == 0 )
     {
         println( "[zm_qol] hellhounds: no zombie_dog_spawner on this map - dog rounds left off (stock would hang the round)" );
@@ -403,15 +443,14 @@ zmqol_enable_dog_rounds()
     //  The Diner location script installs its own spawn logic and two watchdogs
     //  from its own main(); when it has, it owns this map and none of the
     //  generic machinery below runs. Otherwise this hook owns every map.
-    if ( !zmqol_dog_owns_this_map() )
-    {
-        level.zmqol_dog_generic_owned = 1;
-        zmqol_dog_snapshot_locations();
-        level.dog_spawn_func = ::zmqol_dog_spawn_logic;
-        level thread zmqol_dog_watchdog();
-        level thread zmqol_dog_spawn_director();
-    }
-
+    //  v2.16.9 - the generic placement override is NOT installed any more.
+    //  It existed to make hellhounds usable on arenas this mod adds, and that
+    //  is the work the user parked on 2026-09-15. Dog rounds now only reach
+    //  this line on maps the base game already authored for them, where stock
+    //  placement is what "works normally", so stock keeps the wheel. The
+    //  functions below are left defined: zm_transit_loc_diner.gsc:2017 still
+    //  points level.dog_spawn_func at zmqol_dog_spawn_logic for its own arena,
+    //  and deleting them would break that file's link.
     level thread [[ level.dog_round_track_override ]]();
 }
 
@@ -545,43 +584,17 @@ zmqol_dog_owns_this_map()
 //  no map-specific external is named (AI_CONTEXT rule 2).
 // ============================================================================
 
-//  Snapshot every enabled zone's dog_location structs once, as a last-resort
-//  fallback list. Mirrors zmqol_diner_dog_init()'s snapshot, including the
-//  zone.is_enabled gate that a pre-v2.2.6 version of that function was missing.
-zmqol_dog_snapshot_locations()
-{
-    level.zmqol_dog_locs = [];
-
-    if ( !isdefined( level.zone_keys ) || !isdefined( level.zones ) )
-        return;
-
-    for ( z = 0; z < level.zone_keys.size; z++ )
-    {
-        zone = level.zones[level.zone_keys[z]];
-
-        if ( !isdefined( zone ) || !isdefined( zone.dog_locations ) )
-            continue;
-
-        if ( isdefined( zone.is_enabled ) && !zone.is_enabled )
-            continue;
-
-        for ( i = 0; i < zone.dog_locations.size; i++ )
-        {
-            s_loc = zone.dog_locations[i];
-
-            if ( !isdefined( s_loc ) || !isdefined( s_loc.origin ) )
-                continue;
-
-            if ( isdefined( s_loc.is_enabled ) && !s_loc.is_enabled )
-                continue;
-
-            level.zmqol_dog_locs[level.zmqol_dog_locs.size] = s_loc;
-        }
-    }
-
-    println( "[zm_qol] hellhounds: " + level.zmqol_dog_locs.size + " enabled-zone dog location(s) snapshotted for fallback" );
-}
-
+//  zmqol_dog_snapshot_locations() was deleted in v2.16.9. It filled
+//  level.zmqol_dog_locs as a last-resort fallback list for the generic
+//  placement override, and with that override no longer installed its only
+//  caller was gone. It is recoverable from commit de340cb if the parked
+//  custom-arena work resumes, and that is where it should be rebuilt: in a
+//  separate raw script, not here. This file is on a compiled-bytecode ceiling
+//  (H:\Plutonium\AGENTS.md item 1b) and deleting this function is what paid
+//  for the location gate above.
+//
+//  zmqol_dog_spawn_logic below is now reached only through
+//  zm_transit_loc_diner.gsc:2017, which sets level.dog_spawn_func itself.
 //  Picks the spawn point for one hellhound. Stock's dog_spawn_func contract is
 //  ( dog_array, favorite_enemy ) -> an entity whose .origin the dog is
 //  teleported to. dog_array is level.dog_spawners (the actor spawners at the
@@ -4667,7 +4680,7 @@ new_pap_trigger()
                 Trigger sethintstring( "			Hold ^3&&1^7 for Pack-a-Punch [Cost: " + cost + "]" );
             }
         }
-        if(player UseButtonPressed() && player.score >= cost && current_weapon != "riotshield_zm" && player can_buy_weapon() && !player.is_drinking && !is_placeable_mine( current_weapon ) && !is_equipment( current_weapon ) && level.revive_tool != current_weapon && current_weapon != "none" && can_upgrade_weapon( current_weapon ))
+        if(player UseButtonPressed() && player.score >= cost && current_weapon != "riotshield_zm" && player maps\mp\zombies\_zm_magicbox::can_buy_weapon() && !player.is_drinking && !is_placeable_mine( current_weapon ) && !is_equipment( current_weapon ) && level.revive_tool != current_weapon && current_weapon != "none" && can_upgrade_weapon( current_weapon ))
         {
             //  v1.99.30 - held while this upgrade runs, so qol_pap_mode_watch()
             //  cannot hand the machine over mid-upgrade and strand the player's
