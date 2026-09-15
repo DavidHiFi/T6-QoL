@@ -13,6 +13,13 @@ gameplay checks. These are local development references, not release payloads.
   `mod.all.sabs`. Raw GSC/Lua sources are packed into `mod.iwd`. A build that
   ships extra files alongside these (a bundled custom map, say) is off the
   mainline — check what put them there before treating it as the norm.
+- The hellhound location deny-list exists TWICE and the copies must agree:
+  `zmqol_enable_dog_rounds()` in `scripts/zm/quality_of_life.gsc` makes the
+  server refuse the round, and an `excludeLocations` filter in
+  `ui_mp/t6/menus/privategamelobby_project.lua` removes the lobby row. Both
+  currently read tunnel, diner, cornfield, power. Change one and you must
+  change the other: GSC alone leaves the user a switch that does nothing, Lua
+  alone leaves a hidden option the server would still honour.
 - `scripts/zm/quality_of_life.gsc` is ON A COMPILED-BYTECODE CEILING. Adding
   code to it breaks unrelated functions with `Unresolved external` at map load,
   and the symbol the engine names is never the one you touched. Put new
