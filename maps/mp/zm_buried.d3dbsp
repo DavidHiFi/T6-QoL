@@ -20694,7 +20694,7 @@
 "type" "zmcore_MagicBox"
 "script_noteworthy" "maze_chest2_zbarrier"
 "origin" "5605.74 276.96 17"
-"script_gameobjectname" "zclassic zgrief"
+"script_gameobjectname" "zclassic zstandard zgrief"
 "guid" "C1E2E663"
 }
 {
@@ -20732,7 +20732,7 @@
 "type" "zmcore_MagicBox"
 "script_noteworthy" "maze_chest1_zbarrier"
 "origin" "4127.04 1271.74 17"
-"script_gameobjectname" "zclassic zgrief"
+"script_gameobjectname" "zclassic zstandard zgrief"
 "guid" "9D602221"
 }
 {

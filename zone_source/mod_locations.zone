@@ -47,6 +47,47 @@ material,hudscoreboardscroll_downarrow
 material,hudscoreboardscroll_downkey
 
 // ============================================================================
+//  SCOREBOARD CREW EMBLEMS - the OTHER half of the checkerboard      v2.17.0
+// ----------------------------------------------------------------------------
+//  User, 2026-09-15, on Maze survival: the scoreboard crew icon is a
+//  checkerboard again, "find what fix we did for that Origins".
+//
+//  The Origins fix is scoreboard.lua's ZmQolCrew table (v2.15.35): pick the
+//  emblem from the MAP, so Origins gets faction_tomb in classic AND survival.
+//  That table ALREADY has zm_buried = faction_buried, so the Lua half is
+//  correct and was never the problem. The live log says so outright:
+//        Could not load material "faction_buried".
+//        Could not load material "faction_cdc".
+//  The material is simply not resident - Unlinker --list mod.ff finds no
+//  faction_* of any kind.
+//
+//  🌟 WHY ORIGINS WORKED AND BURIED DID NOT. Measured, 2026-09-15, by listing
+//  every donor build_ff.bat already --loads:
+//        faction_tomb      zm_tomb.ff                  <- the BASE map zone
+//        faction_highrise  zm_highrise.ff              <- the BASE map zone
+//        faction_buried    so_zclassic_zm_buried.ff    <- CLASSIC ONLY
+//        faction_prison    so_zclassic_zm_prison.ff    <- CLASSIC ONLY
+//        faction_tranzit   so_zclassic_zm_transit.ff   <- CLASSIC ONLY
+//        faction_cdc/cia   ui_zm.ff, so_zencounter_zm_buried.ff
+//  Origins and Die Rise keep their emblem in the map's own fastfile, which
+//  loads in every gametype, so v2.15.35 was enough there. Buried, Mob and
+//  Green Run keep theirs in a so_zclassic_ file that a zstandard run NEVER
+//  loads - the same mechanism as Borough's two xmodels further down this file.
+//
+//  Declaring all seven here copies them into mod.ff for every Zombies map and
+//  every gametype, which fixes Maze now and Docks + the three Origins arenas
+//  before they can hit it. Every donor above is already in build_ff.bat's
+//  --load list (lines 490-502), so this needs no build_ff change.
+// ============================================================================
+material,faction_buried
+material,faction_prison
+material,faction_tomb
+material,faction_highrise
+material,faction_tranzit
+material,faction_cdc
+material,faction_cia
+
+// ============================================================================
 //  MODELS DINER SPAWNS THAT ITS MAP DOES NOT SHIP
 // ----------------------------------------------------------------------------
 //  Both exist in the stock game, but only inside the per-gametype "so_" files:
