@@ -786,11 +786,42 @@ setupWunderfizz()
     }
     else if(level.script == "zm_buried")
     {
+    	//  ====================================================================
+    	//  v2.17.0 - THE MAZE COURTYARD MACHINE, MOVED ALONG THE HEDGE.
+    	//
+    	//  User, 2026-09-15, with a screenshot and an arrow pointing left along
+    	//  the hedge: *"the back of the wunderfizz where it is right now it's in
+    	//  a good position, but it's kind of bloated, it's in the rock a little
+    	//  bit, so just move it over."*
+    	//
+    	//  🌟 THE HEDGE LINE IS MEASURED. The mapents carry a row of script_structs
+    	//  at y = 736, z = 32, all angles (0,270,0), spaced exactly 64 apart:
+    	//        x = 4832, 4896, 4960, 5024
+    	//  That row IS the hedge face the machine backs onto, and the shipped
+    	//  position (4910,725) sat between the 4896 and 4960 posts - the span the
+    	//  rock outcrop shares. Moving to x = 4864 puts it in the NEXT span left
+    	//  (between 4832 and 4896), clear of the outcrop, with y untouched so the
+    	//  back keeps the position the user said was already good.
+    	//
+    	//  🛑 THE ROCK ITSELF IS NOT MEASURABLE OFFLINE. It is world brush /
+    	//  terrain, not a placed prop - a 400-unit sweep of the mapents around the
+    	//  machine returns no rock model at all, only the fountain. So the 46-unit
+    	//  shift is derived from the hedge posts, which ARE measurable, and NOT
+    	//  from the thing being avoided. That is why the three dvars below exist:
+    	//  set them before the map loads and nudge it live rather than rebuilding.
+    	//  They default to the shipped position, so a normal boot reads nothing.
+    	//  ====================================================================
+    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_maze_x", 4864 ),
+    	                getdvarintdefault( "zmqol_wf_maze_y", 725 ),
+    	                2 ),
+    	              ( 0, getdvarintdefault( "zmqol_wf_maze_yaw", 0 ), 0 ),
+    	              zmqol_wf_machine_model() );
     	zmqol_wf_add((146,138,10), (0,270,0), zmqol_wf_machine_model());
     	zmqol_wf_add((-374,-1103,8), (0,270,0), zmqol_wf_machine_model());
     	zmqol_wf_add((-58,-1512,168), (0,180,0), zmqol_wf_machine_model());
     	zmqol_wf_add((1521,1366,-14), (0,342,0), zmqol_wf_machine_model());
-    	zmqol_wf_add((4910,725,2), (0,0,0), zmqol_wf_machine_model());
+    	//  (4910,725,2) was the Maze courtyard machine; it is now the dvar-tunable
+    	//  entry at the top of this block, moved 46 units along the hedge.
     	zmqol_wf_add((6862,846,108), (0,49,0), zmqol_wf_machine_model());
     }
     else if(level.script == "zm_transit")

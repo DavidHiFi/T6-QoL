@@ -45,7 +45,13 @@ zmqol_enable_vulture_on_borough()
     if ( getdvar( "ui_gametype" ) != "zstandard" )
         return;
 
-    if ( getdvar( "ui_zm_mapstartlocation" ) != "street" )
+    //  v2.17.0 - Maze joins Borough. MUST stay identical to the server half's
+    //  test in zm_buried.gsc; the two decide a clientfield registration, and a
+    //  location in one list but not the other is EXE_CLIENT_FIELD_MISMATCH for
+    //  everyone on that arena.
+    str_location = getdvar( "ui_zm_mapstartlocation" );
+
+    if ( str_location != "street" && str_location != "maze" )
         return;
 
     clientscripts\mp\zombies\_zm_perk_vulture::enable_vulture_perk_for_level();

@@ -53,8 +53,28 @@ main()
 //  zclassic-only gate, so doing this on the server alone produces
 //  EXE_CLIENT_FIELD_MISMATCH. See zm_buried.csc for the matching call.
 //
-//  Scoped to Borough only: it is the one location whose perk set contains Vulture
-//  Aid. Classic is left completely alone.
+//  Scoped to Buried's SURVIVAL ARENAS - Borough and, from v2.17.0, Maze.
+//  Classic is left completely alone.
+//
+//  🌟 v2.17.0 - MAZE JOINS BOROUGH. User, 2026-09-15, on Maze: "Buried, the map
+//  that literally was the first map to have Vulture's Aid - why is Vulture's Aid
+//  missing from this map?"
+//
+//  The chain, measured rather than guessed. Vulture Aid's perk token in T6 is
+//  specialty_nomotionsensor, NOT specialty_vulture (_zm_perk_vulture.gsc:19
+//  registers it under that name). wunderfizz.gsc::getPerks() offers it only
+//  when level._custom_perks["specialty_nomotionsensor"] is defined, and
+//  enable_vulture_perk_for_level() below is the only thing that defines it. So
+//  on Maze the gate refused, the perk was never registered, and the machine's
+//  own boot log printed a SIX-perk list with no Vulture in it:
+//      [zm_qol] wunderfizz: perk list (6) = specialty_armorvest specialty_rof
+//      specialty_longersprint specialty_fastreload
+//      specialty_additionalprimaryweapon specialty_quickrevive
+//
+//  Maze has no Vulture MACHINE either - its four zstandard_perks_maze entities
+//  are Jugg, Quick Revive, Double Tap and Speed Cola - so the Wunderfizz is the
+//  route by which the arena gets the perk at all, exactly as it is for the
+//  perks Maze has no machine for.
 // ============================================================================
 //  🛑 v2.10.9 - READS ui_gametype, NOT g_gametype. The client twin in
 //  zm_buried.csc has always read ui_gametype; this half read g_gametype, so the
@@ -73,13 +93,13 @@ zmqol_enable_vulture_on_borough()
     str_gametype = getdvar( "ui_gametype" );
     str_location = getdvar( "ui_zm_mapstartlocation" );
 
-    if ( str_gametype != "zstandard" || str_location != "street" )
+    if ( str_gametype != "zstandard" || ( str_location != "street" && str_location != "maze" ) )
     {
-        println( "[zm_qol] borough vulture: SKIPPED (ui_gametype=" + str_gametype + " location=" + str_location + ")" );
+        println( "[zm_qol] buried vulture: SKIPPED (ui_gametype=" + str_gametype + " location=" + str_location + ")" );
         return;
     }
 
-    println( "[zm_qol] borough vulture: enabling server half (ui_gametype=" + str_gametype + " location=" + str_location + ")" );
+    println( "[zm_qol] buried vulture: enabling server half (ui_gametype=" + str_gametype + " location=" + str_location + ")" );
     maps\mp\zombies\_zm_perk_vulture::enable_vulture_perk_for_level();
 }
 
