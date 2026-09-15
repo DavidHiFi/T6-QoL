@@ -1,0 +1,56 @@
+# coop-gate.ps1 baseline - findings present and accepted at the time of writing.
+# Key format: RULE|relative\path|token   (no line numbers, so edits do not churn it)
+# Anything NOT in this list fails the build. Do not add entries to make a build go green.
+# Regenerated: 2026-09-15 15:35
+
+R1|scripts\zm\Freeze.csc|zmqol_ww
+R1|scripts\zm\teslagun.csc|zmqol_ww
+R1|scripts\zm\thundergun.csc|zmqol_ww
+R1|scripts\zm\zapgun.csc|zmqol_mgun_debug
+R1|scripts\zm\zapgun.csc|zmqol_ww
+R1|scripts\zm\zm_buried\zm_buried.csc|createfx
+R1|scripts\zm\zm_expanded.csc|emp_all_maps
+R1|scripts\zm\zm_expanded.csc|vulture_marker_height
+R1|scripts\zm\zm_expanded.csc|zmqol_claymore_diner_enabled
+R1|scripts\zm\zm_expanded.csc|zmqol_claymore_diner_x
+R1|scripts\zm\zm_expanded.csc|zmqol_claymore_diner_y
+R1|scripts\zm\zm_expanded.csc|zmqol_claymore_diner_yaw
+R1|scripts\zm\zm_expanded.csc|zmqol_claymore_diner_z
+R1|scripts\zm\zm_expanded.csc|zmqol_mp_weapons
+R1|scripts\zm\zm_expanded.csc|zmqol_semtex_diner_x
+R1|scripts\zm\zm_expanded.csc|zmqol_semtex_diner_y
+R1|scripts\zm\zm_expanded.csc|zmqol_semtex_diner_yaw
+R1|scripts\zm\zm_expanded.csc|zmqol_semtex_diner_z
+R1|scripts\zm\zm_expanded.csc|zmqol_testsound
+R1|scripts\zm\zm_expanded.csc|zmqol_vulture
+R1|scripts\zm\zm_expanded.csc|zmqol_wallbuy_box
+R1|scripts\zm\zm_transit\zm_transit.csc|g_gametype
+R1|scripts\zm\zm_transit\zm_transit.csc|zmqol_diner_shield
+R2|scripts\zm\locs\zm_transit_loc_diner.gsc|players[0]
+R2|scripts\zm\quality_of_life.gsc|a_players[0]
+R2|scripts\zm\zapgun.gsc|a_players[0]
+R2|scripts\zm\zm_buried\zm_buried.gsc|a_players[0]
+R2|scripts\zm\zm_highrise\qol_solo_ee.gsc|get_players()[0]
+R2|scripts\zm\zm_highrise\qol_solo_ee.gsc|level.players[0]
+R2|scripts\zm\zm_tomb\qol_subs_tomb.gsc|players[0]
+R2|scripts\zm\zm_transit\qol_subs_npc_transit.gsc|get_players()[0]
+R3|scripts\zm\zm_tomb\zm_tomb.gsc|connected+spawned_player
+R4|scripts\zm\qol_options.gsc|qol_opt_hud_watcher:cg_drawIdentifier
+R4|scripts\zm\qol_options.gsc|qol_opt_knife_lunge:aim_automelee_enabled
+R4|scripts\zm\quality_of_life.gsc|zmqol_boss_spawn_dvar_watch:spawn_brutus
+R4|scripts\zm\quality_of_life.gsc|zmqol_boss_spawn_dvar_watch:spawn_jumpingjacks
+R4|scripts\zm\quality_of_life.gsc|zmqol_boss_spawn_dvar_watch:spawn_panzer
+R4|scripts\zm\quality_of_life.gsc|zmqol_fly_dvar_watch:fly
+R4|scripts\zm\quality_of_life.gsc|zmqol_fly_key_toggle:fly
+R4|scripts\zm\quality_of_life.gsc|zmqol_give_weapon_dvar_watch:give_weapon
+R4|scripts\zm\quality_of_life.gsc|zmqol_teleport_watch:execute_teleport
+R4|scripts\zm\quality_of_life.gsc|zmqol_toggle_dvar_watch:bottomless_clip
+R4|scripts\zm\quality_of_life.gsc|zmqol_toggle_dvar_watch:ghostmode
+R4|scripts\zm\quality_of_life.gsc|zmqol_toggle_dvar_watch:godmode
+R4|scripts\zm\quality_of_life.gsc|zmqol_toggle_dvar_watch:infinite_ammo
+R4|scripts\zm\quality_of_life.gsc|zmqol_toggle_dvar_watch:infinite_sprint
+R4|scripts\zm\quality_of_life.gsc|zmqol_velocity_dvar_watch:velocity
+R4|scripts\zm\quality_of_life.gsc|zmqol_ww_give_dvar_watch:give_thundergun
+R4|scripts\zm\quality_of_life.gsc|zmqol_ww_give_dvar_watch:give_wavegun
+R4|scripts\zm\quality_of_life.gsc|zmqol_ww_give_dvar_watch:give_wintershowl
+R4|scripts\zm\quality_of_life.gsc|zmqol_ww_give_dvar_watch:give_wunderwaffe
