@@ -182,12 +182,15 @@ internal sealed class ModListView : Control
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
-    protected override void OnMouseWheel(MouseEventArgs e)
+    protected override void OnMouseWheel(MouseEventArgs e) { base.OnMouseWheel(e); WheelBy(e.Delta); }
+
+    /// <summary>Scroll by a wheel delta, whether the message arrived here or was routed to it.</summary>
+    internal void WheelBy(int delta)
     {
-        base.OnMouseWheel(e);
-        offset -= e.Delta / 120 * Step * 3;
+        var before = offset;
+        offset -= delta / 120 * Step * 3;
         Clamp();
-        Invalidate();
+        if (offset != before) Invalidate();
     }
 
     protected override void OnMouseMove(MouseEventArgs e)

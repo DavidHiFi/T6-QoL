@@ -107,6 +107,7 @@ internal sealed class MainForm : Form
         content.Controls.Add(column);
         content.Resize += (_, _) => FitColumn();
         Controls.Add(content); Controls.Add(side); Controls.Add(footer);
+        Application.AddMessageFilter(new WheelRouter(this));
         ApplyTheme(CurrentTheme(settings), false);
         SetTray(settings.Tray, false);
         ShowHome();
@@ -151,6 +152,7 @@ internal sealed class MainForm : Form
 
     private void Clear(string title, string subtitle)
     {
+        scrollers.Clear(); lists.Clear();
         column.Controls.Clear();
         var sub = new Label { Dock = DockStyle.Top, Height = Dp(this, 28), Text = subtitle, ForeColor = Overlay2, Font = F(9), BackColor = Base, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.TopLeft };
         var head = new Label { Dock = DockStyle.Top, Height = Dp(this, 42), Text = title, ForeColor = Ink, Font = F(17, true), BackColor = Base, AutoEllipsis = true, UseMnemonic = false, TextAlign = ContentAlignment.MiddleLeft };
@@ -158,38 +160,78 @@ internal sealed class MainForm : Form
         column.Controls.Add(sub); column.Controls.Add(head);
         FitColumn();
     }
-    // The native scrollbar follows the system's dark/light app mode, not ours, so it renders black
-    // on the light themes. Hide both native bars and draw our own thin rail from the palette; the
-    // scrolling itself is still AutoScroll, so the wheel and keyboard behave exactly as normal.
-    private sealed class PageFlow : FlowLayoutPanel
+    /// <summary>Anything the scroll rail can drive.</summary>
+    private interface IScroller
     {
-        [DllImport("user32.dll")] private static extern bool ShowScrollBar(IntPtr hWnd, int bar, bool show);
-        private const int SbBoth = 3;
-        internal event Action? ViewChanged;
-        internal PageFlow() => AutoScroll = true;
-        private void HideNative() { if (IsHandleCreated) ShowScrollBar(Handle, SbBoth, false); }
-        private void Changed() { HideNative(); ViewChanged?.Invoke(); }
-        protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); HideNative(); }
-        protected override void OnLayout(LayoutEventArgs e) { base.OnLayout(e); Changed(); }
-        protected override void OnPaint(PaintEventArgs e) { base.OnPaint(e); HideNative(); }
-        protected override void OnScroll(ScrollEventArgs e) { base.OnScroll(e); Changed(); }
-        protected override void OnMouseWheel(MouseEventArgs e) { base.OnMouseWheel(e); Changed(); }
-        internal int ViewHeight => ClientSize.Height;
-        internal int ContentHeight => DisplayRectangle.Height;
-        internal int Offset
+        int ViewHeight { get; }
+        int ContentHeight { get; }
+        int Offset { get; set; }
+        event Action? ViewChanged;
+    }
+
+    /// <summary>
+    /// A page that scrolls by moving its content, with no native scrollbar anywhere in it.
+    ///
+    /// The previous version kept AutoScroll on and hid the native bar with ShowScrollBar. Windows
+    /// still reserved the bar's width in the client area while the panel painted across the full
+    /// width, so rows were laid out at one width and drawn at another - which is why text appeared
+    /// duplicated a couple of dozen pixels to the side, with a sliver of leftover card beyond it.
+    /// Owning the scroll outright removes the disagreement rather than papering over it.
+    /// </summary>
+    private sealed class ScrollHost : Panel, IScroller
+    {
+        internal readonly FlowLayoutPanel Content = new();
+        private int offset;
+        public event Action? ViewChanged;
+
+        internal ScrollHost()
         {
-            get => -AutoScrollPosition.Y;
-            set { AutoScrollPosition = new Point(0, Math.Max(0, value)); Changed(); }
+            AutoScroll = false;
+            Content.FlowDirection = FlowDirection.TopDown;
+            Content.WrapContents = false;
+            Content.AutoSize = true;
+            Content.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            Content.Location = Point.Empty;
+            Controls.Add(Content);
+            Content.SizeChanged += (_, _) => Reflow();
+            Resize += (_, _) => Reflow();
         }
+
+        internal int RailWidth { get; set; } = 12;
+        public int ViewHeight => ClientSize.Height;
+        public int ContentHeight => Content.Height;
+        public int Offset
+        {
+            get => offset;
+            set
+            {
+                var clamped = Math.Clamp(value, 0, Math.Max(0, ContentHeight - ViewHeight));
+                if (clamped == offset) return;
+                offset = clamped;
+                Content.Top = -offset;
+                ViewChanged?.Invoke();
+            }
+        }
+
+        internal void Reflow()
+        {
+            var width = Math.Max(40, ClientSize.Width - RailWidth);
+            if (Content.Width != width) Content.Width = width;
+            offset = Math.Clamp(offset, 0, Math.Max(0, ContentHeight - ViewHeight));
+            if (Content.Top != -offset) Content.Top = -offset;
+            ViewChanged?.Invoke();
+        }
+
+        internal void Wheel(int delta) => Offset -= delta / 120 * Ui.Dp(this, 60);
     }
 
     private sealed class Rail : Control
     {
-        private readonly PageFlow flow;
+        private readonly IScroller flow;
         internal Color Thumb, ThumbHot;
         private bool hot, dragging;
         private int grab;
-        internal Rail(PageFlow owner)
+        internal Rail(IScroller owner)
         {
             flow = owner;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
@@ -249,63 +291,74 @@ internal sealed class MainForm : Form
         protected override void OnMouseWheel(MouseEventArgs e) => flow.Offset -= e.Delta;
     }
 
+    private readonly List<ScrollHost> scrollers = [];
+    private readonly List<ModListView> lists = [];
+
+    /// <summary>
+    /// Windows sends the wheel to the focused control, not the one under the pointer. Nothing on
+    /// these pages takes focus, so the wheel is routed by hit test instead - scroll whatever you
+    /// are actually pointing at, without having to click it first.
+    /// </summary>
+    private sealed class WheelRouter(MainForm form) : IMessageFilter
+    {
+        private const int WmMouseWheel = 0x020A;
+        public bool PreFilterMessage(ref Message m)
+        {
+            if (m.Msg != WmMouseWheel || !form.Visible) return false;
+            var lp = m.LParam.ToInt64();
+            var at = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+            var delta = (short)((m.WParam.ToInt64() >> 16) & 0xFFFF);
+
+            foreach (var list in form.lists)
+                if (Over(list, at)) { list.WheelBy(delta); return true; }
+            foreach (var host in form.scrollers)
+                if (Over(host, at)) { host.Wheel(delta); return true; }
+            return false;
+        }
+        private static bool Over(Control c, Point screen) =>
+            c.IsHandleCreated && c.Visible && c.FindForm() is { } f && f.Visible && c.RectangleToScreen(c.ClientRectangle).Contains(screen);
+    }
+
     private FlowLayoutPanel Page()
     {
-        var host = new Panel { Dock = DockStyle.Fill, BackColor = Base };
-        var p = new PageFlow { Dock = DockStyle.Fill, BackColor = Base };
-        ConfigureFlow(p);
-        var rail = new Rail(p) { Width = Dp(this, 12), BackColor = Base, Thumb = Overlay0, ThumbHot = Overlay2, Anchor = AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom };
-        host.Controls.Add(p);
+        var host = new ScrollHost { Dock = DockStyle.Fill, BackColor = Base, RailWidth = Dp(this, 12) };
+        var p = host.Content;
+        p.BackColor = Base;
+        p.Padding = new Padding(0, Dp(this, 8), 0, Dp(this, 12));
+
+        var rail = new Rail(host) { Width = Dp(this, 12), BackColor = Base, Thumb = Overlay0, ThumbHot = Overlay2 };
         host.Controls.Add(rail);
         void PlaceRail() { rail.Bounds = new Rectangle(host.ClientSize.Width - rail.Width, 0, rail.Width, host.ClientSize.Height); rail.BringToFront(); }
         host.Resize += (_, _) => PlaceRail();
-        column.Controls.Add(host); host.BringToFront(); PlaceRail();
-        return p;
-    }
-    private void ConfigureFlow(FlowLayoutPanel p)
-    {
-        var dark = CurrentTheme(settings).Dark;
-        p.FlowDirection = FlowDirection.TopDown; p.WrapContents = false; p.AutoScroll = true; p.Padding = new Padding(0, 8, 0, 12);
-        // Dark themes get the dark overlay scrollbar; light themes reset to the default so the
-        // scrollbar does not render black against a white page.
-        p.HandleCreated += (_, _) => SetWindowTheme(p.Handle, dark ? "DarkMode_Explorer" : null, null);
-        var laying = false;
-        int Target() => Math.Max(Dp(p, 200), p.ClientSize.Width - Dp(p, 4));
 
-        // The centring is done by the column; every row just fills its width. Re-measure after each
-        // pass: the first one can bring in a vertical scrollbar, which narrows the client area, and
-        // a row still sized for the old width would leave a horizontal scrollbar behind.
+        // Every row is the content's full width; the content panel auto-sizes to its rows, and the
+        // host simply slides it. Nothing here consults a scrollbar, so nothing can disagree about
+        // how wide a row is.
+        var laying = false;
         void Fit()
         {
             if (laying || p.Controls.Count == 0) return;
             laying = true;
             try
             {
-                for (var pass = 0; pass < 4; pass++)
-                {
-                    var width = Target();
-                    var changed = false;
-                    foreach (Control c in p.Controls) if (c.Width != width) { c.Width = width; changed = true; }
-                    if (!changed) break;
-                    p.PerformLayout();
-                }
+                var width = Math.Max(Dp(p, 200), p.ClientSize.Width - p.Padding.Horizontal);
+                foreach (Control c in p.Controls) if (c.Width != width) c.Width = width;
             }
             finally { laying = false; }
         }
-
         p.Resize += (_, _) => Fit();
-        p.DpiChangedAfterParent += (_, _) => Fit();
-        // Only the new control, never the whole list. Resize still does the full pass, and it
-        // fires when the scroll rail changes the client width.
-        p.ControlAdded += (_, e) => { if (!laying && e.Control is not null) e.Control.Width = Target(); };
+        p.ControlAdded += (_, e) => { if (!laying && e.Control is not null) e.Control.Width = Math.Max(Dp(p, 200), p.ClientSize.Width - p.Padding.Horizontal); };
 
-        // Build the entire page inside one layout pass. Left to itself, a FlowLayoutPanel re-lays
-        // out every child on every add, and each row re-measures its own text - quadratic, which
-        // is a 29-second freeze on a game with 82 mods installed. Resuming is queued so it happens
-        // once the page-building method has finished adding rows.
+        // Build the whole page inside one layout pass: left alone, a FlowLayoutPanel re-lays out
+        // every child on every add and each row re-measures its own text, which is quadratic and
+        // was a 29-second freeze on a game with 82 mods installed.
         p.SuspendLayout();
-        void Done() { p.ResumeLayout(true); Fit(); }
-        if (IsHandleCreated) BeginInvoke(Done); else p.HandleCreated += (_, _) => BeginInvoke(Done);
+        void Done() { p.ResumeLayout(true); Fit(); host.Reflow(); PlaceRail(); }
+        if (IsHandleCreated) BeginInvoke(Done); else host.HandleCreated += (_, _) => BeginInvoke(Done);
+
+        scrollers.Add(host);
+        column.Controls.Add(host); host.BringToFront(); PlaceRail();
+        return p;
     }
     private FlowLayoutPanel Cards() => Page();
     private Panel Hero(string title, string installed, string missing, string button, Func<Task> action)
@@ -825,6 +878,7 @@ internal sealed class MainForm : Form
             async () => { if (await Ask($"Remove {item.Name} from {gameName}?\n\n{item.Folder}")) service.RemoveModFolder(game, item.Folder, Reporter()); },
             list, () => ShowMods(game, system, gameName));
 
+        lists.Add(list);
         var search = SearchBar($"Search {mods.Count} mods", list);
         search.Visible = mods.Count > 8;
         var actions = ModActions(game, system, gameName);
