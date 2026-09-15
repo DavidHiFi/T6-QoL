@@ -73,7 +73,7 @@ internal sealed class InstallerService
         var list = new List<InstalledMod>();
         foreach (var folder in Directory.EnumerateDirectories(dir))
         {
-            var name = System.IO.Path.GetFileName(folder);
+            var name = Regex.Replace(System.IO.Path.GetFileName(folder), @"\^[0-9:;]", "").Trim();
             var version = "";
             var json = System.IO.Path.Combine(folder, "mod.json");
             if (File.Exists(json))
@@ -81,7 +81,9 @@ internal sealed class InstallerService
                 try
                 {
                     using var doc = JsonDocument.Parse(File.ReadAllText(json));
-                    if (doc.RootElement.TryGetProperty("name", out var n)) name = n.GetString() ?? name;
+                    // Mod names carry Call of Duty colour codes (^1, ^5). They mean nothing outside
+                    // the game's own text renderer, so they do not belong in this list.
+                    if (doc.RootElement.TryGetProperty("name", out var n)) name = Regex.Replace(n.GetString() ?? name, @"\^[0-9:;]", "").Trim();
                     if (doc.RootElement.TryGetProperty("version", out var v)) version = "v" + Regex.Replace(v.GetString() ?? "", @"\^[0-9]", "");
                 }
                 catch { }

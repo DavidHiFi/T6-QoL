@@ -604,26 +604,6 @@ internal sealed class MainForm : Form
         }
     }
 
-    /// <summary>A live filter over the rows that follow it - 89 mods is not a scrollable list.</summary>
-    private Control SearchRow(string hint, List<(Control Row, string Text)> rows)
-    {
-        var host = new RoundedPanel { Height = Dp(this, 44), Margin = new Padding(0, 0, 0, 10), Radius = 10, BackColor = Surface0, BorderColor = Surface0, HoverBorderColor = Surface0, HoverFill = Color.Empty };
-        var box = new TextBox { BorderStyle = BorderStyle.None, BackColor = Surface0, ForeColor = Ink, Font = F(10), PlaceholderText = hint };
-        host.Controls.Add(box);
-        host.Resize += (_, _) =>
-        {
-            var pad = Dp(host, 16);
-            box.Bounds = new Rectangle(pad, Math.Max(0, (host.Height - box.Height) / 2), Math.Max(Dp(host, 60), host.Width - pad * 2), box.Height);
-        };
-        box.TextChanged += (_, _) =>
-        {
-            var q = box.Text.Trim();
-            foreach (var (row, text) in rows)
-                row.Visible = q.Length == 0 || text.Contains(q, StringComparison.OrdinalIgnoreCase);
-        };
-        return host;
-    }
-
     private void ShowUninstall()
     {
         currentPage = ShowUninstall;
@@ -768,32 +748,100 @@ internal sealed class MainForm : Form
         var bytes = mods.Sum(m => m.Bytes);
         Clear($"{gameName} mods", $"{(mods.Count == 1 ? "1 mod" : $"{mods.Count} mods")}  •  {InstallerService.FormatSize(bytes)}  •  storage\\{game}\\mods");
         Select("Installed mods"); footer.Text = PageFooter(service.GetStatus());
-        var page = Page();
 
-        var rows = new List<(Control Row, string Text)>();
-        if (mods.Count > 8) page.Controls.Add(SearchRow($"Search {mods.Count} mods", rows));
-        if (mods.Count == 0)
-            page.Controls.Add(Card("Nothing installed", "No mods are installed for this game yet. Install one from a .zip or a mod file.", "", "Add a mod", () => InstallModFromFile(game), true, () => ShowMods(game, system, gameName)));
-        foreach (var mod in mods)
+        // Not the usual row-per-control page: this one is a single painted list, because a game
+        // here can hold 80-odd mods and scrolling that many child windows is what made it crawl.
+        var body = new Panel { Dock = DockStyle.Fill, BackColor = Base };
+        var list = new ModListView
         {
-            var folder = mod.Path;
-            var row = Card(mod.Name, $"{mod.Version}{(mod.Version.Length > 0 ? "  •  " : "")}{folder}", InstallerService.FormatSize(mod.Bytes), "Remove",
-                async () => { if (await Ask($"Remove {mod.Name} from {gameName}?\n\n{folder}")) service.RemoveModFolder(game, folder, Reporter()); },
-                false, () => ShowMods(game, system, gameName));
-            // Every mod gets both actions: see where it lives, or take it off.
-            row.Second.Visible = true;
-            row.Second.Text = "Open folder";
-            row.Second.BackColor = Surface1; row.Second.HoverColor = Surface2; row.Second.ForeColor = Ink;
-            row.Second.Click += (_, _) => service.OpenFolder(folder);
-            Tip(row.Second, folder);
-            rows.Add((row, mod.Name + " " + Path.GetFileName(folder)));
-            page.Controls.Add(row);
-        }
+            Dock = DockStyle.Fill,
+            BackColor = Base,
+            Surface = Surface0,
+            Ink = Ink,
+            Sub = Subtext0,
+            Muted = Overlay2,
+            Button = Surface1,
+            ButtonHot = Surface2,
+            ButtonInk = Ink,
+            RailColor = Overlay0,
+            RailHotColor = Overlay2,
+            EmptyText = mods.Count == 0 ? $"No mods are installed for {gameName} yet." : "Nothing matches that search."
+        };
+        list.SetItems(mods.Select(m => new ModListView.Item(
+            m.Name,
+            $"{m.Version}{(m.Version.Length > 0 ? "  •  " : "")}{m.Path}",
+            InstallerService.FormatSize(m.Bytes),
+            m.Path)));
+        list.OpenFolder = item => service.OpenFolder(item.Folder);
+        list.RemoveMod = item => _ = Run(
+            async () => { if (await Ask($"Remove {item.Name} from {gameName}?\n\n{item.Folder}")) service.RemoveModFolder(game, item.Folder, Reporter()); },
+            list, () => ShowMods(game, system, gameName));
 
-        page.Controls.Add(Caption("THIS FOLDER"));
-        page.Controls.Add(Card("Add a mod", "Pick a .zip or a mod .ff/.iwd file to copy in here.", "", "Choose file", () => InstallModFromFile(game), false, () => ShowMods(game, system, gameName)));
-        page.Controls.Add(Card("Open in Explorer", service.ModsDir(game), "", "Open folder", () => { service.OpenFolder(service.ModsDir(game)); return Task.CompletedTask; }));
-        page.Controls.Add(Card("Back to installed mods", "The list of games.", "", "Back", () => { ShowAllMods(); return Task.CompletedTask; }));
+        var search = SearchBar($"Search {mods.Count} mods", list);
+        search.Visible = mods.Count > 8;
+        var actions = ModActions(game, system, gameName);
+
+        body.Controls.Add(search);
+        body.Controls.Add(actions);
+        body.Controls.Add(list);
+        list.BringToFront();
+        column.Controls.Add(body);
+        body.BringToFront();
+    }
+
+    /// <summary>The always-reachable actions for a mods folder, pinned under the list.</summary>
+    private Panel ModActions(string game, string system, string gameName)
+    {
+        var bar = new Panel { Dock = DockStyle.Bottom, Height = Dp(this, 52), BackColor = Base };
+        RoundButton Make(string text, bool primary, Action click)
+        {
+            var b = new RoundButton
+            {
+                Height = Dp(this, 34),
+                Radius = Dp(this, 17),
+                Text = text,
+                BackColor = primary ? Teal : Surface1,
+                HoverColor = primary ? Sky : Surface2,
+                ForeColor = primary ? Crust : Ink,
+                Font = F(9, true),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            b.Click += (_, _) => click();
+            bar.Controls.Add(b);
+            return b;
+        }
+        var add = Make("Add a mod", true, () => _ = Run(() => InstallModFromFile(game), bar, () => ShowMods(game, system, gameName)));
+        var open = Make("Open in Explorer", false, () => service.OpenFolder(service.ModsDir(game)));
+        var back = Make("Back", false, ShowAllMods);
+        tips.SetToolTip(open, service.ModsDir(game));
+        bar.Resize += (_, _) =>
+        {
+            int gap = Dp(bar, 8), y = Dp(bar, 12);
+            var w = Math.Max(Dp(bar, 80), (bar.Width - gap * 2) / 3);
+            add.Bounds = new Rectangle(0, y, w, Dp(bar, 34));
+            open.Bounds = new Rectangle(w + gap, y, w, Dp(bar, 34));
+            back.Bounds = new Rectangle((w + gap) * 2, y, bar.Width - (w + gap) * 2, Dp(bar, 34));
+        };
+        return bar;
+    }
+
+    /// <summary>A live filter bound to a painted list rather than to a pile of row controls.</summary>
+    private Panel SearchBar(string hint, ModListView list)
+    {
+        var host = new Panel { Dock = DockStyle.Top, Height = Dp(this, 52), BackColor = Base };
+        var card = new RoundedPanel { Radius = Dp(this, 10), BackColor = Surface0, BorderColor = Surface0, HoverBorderColor = Surface0, HoverFill = Color.Empty };
+        var box = new TextBox { BorderStyle = BorderStyle.None, BackColor = Surface0, ForeColor = Ink, Font = F(10), PlaceholderText = hint };
+        card.Controls.Add(box);
+        host.Controls.Add(card);
+        host.Resize += (_, _) =>
+        {
+            card.Bounds = new Rectangle(0, 0, host.Width, Dp(host, 44));
+            var pad = Dp(host, 16);
+            box.Bounds = new Rectangle(pad, Math.Max(0, (card.Height - box.Height) / 2), Math.Max(Dp(host, 60), card.Width - pad * 2), box.Height);
+        };
+        box.TextChanged += (_, _) => list.SetFilter(box.Text);
+        return host;
     }
 
     // Run() already owns the busy flag, the error dialog and the page refresh - this only picks
