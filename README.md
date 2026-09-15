@@ -24,8 +24,7 @@ More guns in the Mystery Box, wonder weapons from the unreleased DLC5, new Survi
 
 ## Installation
 
-Install Plutonium and run it once so its folders exist, then close it.
-
+Install Plutonium and run it once so its folders exist, then close it. Then pick either route below - they install the same mod.
 
 ### With the mod manager
 
@@ -39,6 +38,7 @@ Install Plutonium and run it once so its folders exist, then close it.
 It backs up anything it replaces, keeps your saved menu settings across updates, and tells you when a newer release is out.
 
 ### With the release installer
+
 1. [Download the latest release](https://github.com/DavidHiFi/T6-QoL/releases/latest) and unzip it anywhere.
 2. Run **`Windows Install.bat`**.
 3. Choose **INSTALL → The mod** and confirm.
