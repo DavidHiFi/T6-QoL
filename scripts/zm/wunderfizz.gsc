@@ -803,19 +803,51 @@ setupWunderfizz()
     	//  (between 4832 and 4896), clear of the outcrop, with y untouched so the
     	//  back keeps the position the user said was already good.
     	//
-    	//  🛑 THE ROCK ITSELF IS NOT MEASURABLE OFFLINE. It is world brush /
-    	//  terrain, not a placed prop - a 400-unit sweep of the mapents around the
-    	//  machine returns no rock model at all, only the fountain. So the 46-unit
-    	//  shift is derived from the hedge posts, which ARE measurable, and NOT
-    	//  from the thing being avoided. That is why the three dvars below exist:
-    	//  set them before the map loads and nudge it live rather than rebuilding.
-    	//  They default to the shipped position, so a normal boot reads nothing.
+    	//  🛑 v2.17.1 - THE FIRST ATTEMPT MOVED IT SIDEWAYS AND NOTHING ELSE, AND
+    	//  THAT WAS THE WRONG READ OF THE REQUEST. User: *"all you did was like
+    	//  slightly move it to the left ... I told you to move it up to the hedge
+    	//  of the maze so it's lined up, put it up against it ... push it back
+    	//  towards there AND move it off to the left."* Two axes, not one.
+    	//
+    	//  🌟 SO STOP TYPING A Y COORDINATE AND LET THE ENGINE FIND THE HEDGE.
+    	//  snap_yaw below hands this candidate to zmqol_wf_wall_snap(), which is
+    	//  the function written for exactly this failure ("asking which wall in
+    	//  words has failed three times running on this one machine"). It traces
+    	//  from the seed at eye height along the given yaw, stops on the real
+    	//  hedge brush, backs the machine off by zmqol_wf_wall_gap (30) and turns
+    	//  it to face back down the line. "Up against it, lined up, facing out"
+    	//  falls out of the trace instead of out of my arithmetic.
+    	//
+    	//  THE ROCK WAS NEVER MEASURABLE OFFLINE - it is world brush, not a placed
+    	//  prop; a 400-unit mapents sweep around the machine finds no rock model
+    	//  at all, only the fountain. That is precisely why the trace is the right
+    	//  instrument here and a typed coordinate is not.
+    	//
+    	//  SEED: x 4800 is one hedge-post span (the posts are 64 apart at
+    	//  4832/4896/4960/5024) left of the v2.17.0 spot, which is the "off to the
+    	//  left" half. y 690 is just a point standing in the courtyard IN FRONT of
+    	//  the hedge - it is a ray origin, not the answer; yaw 90 walks it into the
+    	//  hedge and the trace decides where the machine actually stops.
+    	//
+    	//  The dvars still tune it live without a rebuild. If this is still not the
+    	//  spot, the exact fix is a `.where` screenshot: stand where the machine
+    	//  should go, look at the hedge, and those two numbers become the seed and
+    	//  the snap yaw directly - that is the workflow wall_snap was built around.
     	//  ====================================================================
-    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_maze_x", 4864 ),
-    	                getdvarintdefault( "zmqol_wf_maze_y", 725 ),
+    	//  v2.17.2 - x 4800 -> 4780. User, with the snapped machine on screen:
+    	//  *"that's perfect, all you need to do is slightly move it off to the
+    	//  left ... so it's more centered from the left hedge and that rock on the
+    	//  right."* The snap result was accepted; this is 20 units of lateral
+    	//  centring and nothing else. Y stays 690 (the ray origin) and the trace
+    	//  still decides the final Y, so the seating against the hedge is
+    	//  untouched - only which point along the hedge it seats at.
+    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_maze_x", 4780 ),
+    	                getdvarintdefault( "zmqol_wf_maze_y", 690 ),
     	                2 ),
-    	              ( 0, getdvarintdefault( "zmqol_wf_maze_yaw", 0 ), 0 ),
+    	              ( 0, 0, 0 ),
     	              zmqol_wf_machine_model() );
+    	level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_yaw =
+    	        getdvarintdefault( "zmqol_wf_maze_yaw", 90 );
     	zmqol_wf_add((146,138,10), (0,270,0), zmqol_wf_machine_model());
     	zmqol_wf_add((-374,-1103,8), (0,270,0), zmqol_wf_machine_model());
     	zmqol_wf_add((-58,-1512,168), (0,180,0), zmqol_wf_machine_model());
