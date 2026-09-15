@@ -1445,6 +1445,14 @@ init()
     precacheitem( "m1911lh_upgraded_zm" );
     level.player_too_many_weapons_monitor_func = ::player_too_many_weapons_monitor;
 
+    //  --- PRE-NERF RECOIL (v2.16.10, GAME 3) ---
+    //  Default 1 = what this mod already does, and init() returns immediately
+    //  on 1, so this line costs a dvar read on every map and nothing else. It
+    //  lives HERE because its twins need precacheitem() before the first frame.
+    //  The whole feature is in scripts\zm\qol_recoil.gsc - deliberately not in
+    //  this file, which is on a compiled-bytecode ceiling (AGENTS.md rule 1b).
+    scripts\zm\qol_recoil::init();
+
     // --- BO2DD ---
     level thread bo2dd_onplayerconnect();
 

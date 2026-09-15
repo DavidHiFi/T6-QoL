@@ -411,6 +411,16 @@ init()
     //  in both directions, same as the other PATCHES rows.
     qol_opt_dvar( "three_hit_down", "0" );
 
+    //  v2.16.10 - PRE-NERF RECOIL, user request 2026-09-15, the GAME 3 tab.
+    //  ON (1) = what this mod already ships: Treyarch's LAUNCH-DAY recoil for
+    //  eight gun families. OFF (0) hands out post-patch twins instead.
+    //  🛑 NOT LIVE MID-MATCH, and it is the only row in this mod that is not.
+    //  Recoil is read out of the weapon def at map load and there is no dvar or
+    //  script call anywhere on this build that reaches it - so the twins have
+    //  to be precached before the first frame, and a flip only takes on the
+    //  NEXT map load. See the banner in scripts\zm\qol_recoil.gsc.
+    qol_opt_dvar( "prenerf_recoil", "1" );
+
     //  v2.8.2 - ONE SHOT ONE KILL, user request 2026-08-29, the CHEATS tab.
     //  OFF (0) = stock. Read on every point of damage a player deals, inside
     //  the level.callbackactordamage chain this mod already owns - see

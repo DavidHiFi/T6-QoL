@@ -2352,6 +2352,23 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "KNIFE LUNGE", "knife_lunge", "The melee charge that pulls you onto a zombie. Disable it to knife in place.")
 
+	-- ========================================================================
+	--  v2.16.10 - PRE-NERF RECOIL. User request 2026-09-15: *"my mod comes with
+	--  the pre-patch / pre-nerf recoil for all the guns ... it would be nice to
+	--  have that as an option you can turn on or off, in the game 3 tab"*.
+	--  ENABLED = 1 = what the mod already ships, so leaving this alone changes
+	--  nothing, and the GSC side returns before it touches anything on 1.
+	--
+	--  🛑 THE ONE ROW IN THIS MENU THAT IS NOT LIVE MID-MATCH, and the
+	--  description says so rather than leaving the player to discover it.
+	--  Recoil is read out of the weapon definition when the map loads; it is
+	--  not a dvar and no script call reaches it (searched: all 2,758 BO2 dvars,
+	--  and the whole stock script tree). The post-patch guns therefore have to
+	--  be precached before the first frame, so a flip lands on the next map
+	--  load. See the banner in scripts\zm\qol_recoil.gsc for the whole of it.
+	-- ========================================================================
+	T(QolGame3Buttons, LocalClientIndex, "PRE-NERF RECOIL", "prenerf_recoil", "Treyarch's launch-day recoil. Disable for the patched values. Applies on next map load.")
+
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.
 	local MagicSelector = QolGame3Buttons:addGametypeSettingLeftRightSelector(
@@ -2363,7 +2380,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 
-	return QolGame3Container                          -- 3 rows + 0 spacers = 3.0
+	return QolGame3Container                          -- 4 rows + 0 spacers = 4.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
