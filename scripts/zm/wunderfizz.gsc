@@ -834,14 +834,35 @@ setupWunderfizz()
     	//  should go, look at the hedge, and those two numbers become the seed and
     	//  the snap yaw directly - that is the workflow wall_snap was built around.
     	//  ====================================================================
-    	//  v2.17.2 - x 4800 -> 4780. User, with the snapped machine on screen:
-    	//  *"that's perfect, all you need to do is slightly move it off to the
-    	//  left ... so it's more centered from the left hedge and that rock on the
-    	//  right."* The snap result was accepted; this is 20 units of lateral
-    	//  centring and nothing else. Y stays 690 (the ray origin) and the trace
-    	//  still decides the final Y, so the seating against the hedge is
-    	//  untouched - only which point along the hedge it seats at.
-    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_maze_x", 4780 ),
+    	//  v2.17.2 - x 4800 -> 4780, lateral centring on the user's "more centred
+    	//  between the left hedge and that rock".
+    	//
+    	//  🛑 v2.17.3 - x 4780 -> 4720, AND THIS ONE IS NOT COSMETIC. User: *"one
+    	//  zombie just spawned in front of me through the machine, it came out of
+    	//  the hedge, straight through the hedge itself."*
+    	//
+    	//  🌟 THE SPAWN POINTS ARE IN THE MAPENTS AND 4780 WAS THE WORST POSSIBLE
+    	//  X. Buried's hedge spawns are script_structs with script_noteworthy
+    	//  "custom_spawner_entry", script_string "hedge_location find_flesh",
+    	//  sitting at y = 842 - BEHIND the hedge the machine backs onto (the snap
+    	//  puts the brush at ~814). Zombies spawn there and walk out through it.
+    	//  Along this stretch they are at x = 4643, 4755, 4801, 4836, 4923.
+    	//  4780 is the midpoint of 4755 and 4801 almost exactly (their mean is
+    	//  4778) - the machine was standing dead centre in the narrowest gap on
+    	//  the whole run, 34 units from each side. A zombie walking out of either
+    	//  had to come through it.
+    	//
+    	//  Sweeping x along y=784 in 20s and taking the distance to the nearest
+    	//  spawn-capable entity, 4720 is the maximum in this stretch at 68 units -
+    	//  double the old clearance, and the only local peak. It is also further
+    	//  LEFT, which is the direction asked for, while staying ~77 from the
+    	//  perpendicular hedge at x=4643 (two more hedge_location structs sit at
+    	//  (4643,768) and (4643,692), which is how that corner is located). Half
+    	//  the machine's width is 37, so that leaves ~40 units of air to the left
+    	//  hedge: off it, not in it.
+    	//
+    	//  Measurement: modding-jobs\locs-restore-001\maze_spawners.py
+    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_maze_x", 4720 ),
     	                getdvarintdefault( "zmqol_wf_maze_y", 690 ),
     	                2 ),
     	              ( 0, 0, 0 ),
