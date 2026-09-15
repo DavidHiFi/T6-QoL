@@ -344,7 +344,7 @@ internal sealed class MainForm : Form
         if (s.Sounds == "installed") list.Add("custom sounds");
         if (s.Controller != "game defaults") list.Add(s.Controller == "ps5" ? "PS5 icons" : s.Controller + " icons");
         if (s.ReShade == "installed") list.Add("ReShade");
-        if (s.Shortcuts != "not added") list.Add("Start menu shortcuts");
+        // Not the app's own Start menu entry - that is in Settings, and it is not part of the mod.
         return list.Count == 0 ? "Nothing is installed yet." : "Installed:  " + string.Join("  ·  ", list);
     }
     private static string MissingText(InstallStatus s)
@@ -355,7 +355,6 @@ internal sealed class MainForm : Form
         if (s.Sounds != "installed") list.Add("custom sounds");
         if (s.Controller == "game defaults") list.Add("controller icons");
         if (s.ReShade != "installed") list.Add("ReShade");
-        if (s.Shortcuts == "not added") list.Add("Start menu shortcuts");
         return list.Count == 0 ? "Everything is installed." : "Not installed:  " + string.Join("  ·  ", list);
     }
     // The hero rides in the same centred column as the rows, so the two never sit on different
@@ -521,14 +520,16 @@ internal sealed class MainForm : Form
         var s = service.GetStatus(); Clear("Home", "Discover the Quality of Life series  •  Plutonium"); Select("Home");
         footer.Text = PageFooter(s);
         var cards = HeroPage(Hero("Black Ops II  •  Zombies", InstalledText(s), MissingText(s), "Open Black Ops II", () => { ShowT6(); return Task.CompletedTask; }));
-        if (pendingCheck is { ModUpdate: true })
-            cards.Controls.Add(Card($"Mod update {pendingCheck.LatestTag}", "A newer release is on GitHub. It updates the five mod files and keeps your settings.", "update available", "Install update", async () => { await service.InstallUpdateAsync(Reporter()); await Tell("Installed. Your settings were kept."); }, true, ShowHome));
-        if (pendingCheck is { AppUpdate: true })
-            cards.Controls.Add(Card($"App update {pendingCheck.LatestTag}", "A newer version of this tool is on GitHub.", "update available", "Update app", async () => { if (await Ask("The app will close, update itself, and open again.", "Update now", "Not now")) { await service.InstallAppUpdateAsync(Reporter()); Application.Exit(); } }, true, ShowHome));
+        // Gated on CanInstall, not on the version comparison: a release whose package is missing
+        // would otherwise offer a button that can only end in "there is nothing to install".
+        if (pendingCheck is { CanInstallMod: true })
+            cards.Controls.Add(Card($"Mod update {pendingCheck.ModTag}", "A newer release is on GitHub. It updates the five mod files and keeps your settings.", "update available", "Install update", async () => { await service.InstallUpdateAsync(Reporter()); await Tell("Installed. Your settings were kept."); }, true, ShowHome));
+        if (pendingCheck is { CanInstallApp: true })
+            cards.Controls.Add(Card($"App update {pendingCheck.AppTag}", "A newer version of this tool is on GitHub.", "update available", "Update app", async () => { if (await Ask("The app will close, update itself, and open again.", "Update now", "Not now")) { await service.InstallAppUpdateAsync(Reporter()); Application.Exit(); } }, true, ShowHome));
         cards.Controls.Add(Card("World at War (T4)", "Play World at War through Plutonium, online or LAN.", "no mod yet", "Open", () => { ShowGame("t4", "T4", "World at War"); return Task.CompletedTask; }));
         cards.Controls.Add(Card("Black Ops (T5)", "Play Black Ops through Plutonium, online or LAN.", "no mod yet", "Open", () => { ShowGame("t5", "T5", "Black Ops"); return Task.CompletedTask; }));
         cards.Controls.Add(Card("Black Ops III (T7)", "No Quality of Life mod yet - Black Ops II is the current focus.", "nothing yet", "About", () => Tell("There is no Quality of Life mod for Black Ops III yet.\n\nDevelopment has not started; Black Ops II is the current focus.\n\nIts home will be github.com/DavidHiFi/T7-QoL.")));
-        cards.Controls.Add(Card("Check for a newer version", "Asks GitHub whether a newer release exists, and can install it for you.", "github.com/DavidHiFi/T6-QoL", "Check now", CheckUpdates, false, ShowHome));
+        cards.Controls.Add(Card("Check for a newer version", "Asks GitHub about the mod and about this app, and can install either.", "mod + app", "Check now", CheckUpdates, false, ShowHome));
     }
     private static string PageFooter(InstallStatus s) => !s.PlutoniumFound ? "Plutonium was not found. Run it once, then return here." : s.PlutoniumRunning ? "Close Plutonium before installing or removing files." : $"Plutonium: {s.Root}";
 
@@ -610,35 +611,50 @@ internal sealed class MainForm : Form
     {
         currentPage = ShowUninstall;
         var s = service.GetStatus();
-        Clear("Remove mods", "Take a Quality of Life install apart, or remove any mod from any game");
+        Clear("Remove mods", "Anything this app installed, and any mod in your Plutonium folders");
         Select("Remove mods"); footer.Text = PageFooter(s);
         var page = Page();
 
-        // The Quality of Life parts only exist for Black Ops II today, so say so instead of
-        // letting the page read as though it covered every game.
-        var parts = new[]
-        {
-            ("The mod", "mod", s.Mod, "The five mod files under storage\\t6\\mods. Your saved menu settings stay."),
-            ("HD textures", "images", s.Textures, "The texture pack under storage\\t6\\images."),
-            ("Custom sounds", "zone", s.Sounds, "The sound pack under storage\\t6\\zone."),
-            ("Controller icons", "controller", s.Controller, "The button prompt images, so the game's own prompts come back."),
-            ("ReShade", "reshade", s.ReShade, "The ReShade DLL, presets and shader collection.")
-        };
-        var installed = parts.Count(p => StatusGood(p.Item3));
-        page.Controls.Add(Caption("BLACK OPS II (T6)  •  QUALITY OF LIFE"));
-        page.Controls.Add(Card("Remove everything", "Every part below plus the Start menu shortcuts. Your saved menu settings are kept.", installed == 1 ? "1 part installed" : $"{installed} parts installed", "Remove all", RemoveEverything, true, ShowUninstall));
-        foreach (var item in parts)
-            page.Controls.Add(Card(item.Item1, item.Item4 + " A backup can be put back.", item.Item3, "Remove", async () => { if (await Ask($"Remove {item.Item1}?")) service.Remove(item.Item2, service.HasBackup(item.Item2) && await Ask("Put your backup back after removal?", "Restore it", "Just remove"), Reporter()); }, false, ShowUninstall));
-
-        page.Controls.Add(Caption("ANY OTHER MOD"));
-        foreach (var (game, system, name) in PlutoGames)
+        // One section per game, all shaped the same. Black Ops II simply has more in it, because
+        // it is the game with a Quality of Life install - not because it is a special case.
+        Row ModsRow(string game, string system, string name)
         {
             var count = service.CountMods(game);
-            var g = game; var sys = system; var n = name;
-            page.Controls.Add(Card($"{name} ({system})", $"Remove any of the mods in this game's folder, one at a time.", count == 0 ? "none" : count == 1 ? "1 mod" : $"{count} mods",
-                count == 0 ? "Nothing to remove" : "Open list",
-                count == 0 ? () => Task.CompletedTask : () => { ShowMods(g, sys, n); return Task.CompletedTask; }));
+            string g = game, sys = system, n = name;
+            return Card("Installed mods", $"Everything in storage\\{game}\\mods. Remove them one at a time.",
+                count == 0 ? "none" : count == 1 ? "1 mod" : $"{count} mods",
+                count == 0 ? "Nothing there" : "Open list",
+                count == 0 ? () => Task.CompletedTask : () => { ShowMods(g, sys, n); return Task.CompletedTask; });
         }
+
+        page.Controls.Add(Caption("WORLD AT WAR (T4)"));
+        page.Controls.Add(ModsRow("t4", "T4", "World at War"));
+
+        page.Controls.Add(Caption("BLACK OPS (T5)"));
+        page.Controls.Add(ModsRow("t5", "T5", "Black Ops"));
+
+        page.Controls.Add(Caption("BLACK OPS II (T6)"));
+        var parts = new[]
+        {
+            ("Quality of Life mod", "mod", s.Mod, "The five mod files under storage\\t6\\mods. Your saved menu settings stay."),
+            ("HD texture pack", "images", s.Textures, "The texture pack under storage\\t6\\images."),
+            ("Custom sound pack", "zone", s.Sounds, "The sound pack under storage\\t6\\zone."),
+            ("Controller icons", "controller", s.Controller, "The button prompt images, so the game's own prompts come back.")
+        };
+        foreach (var item in parts)
+            page.Controls.Add(Card(item.Item1, item.Item4 + " A backup can be put back.", item.Item3, "Remove", async () => { if (await Ask($"Remove {item.Item1}?")) service.Remove(item.Item2, service.HasBackup(item.Item2) && await Ask("Put your backup back after removal?", "Restore it", "Just remove"), Reporter()); }, false, ShowUninstall));
+        page.Controls.Add(ModsRow("t6", "T6", "Black Ops II"));
+
+        page.Controls.Add(Caption("BLACK OPS III (T7)"));
+        page.Controls.Add(Card("Nothing to remove", "Plutonium does not run Black Ops III, so this app installs nothing for it.", "", "About", () => { ShowEmptyGame("Black Ops III", "T7"); return Task.CompletedTask; }));
+
+        // ReShade is not one game's: it hooks every Plutonium title.
+        page.Controls.Add(Caption("EVERY GAME"));
+        page.Controls.Add(Card("ReShade", "The ReShade DLL, presets and shader collection, shared by every Plutonium game. A backup can be put back.", s.ReShade, "Remove", async () => { if (await Ask("Remove ReShade?")) service.Remove("reshade", service.HasBackup("reshade") && await Ask("Put your backup back after removal?", "Restore it", "Just remove"), Reporter()); }, false, ShowUninstall));
+
+        var installed = parts.Count(p => StatusGood(p.Item3)) + (StatusGood(s.ReShade) ? 1 : 0);
+        page.Controls.Add(Caption("ALL AT ONCE"));
+        page.Controls.Add(Card("The whole Quality of Life package", "Every part above plus the Start menu shortcuts. Your saved menu settings are kept, and mods you installed yourself are untouched.", installed == 1 ? "1 part installed" : $"{installed} parts installed", "Remove all", RemoveEverything, true, ShowUninstall));
     }
 
     private void ShowBackups()
@@ -688,7 +704,7 @@ internal sealed class MainForm : Form
         page.Controls.Add(ThemeGrid(page, current));
         page.Controls.Add(Card("Reset to default", $"Go back to {Palettes.Default.Name}.", CurrentTheme(settings).Key == Palettes.Default.Key ? "in use" : "available", "Use default", () => { settings.Theme = Palettes.Default.Key; settings.Save(); ApplyTheme(Palettes.Default, true); return Task.CompletedTask; }, false, ShowSettings));
         page.Controls.Add(Caption("UPDATES"));
-        page.Controls.Add(Card("Check for updates", "Checks GitHub for a newer mod release and a newer version of this app.", "github.com/DavidHiFi/T6-QoL", "Check now", CheckUpdates, false, ShowSettings));
+        page.Controls.Add(Card("Check for updates", "Asks GitHub about the mod and about this app. Each has its own release line.", "mod + app", "Check now", CheckUpdates, false, ShowSettings));
         page.Controls.Add(Card("Automatic update checks", "Asks GitHub for a newer release every time this app opens.", settings.AutoUpdate ? "on" : "off", settings.AutoUpdate ? "Turn off" : "Turn on", () => { settings.AutoUpdate = !settings.AutoUpdate; settings.Save(); return Task.CompletedTask; }, false, ShowSettings));
         page.Controls.Add(Caption("APP"));
         page.Controls.Add(Card("Player name", settings.PlayerName.Trim().Length > 0 ? $"The name the game shows. Now: {settings.PlayerName.Trim()}" : "Not set - the game shows \"Player\" in LAN sessions.", settings.PlayerName.Trim().Length > 0 ? "set" : "not set", "Change", async () => { var name = await AskText("What name should the game show?", settings.PlayerName); if (name is not null) { settings.PlayerName = name.Trim(); settings.Save(); } }, false, ShowSettings));
@@ -948,9 +964,10 @@ internal sealed class MainForm : Form
     {
         var result = await service.CheckForUpdatesAsync();
         if (result.Ok) pendingCheck = result;
-        if (!result.Ok || (!result.ModUpdate && !result.AppUpdate))
+        // Nothing installable means nothing to choose between - just report what was found.
+        if (!result.Ok || (!result.CanInstallMod && !result.CanInstallApp))
         {
-            await Tell(result.Ok ? result.Summary + "\n\nEverything is up to date." : result.Summary);
+            await Tell(result.Ok && !result.ModUpdate && !result.AppUpdate ? result.Summary + "\n\nEverything is up to date." : result.Summary);
             return;
         }
         var options = new List<(string Text, string Key, bool Primary)>();

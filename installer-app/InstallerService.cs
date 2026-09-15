@@ -16,7 +16,7 @@ internal sealed record ShortcutInfo(string File, string Label, string Target, bo
 
 internal sealed record UpdateResult(bool Ok, string Summary, bool CanInstall);
 
-internal sealed record UpdateCheck(bool Ok, string Summary, string LatestTag, bool ModUpdate, bool AppUpdate, bool CanInstallMod, bool CanInstallApp);
+internal sealed record UpdateCheck(bool Ok, string Summary, string ModTag, string AppTag, bool ModUpdate, bool AppUpdate, bool CanInstallMod, bool CanInstallApp);
 
 internal sealed record InstalledMod(string Folder, string Name, string Version, string Path, long Bytes, bool QualityOfLife);
 
@@ -574,40 +574,95 @@ internal sealed class InstallerService
         Log("Started ReShade watchdog");
     }
 
+    /// <summary>
+    /// The mod and this app are two projects with two release lines, so this asks each repository
+    /// about itself. Asking the mod repository about both was why a mod tag (v2.15.51) came back
+    /// as an app update, with no app package behind it to install.
+    /// </summary>
     internal async Task<UpdateCheck> CheckForUpdatesAsync()
     {
+        updateZipUrl = updateZipName = appZipUrl = appZipName = null;
+        var lines = new List<string>();
+        bool reached = false, modUpdate = false, appUpdate = false;
+        string modTag = "", appTag = "";
+
+        var modCurrent = ReadModVersion().TrimStart('v');
         try
         {
             using var doc = JsonDocument.Parse(await http.GetStringAsync($"https://api.github.com/repos/{Repo}/releases/latest"));
             var root = doc.RootElement;
-            var tag = root.GetProperty("tag_name").GetString() ?? "";
-            var modCurrent = ReadModVersion().TrimStart('v');
-            var appCurrent = ProductVersion;
-            var releaseVersion = Version.TryParse(tag.TrimStart('v'), out var parsedTag) ? parsedTag : null;
-            var modUpdate = releaseVersion is not null && Version.TryParse(modCurrent, out var parsedMod) ? releaseVersion > parsedMod : modCurrent.Length == 0;
-            var appUpdate = releaseVersion is not null && Version.TryParse(appCurrent, out var parsedApp) && releaseVersion > parsedApp;
-            updateZipUrl = null; updateZipName = null; appZipUrl = null; appZipName = null;
-            if (root.TryGetProperty("assets", out var assets))
+            reached = true;
+            modTag = root.GetProperty("tag_name").GetString() ?? "";
+            var latest = Parse(modTag);
+            // ReadModVersion says "not installed" rather than "", so compare on whether it parses:
+            // no readable version means there is nothing installed to be newer than the release.
+            var haveMod = Version.TryParse(modCurrent, out var installed);
+            modUpdate = latest is not null && (!haveMod || latest > installed);
+
+            // The release also carries the texture, sound and controller packs. Pick the one that
+            // is actually the mod, or InstallUpdateAsync unpacks icons and finds no mod files.
+            string? otherUrl = null, otherName = null;
+            foreach (var (name, url) in Zips(root))
             {
-                foreach (var asset in assets.EnumerateArray())
-                {
-                    var name = asset.GetProperty("name").GetString() ?? "";
-                    if (!name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
-                    if (name.Contains("portable", StringComparison.OrdinalIgnoreCase)) { appZipUrl ??= asset.GetProperty("browser_download_url").GetString(); appZipName ??= name; continue; }
-                    if (name.Contains("texture", StringComparison.OrdinalIgnoreCase) || name.Contains("sound", StringComparison.OrdinalIgnoreCase)) continue;
-                    updateZipUrl ??= asset.GetProperty("browser_download_url").GetString();
-                    updateZipName ??= name;
-                }
+                if (name.Contains("texture", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("sound", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("controller", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("icon", StringComparison.OrdinalIgnoreCase)
+                    || name.Contains("portable", StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Contains("mod", StringComparison.OrdinalIgnoreCase)) { updateZipUrl ??= url; updateZipName ??= name; }
+                else { otherUrl ??= url; otherName ??= name; }
             }
-            var lines = new List<string> { $"Latest release: {tag}", $"Mod installed: {(modCurrent.Length == 0 ? "nothing" : "v" + modCurrent)}{(modUpdate ? "  -  update available" : "  -  up to date")}", $"This app: v{appCurrent}{(appUpdate ? "  -  update available" : "  -  up to date")}" };
-            var summary = string.Join(Environment.NewLine, lines);
-            Log($"update check: tag={tag} mod={modCurrent} app={appCurrent} modUpdate={modUpdate} appUpdate={appUpdate} assets={updateZipName}/{appZipName}");
-            return new(true, summary, tag, modUpdate, appUpdate, updateZipUrl is not null && modUpdate, appZipUrl is not null && appUpdate);
+            updateZipUrl ??= otherUrl; updateZipName ??= otherName;
+            lines.Add($"Mod: {(haveMod ? "v" + modCurrent : "not installed")}, latest {modTag}{(modUpdate ? "  -  update available" : "  -  up to date")}");
         }
         catch (Exception ex)
         {
-            Log($"update check failed: {ex.Message}");
-            return new(false, "Could not reach GitHub. Check your connection and try again.", "", false, false, false, false);
+            Log($"mod update check failed: {ex.Message}");
+            lines.Add("Mod: could not reach its releases.");
+        }
+
+        var appCurrent = ProductVersion;
+        try
+        {
+            using var doc = JsonDocument.Parse(await http.GetStringAsync($"https://api.github.com/repos/{ToolRepo}/releases/latest"));
+            var root = doc.RootElement;
+            reached = true;
+            appTag = root.GetProperty("tag_name").GetString() ?? "";
+            var latest = Parse(appTag);
+            appUpdate = latest is not null && Version.TryParse(appCurrent, out var running) && latest > running;
+            // The portable zip is the self-update package: it holds the exe this replaces itself with.
+            foreach (var (name, url) in Zips(root))
+                if (name.Contains("portable", StringComparison.OrdinalIgnoreCase)) { appZipUrl ??= url; appZipName ??= name; }
+            lines.Add($"This app: v{appCurrent}, latest {appTag}{(appUpdate ? "  -  update available" : "  -  up to date")}");
+        }
+        catch (Exception ex)
+        {
+            Log($"app update check failed: {ex.Message}");
+            lines.Add("This app: could not reach its releases.");
+        }
+
+        var canMod = modUpdate && updateZipUrl is not null;
+        var canApp = appUpdate && appZipUrl is not null;
+        // Never offer an update whose package is missing - that is a dialog that can only fail.
+        if (modUpdate && !canMod) lines.Add("The mod release has no package attached yet.");
+        if (appUpdate && !canApp) lines.Add("The app release has no package attached yet.");
+
+        Log($"update check: modTag={modTag} mod={modCurrent} modUpdate={modUpdate}/{canMod}; appTag={appTag} app={appCurrent} appUpdate={appUpdate}/{canApp}");
+        if (!reached) return new(false, "Could not reach GitHub. Check your connection and try again.", "", "", false, false, false, false);
+        return new(true, string.Join(Environment.NewLine, lines), modTag, appTag, modUpdate, appUpdate, canMod, canApp);
+    }
+
+    private static Version? Parse(string tag) => Version.TryParse(tag.TrimStart('v', 'V'), out var v) ? v : null;
+
+    private static IEnumerable<(string Name, string Url)> Zips(JsonElement release)
+    {
+        if (!release.TryGetProperty("assets", out var assets)) yield break;
+        foreach (var asset in assets.EnumerateArray())
+        {
+            var name = asset.GetProperty("name").GetString() ?? "";
+            if (!name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+            var url = asset.GetProperty("browser_download_url").GetString();
+            if (url is not null) yield return (name, url);
         }
     }
 
@@ -647,17 +702,34 @@ internal sealed class InstallerService
         var exe = Directory.EnumerateFiles(outDir, "QualityOfLifeSeries.exe", SearchOption.AllDirectories).FirstOrDefault() ?? throw new InvalidOperationException("That download did not contain the app.");
         var source = System.IO.Path.GetDirectoryName(exe)!;
         var appDir = AppContext.BaseDirectory.TrimEnd(System.IO.Path.DirectorySeparatorChar);
-        var script = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "qol-self-update.cmd");
+        var script = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"qol-self-update-{Guid.NewGuid():N}.cmd");
+        var pid = Environment.ProcessId;
+
+        // Wait for this process to actually exit rather than guessing at two seconds: the exe
+        // cannot be overwritten while it is still running, and a flat sleep left the user on the
+        // old version with nothing said about it. Robocopy retries, and only a copy that really
+        // worked gets to relaunch.
         File.WriteAllText(script, string.Join(Environment.NewLine,
         [
             "@echo off",
-            "timeout /t 2 /nobreak >nul",
-            $"robocopy \"{source}\" \"{appDir}\" /E /NFL /NDL /NJH /NJS /NP >nul",
+            "setlocal",
+            $"for /l %%i in (1,1,60) do (",
+            $"  tasklist /fi \"PID eq {pid}\" 2>nul | find \"{pid}\" >nul || goto ready",
+            "  ping -n 2 127.0.0.1 >nul",
+            ")",
+            ":ready",
+            $"robocopy \"{source}\" \"{appDir}\" /E /R:5 /W:1 /NFL /NDL /NJH /NJS /NP >nul",
+            "if errorlevel 8 (",
+            $"  echo {DateTime.Now:h:mm:ss tt}  app update FAILED - files could not be replaced>>\"{LogFile}\"",
+            ") else (",
+            $"  echo {DateTime.Now:h:mm:ss tt}  app update applied>>\"{LogFile}\"",
+            ")",
             $"start \"\" \"{System.IO.Path.Combine(appDir, "QualityOfLifeSeries.exe")}\"",
             $"rmdir /s /q \"{temp}\"",
+            "(goto) 2>nul & del \"%~f0\""
         ]));
-        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { UseShellExecute = true, WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden });
-        Log($"app update started from {appZipName}, source {source}");
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { UseShellExecute = false, CreateNoWindow = true });
+        Log($"app update started from {appZipName}, source {source}, pid {pid}");
         await Task.CompletedTask;
     }
 
