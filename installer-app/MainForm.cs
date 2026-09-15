@@ -85,14 +85,17 @@ internal sealed class MainForm : Form
         Icon = File.Exists(iconPath) ? new Icon(iconPath) : Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         artwork = File.Exists(iconPath) ? new Icon(iconPath, new Size(64, 64)).ToBitmap() : null;
         side = new Panel { Dock = DockStyle.Left, Width = 238, BackColor = Mantle, Padding = new Padding(12, 14, 12, 12), AutoScroll = true };
+        // Docked top, so this list reads bottom-up: Home, then the games, then what you do to a
+        // mod, then the app's own settings. Mod-level and app-level never share a group.
         side.Controls.Add(NavItem("\uE946", "About", ShowAbout));
         side.Controls.Add(NavItem("\uE8A5", "Details and log", ShowDetails));
         side.Controls.Add(NavItem("\uE713", "Settings", ShowSettings));
-        side.Controls.Add(NavItem("\uE74D", "Uninstall", ShowUninstall));
+        side.Controls.Add(Section("APP"));
+        side.Controls.Add(NavItem("\uE74D", "Remove mods", ShowUninstall));
         side.Controls.Add(NavItem("\uE8B7", "Backups", ShowBackups));
-        side.Controls.Add(NavItem("\uE71B", "Start menu shortcuts", ShowShortcuts));
         side.Controls.Add(NavItem("\uE790", "ReShade", ShowReShade));
-        side.Controls.Add(Section("TOOLS"));
+        side.Controls.Add(NavItem("\uE8B9", "Installed mods", ShowAllMods));
+        side.Controls.Add(Section("MODS"));
         side.Controls.Add(NavItem("\uE7FC", "Black Ops III (T7)", () => ShowEmptyGame("Black Ops III", "T7")));
         side.Controls.Add(NavItem("\uE7FC", "Black Ops II (T6)", ShowT6));
         side.Controls.Add(NavItem("\uE7FC", "Black Ops (T5)", () => ShowGame("t5", "T5", "Black Ops")));
@@ -267,6 +270,8 @@ internal sealed class MainForm : Form
         // scrollbar does not render black against a white page.
         p.HandleCreated += (_, _) => SetWindowTheme(p.Handle, dark ? "DarkMode_Explorer" : null, null);
         var laying = false;
+        int Target() => Math.Max(Dp(p, 200), p.ClientSize.Width - Dp(p, 4));
+
         // The centring is done by the column; every row just fills its width. Re-measure after each
         // pass: the first one can bring in a vertical scrollbar, which narrows the client area, and
         // a row still sized for the old width would leave a horizontal scrollbar behind.
@@ -278,7 +283,7 @@ internal sealed class MainForm : Form
             {
                 for (var pass = 0; pass < 4; pass++)
                 {
-                    var width = Math.Max(Dp(p, 200), p.ClientSize.Width - Dp(p, 4));
+                    var width = Target();
                     var changed = false;
                     foreach (Control c in p.Controls) if (c.Width != width) { c.Width = width; changed = true; }
                     if (!changed) break;
@@ -287,9 +292,20 @@ internal sealed class MainForm : Form
             }
             finally { laying = false; }
         }
+
         p.Resize += (_, _) => Fit();
-        p.ControlAdded += (_, _) => Fit();
         p.DpiChangedAfterParent += (_, _) => Fit();
+        // Only the new control, never the whole list. Resize still does the full pass, and it
+        // fires when the scroll rail changes the client width.
+        p.ControlAdded += (_, e) => { if (!laying && e.Control is not null) e.Control.Width = Target(); };
+
+        // Build the entire page inside one layout pass. Left to itself, a FlowLayoutPanel re-lays
+        // out every child on every add, and each row re-measures its own text - quadratic, which
+        // is a 29-second freeze on a game with 82 mods installed. Resuming is queued so it happens
+        // once the page-building method has finished adding rows.
+        p.SuspendLayout();
+        void Done() { p.ResumeLayout(true); Fit(); }
+        if (IsHandleCreated) BeginInvoke(Done); else p.HandleCreated += (_, _) => BeginInvoke(Done);
     }
     private FlowLayoutPanel Cards() => Page();
     private Panel Hero(string title, string installed, string missing, string button, Func<Task> action)
@@ -361,7 +377,16 @@ internal sealed class MainForm : Form
     }
 
     private readonly ToolTip tips = new() { AutoPopDelay = 12000, InitialDelay = 400, ReshowDelay = 100 };
-    private Panel Card(string title, string description, string status, string button, Func<Task> action, bool primary = false, Action? refresh = null)
+    // Attached on first hover. Wiring a tooltip per label up front costs more than building the
+    // rest of the page once a game has 80-odd mods in it.
+    private void Tip(Control c, string text)
+    {
+        if (text.Length == 0) return;
+        void OnEnter(object? sender, EventArgs e) { tips.SetToolTip(c, text); c.MouseEnter -= OnEnter; }
+        c.MouseEnter += OnEnter;
+    }
+
+    private Row Card(string title, string description, string status, string button, Func<Task> action, bool primary = false, Action? refresh = null)
     {
         var row = new Row();
         row.Title.Text = title;
@@ -373,8 +398,8 @@ internal sealed class MainForm : Form
         row.Button.HoverColor = primary ? Sky : Surface2;
         row.Button.ForeColor = primary ? Crust : Ink;
         row.Button.Click += async (_, _) => await Run(action, row.Button, refresh);
-        tips.SetToolTip(row.Description, description);
-        tips.SetToolTip(row.Status, status);
+        Tip(row.Description, description);
+        Tip(row.Status, status);
         return row;
     }
     private Label Caption(string text) => new() { AutoSize = false, Height = 28, Text = text, Font = F(8), ForeColor = Overlay0, Margin = new Padding(0, 10, 0, 0), Padding = new Padding(2, 0, 0, 4), TextAlign = ContentAlignment.BottomLeft, BackColor = Base, UseMnemonic = false };
@@ -382,7 +407,11 @@ internal sealed class MainForm : Form
     {
         if (busy || overlay is not null) { footer.Text = "One moment - still working."; return; }
         busy = true; footer.Text = "Working...";
-        try { await action(); footer.Text = "Done"; refresh?.Invoke(); }
+        // Only re-draw if the action left us on the same page. A row whose action navigates
+        // elsewhere would otherwise be yanked straight back by its own refresh - which is why
+        // "View" and "Manage" looked like they did nothing at all.
+        var from = currentPage;
+        try { await action(); footer.Text = "Done"; if (ReferenceEquals(from, currentPage)) refresh?.Invoke(); }
         catch (Exception ex) { footer.Text = "Stopped"; await Tell("That did not work:\n\n" + ex.Message); }
         finally { busy = false; }
     }
@@ -524,17 +553,75 @@ internal sealed class MainForm : Form
         var s = service.GetStatus(); Clear("ReShade", "Improves the visuals for every Plutonium game - BO1, MW3, WaW and BO2"); Select("ReShade"); footer.Text = PageFooter(s);
         var cards = Cards();
         cards.Controls.Add(Card("Install ReShade", "Installs the included presets and shader collection. Keeps a copy for repair.", s.ReShade, "Install", InstallReShade, true, ShowReShade));
-        cards.Controls.Add(Card("Start ReShade watchdog only", "Puts ReShade back when Plutonium clears it. Close its window to stop it.", "own window", "Start", () => { service.StartWatchdog(); footer.Text = "Watchdog started - close its window to stop it."; return Task.CompletedTask; }, false, ShowReShade));
+        cards.Controls.Add(Card("Run the watchdog now", "Puts ReShade back when Plutonium clears it. Close its window to stop it.", "own window", "Start", () => { service.StartWatchdog(); footer.Text = "Watchdog started - close its window to stop it."; return Task.CompletedTask; }, false, ShowReShade));
+        // The watchdog shortcut belongs with ReShade. The app's own shortcuts live in Settings -
+        // keeping a second "launcher" entry here just put two near-identical items in one Start
+        // menu folder.
+        var hasWatcher = s.Shortcuts != "not added";
+        cards.Controls.Add(Card("Start menu shortcut for the watchdog", "An entry that starts the ReShade helper without opening this app.", hasWatcher ? "added" : "not added", hasWatcher ? "Remove" : "Add", () => { if (hasWatcher) service.RemoveShortcuts(); else service.InstallShortcuts(false, true, Reporter()); return Task.CompletedTask; }, false, ShowReShade));
     }
 
-    private void ShowShortcuts()
+    // Plutonium's own games, in the order the sidebar lists them. Black Ops III is not one of
+    // them, so it has no mods folder to show.
+    private static readonly (string Game, string System, string Name)[] PlutoGames =
+    [
+        ("t4", "T4", "World at War"),
+        ("t5", "T5", "Black Ops"),
+        ("t6", "T6", "Black Ops II")
+    ];
+
+    /// <summary>
+    /// One row per game, then drill into a game for the list. Flattening all three into a single
+    /// page meant 170-odd rows and three full size walks before anything drew.
+    /// </summary>
+    private void ShowAllMods()
     {
-        currentPage = ShowShortcuts;
-        var s = service.GetStatus(); Clear("Start menu shortcuts", "A group called \"Quality of Life Series\""); Select("Start menu shortcuts"); footer.Text = PageFooter(s); var cards = Cards();
-        cards.Controls.Add(Card("Add both", "Quality of Life Series Launcher and Plutonium ReShade Watcher.", s.Shortcuts, "Add both", () => { service.InstallShortcuts(true, true, Reporter()); return Task.CompletedTask; }, true, ShowShortcuts));
-        cards.Controls.Add(Card("Just the launcher", "One entry that opens this installer.", s.Shortcuts, "Add launcher", () => { service.InstallShortcuts(true, false, Reporter()); return Task.CompletedTask; }, false, ShowShortcuts));
-        cards.Controls.Add(Card("Just the watcher", "One entry that starts the ReShade helper.", s.Shortcuts, "Add watcher", () => { service.InstallShortcuts(false, true, Reporter()); return Task.CompletedTask; }, false, ShowShortcuts));
-        cards.Controls.Add(Card("Remove the shortcuts", "Takes both entries off again, and the group folder with them.", s.Shortcuts, "Remove", async () => { if (await Ask("Remove the Start menu shortcuts?")) service.RemoveShortcuts(); }, false, ShowShortcuts));
+        currentPage = ShowAllMods;
+        Clear("Installed mods", "Every mod in your Plutonium mods folders");
+        Select("Installed mods");
+        footer.Text = PageFooter(service.GetStatus());
+        var page = Page();
+
+        foreach (var (game, system, name) in PlutoGames)
+        {
+            var count = service.CountMods(game);
+            var g = game; var sys = system; var n = name;
+            Func<Task> open = count == 0
+                ? () => InstallModFromFile(g)
+                : () => { ShowMods(g, sys, n); return Task.CompletedTask; };
+            page.Controls.Add(Card(
+                $"{name} ({system})",
+                service.ModsDir(game),
+                count == 0 ? "none" : count == 1 ? "1 mod" : $"{count} mods",
+                count == 0 ? "Add a mod" : "View",
+                open, false, ShowAllMods));
+        }
+        page.Controls.Add(Caption("FOLDERS"));
+        foreach (var (game, system, name) in PlutoGames)
+        {
+            var g = game;
+            page.Controls.Add(Card($"{name} mods folder", service.ModsDir(game), "", "Open folder", () => { service.OpenFolder(service.ModsDir(g)); return Task.CompletedTask; }));
+        }
+    }
+
+    /// <summary>A live filter over the rows that follow it - 89 mods is not a scrollable list.</summary>
+    private Control SearchRow(string hint, List<(Control Row, string Text)> rows)
+    {
+        var host = new RoundedPanel { Height = Dp(this, 44), Margin = new Padding(0, 0, 0, 10), Radius = 10, BackColor = Surface0, BorderColor = Surface0, HoverBorderColor = Surface0, HoverFill = Color.Empty };
+        var box = new TextBox { BorderStyle = BorderStyle.None, BackColor = Surface0, ForeColor = Ink, Font = F(10), PlaceholderText = hint };
+        host.Controls.Add(box);
+        host.Resize += (_, _) =>
+        {
+            var pad = Dp(host, 16);
+            box.Bounds = new Rectangle(pad, Math.Max(0, (host.Height - box.Height) / 2), Math.Max(Dp(host, 60), host.Width - pad * 2), box.Height);
+        };
+        box.TextChanged += (_, _) =>
+        {
+            var q = box.Text.Trim();
+            foreach (var (row, text) in rows)
+                row.Visible = q.Length == 0 || text.Contains(q, StringComparison.OrdinalIgnoreCase);
+        };
+        return host;
     }
 
     private void ShowUninstall()
@@ -678,17 +765,35 @@ internal sealed class MainForm : Form
     {
         currentPage = () => ShowMods(game, system, gameName);
         var mods = service.GetInstalledMods(game);
-        Clear($"{gameName} mods", $"Plutonium {system}  •  storage\\{game}\\mods"); Select($"{gameName} ({system})"); footer.Text = PageFooter(service.GetStatus());
+        var bytes = mods.Sum(m => m.Bytes);
+        Clear($"{gameName} mods", $"{(mods.Count == 1 ? "1 mod" : $"{mods.Count} mods")}  •  {InstallerService.FormatSize(bytes)}  •  storage\\{game}\\mods");
+        Select("Installed mods"); footer.Text = PageFooter(service.GetStatus());
         var page = Page();
-        page.Controls.Add(Caption($"INSTALLED ({mods.Count})"));
+
+        var rows = new List<(Control Row, string Text)>();
+        if (mods.Count > 8) page.Controls.Add(SearchRow($"Search {mods.Count} mods", rows));
         if (mods.Count == 0)
-            page.Controls.Add(Card("Nothing installed", "No mods are installed for this game yet. Install one from a .zip or a mod file.", "empty", "Install", () => InstallModFromFile(game), true, () => ShowMods(game, system, gameName)));
+            page.Controls.Add(Card("Nothing installed", "No mods are installed for this game yet. Install one from a .zip or a mod file.", "", "Add a mod", () => InstallModFromFile(game), true, () => ShowMods(game, system, gameName)));
         foreach (var mod in mods)
-            page.Controls.Add(Card(mod.Name, $"{mod.Version}{(mod.Version.Length > 0 ? "  •  " : "")}{mod.Path}", InstallerService.FormatSize(mod.Bytes), "Remove", async () => { if (await Ask($"Remove {mod.Name}?")) service.RemoveModFolder(game, mod.Path, Reporter()); }, false, () => ShowMods(game, system, gameName)));
-        page.Controls.Add(Caption("ADD"));
-        page.Controls.Add(Card("Install a mod from a file", "Pick a .zip or a mod .ff/.iwd file. It is copied into this game's mods folder.", "zip or file", "Choose file", () => InstallModFromFile(game), true, () => ShowMods(game, system, gameName)));
-        page.Controls.Add(Card("Open mods folder", "Where Plutonium looks for this game's mods.", "mods", "Open folder", () => { service.OpenFolder(service.ModsDir(game)); return Task.CompletedTask; }));
-        page.Controls.Add(Card($"Back to {gameName}", "Returns to the game screen. Nothing is changed.", "back", "Back", () => { if (game == "t6") ShowT6(); else ShowGame(game, system, gameName); return Task.CompletedTask; }));
+        {
+            var folder = mod.Path;
+            var row = Card(mod.Name, $"{mod.Version}{(mod.Version.Length > 0 ? "  •  " : "")}{folder}", InstallerService.FormatSize(mod.Bytes), "Remove",
+                async () => { if (await Ask($"Remove {mod.Name} from {gameName}?\n\n{folder}")) service.RemoveModFolder(game, folder, Reporter()); },
+                false, () => ShowMods(game, system, gameName));
+            // Every mod gets both actions: see where it lives, or take it off.
+            row.Second.Visible = true;
+            row.Second.Text = "Open folder";
+            row.Second.BackColor = Surface1; row.Second.HoverColor = Surface2; row.Second.ForeColor = Ink;
+            row.Second.Click += (_, _) => service.OpenFolder(folder);
+            Tip(row.Second, folder);
+            rows.Add((row, mod.Name + " " + Path.GetFileName(folder)));
+            page.Controls.Add(row);
+        }
+
+        page.Controls.Add(Caption("THIS FOLDER"));
+        page.Controls.Add(Card("Add a mod", "Pick a .zip or a mod .ff/.iwd file to copy in here.", "", "Choose file", () => InstallModFromFile(game), false, () => ShowMods(game, system, gameName)));
+        page.Controls.Add(Card("Open in Explorer", service.ModsDir(game), "", "Open folder", () => { service.OpenFolder(service.ModsDir(game)); return Task.CompletedTask; }));
+        page.Controls.Add(Card("Back to installed mods", "The list of games.", "", "Back", () => { ShowAllMods(); return Task.CompletedTask; }));
     }
 
     // Run() already owns the busy flag, the error dialog and the page refresh - this only picks
@@ -873,6 +978,8 @@ internal sealed class MainForm : Form
         internal readonly Label Description = new();
         internal readonly Label Status = new();
         internal readonly RoundButton Button = new();
+        /// <summary>An optional extra action to the left of the main one - hidden unless a page asks for it.</summary>
+        internal readonly RoundButton Second = new() { Visible = false };
         internal Row()
         {
             Margin = new Padding(0, 0, 0, 8); Radius = 10; BackColor = Surface0; BorderColor = Surface0; HoverBorderColor = Surface0; HoverFill = Color.Empty;
@@ -880,9 +987,11 @@ internal sealed class MainForm : Form
             Description.AutoSize = false; Description.Font = F(9); Description.ForeColor = Subtext0; Description.BackColor = Surface0; Description.AutoEllipsis = true; Description.TextAlign = ContentAlignment.MiddleLeft; Description.UseMnemonic = false;
             Status.AutoSize = false; Status.Font = F(8.5f); Status.ForeColor = Overlay2; Status.BackColor = Surface0; Status.TextAlign = ContentAlignment.MiddleRight; Status.AutoEllipsis = true; Status.UseMnemonic = false;
             Button.Radius = 15; Button.Font = F(8.5f, true); Button.Cursor = Cursors.Hand;
-            Controls.Add(Title); Controls.Add(Description); Controls.Add(Status); Controls.Add(Button);
+            Second.Radius = 15; Second.Font = F(8.5f, true); Second.Cursor = Cursors.Hand; Second.TextAlign = ContentAlignment.MiddleCenter;
+            Controls.Add(Title); Controls.Add(Description); Controls.Add(Status); Controls.Add(Button); Controls.Add(Second);
             Status.TextChanged += (_, _) => LayoutRow();
             Button.TextChanged += (_, _) => LayoutRow();
+            Second.VisibleChanged += (_, _) => LayoutRow();
             Height = Dp(this, 68);
         }
         protected override void OnResize(EventArgs e) { base.OnResize(e); LayoutRow(); }
@@ -896,7 +1005,15 @@ internal sealed class MainForm : Form
             var buttonLeft = Width - pad - Button.Width;
             Button.Location = new Point(buttonLeft, (Height - Button.Height) / 2);
 
-            var statusRight = buttonLeft - gap;
+            var actionsLeft = buttonLeft;
+            if (Second.Visible)
+            {
+                Second.Size = new Size(Dp(this, 104), Dp(this, 30));
+                actionsLeft = buttonLeft - Dp(this, 8) - Second.Width;
+                Second.Location = new Point(actionsLeft, (Height - Second.Height) / 2);
+            }
+
+            var statusRight = actionsLeft - gap;
             var wanted = Status.Text.Length == 0 ? 0 : TextRenderer.MeasureText(Status.Text, Status.Font).Width + Dp(this, 4);
             var room = Math.Max(0, (statusRight - pad - Dp(this, 140)));
             var statusWidth = Math.Min(wanted, Math.Min(Dp(this, 210), room));

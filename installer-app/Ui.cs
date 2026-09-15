@@ -10,7 +10,19 @@ internal static class Ui
     // that survives the round trip instead of changing the user's registry.
     internal static readonly string Family = ResolveFamily();
 
-    internal static Font F(float size, bool bold = false) => new(Family, size, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Point);
+    // Fonts are immutable and a page of 80-odd rows asks for the same half-dozen over and over,
+    // so hand back one instance per size instead of a fresh GDI+ object each time.
+    private static readonly Dictionary<(float, bool), Font> Cache = [];
+
+    internal static Font F(float size, bool bold = false)
+    {
+        lock (Cache)
+        {
+            if (!Cache.TryGetValue((size, bold), out var font))
+                Cache[(size, bold)] = font = new Font(Family, size, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Point);
+            return font;
+        }
+    }
 
     // Every hand-placed bound goes through this, so the layout survives 125% and 150% displays.
     internal static int Dp(Control c, int value) => (int)Math.Round(value * c.DeviceDpi / 96.0);
