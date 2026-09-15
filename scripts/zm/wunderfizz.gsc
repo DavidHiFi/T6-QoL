@@ -857,16 +857,40 @@ setupWunderfizz()
     	//  makes the number above a ray height instead of a claim - see the flag's
     	//  note in zmqol_wf_place().
     	//
-    	//  ANGLE: flat. No pitch and no roll, whatever the wreck beside it is
-    	//  doing - the cars in this field sit at up to 99 degrees of roll and
-    	//  matching one would be the "weird angle" the user asked to avoid.
-    	//  Placement yaw 315 puts the machine's FRONT on yaw 225 (front =
-    	//  placement yaw - 90, the convention zmqol_wf_wall_snap documents),
-    	//  i.e. looking back south-west across the open field towards the
-    	//  Pack-a-Punch and the spawns, so a player meets its face and not its
-    	//  back. No snap_yaw: there is no wall within reach in an open field and
-    	//  the snap would log "found no wall" and change nothing.
-    	zmqol_wf_add((10550,-282,-216), (0,315,0), zmqol_wf_machine_model());
+    	//  🛑 ANGLE: SQUARE TO THE WORLD AXES. v2.16.10 first shipped placement
+    	//  yaw 315, which put the machine on a 45-degree diagonal. User,
+    	//  2026-09-15, with a screenshot: *"it's on an angle and it needs to be
+    	//  pushed over to the left a little bit ... make sure it's squared up and
+    	//  its back is to the cornfield, right now it's on an angle."*
+    	//
+    	//  Placement yaw 0 puts the machine's FRONT on yaw 270 - front =
+    	//  placement yaw - 90, the convention zmqol_wf_wall_snap documents - so
+    	//  it faces due south, down the field towards the Pack-a-Punch at
+    	//  (10460,-564) and the spawn cluster, with its BACK squarely into the
+    	//  corn to the north. A player walking up from the spawns meets its face.
+    	//
+    	//  Flat in the other two axes as well. The wrecks in this field sit at up
+    	//  to 99 degrees of roll and matching one would be the "weird angle" the
+    	//  user asked to avoid, so pitch and roll stay 0 whatever the bus beside
+    	//  it is doing.
+    	//
+    	//  MOVED 60 UNITS -X from (10550,-282), which is "left" for a player
+    	//  approaching from the spawns to the south and facing the machine. That
+    	//  also opens the gap to the microbus rather than closing it: the bus
+    	//  lies along yaw 138.9 from (10477.7,-364.5), so -X is away from its
+    	//  long axis, not into it.
+    	//
+    	//  No snap_yaw: there is no wall within reach in an open field and the
+    	//  snap would log "found no wall" and change nothing.
+    	//
+    	//  The three dvars are for live tuning only - set them before the map
+    	//  loads. They default to the shipped position, so a normal boot reads
+    	//  nothing.
+    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_cf_x", 10490 ),
+    	                getdvarintdefault( "zmqol_wf_cf_y", -282 ),
+    	                -216 ),
+    	              ( 0, getdvarintdefault( "zmqol_wf_cf_yaw", 0 ), 0 ),
+    	              zmqol_wf_machine_model() );
     	level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_floor = 1;
     	//  ====================================================================
     }

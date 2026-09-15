@@ -11,40 +11,38 @@ struct_init()
 	scripts\zm\replaced\utility::register_perk_struct("specialty_weapupgrade", "p6_anim_zm_buildable_pap_on", (10460, -564, -220), (0, -35, 0));
 
 	// ========================================================================
-	//  🛑 v2.16.10 - PERK MACHINES. Cornfield had NONE.
+	//  🛑 NO PERK MACHINES HERE, AND THAT IS CORRECT. DO NOT ADD THEM BACK.
 	//
-	//  Every other location this mod adds registers four to six perks here -
-	//  Tunnel six, Power six, Diner five, Docks three. Cornfield registered
-	//  Pack-a-Punch and stopped, so the arena shipped with no perks at all,
-	//  which is not a design choice anybody made: it is the same "registered but
-	//  never finished" gap as the missing box and the missing lobby caption.
-	//  Found by audit, 2026-09-15, after the user asked for "full integrity
-	//  checks ... because it's obviously not right".
+	//  v2.16.10 briefly registered Juggernog and Speed Cola at the positions the
+	//  stock mapents tags "znml_perks_cornfield". Both were WRONG and both are
+	//  reverted, in the same session they were added (user, 2026-09-15, with a
+	//  screenshot of the Speed Cola machine wedged between two wrecked cars:
+	//  *"you put this speed cola machine inside of this car here, it's all
+	//  bugged ... was that even in the reimagined mod to begin with?"*).
 	//
-	//  🌟 THESE ARE TREYARCH'S OWN CORNFIELD POSITIONS, NOT PICKED BY THIS MOD.
-	//  The stock TranZit mapents has a zm_perk_machine struct set tagged
-	//  script_string "znml_perks_cornfield" - the perks NML mode puts in this
-	//  field. Read out with the Unlinker, 2026-09-15:
-	//        zombie_vending_jugg     (10355.1, -1507.9, -213.3)  yaw 260.2
-	//        zombie_vending_sleight  ( 9944.8,  -121.7, -211.0)  yaw  21.8
-	//  Same geometry, same floor, authored by the people who built the field -
-	//  which is a stronger claim than any coordinate this mod could invent, and
-	//  the same reasoning the Origins branch of wunderfizz.gsc uses for taking
-	//  vanilla machine origins unmodified.
+	//  TWO SEPARATE FAULTS, BOTH WORTH RECORDING SO NOBODY REPEATS THEM:
 	//
-	//  Registered here rather than reused in place because that script_string
-	//  binds them to NML; a zstandard game never spawns them. register_perk_struct
-	//  is how every other location in this mod puts a machine down.
+	//  1. IT IS NOT IN THE SOURCE THIS LOCATION IS PORTED FROM. Checked against
+	//     Jbleezy/BO2-Reimagined master, 2026-09-15: their
+	//     scripts\zm\locs\zm_transit_loc_cornfield.gsc struct_init registers the
+	//     empty placeholder and Pack-a-Punch, and NOTHING else. Cornfield has no
+	//     perk machines in Reimagined. The "every other location registers four
+	//     to six" reasoning that added them was an argument from symmetry, not
+	//     evidence, and symmetry is not how this file's other positions were won.
 	//
-	//  📝 ONLY TWO, AND THAT IS THE HONEST NUMBER. Those are the only perk
-	//  machines the stock map places in this field. The rest of the mod's perk
-	//  list is still reachable here through the Wunderfizz that v2.16.10 adds
-	//  beside the microbus (scripts\zm\wunderfizz.gsc, the zm_transit branch) -
-	//  so the arena has Jugg, Speed Cola, Pack-a-Punch and a spinner for
-	//  everything else, rather than six positions this mod made up.
+	//  2. THE STOCK NML SPOT IS INSIDE THIS MOD'S OWN BARRIERS. Speed Cola's
+	//     znml position is (9944.8, -121.7, -211). init_barriers() below spawns
+	//     veh_t6_civ_microbus_dead at (9900, -232, -217) and a second
+	//     veh_t6_civ_smallwagon_dead at (9982, -142, -217) to wall off the west
+	//     exit - so the machine lands BETWEEN two cars that do not exist in NML,
+	//     which is why Treyarch's spot was clear and ours was not. Any future
+	//     placement in this arena has to be checked against init_barriers(), not
+	//     just against the stock mapents.
+	//
+	//  The perk list stays reachable through the Wunderfizz that v2.16.10 adds
+	//  (scripts\zm\wunderfizz.gsc, the zm_transit branch), which is how this
+	//  arena is meant to hand out perks.
 	// ========================================================================
-	scripts\zm\replaced\utility::register_perk_struct("specialty_armorvest", "zombie_vending_jugg", (10355.1, -1507.9, -213.3), (0, 260.2, 0));
-	scripts\zm\replaced\utility::register_perk_struct("specialty_fastreload", "zombie_vending_sleight", (9944.8, -121.7, -211), (0, 21.8, 0));
 
 	structs = getstructarray("player_respawn_point", "targetname");
 	respawn_point = undefined;
@@ -226,34 +224,51 @@ treasure_chest_init()
 // ============================================================================
 //  zmqol_cornfield_box_origin  -  where the box stands, floored by a trace.
 //
-//  WHERE: (10900, -150) by default, the open lane along the north of the field.
-//  Picked off the stock mapents rather than by eye:
-//    - nothing of any class is within 190 units of it, so it is not being put
-//      inside something that is already there;
-//    - a stock cornfield_standard_player_respawns struct sits 223 away and a
-//      zone_amb_cornfield_spawners riser_location 199 away, and BOTH are proof
-//      of walkable ground - players stand on one and zombies climb out of the
-//      other;
-//    - it is roughly mid-field between the Pack-a-Punch cluster in the west
-//      (10460,-564) and the open east half, so it is on the way rather than in
-//      a corner.
+//  WHERE: (13337, 72) - REIMAGINED'S OWN cornfield_chest, by the Nacht der
+//  Untoten building at the east end of the arena.
 //
-//  🛑 THE Z IS TRACED, NEVER WRITTEN DOWN. The cornfield floor is not flat and
-//  its pathnode grid sits ~120 units above the props where every other TranZit
-//  region has the usual ~30 (measured against the stock dump, 2026-09-15), so
-//  no hand-written height for this field is trustworthy. The ray starts 200
-//  above the seed and runs 400 down, which straddles every floor height the
-//  field's own props record (-131 at the east end to -218 at the west).
+//  🛑 THE FIRST ATTEMPT PUT IT AT (10900,-150) AND THAT WAS WRONG. User,
+//  2026-09-15, with a screenshot of the box standing in dense corn: *"the
+//  mystery box is in the middle of the field, make sure that the positions are
+//  correct and they're in the correct area"*, having asked for it *"in one of
+//  the pathways"*. That seed was chosen for being EMPTY in the stock mapents,
+//  which is not the same thing as being somewhere a player would walk - an
+//  uncut cornfield is empty of entities everywhere.
+//
+//  🌟 REIMAGINED ALREADY ANSWERED THIS AND THE ANSWER WAS FINDABLE. Their
+//  treasure_chest_init() is byte-identical to the one this file used to carry,
+//  including the getstruct( "cornfield_chest" ) that finds nothing - because
+//  THEY SHIP A MODIFIED MAP. Jbleezy/BO2-Reimagined master,
+//  maps\mp\zm_transit.d3dbsp line 26796, carries a treasure_chest_use struct
+//  script_noteworthy "cornfield_chest" at origin (13337, 72, -179) angles
+//  (0,180,0), plus its cornfield_chest_zbarrier twin at the same spot. That is
+//  the position the script this location was ported from was written against,
+//  and the reason the port looked complete while doing nothing.
+//
+//  🌟 THE STOCK MAP DATA AGREES IT IS REAL GROUND, which the old seed's did
+//  not. Within 130 units of it the stock mapents has a pathnode at z -167.8, a
+//  cornfield_standard_player_respawns initial_spawn at z -165.4 and a
+//  zone_cornfield_prototype_spawners riser_location at z -197.3 - so nodes sit
+//  the usual ~10-30 above the props here. Out in the open field they sat ~120
+//  above, which is the measurement that should have warned against (10900,-150)
+//  in the first place.
+//
+//  🛑 THE Z IS STILL TRACED, NOT COPIED. Reimagined's -179 floats in their own
+//  map - that is exactly why their _zm_reimagined::spawn_mystery_box_blocks_
+//  and_collision() stacks cinder blocks under this chest and the tunnel one.
+//  Tracing the floor puts the box ON the ground instead, so no blocks are
+//  needed (p6_anim_zm_magic_box measures z 0..19.2 - its underside IS its
+//  origin). The ray starts 200 above the seed and runs 400 down.
 //
 //  The three dvars are for live tuning only - set them before the map loads.
 //  They default to the shipped position, so a normal boot reads nothing.
 // ============================================================================
 zmqol_cornfield_box_origin()
 {
-	n_x = getdvarintdefault( "zmqol_cornfield_box_x", 10900 );
-	n_y = getdvarintdefault( "zmqol_cornfield_box_y", -150 );
+	n_x = getdvarintdefault( "zmqol_cornfield_box_x", 13337 );
+	n_y = getdvarintdefault( "zmqol_cornfield_box_y", 72 );
 
-	v_seed = ( n_x, n_y, -195 );
+	v_seed = ( n_x, n_y, -179 );
 
 	trace = bullettrace( v_seed + ( 0, 0, 200 ), v_seed - ( 0, 0, 200 ), 0, undefined );
 
@@ -283,7 +298,8 @@ zmqol_cornfield_box_origin()
 zmqol_cornfield_bring_chest_in()
 {
 	v_box = zmqol_cornfield_box_origin();
-	n_yaw = getdvarintdefault( "zmqol_cornfield_box_yaw", 90 );
+	//  180 is Reimagined's own angle for this chest, from the same struct.
+	n_yaw = getdvarintdefault( "zmqol_cornfield_box_yaw", 180 );
 
 	s_chest = undefined;
 
