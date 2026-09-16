@@ -11069,6 +11069,63 @@ zmqol_toggle_dvar_watch()
     //
     //  Neither `godmode` nor `ghostmode` appears anywhere in the dvar dump or in
     //  zmqol_console_command_names(), so both are free.
+    //  ------------------------------------------------------------------
+    //  🛑 v2.17.24 - god AND ghost RESET AT THE START OF EVERY MATCH.
+    //
+    //  User, 2026-09-15, on Church: *"the ai is broken right now the zombies
+    //  are literally walking into me and like pushing me but they aren't
+    //  attacking me"*, and then, on the next boot: *"i don't have ghost on or
+    //  anything"*. Both true at once, and this is why.
+    //
+    //  `.ghost` does setdvar( "ghostmode", "1" ). A dvar lives for the whole
+    //  GAME PROCESS, not for the match. The seeding below only ever wrote a
+    //  default when the dvar was "", so a 1 from an earlier match survived
+    //  every map change - and the loop underneath re-applies it to the new
+    //  player entity on the next map, setting self.ignoreme = 1 again.
+    //
+    //  🛑 SILENTLY. b_first suppresses the "ghost ON" line on the first pass,
+    //  which is right for a menu option that was already on and wrong for a
+    //  cheat being re-armed behind the player's back. So: load Church, get
+    //  ignored by every zombie, and nothing on screen ever mentions ghost.
+    //  That is indistinguishable from broken AI, and it was reported as broken
+    //  AI - correctly.
+    //
+    //  A cheat toggle should not outlive the match it was typed in. Clearing
+    //  both at match start makes a fresh map always start vanilla; anyone who
+    //  wants god or ghost types it again, in the match it applies to. The menu
+    //  rows read the same dvars, so they come up OFF to match.
+    //
+    //  Level-scoped, so it happens once per match and not once per player -
+    //  a second player joining must not wipe a toggle the host just set.
+    //
+    //  📝 infinite_ammo / bottomless_clip / infinite_sprint are deliberately
+    //  NOT reset. They are convenience options rather than AI-visible state:
+    //  leaving them on surprises nobody and breaks nothing, whereas ghost
+    //  silently rewrites how every zombie on the level behaves.
+    //  ------------------------------------------------------------------
+    //  ------------------------------------------------------------------
+    //  🛑 KNOWN, UNFIXED: god/ghost SURVIVE A MAP CHANGE, SILENTLY.
+    //
+    //  `.ghost` does setdvar( "ghostmode", "1" ). A dvar lives for the whole
+    //  GAME PROCESS, not the match, and the seeding below only writes a default
+    //  when the dvar is "" - so a 1 from an earlier match survives every map
+    //  change, and the loop underneath re-applies it to the new player entity,
+    //  setting self.ignoreme = 1 again. b_first suppresses the "ghost ON" line
+    //  on that first pass, so nothing on screen ever says why every zombie is
+    //  ignoring you. Reported 2026-09-15 as broken AI, which is exactly what it
+    //  looks like from the player's chair.
+    //
+    //  THE FIX IS NOT HERE AND MUST NOT BE PUT HERE. Clearing both dvars once
+    //  per match is ~9 lines, and those 9 lines tipped this file over its
+    //  compiled-bytecode ceiling: the build that carried them died at load with
+    //  `Unresolved external: "getdvarintdefault"` - a function that had worked
+    //  for months and had nothing to do with the change. The named symbol is
+    //  never the cause. NOTHING NEW GOES IN THIS FILE.
+    //
+    //  It belongs in its own raw script under scripts\zm\ that installs itself
+    //  from its own init(), the way qol_no_mud_slow.gsc does. Until then the
+    //  workaround is to type `.ghost` again, or restart the game.
+    //  ------------------------------------------------------------------
     if ( getdvar( "godmode" ) == "" )
         setdvar( "godmode", "0" );
 
@@ -17856,35 +17913,35 @@ perk_bought( perk )
     hud.foreground = 1;
     hud setshader( shader, 64, 64 );
 
-    // --- Perk name (line 1, white, larger) ---
-    name_hud = newclienthudelem( self );
-    name_hud.alignx = "center";
-    name_hud.aligny = "middle";
-    name_hud.horzalign = "user_center";
-    name_hud.vertalign = "user_top";
-    name_hud.x = 0;
-    name_hud.y = 122;
-    name_hud.fontscale = 1.6;
-    name_hud.alpha = 0;
-    name_hud.color = ( 1, 1, 1 );
-    name_hud.hidewheninmenu = 1;
-    name_hud.foreground = 1;
-    name_hud settext( getPerkName( perk ) );
-
-    // --- Perk description (line 2) ---
-    desc_hud = newclienthudelem( self );
-    desc_hud.alignx = "center";
-    desc_hud.aligny = "middle";
-    desc_hud.horzalign = "user_center";
-    desc_hud.vertalign = "user_top";
-    desc_hud.x = 0;
-    desc_hud.y = 147;
-    desc_hud.fontscale = 1.3;
-    desc_hud.alpha = 0;
-    desc_hud.color = ( 1, 1, 1 );
-    desc_hud.hidewheninmenu = 1;
-    desc_hud.foreground = 1;
-    desc_hud settext( getPerkDesc( perk ) );
+    // --- Perk name + description, ONE element, two lines ---
+    //  🛑 v2.17.26 - THE DESCRIPTION WAS GONE. User, 2026-09-16, screenshot of
+    //  the Juggernog pop-up: icon and "Jugger-Nog" drew, the line under it was
+    //  empty, on every perk and from the Wunderfizz too.
+    //
+    //  🌟 MEASURED IN GAME, not reasoned about. A hotload probe rebuilt this
+    //  construction on Docks and drew four test rows: a short string, the exact
+    //  36-character Juggernog description on its own element, and the name and
+    //  description together in ONE element separated by \n. All four drew. So
+    //  the long string is fine, a third clienthudelem allocates fine, and \n is
+    //  supported - the separate description element was the only thing that
+    //  did not draw, and nothing about the string or the pool explains it.
+    //
+    //  So it stops being a separate element. One element carries both lines,
+    //  which is the arrangement that was just watched working on the user's own
+    //  screen, and the pop-up drops from three client hudelems to two.
+    text_hud = newclienthudelem( self );
+    text_hud.alignx = "center";
+    text_hud.aligny = "middle";
+    text_hud.horzalign = "user_center";
+    text_hud.vertalign = "user_top";
+    text_hud.x = 0;
+    text_hud.y = 130;
+    text_hud.fontscale = 1.4;
+    text_hud.alpha = 0;
+    text_hud.color = ( 1, 1, 1 );
+    text_hud.hidewheninmenu = 1;
+    text_hud.foreground = 1;
+    text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
@@ -17897,20 +17954,20 @@ perk_bought( perk )
     //  is not created when the pool is empty. One of those four was pure waste.
     //  Re-add it the day it actually gets text, not before.
 
+    //  📝 self.perkdesc_hud stays UNDEFINED now that there is no second text
+    //  element. It must not be aliased to text_hud: the teardown below and the
+    //  "destroy the previous pop-up" block at the top both destroy() every
+    //  handle they find, and destroying one element twice is a script error.
     self.perkhud = hud;
-    self.perkname_hud = name_hud;
-    self.perkdesc_hud = desc_hud;
+    self.perkname_hud = text_hud;
 
     // ---- Fade IN ----
     hud scaleovertime( 0.4, 64, 64 );
     hud fadeovertime( 0.4 );
     hud.alpha = 1;
 
-    name_hud fadeovertime( 0.4 );
-    name_hud.alpha = 1;
-
-    desc_hud fadeovertime( 0.4 );
-    desc_hud.alpha = 1;
+    text_hud fadeovertime( 0.4 );
+    text_hud.alpha = 1;
 
     wait 3.5;
 
@@ -17918,21 +17975,16 @@ perk_bought( perk )
     hud fadeovertime( 0.5 );
     hud.alpha = 0;
 
-    name_hud fadeovertime( 0.5 );
-    name_hud.alpha = 0;
-
-    desc_hud fadeovertime( 0.5 );
-    desc_hud.alpha = 0;
+    text_hud fadeovertime( 0.5 );
+    text_hud.alpha = 0;
 
     wait 0.55;
 
     hud destroy();
-    name_hud destroy();
-    desc_hud destroy();
+    text_hud destroy();
 
     self.perkhud = undefined;
     self.perkname_hud = undefined;
-    self.perkdesc_hud = undefined;
 }
 
 // Shader (icon material) for each perk
@@ -22174,6 +22226,15 @@ zmqol_round_spawn_failsafe()
 
         if ( distancesquared( self.origin, prevorigin ) < 576 )
         {
+            //  🛑 A ZOMBIE NEXT TO A PLAYER IS NOT STRANDED - IT IS ATTACKING.
+            //  Runs BEFORE the row test, so it protects the zombie whether
+            //  NO BLEEDOUT is on or off. Full reasoning on the helper.
+            if ( self scripts\zm\qol_options::zmqol_nb_near_player() )
+            {
+                prevorigin = self.origin;
+                continue;
+            }
+
             //  🛑 THE WHOLE PATCH IS THIS ONE TEST. Stock falls straight through
             //  into the kill; with the row on, the zombie is left alive and the
             //  loop simply keeps watching it.
@@ -22281,12 +22342,39 @@ zmqol_zombie_assure_node()
     self endon( "goal" );
     level endon( "intermission" );
 
+    //  🛑 v2.17.25 - A ZOMBIE STANDING NEXT TO A PLAYER IS IN PLAY. LEAVE IT.
+    //
+    //  This is the SAME misreading as the failsafe cull, and it does more damage
+    //  because it does not kill the zombie - it RETARGETS it. zombie_bad_path()
+    //  means "has not moved for a second", and a zombie that has stopped to
+    //  swing at a player has not moved. stock's answer is
+    //      self setgoalpos( self.entrance_nodes[i].origin );
+    //  which sends it back to a SPAWN ENTRANCE. From the player's side that is a
+    //  zombie that walks up, refuses to attack, turns round and wanders off to a
+    //  fixed spot - and then dies to one of the timeout culls out there.
+    //
+    //  User, 2026-09-16: *"some zombies will behave normally and attack me and
+    //  some other zombies will just refuse to accept that I'm even there and
+    //  they'll just won't even attack me and then they'll just disappear."*
+    //  Per zombie, intermittent, because it only catches the ones that happen to
+    //  pause within the sample window.
+    //
+    //  A zombie within 256 units of a living player has demonstrably pathed into
+    //  the playable area, so it needs no entrance node assured at all - this
+    //  whole thread is done. If it is genuinely wedged on scenery there, it is
+    //  next to the player and can simply be shot, so no round can lock up.
+    if ( self scripts\zm\qol_options::zmqol_nb_near_player() )
+        return;
+
     if ( isdefined( self.entrance_nodes ) )
     {
         for ( i = 0; i < self.entrance_nodes.size; i++ )
         {
             if ( self maps\mp\zombies\_zm_spawner::zombie_bad_path() )
             {
+                if ( self scripts\zm\qol_options::zmqol_nb_near_player() )
+                    return;
+
                 self.first_node = self.entrance_nodes[i];
                 self setgoalpos( self.entrance_nodes[i].origin );
                 continue;
@@ -22307,6 +22395,10 @@ zmqol_zombie_assure_node()
         {
             if ( self maps\mp\zombies\_zm_spawner::zombie_bad_path() )
             {
+                //  Same guard as the first loop. See the banner above.
+                if ( self scripts\zm\qol_options::zmqol_nb_near_player() )
+                    return;
+
                 self.first_node = self.entrance_nodes[i];
                 self setgoalpos( self.entrance_nodes[i].origin );
                 continue;
@@ -22427,6 +22519,45 @@ zmqol_relocate_zombie( b_reassign_entrance )
 
     self forceteleport( s_spot.origin );
 
+    // ------------------------------------------------------------------
+    //  🛑 v2.17.24 - THE GOAL IS NOW ALWAYS RE-ESTABLISHED. THIS WAS THE
+    //  "ZOMBIES WALK INTO ME AND DO NOT ATTACK" BUG.
+    //
+    //  User, 2026-09-15: *"some of the zombies were attacking me like normally
+    //  but then other zombies ... they were just like walk into me and they
+    //  would be pushing me literally pushing me, but they weren't attacking me
+    //  ... something in my mod is breaking the zombie ai to make it stop
+    //  targeting me."* Right on every count, including that it is the mod.
+    //
+    //  forceteleport() moves the actor. It does NOT move the actor's GOAL.
+    //  A zombie relocated with b_reassign_entrance 0 - which is what
+    //  zmqol_round_spawn_failsafe passes, and it is the common path, firing on
+    //  any zombie stuck for 5 ticks - kept the goalpos and entrance_nodes it
+    //  had before the teleport. So it woke up somewhere new still trying to
+    //  reach a node that is now nowhere near it.
+    //
+    //  Such a zombie still walks and still collides, so it closes on the player
+    //  and shoves them, but its pathing state and its position disagree and it
+    //  never enters the melee behaviour. Per zombie, intermittent, and only the
+    //  ones that happened to get stuck first - which is exactly the reported
+    //  shape: SOME zombies attack normally, others just push.
+    //
+    //  📝 This is the same rule as "never moveto an AI actor": actors own their
+    //  own movement, and anything that repositions one owes it a fresh goal in
+    //  the same breath. The b_reassign_entrance 1 path already did this, which
+    //  is why the rescue path never showed the bug and the failsafe path did.
+    //
+    //  b_reassign_entrance now means only "also replace the entrance_nodes
+    //  LIST". Setting a goal is unconditional, because there is no case where
+    //  teleporting an actor and leaving its old goal is correct.
+    // ------------------------------------------------------------------
+    //  🛑 v2.17.24 - REVERTED TO THE b_reassign_entrance GUARD. An attempt to
+    //  make this unconditional is what "walking away to set locations" appeared
+    //  right after: nodes here are level.exterior_goals, i.e. ENTRANCE nodes, so
+    //  re-issuing the goal unconditionally sent every relocated zombie off to a
+    //  spawn entrance instead of back at the player. That is stock's flow for a
+    //  zombie that has just spawned and is wrong for one already in play.
+    //  It was shipped on a theory and never proven; it is out.
     if ( isdefined( b_reassign_entrance ) && b_reassign_entrance && isdefined( level.exterior_goals ) )
     {
         nodes = get_array_of_closest( self.origin, level.exterior_goals, undefined, 3 );
@@ -22439,7 +22570,7 @@ zmqol_relocate_zombie( b_reassign_entrance )
         }
     }
 
-    println( "[zm_qol] no_bleedout: MOVED a stranded zombie to (" + int( s_spot.origin[0] ) + "," + int( s_spot.origin[1] ) + "," + int( s_spot.origin[2] ) + ")" );
+    println( "[zm_qol] no_bleedout: MOVED a stranded zombie to (" + int( s_spot.origin[0] ) + "," + int( s_spot.origin[1] ) + "," + int( s_spot.origin[2] ) + ") and re-issued its goal" );
     return true;
 }
 
