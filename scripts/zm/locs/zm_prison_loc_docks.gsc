@@ -145,6 +145,70 @@ main()
 	scripts\zm\locs\loc_common::increase_pap_collision();
 	level thread scripts\zm\locs\loc_common::init();
 	level thread maps\mp\zm_alcatraz_traps::init_tower_trap_trigs();
+	level thread report_docks_state();
+}
+
+// ============================================================================
+//  report_docks_state  -  three lines, print-only, no entities touched.
+//
+//  Each one is the load-time evidence for a v2.17.9 fix, so a log tail says
+//  whether the build in front of you has them without needing a playthrough:
+//
+//    pap zone     registered=1 is what the "death barrier" fix buys. Before it,
+//                 nothing ever called zone_init("zone_dock_puzzle"), so the zone
+//                 did not exist, its player_volume counted for nothing and
+//                 _zm.gsc's out-of-area monitor killed anyone through the gate.
+//                 enabled=0 here is CORRECT - it opens on the 2000 purchase.
+//    shock box    loaded=0 means the run skipped the classic-only
+//                 p6_zm_al_shock_box_on, i.e. no black placeholder props.
+//    (the Wunderfizz line is printed by zmqol_wf_place() itself.)
+// ============================================================================
+report_docks_state()
+{
+	//  🛑 THREADED WITH A BOUNDED WAIT, because this runs at map-load time and
+	//  the answer is only meaningful after the zone manager has built the zones.
+	//  manage_zones() is threaded from maps\mp\zm_prison::main() and calls
+	//  working_zone_init() before its first wait, but nothing guarantees that
+	//  lands before this location's main() - and a report that prints 0 because
+	//  it asked too early is worse than no report. Five seconds is far longer
+	//  than it has ever taken; the same shape as the waits in wunderfizz.gsc.
+	n_wait = 0;
+
+	while ( n_wait < 100 )
+	{
+		if ( isdefined( level.zones ) && isdefined( level.zones[ "zone_dock" ] ) )
+		{
+			break;
+		}
+
+		wait 0.05;
+		n_wait++;
+	}
+
+	//  📝 No ternaries anywhere in this file - T6 GSC has no ?: operator.
+	n_registered = 0;
+	n_enabled = 0;
+	n_box = 0;
+
+	if ( isdefined( level.zones ) && isdefined( level.zones[ "zone_dock_puzzle" ] ) )
+	{
+		n_registered = 1;
+
+		if ( zone_is_enabled( "zone_dock_puzzle" ) )
+		{
+			n_enabled = 1;
+		}
+	}
+
+	if ( zmqol_docks_shockbox_on_loaded() )
+	{
+		n_box = 1;
+	}
+
+	println( "[zm_qol] docks: pap zone_dock_puzzle registered=" + n_registered +
+	         " enabled=" + n_enabled + " (enabled turns 1 when the 2000 gate is bought)" );
+	println( "[zm_qol] docks: shock_box_on loaded=" + n_box +
+	         " - 0 keeps the map's own _off boxes instead of the black placeholder" );
 }
 
 //  📝 The v1.12.x zmqol_docks_probe() diagnostic that used to sit here was
@@ -335,6 +399,36 @@ turn_afterlife_interacts_on()
 
 	m_docks_shockbox = getent("docks_panel", "targetname");
 	m_docks_shockbox turn_afterlife_interact_on();
+
+	//  Read the models BACK off the entities rather than reporting what this
+	//  function meant to do. The engine draws whatever setmodel() last set, so
+	//  "_off" on every line is the direct evidence that no classic-only
+	//  placeholder can be on screen - which is the whole of the black-box fix.
+	//  Three boxes, all in the Docks arena: Juggernog (472, 6596, 208), the
+	//  three-gun one (-637, 6931, 65) and the panel by the 2000 gate
+	//  (-1476, 5345, -72).
+	foreach (model in a_afterlife_interact)
+	{
+		if (!isdefined(model))
+		{
+			continue;
+		}
+
+		//  Only the two this function actually switched. getentarray picks up all
+		//  18 afterlife_interact props on the map, most of them up at the
+		//  cellblock end and none of this location's business.
+		if (model.script_string != "juggernog_on" && model.script_string != "additionalprimaryweapon_on")
+		{
+			continue;
+		}
+
+		println("[zm_qol] docks: shock box '" + model.script_string + "' model=" + model.model);
+	}
+
+	if (isdefined(m_docks_shockbox))
+	{
+		println("[zm_qol] docks: shock box 'docks_panel' model=" + m_docks_shockbox.model);
+	}
 }
 
 // ============================================================================
@@ -503,6 +597,21 @@ open_custom_door_master_key(n_door_index, e_triggerer)
 	m_gate_01 playsound("zmb_chainlink_open");
 	flag_set("docks_inner_gate_unlocked");
 	flag_set("docks_inner_gate_open");
+
+	//  The other half of report_docks_state(): "docks_inner_gate_unlocked" is the
+	//  flag the restored zone edge waits on, and zone_flag_wait() enables the
+	//  zone on the next pass, so give it one frame before reading it back.
+	//  enabled=1 here is the proof that the Pack-a-Punch side is now playable
+	//  area; enabled=0 would mean the out-of-area kill is still armed.
+	wait 0.05;
+	n_enabled = 0;
+
+	if ( isdefined( level.zones ) && isdefined( level.zones[ "zone_dock_puzzle" ] ) && zone_is_enabled( "zone_dock_puzzle" ) )
+	{
+		n_enabled = 1;
+	}
+
+	println( "[zm_qol] docks: 2000 gate bought - zone_dock_puzzle enabled=" + n_enabled );
 }
 
 door_rumble_on_open()
