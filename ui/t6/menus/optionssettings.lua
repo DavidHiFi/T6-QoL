@@ -2283,7 +2283,7 @@ end
 --  from the user's own overflow screenshots. A 16th row on either one is the
 --  reported bug, not a risk of it.
 --
---  📝 ROOM LEFT: 12 more rows (v2.14.28) before this tab reaches the same ceiling. When
+--  📝 ROOM LEFT: 10 more rows (v2.15.53) before this tab reaches the same ceiling. When
 --  the next option needs a home, it belongs here rather than on GAME 1 or 2.
 --
 --  📝 The label reads NO DENIZENS rather than DENIZENS so that ENABLED is the
@@ -2336,7 +2336,18 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 
-	return QolGame3Container                          -- 4 rows + 0 spacers = 4.0
+	-- Moved from the pre-game lobby. Keep this as a direct dvar selector so it
+	-- controls the same server setting without archiving a per-match state.
+	local CheatsSelector = QolGame3Buttons:addDvarLeftRightSelector(
+		LocalClientIndex,
+		Engine.Localize("CHEATS"),
+		"sv_cheats",
+		Engine.Localize("Enable cheats on server.")
+	)
+	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
+	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
+
+	return QolGame3Container                          -- 5 rows + 0 spacers = 5.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
