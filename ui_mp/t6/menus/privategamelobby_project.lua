@@ -205,6 +205,12 @@ if CoD.MapInfoImage ~= nil and CoD.MapInfoImage.ZombieUpdate ~= nil and CoD.MapI
 		--  v2.17.0 - Maze (Buried). Buried's only stock survival row is
 		--  street/Borough, so maze needs this line for the same reason.
 		maze           = "MAZE",
+		--  v2.17.4 - the last four. Stock's gametypestable.csv has no survival
+		--  row for Origins at all, and none for Mob's docks.
+		trenches        = "TRENCHES",
+		excavation_site = "EXCAVATION SITE",
+		church          = "CHURCH",
+		docks           = "DOCKS",
 	}
 
 	CoD.MapInfoImage.ZombieUpdate = function (Widget, MapName, GameType)

@@ -464,6 +464,15 @@ main()
 	level thread pap_fx();
 	level thread set_ee_ending();
 	level thread scripts\zm\locs\loc_common::init();
+	//  v2.17.9 - the robots and the prone guarantee, for consistency with the
+	//  other three Origins arenas. The Crazy Place is a sealed chamber so the
+	//  robots were never visible here, but the allowprone( 0 ) they own could
+	//  still reach a player, and the removal is harmless either way.
+	level thread scripts\zm\locs\loc_common::disable_giant_robots();
+	level thread scripts\zm\locs\loc_common::force_prone_allowed();
+	//  No challenge slab is inside the sealed chamber, so this is a no-op here -
+	//  called for consistency with the other three Origins arenas.
+	level thread scripts\zm\locs\loc_common::remove_challenge_boxes();
 }
 
 // ============================================================================

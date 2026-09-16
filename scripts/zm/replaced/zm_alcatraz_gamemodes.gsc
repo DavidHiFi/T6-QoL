@@ -31,6 +31,36 @@ init()
 	add_map_location_gamemode("zstandard", "cellblock", maps\mp\zm_alcatraz_grief_cellblock::precache, maps\mp\zm_alcatraz_grief_cellblock::main);
 
 	add_map_location_gamemode("zgrief", "cellblock", maps\mp\zm_alcatraz_grief_cellblock::precache, maps\mp\zm_alcatraz_grief_cellblock::main);
+
+	// ========================================================================
+	//  v2.17.4 - THE DOCKS (Mob of the Dead survival), restored.
+	//
+	//  Cut in v1.15.0 with the other ported locations; the loc script stayed in
+	//  scripts\zm\locs\ and already carries its zm_qol adaptation - populated
+	//  precache list, and the character fix noted in its own header (the MotD
+	//  grief models a zstandard run never loads are no longer set, which is what
+	//  the old invisibility bug was).
+	//
+	//  Its struct_init registers Juggernog, Electric Cherry and Pack-a-Punch
+	//  from script, and the loc script itself disables the gondola call
+	//  triggers, the craftable (plane-part) triggers and the afterlife props,
+	//  then inits Brutus properly for a non-classic run.
+	//
+	//  🌟 THE ESCAPE QUEST CANNOT FIRE HERE. Unlike Origins and Buried, MotD's
+	//  sidequest is not gated by is_sidequest_allowed() at all - it is threaded
+	//  from zm_alcatraz_classic.gsc:59, and a survival location runs
+	//  zm_prison_loc_docks::main instead, so start_alcatraz_sidequest() is never
+	//  reached. Structural, not a flag.
+	//
+	//  The dock_chest struct and its zbarrier are both stock and ungated:
+	//  script_gameobjectname does not appear ANYWHERE in zm_prison's mapents
+	//  (0 occurrences), so the Maze box failure cannot happen on this map.
+	// ========================================================================
+	add_map_location_gamemode("zstandard", "docks", scripts\zm\locs\zm_prison_loc_docks::precache, scripts\zm\locs\zm_prison_loc_docks::main);
+	add_map_location_gamemode("zgrief", "docks", scripts\zm\locs\zm_prison_loc_docks::precache, scripts\zm\locs\zm_prison_loc_docks::main);
+
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "docks", scripts\zm\locs\zm_prison_loc_docks::struct_init);
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "docks", scripts\zm\locs\zm_prison_loc_docks::struct_init);
 }
 
 // ============================================================================

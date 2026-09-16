@@ -164,6 +164,16 @@ main()
     replaceFunc( maps\mp\zm_tomb_capture_zones::pack_a_punch_init,          scripts\zm\replaced\zm_tomb_capture_zones::pack_a_punch_init );
     replaceFunc( maps\mp\zm_tomb_capture_zones::recapture_round_tracker,    scripts\zm\replaced\zm_tomb_capture_zones::recapture_round_tracker );
     replaceFunc( maps\mp\zm_tomb_capture_zones::all_zones_captured_vo,      scripts\zm\replaced\zm_tomb_capture_zones::all_zones_captured_vo );
+    //  ⭐ v2.17.29 - THE SIXTH, AND THE ONE THAT WAS BREAKING ZOMBIE AI ON
+    //  EVERY ORIGINS SURVIVAL ARENA. Stock's loop notifies "stop_find_flesh"
+    //  and never restarts find_flesh, which permanently leaves the zombie with
+    //  ignoreme = 1 - it walks and shoves but can never swing again. Correct on
+    //  classic Origins (the zombie was sent to smash a generator); meaningless
+    //  and destructive on an arena with no generator to capture. Measured: a
+    //  working zombie reads ignoreme=0, a broken one ignoreme=1, and
+    //  _zm_ai_basic::find_flesh():24 is the only thing in the tree that clears
+    //  it. Full reasoning on the replacement.
+    replaceFunc( maps\mp\zm_tomb_capture_zones::capture_zombies_only_attack_nearby_players, scripts\zm\replaced\zm_tomb_capture_zones::capture_zombies_only_attack_nearby_players );
 
     // ========================================================================
     //  ORIGINS SURVIVAL - the four chamber walls rise instead of snapping.
@@ -343,9 +353,32 @@ zmqol_register_survival_clientfields()
 //  because main() runs before _zm::main() assigns that - the same reason
 //  loc_common::wallbuy_match_string() reads the dvars.
 // ============================================================================
+//  🛑 v2.17.6 - THIS IS A LIST NOW, AND IT MUST STAY ONE.
+//
+//  It was `== "crazy_place"` and that was correct while Crazy Place was the only
+//  Origins arena registering machines. v2.17.4 registered Church, Trenches and
+//  Excavation Site, whose struct_inits register 1, 4 and 3 machines - and the
+//  very next boot died:
+//
+//      SV_Shutdown: Attempt to register ClientField electric_cherry_reload_fx
+//      failed. Client Field set 'allplayers' either already contains a field
+//      called electric_cherry_reload_fx, or a hash collision has occurred.
+//
+//  Exactly the failure the banner above predicts: with machines present
+//  _zm_perks::init() runs its custom-perk loop and registers that field itself,
+//  so this file's mirror becomes the duplicate. MOD_CATALOGUE.md §37e named
+//  this trap in advance and the test to revisit - "did we add perk machines to
+//  a loc script?" - and it got missed anyway.
+//
+//  🌟 SO IT IS NO LONGER A JUDGEMENT CALL. tools\check-perk-guard.ps1 now reads
+//  every loc script's struct_init for register_perk_struct calls and fails the
+//  build if a location that registers machines is absent from the list below.
+//  Add a machine anywhere and the build tells you to come here.
 zmqol_loc_spawns_perk_machines()
 {
-    return getdvar( "ui_zm_mapstartlocation" ) == "crazy_place";
+    str_loc = getdvar( "ui_zm_mapstartlocation" );
+
+    return str_loc == "crazy_place" || str_loc == "church" || str_loc == "trenches" || str_loc == "excavation_site";
 }
 
 // ============================================================================
@@ -445,7 +478,8 @@ init()
     level thread zmqol_no_power_tomb_extras();
     level thread zmqol_disable_staff_relay_switches();
     level thread zmqol_remove_survival_ee_props();
-    level thread zmqol_open_stock_barriers();
+    level thread zmqol_disable_survival_barriers();
+    zmqol_include_carpenter();
     level thread zmqol_wunderfizz_all_perks();
     added_weapons();
 
@@ -1429,96 +1463,116 @@ zmqol_remove_survival_ee_props()
 }
 
 // ============================================================================
-//  zmqol_open_stock_barriers
+//  ⭐ CARPENTER ON ORIGINS. Stock zm_tomb::include_powerups() registers nine
+//  power-ups and Carpenter is not among them, so ".carpenter" answered "no
+//  power-up carpenter on this map" and dropped nothing.
 //
-//  🛑 Zombies walk through Origins' wooden window barriers WITHOUT tearing the
-//  boards. Reported at generator 3 on Trenches, 2026-08-02.
+//  User, 2026-09-16: *"bring back carpenter, of course, because carpenter is
+//  meant to be on Origins."*
 //
-//  ROOT CAUSE - Origins is the only map that never zone-tags its zbarriers.
+//  🛑 CLASSIC ORIGINS ONLY, and that is now settled rather than guessed.
+//  User, 2026-09-16: *"disable carpenter on all these survival maps ... make
+//  sure that the actual Origins map has the power-up because that works fine."*
+//  The survival arenas have no barriers any more - see
+//  zmqol_disable_survival_barriers() in this file - so Carpenter would have
+//  nothing to repair there and the drop would be a dud pickup.
 //
-//  maps\mp\zombies\_zm_zonemgr.gsc:317 only adds a barrier to a zone:
-//        if ( targets[j] iszbarrier() && isdefined( targets[j].script_string )
-//             && targets[j].script_string == zone_name )
-//            zone.zbarriers[zone.zbarriers.size] = targets[j];
+//  📝 BO2-Reimagined, the port source for these arenas, never registers
+//  Carpenter on zm_tomb in any mode. Survival now matches it; classic keeps
+//  zm_qol's addition.
 //
-//  Counted over the shipped mapents (T6-Data-Archive):
-//        zm_transit   38 of 38 zbarriers carry script_string
-//        zm_prison    22 of 22
-//        zm_tomb       0 of 12          <-- every one of them untagged
-//
-//  So on Origins `zone.zbarriers` is empty for EVERY zone, forever. Three
-//  consequences, and the third is the bug:
-//    1. maps\mp\zm_tomb.gsc::drop_all_barriers() iterates zone.zbarriers, so on
-//       this map it is a COMPLETE NO-OP. Treyarch clearly meant every barrier to
-//       be open - Origins has no board-repair minigame - but the code never
-//       reaches a single one, which is why the boards are still standing.
-//    2. The barrier attack/repair system never engages with them either, so no
-//       zombie ever plays a tear animation on one.
-//    3. Each barrier ships with a node_negotiation_begin entity at the SAME
-//       origin carrying animscript "zm_mantle_over_40" - an ordinary path node,
-//       always live, owned by nobody. Zombies mantle straight through six intact
-//       boards. Verified on the one 394 units from generator_mid_trench:
-//         (696, 1985, -97)  zbarrier_zmcore_BasicWoodBarrier, zbarriernumboards 6
-//
-//  THE FIX - finish what drop_all_barriers() was trying to do.
-//
-//  Same two calls stock uses, same 0.05s pacing, but the barriers are reached via
-//  the "exterior_goal" structs (which DO target them correctly) instead of the
-//  permanently-empty zone arrays. The window then reads as an open hole, matching
-//  both Treyarch's evident intent and what the zombies actually do.
-//
-//  is_classic() gated, so classic Origins is untouched - and note this changes
-//  nothing there anyway, since stock already intends all barriers open.
-//
-//  🛑 THE OTHER OPTION, NOT TAKEN. The barriers could instead be made REAL on
-//  survival - assign each one a script_string naming the zone it sits in, before
-//  _zm_zonemgr builds its arrays, and Origins survival would get Town/Farm-style
-//  boards that zombies tear and players rebuild for points. That is a bigger
-//  change: zone membership has to be resolved at runtime by volume containment
-//  (the volumes are brush models, so it cannot be tabulated offline), barriers sit
-//  on zone boundaries where containment is ambiguous, and registering them alters
-//  zombie spawn/goal selection on all four arenas. Worth doing deliberately, not
-//  as a side effect of a bug fix.
-//
-//  🛑 NOT verified in game yet.
+//  include_powerup() only writes level.zombie_include_powerups[name]; the drop
+//  table is built later by _zm_powerups::init() from that array. main() runs
+//  before the map threads its native code, which is well before that, so this
+//  lands in time - the same ordering the replaceFuncs above rely on.
 // ============================================================================
-zmqol_open_stock_barriers()
+zmqol_include_carpenter()
 {
-    if ( is_classic() )
-        return;
+    // ------------------------------------------------------------------------
+    //  🛑 KEEP THIS REGISTRATION UNCONDITIONAL - IT RUNS INSIDE THE PRECACHE
+    //  WINDOW AND add_zombie_powerup() WRITES THE POWERUP TABLE.
+    //
+    //  Carpenter is kept OFF the survival arenas in
+    //  zmqol_should_drop_carpenter() instead. That is pure script: it decides
+    //  whether the powerup may appear in the random drop pool and touches no
+    //  registration, no precache and no clientfield, so survival and classic
+    //  still register byte-identical tables. A mode-dependent registration here
+    //  would not, and there is no reason to find out the hard way.
+    // ------------------------------------------------------------------------
 
-    flag_wait( "start_zombie_round_logic" );
-    wait_network_frame();
-
-    a_goals = getstructarray( "exterior_goal", "targetname" );
-    n_opened = 0;
-
-    foreach ( s_goal in a_goals )
+    // ------------------------------------------------------------------------
+    //  🛑 THE INCLUDE IS NOT ENOUGH, AND ROOT INIT WAS NOT EARLY ENOUGH EITHER.
+    //  Both were tried and both measured the same thing:
+    //
+    //      [zm_qol] CARPENTER: included at root init - before ...
+    //      [zm_qol] CARPENTER READBACK: included=1 registered=0
+    //
+    //  _zm_powerups::init() has already walked its add_zombie_powerup() list by
+    //  the time ANY of this mod's script gets to speak, so setting the include
+    //  flag afterwards gates a call that will never be made again.
+    //
+    //  🌟 SO MAKE THE CALL OURSELVES. add_zombie_powerup() is not private and is
+    //  not one-shot - it is gated only on level.zombie_include_powerups, which
+    //  the include() call below has already set. These are stock's own arguments
+    //  from _zm_powerups.gsc:99, with the drop rule reimplemented below because
+    //  ::func_should_drop_carpenter is a pointer into a file we cannot take one
+    //  from.
+    //
+    //  📝 This is still inside the precache window - the clientfield
+    //  registrations a few lines up in this same main() would be a fatal
+    //  EXE_CLIENT_FIELD_MISMATCH otherwise, and they are not.
+    // ------------------------------------------------------------------------
+    if ( !isdefined( level.zombie_powerups ) || !isdefined( level.zombie_powerups["carpenter"] ) )
     {
-        if ( !isdefined( s_goal.target ) )
-            continue;
-
-        a_targets = getentarray( s_goal.target, "targetname" );
-
-        foreach ( e_barrier in a_targets )
-        {
-            if ( !isdefined( e_barrier ) || !e_barrier iszbarrier() )
-                continue;
-
-            n_pieces = e_barrier getnumzbarrierpieces();
-
-            for ( i = 0; i < n_pieces; i++ )
-            {
-                e_barrier hidezbarrierpiece( i );
-                e_barrier setzbarrierpiecestate( i, "open" );
-            }
-
-            n_opened++;
-            wait 0.05;
-        }
+        maps\mp\zombies\_zm_utility::include_powerup( "carpenter" );
+        maps\mp\zombies\_zm_powerups::add_zombie_powerup( "carpenter", "zombie_carpenter", &"ZOMBIE_POWERUP_MAX_AMMO", ::zmqol_should_drop_carpenter, 0, 0, 0 );
+        println( "[zm_qol] CARPENTER: registered by hand from zm_tomb main()" );
     }
 
-    println( "[zm_qol] BARRIERS opened " + n_opened + " stock zbarriers" );
+    level thread zmqol_carpenter_readback();
+}
+
+//  Did it actually reach the drop table? add_zombie_powerup() silently returns
+//  for any name absent from level.zombie_include_powerups, so "included" and
+//  "registered" are two different facts and only the second one makes
+//  ".carpenter" work. This prints which one we got.
+//  maps\mp\zombies\_zm_powerups::func_should_drop_carpenter(), verbatim. It only
+//  decides whether Carpenter may appear in the RANDOM drop pool; ".carpenter"
+//  goes through specific_powerup_drop() and does not consult it at all.
+zmqol_should_drop_carpenter()
+{
+    //  ⭐ NO CARPENTER ON THE ORIGINS SURVIVAL ARENAS. User, 2026-09-16:
+    //  *"disable carpenter on all these survival maps ... make sure that the
+    //  actual Origins map has the power-up because that works fine."* Those
+    //  arenas have no barriers left (zmqol_disable_survival_barriers), so a
+    //  Carpenter there would be a pickup that repairs nothing.
+    //
+    //  🛑 THE BLOCK BELONGS HERE, NOT ON THE REGISTRATION - see the banner on
+    //  zmqol_include_carpenter(). This function runs long after precache and
+    //  writes nothing, so classic and survival still register the same tables.
+    if ( !is_classic() )
+        return false;
+
+    if ( maps\mp\zombies\_zm_powerups::get_num_window_destroyed() < 5 )
+        return false;
+
+    return true;
+}
+
+zmqol_carpenter_readback()
+{
+    flag_wait( "start_zombie_round_logic" );
+
+    b_inc = 0;
+    b_reg = 0;
+
+    if ( isdefined( level.zombie_include_powerups ) && isdefined( level.zombie_include_powerups["carpenter"] ) )
+        b_inc = 1;
+
+    if ( isdefined( level.zombie_powerups ) && isdefined( level.zombie_powerups["carpenter"] ) )
+        b_reg = 1;
+
+    println( "[zm_qol] CARPENTER READBACK: included=" + b_inc + " registered=" + b_reg + " (registered=1 is what .carpenter needs)" );
 }
 
 // ============================================================================
@@ -1593,6 +1647,93 @@ zmqol_open_stock_barriers()
 //  exists solely so zmqol_whoswho_knife_name()'s guard passes - dropping it
 //  would quietly take the ballistic knife off Who's Who here.
 // ============================================================================
+// ============================================================================
+//  ⭐ ORIGINS SURVIVAL: NO BARRIERS AT ALL, AND NOTHING TO REBUILD.
+//
+//  User, 2026-09-16, after a day of this: *"just get rid of these barriers ...
+//  so there's no way for them to be a problem ... make sure I can't build them,
+//  no tooltip shows up ... not touching or interfering with the actual Origins
+//  as a whole map."*
+//
+//  🛑 CLASSIC ORIGINS IS UNTOUCHED. is_classic() returns immediately, so the
+//  twelve stock zbarriers stand and behave exactly as they always have on the
+//  full map, Carpenter included.
+//
+//  📝 WHY A SURVIVAL ARENA CANNOT JUST KEEP THEM. Measured on Church,
+//  2026-09-16, probe raw\scripts\zm\zzz_zmqol_aiprobe.gsc: across two matches
+//  it logged 44 zombies inside 250 units of the player and NOT ONE
+//  zm_barricade_enter climb. Zombies that take the entrance path reach the
+//  window and never get through it; the ones that reach the player are
+//  find_flesh risers, which stock sends past the barrier system entirely
+//  (_zm_spawner::should_skip_teardown, :330). Half-working barriers are worse
+//  than none: a zombie wedged at a window taunts on the spot, which is the
+//  "stops and attacks the air" the user reported.
+//
+//  📝 BO2-Reimagined, which is where these arenas were ported from, was checked
+//  before writing this. It does NOT disable the zbarriers - it does not touch
+//  them at all, and its loc_common::barrier() spawns arena-boundary collision
+//  walls and props, nothing else. It also never registers Carpenter. So there
+//  was no Reimagined behaviour to copy here; this is the user's own call.
+//
+//  Two things per barrier, and the second is the one that removes the prompt:
+//    1. every piece hidden and set "open" - no boards, and
+//       _zm_utility::all_chunks_destroyed() reads piece state only, so stock's
+//       tear_into_building() returns straight away instead of parking a zombie
+//       at a window it can never get through.
+//    2. level.no_board_repair set to 1 - stock's OWN switch for this, read off
+//       _zm_blockers::blocker_trigger_think(), which returns on its first two
+//       lines when that flag is set. Nothing creates the unitrigger stub, so
+//       there is no "Hold F to Rebuild Barrier" prompt and no rebuild points.
+//
+//  📝 The first attempt unregistered s_goal.unitrigger_stub instead and logged
+//  "0 rebuild prompt(s) unregistered" on Church, because the stub does not
+//  exist yet: blocker_trigger_think() builds it lazily the first time a barrier
+//  is used. The flag is set before the round flag for that reason.
+// ============================================================================
+zmqol_disable_survival_barriers()
+{
+    if ( is_classic() )
+        return;
+
+    //  before anything waits - blocker_trigger_think() reads this the first
+    //  time a barrier is touched, and it must already be set by then
+    level.no_board_repair = 1;
+
+    flag_wait( "start_zombie_round_logic" );
+    wait_network_frame();
+
+    a_goals = getstructarray( "exterior_goal", "targetname" );
+
+    n_opened = 0;
+
+    foreach ( s_goal in a_goals )
+    {
+        if ( !isdefined( s_goal.target ) )
+            continue;
+
+        a_targets = getentarray( s_goal.target, "targetname" );
+
+        foreach ( e_barrier in a_targets )
+        {
+            if ( !isdefined( e_barrier ) || !e_barrier iszbarrier() )
+                continue;
+
+            n_pieces = e_barrier getnumzbarrierpieces();
+
+            for ( i = 0; i < n_pieces; i++ )
+            {
+                e_barrier hidezbarrierpiece( i );
+                e_barrier setzbarrierpiecestate( i, "open" );
+            }
+
+            n_opened++;
+            wait 0.05;
+        }
+    }
+
+    println( "[zm_qol] SURVIVAL BARRIERS: " + n_opened + " zbarrier(s) opened and hidden on " + getdvar( "ui_zm_mapstartlocation" ) + ", level.no_board_repair=1 so there is no rebuild prompt - classic Origins is untouched" );
+}
+
 added_weapons()
 {
     if (level.script == "zm_tomb")
@@ -2008,6 +2149,16 @@ zmqol_tomb_round_spawn_failsafe()
 
         if ( distancesquared( self.origin, prevorigin ) < 576 )
         {
+            //  🛑 A ZOMBIE NEXT TO A PLAYER IS NOT STRANDED - IT IS ATTACKING.
+            //  This copy's timer is 15s, half the shared one, so an attacking
+            //  zombie trips it twice as fast: Origins is where the user saw a
+            //  zombie vanish mid-fight. Full reasoning on the helper.
+            if ( self scripts\zm\qol_options::zmqol_nb_near_player() )
+            {
+                prevorigin = self.origin;
+                continue;
+            }
+
             //  🛑 THE PATCH — the same one the shared copy carries.
             if ( getdvarintdefault( "no_bleedout", 0 ) )
             {
@@ -2084,11 +2235,48 @@ zmqol_tomb_round_spawn_failsafe()
 //
 //  📝 The `else` branch is maps\mp\zm_tomb_giant_robot.gsc:923 verbatim.
 // ============================================================================
+// ============================================================================
+//  🛑 v2.17.27 - THIS IS THE ORIGINS "ZOMBIES WON'T ATTACK / JUST VANISH" BUG.
+//
+//  User, 2026-09-16, after the aitype overrides fixed Town: *"it seemed like
+//  there was no problem on town, but then on church survival the issue was
+//  happening and the zombie was just walking into me not attacking me."*
+//  Origins only, which is the tell - the giant robot is Origins only.
+//
+//  🌟 THE MARKING FREEZES THE ZOMBIE'S GOAL, AND SPARING IT DID NOT UNFREEZE IT.
+//  Stock's activate_kill_trigger walks every zombie within 600 units of the foot
+//  and, for each one touching it, does BOTH:
+//        zombie.marked_for_death = 1;
+//        zombie setgoalpos( <its own origin> );     <- "stand still and die"
+//  The version below cleared the flag and left the GOAL pointing at the zombie's
+//  own feet. A zombie whose goal is where it already stands has arrived: it
+//  stops, and it never closes to swing. That is the zombie standing in the
+//  player's face doing nothing.
+//
+//  🛑 THE OLD NOTE HERE CLAIMED "its frozen goal repairs itself -
+//  _zm_ai_basic::find_flesh() is a while(1) that re-targets every pass". That
+//  was an assumption and it is WRONG - it was never booted, and the live logs
+//  show marked zombies on Church from round 1 (robot_marked=1 in the
+//  no_bleedout death lines). The goal has to be handed back explicitly.
+//
+//  AND WITH THE ROW OFF IT IS THE OTHER HALF OF THE SAME REPORT: the zombie is
+//  not spared at all, it is stomped - *"the zombie was just attacking me and
+//  ... it just disappeared"*. So the sparing is no longer conditional on the
+//  row. These arenas call loc_common::disable_giant_robots(); a robot that is
+//  supposed to have been deleted must not still be killing zombies, whatever
+//  the no-bleedout setting says.
+// ============================================================================
 zmqol_tomb_zombie_stomp_death( robot, a_zombies_to_kill )
 {
-    if ( getdvarintdefault( "no_bleedout", 0 ) )
+    //  Survival arenas delete the robots outright, so a stomp there is a kill
+    //  from something that should not exist. Spare unconditionally on those;
+    //  classic Origins keeps the row's behaviour.
+    b_spare = getdvarintdefault( "no_bleedout", 0 ) || !is_classic();
+
+    if ( b_spare )
     {
         n_spared = 0;
+        a_players = get_players();
 
         for ( i = 0; i < a_zombies_to_kill.size; i++ )
         {
@@ -2098,13 +2286,38 @@ zmqol_tomb_zombie_stomp_death( robot, a_zombies_to_kill )
                 continue;
 
             zombie.marked_for_death = undefined;
+
+            //  🛑 HAND THE GOAL BACK. Without this the zombie keeps the
+            //  setgoalpos( own origin ) the marking gave it and simply stands
+            //  there for the rest of its life. Nearest living player, so it
+            //  resumes closing on somebody immediately.
+            e_near = undefined;
+            n_best = 0;
+
+            for ( j = 0; j < a_players.size; j++ )
+            {
+                if ( !isdefined( a_players[j] ) || !isalive( a_players[j] ) )
+                    continue;
+
+                n_d = distancesquared( zombie.origin, a_players[j].origin );
+
+                if ( !isdefined( e_near ) || n_d < n_best )
+                {
+                    e_near = a_players[j];
+                    n_best = n_d;
+                }
+            }
+
+            if ( isdefined( e_near ) )
+                zombie setgoalpos( e_near.origin );
+
             n_spared++;
         }
 
         if ( !isdefined( level.zmqol_nb_stomp_round ) || level.zmqol_nb_stomp_round != level.round_number )
         {
             level.zmqol_nb_stomp_round = level.round_number;
-            println( "[zm_qol] no_bleedout: SUPPRESSED giant-robot stomp - " + n_spared + " zombie(s) spared, round " + level.round_number );
+            println( "[zm_qol] robot stomp: SUPPRESSED - " + n_spared + " zombie(s) spared AND re-targeted at a player, round " + level.round_number + ", classic=" + is_classic() );
         }
 
         return;

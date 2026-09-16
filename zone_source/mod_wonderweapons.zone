@@ -132,14 +132,44 @@ script,scripts/zm/thundergun.csc
 // ============================================================================
 // Stock retail files plus only the two DLC5 Moon Wave Gun states. Matching
 // server/client AIType overrides provide the twelve referenced animations.
-rawfile,animtrees/zm_transit_basic.atr
-rawfile,animstatedefs/zm_transit_basic.asd
-rawfile,animtrees/zm_nuked_basic.atr
-rawfile,animstatedefs/zm_nuked_basic.asd
-rawfile,animtrees/zm_highrise_basic.atr
-rawfile,animstatedefs/zm_highrise_basic.asd
-rawfile,animtrees/zm_prison_basic.atr
-rawfile,animstatedefs/zm_prison_basic.asd
+// ============================================================================
+//  🛑 v2.17.26 - THE WHOLE AI-ASSET BLOCK IS DISABLED, UNDER TEST.
+//
+//  User, 2026-09-16: zombies on every map intermittently refuse to attack -
+//  they walk into the player, push them around, never swing, then despawn.
+//  *"this was not happening earlier yesterday"*, and *"this is bricking the
+//  entirety of the mod, I cannot do a release with this bad of a bug in it."*
+//
+//  These lines went in on 2026-09-15 11:33 for the Winter's Howl / Wave Gun
+//  death poses. They are the ONLY AI-behaviour assets the mod has ever shipped
+//  and the only ones added that day - a whole-tree diff of all 70 scripts found
+//  nothing in the targeting or attack path, which is what pointed here.
+//
+//  🛑 WHY THIS IS THE RIGHT THING TO PULL FIRST. An aitype script is the AI's
+//  own definition, and the block's own note says each file is "the stock
+//  DECOMPILE plus seven dummy_anim_ref lines". A decompiled-and-recompiled
+//  aitype is not guaranteed byte-faithful, and mod.ff loads BEFORE the map
+//  fastfiles so OUR copy replaces Treyarch's for every zombie of that type.
+//  Only some variants are overridden (transit 01/02/03/05/08/09 - not 04, 06,
+//  07), so some zombies get a rewritten AI type and their neighbours do not,
+//  which matches "some attack normally and some ignore me" exactly.
+//
+//  COST while disabled: no freeze-shatter, Wunderwaffe or Thundergun reaction
+//  animation. Zombies take full damage and die normally. That is the same
+//  degradation the README already accepts for special enemies, and it is worth
+//  paying to find out whether this is what is breaking every match.
+//
+//  RESTORE: uncomment. Backup of this file before the change is
+//  modding-jobs\church-pap-001\mod_wonderweapons.zone.bak-aitypes-on.
+// ============================================================================
+// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_transit_basic.atr
+// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_transit_basic.asd
+// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_nuked_basic.atr
+// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_nuked_basic.asd
+// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_highrise_basic.atr
+// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_highrise_basic.asd
+// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_prison_basic.atr
+// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_prison_basic.asd
 // still NOT shipped (guns gated off there): zm_tomb_basic, zm_buried_basic
 // ============================================================================
 //  🌟 THE AITYPE OVERRIDES THE .asd ABOVE HAS ALWAYS NEEDED.
@@ -162,34 +192,34 @@ rawfile,animstatedefs/zm_prison_basic.asd
 //
 //  Each file is the stock decompile plus seven dummy_anim_ref lines, server and
 //  client, and both sides must ship or the client desyncs on the death.
-script,aitype/zm_transit_basic_01.gsc
-script,aitype/zm_transit_basic_02.gsc
-script,aitype/zm_transit_basic_03.gsc
-script,aitype/zm_transit_basic_05.gsc
-script,aitype/zm_transit_basic_08.gsc
-script,aitype/zm_transit_basic_09.gsc
-script,aitype/clientscripts/zm_transit_basic_01.csc
-script,aitype/clientscripts/zm_transit_basic_02.csc
-script,aitype/clientscripts/zm_transit_basic_03.csc
-script,aitype/clientscripts/zm_transit_basic_05.csc
-script,aitype/clientscripts/zm_transit_basic_08.csc
-script,aitype/clientscripts/zm_transit_basic_09.csc
-script,aitype/zm_nuked_basic_01.gsc
-script,aitype/zm_nuked_basic_02.gsc
-script,aitype/zm_nuked_basic_01_beyes.gsc
-script,aitype/zm_nuked_basic_02_beyes.gsc
-script,aitype/clientscripts/zm_nuked_basic_01.csc
-script,aitype/clientscripts/zm_nuked_basic_02.csc
-script,aitype/clientscripts/zm_nuked_basic_01_beyes.csc
-script,aitype/clientscripts/zm_nuked_basic_02_beyes.csc
-script,aitype/zm_highrise_basic_01.gsc
-script,aitype/zm_highrise_basic_02.gsc
-script,aitype/zm_highrise_basic_03.gsc
-script,aitype/clientscripts/zm_highrise_basic_01.csc
-script,aitype/clientscripts/zm_highrise_basic_02.csc
-script,aitype/clientscripts/zm_highrise_basic_03.csc
-script,aitype/zm_alcatraz_basic.gsc
-script,aitype/clientscripts/zm_alcatraz_basic.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_transit_basic_01.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_transit_basic_02.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_transit_basic_03.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_transit_basic_05.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_transit_basic_08.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_transit_basic_09.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_transit_basic_01.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_transit_basic_02.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_transit_basic_03.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_transit_basic_05.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_transit_basic_08.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_transit_basic_09.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_nuked_basic_01.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_nuked_basic_02.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_nuked_basic_01_beyes.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_nuked_basic_02_beyes.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_nuked_basic_01.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_nuked_basic_02.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_nuked_basic_01_beyes.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_nuked_basic_02_beyes.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_highrise_basic_01.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_highrise_basic_02.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_highrise_basic_03.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_highrise_basic_01.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_highrise_basic_02.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_highrise_basic_03.csc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/zm_alcatraz_basic.gsc
+// [v2.17.26 DISABLED - AI regression test] script,aitype/clientscripts/zm_alcatraz_basic.csc
 // ============================================================================
 //  🛑 v2.10.6 - REVERTED. BOOTED 2026-09-02 and the map refused to load with:
 //    BG_AnimStateDef_Parse: state 'zm_death_tesla_t5' has subState with anim

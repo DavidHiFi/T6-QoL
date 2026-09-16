@@ -749,6 +749,11 @@ function CoD.Loading.GetZMLoadingMapName()
 		-- v2.17.0 - Maze (Buried). Stock has no maze row either; Buried's only
 		-- survival row is street/Borough.
 		maze           = "MAZE",
+		-- v2.17.4 - the last four.
+		trenches        = "TRENCHES",
+		excavation_site = "EXCAVATION SITE",
+		church          = "CHURCH",
+		docks           = "DOCKS",
 	}
 	if ZmQolLocationTitles[location] ~= nil then
 		return ZmQolLocationTitles[location]
@@ -781,10 +786,35 @@ CoD.Loading.StartLoading = function (f8_arg0, f8_arg1)
 		f8_local1 = "NEVADA, USA"
 	end
 	local f8_local2 = Dvar.ls_gametype:get()
-	-- Direct CLI map changes can leave ls_gametype carrying the previous map's
-	-- display text. ui_gametype already contains the mode being loaded.
-	if CoD.isZombie == true and UIExpression.DvarString(nil, "ui_gametype") == CoD.Zombie.GAMETYPE_ZCLASSIC then
-		f8_local2 = UIExpression.ToUpper(nil, Engine.Localize("MPUI_ZCLASSIC"))
+	-- ls_gametype is written when the LOBBY picks a mode, so any map start that
+	-- does not go through the lobby - a console `map`, a mod reload - leaves the
+	-- PREVIOUS match's text sitting on the third line. Loading Church printed
+	-- "TRANZIT" underneath it for exactly this reason. ui_gametype always holds
+	-- the mode actually being loaded, so read that instead.
+	--
+	-- v2.17.32 - this covered zclassic only and every survival load fell through
+	-- to the stale value. The lookup below is the same one scoreboard.lua's
+	-- GetGameModeDisplayName() uses: gametypestable section 0, key column 1,
+	-- display-string column 7.
+	if CoD.isZombie == true then
+		local ZmQolGametype = UIExpression.DvarString(nil, "ui_gametype")
+
+		if ZmQolGametype == CoD.Zombie.GAMETYPE_ZCLASSIC then
+			f8_local2 = UIExpression.ToUpper(nil, Engine.Localize("MPUI_ZCLASSIC"))
+		elseif ZmQolGametype ~= nil and ZmQolGametype ~= "" then
+			local ZmQolKey = UIExpression.TableLookup(nil, CoD.gametypesTable, 0, 0, 1, ZmQolGametype, 7)
+
+			if ZmQolKey ~= nil and ZmQolKey ~= "" then
+				local ZmQolName = Engine.Localize(ZmQolKey)
+
+				-- Engine.Localize hands a missing key straight back, which is how
+				-- a bad key is told from a good one. Anything unresolved keeps the
+				-- stock value rather than printing a key on the loading screen.
+				if ZmQolName ~= nil and ZmQolName ~= "" and string.match(ZmQolName, ZmQolKey) == nil then
+					f8_local2 = UIExpression.ToUpper(nil, ZmQolName)
+				end
+			end
+		end
 	end
 	f8_arg0.mapNameLabel:setText(f8_local0)
 	f8_arg0.mapLocationLabel:setText(f8_local1)

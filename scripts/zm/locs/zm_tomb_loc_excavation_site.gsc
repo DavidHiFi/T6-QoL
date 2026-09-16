@@ -14,6 +14,35 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((-985, 521, 104), (0, 235, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((-1286, 108, 102), (0, 55, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((-1473, -474, 104), (0, 80, 0), zone, 2);
+
+	// --- perk machines: Reimagined's own mapents positions -------------------
+	//  This mod ships no zm_tomb mapents and the stock machines are tagged
+	//  "zclassic_perks_tomb", which never matches "zstandard_excavation_site",
+	//  so without these three No Man's Land has no perks and no Pack-a-Punch.
+	//  Same script-registration technique as Church, Trenches, Borough, Docks
+	//  and Crazy Place (MOD_CATALOGUE.md §37c).
+	//
+	//  Origins/angles verbatim from BO2-Reimagined's zm_tomb.d3dbsp, entities
+	//  tagged "zstandard_perks_excavation_site" (extract_tomb_perks.py). Float
+	//  noise in their angles (1.00179e-005, -4.43583e-012) written as 0; the
+	//  225 and 270 yaws are real and kept.
+	//
+	//  All three models are Origins' own and present in zm_tomb.ff (checked with
+	//  Unlinker --list, not assumed - a precachemodel of something the level
+	//  lacks is fatal at load).
+	scripts\zm\replaced\utility::register_perk_struct( "specialty_armorvest", "zombie_vending_jugg", (2328, -232, 139), (0, 180, 0) );
+	scripts\zm\replaced\utility::register_perk_struct( "specialty_longersprint", "zombie_vending_marathon", (-2355, -36, 240), (0, 225, 0) );
+	//  PaP through loc_common so it draws BUILT, not the "please wait" pose -
+	//  see the banner on loc_common::register_pap_struct_built.
+	//  Origins' dig sites are staff/quest furniture - dropped from the struct
+	//  index before dig_spots_init() reads it, so none ever spawns.
+	scripts\zm\locs\loc_common::remove_dig_site_structs();
+
+	//  🛑 BEFORE registering ours: drop Origins' own PaP struct. This arena's
+	//  machine sits at the same spot as the map's, so without this there are two
+	//  overlapping structs and Instant PaP / the fx bind to the wrong one.
+	scripts\zm\locs\loc_common::drop_map_pap_structs();
+	scripts\zm\locs\loc_common::register_pap_struct_built( "p6_zm_tm_packapunch", (-5.5, -8.5, 335.5), (0, 270, 0) );
 }
 
 // zm_qol: populated - see the note in zm_transit_loc_diner.gsc::precache.
@@ -47,6 +76,17 @@ main()
 	disable_zombie_spawn_locations();
 	disable_player_spawn_locations();
 	level thread scripts\zm\locs\loc_common::init();
+	//  Ghost the stone-heap machine; the client draws the assembled one.
+	//  See loc_common::pap_built_pose. This arena's Pack-a-Punch happens to sit
+	//  at Origins' own PaP spot, so the origin still disambiguates correctly.
+	level thread scripts\zm\locs\loc_common::pap_built_pose( (-5.5, -8.5, 335.5) );
+	//  No giant robots in a survival arena - and this is what was blocking prone.
+	level thread scripts\zm\locs\loc_common::disable_giant_robots();
+	level thread scripts\zm\locs\loc_common::force_prone_allowed();
+	//  No challenge slab is inside No Man's Land (both sit in the bunkers and
+	//  the village), so this is a no-op here - called for consistency so a
+	//  future arena cannot inherit the gap.
+	level thread scripts\zm\locs\loc_common::remove_challenge_boxes();
 }
 
 treasure_chest_init()
@@ -144,6 +184,32 @@ disable_doors()
 	}
 }
 
+// ============================================================================
+//  🛑 v2.17.13 - activate_zone_farm ADDED. Same disconnected-arena bug as
+//  Trenches and Church.
+//
+//  activate_zone_nml covers 58 of the No Man's Land links and was already set,
+//  so most of this arena was fine. But valid_zones (below) also lists
+//  zone_nml_farm and zone_nml_farm_1, and every link to those is gated on
+//  activate_zone_farm:
+//      zone_nml_0    --activate_zone_farm--> zone_nml_farm
+//      zone_nml_5    --activate_zone_farm--> zone_nml_farm
+//      zone_nml_farm --activate_zone_farm--> zone_nml_farm_1
+//
+//  Two enabled-but-unreachable zones, which is the same freeze-then-vanish
+//  shape: spawn, no path to the player, idle, distance-cleaned.
+//
+//  📝 The farm chain also reaches zone_nml_celllar and the bolt stairs, which
+//  are NOT in valid_zones - disable_zones() below switches those off, so
+//  setting this flag does not widen the arena past its intended edge.
+// ============================================================================
+//  🛑 v2.17.14 - activate_zone_farm REVERTED, untested, for safety. Same
+//  reasoning as Church: the identical change on Trenches produced an instant
+//  "GAME OVER, Zombies: 0" at full health, and the farm chain reaches
+//  zone_nml_celllar and the bolt stairs which disable_zones() switches off
+//  immediately afterwards - exactly the activate-then-disable shape that is
+//  suspected there. The two farm zones stay unreachable rather than risk the
+//  arena.
 enable_zones()
 {
 	flag_set("activate_zone_nml");

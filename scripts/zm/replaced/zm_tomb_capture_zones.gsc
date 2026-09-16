@@ -63,6 +63,98 @@
 //      round start on survival, so stock would play Richtofen's line over the
 //      first round of every match on an arena that has no generators in it.
 // ============================================================================
+//  ⭐ capture_zombies_only_attack_nearby_players  -  THE ORIGINS "ZOMBIES WALK
+//  INTO ME AND DON'T ATTACK" BUG. THIS IS THE ONE.
+//
+//  User, 2026-09-16, on Church: *"the zombie attacked me once, i walked away a
+//  little bit and then walked back towards him, and then he's just again just
+//  walking into me and pushing me and not attacking me."* Origins only - the
+//  transit family was fixed by removing the aitype overrides and stayed fixed.
+//
+//  🌟 MEASURED, NOT ARGUED. A per-zombie audit printed the same fields for a
+//  zombie that DID attack and one that did not. Exactly one field differed:
+//
+//      ✅ OK        attacked after 2s    ignoreme=0  ignoreall=0
+//      🛑 NO-ATTACK 11.5s, no damage     ignoreme=1  ignoreall=0
+//
+//  `ignoreme` is cleared in exactly ONE place in the whole tree -
+//  _zm_ai_basic::find_flesh():24 - and that function opens with
+//      self endon( "stop_find_flesh" );
+//  So a zombie still holding ignoreme=1 is a zombie whose find_flesh thread is
+//  NOT RUNNING. It keeps whatever goal it had, so it still walks at the player
+//  and still shoves them, and it will never swing again.
+//
+//  🛑 AND THIS IS WHAT STOPS IT. Stock's loop, zm_tomb_capture_zones.gsc:1067:
+//
+//      while( true ) {
+//          if( self should_capture_zombie_attack_generator( s_zone ) ) {
+//              self notify( "stop_find_flesh" );          <- kills find_flesh
+//              self.goalradius = 30;
+//              self setgoalpos( self.attacking_point.origin );
+//          }
+//          wait 0.5;
+//      }
+//
+//  It kills find_flesh and NEVER RESTARTS IT. On classic Origins that is
+//  correct: the zombie has been told to go and smash a generator and the
+//  capture system owns it from then on.
+//
+//  A SURVIVAL ARENA HAS NO GENERATOR TO CAPTURE - but the thread is still
+//  started on every zombie in a capture zone and re-tests every half second.
+//  Any zombie it catches loses find_flesh permanently and wanders off to a
+//  generator attack point. That is, in the user's words across this whole
+//  session: "some zombies attack normally and some refuse to acknowledge I
+//  exist", "they stop targeting me and walk away to set locations", and an
+//  attack that "stopped midway through".
+//
+//  📝 It also explains why it survived every earlier fix: nothing about it is
+//  in the failsafes, the aitypes, no_bleedout, the robots or the zone list.
+//
+//  Same shape as the other five here - stock verbatim behind is_classic() - so
+//  classic Origins is unchanged. On survival the loop simply never runs, which
+//  leaves find_flesh alone and the zombie ordinary.
+// ============================================================================
+capture_zombies_only_attack_nearby_players( s_zone )
+{
+	self endon( "death" );
+
+	//  🛑 SURVIVAL: DO NOTHING AT ALL. Returning here means the zombie is never
+	//  told to stop finding flesh, so find_flesh keeps running and keeps
+	//  ignoreme at 0 - an ordinary zombie that chases and swings.
+	if ( !is_classic() )
+		return;
+
+	n_goal_radius = self.goalradius;
+
+	while ( true )
+	{
+		self.goalradius = n_goal_radius;
+
+		if ( self maps\mp\zm_tomb_capture_zones::should_capture_zombie_attack_generator( s_zone ) )
+		{
+			self notify( "stop_find_flesh" );
+			self notify( "zombie_acquire_enemy" );
+			self.goalradius = 30;
+
+			if ( !isdefined( self.attacking_point ) )
+				self.attacking_point = self maps\mp\zm_tomb_capture_zones::get_unclaimed_attack_point( s_zone );
+
+			self setgoalpos( self.attacking_point.origin );
+			self thread maps\mp\zm_tomb_capture_zones::cancel_generator_attack_if_player_gets_close_to_generator( s_zone );
+			str_notify = self waittill_any_return( "goal", "stop_attacking_generator" );
+
+			if ( isdefined( str_notify ) && str_notify == "stop_attacking_generator" )
+				self.attacking_point maps\mp\zm_tomb_capture_zones::unclaim_attacking_point();
+			else
+			{
+				self maps\mp\zm_tomb_capture_zones::play_melee_attack_animation();
+				continue;
+			}
+		}
+
+		wait 0.5;
+	}
+}
 
 register_elements_powered_by_zone_capture_generators()
 {

@@ -1691,6 +1691,23 @@ material,loadscreen_zm_tomb_zstandard_crazy_place
 material,menu_zm_buried_zsurvival_maze
 material,loadscreen_zm_buried_zstandard_maze
 
+// --- v2.17.4: the last four - Origins' Trenches / Excavation Site / Church,
+//     and Mob's Docks. All eight .json sources survived the v1.15.0 strip in
+//     zone_assets\materials\, so these are declarations only and no new art:
+//     the Origins three point at menu_zm_tomb_zsurvival_tomb and
+//     loadscreen_zombie_le_tombeau_zstandard (the same pair Crazy Place reuses)
+//     and Docks at menu_zm_prison_zsurvival_cellblock /
+//     loadscreen_zm_hellcatraz. Every referenced .iwi is already in
+//     zone_assets\images\ and in images\ for mod.iwd.
+material,menu_zm_tomb_zsurvival_trenches
+material,loadscreen_zm_tomb_zstandard_trenches
+material,menu_zm_tomb_zsurvival_excavation_site
+material,loadscreen_zm_tomb_zstandard_excavation_site
+material,menu_zm_tomb_zsurvival_church
+material,loadscreen_zm_tomb_zstandard_church
+material,menu_zm_prison_zsurvival_docks
+material,loadscreen_zm_prison_zstandard_docks
+
 // ============================================================================
 //  SURVIVAL PLAYER CHARACTERS (Die Rise + Borough: the CDC/CIA teams)
 // ----------------------------------------------------------------------------

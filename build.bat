@@ -97,6 +97,63 @@ echo [0/9] Pre-flight: raw weapon file size ceiling (20480 bytes)...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$d=Join-Path $env:PROJ_DIR0 'weapons\zm'; if(-not (Test-Path -LiteralPath $d)){ Write-Host '    [skip] no weapons\zm folder'; exit 0 }; $ok=$env:WPN_OK -split ' '; $bad=@(); Get-ChildItem -LiteralPath $d -File | ForEach-Object { if($_.Length -ge 20480){ if($ok -contains $_.Name){ Write-Host ('    [known] ' + $_.Name + ' ' + $_.Length + ' B - over the limit on purpose, the map supplies its own') } else { $bad += ($_.Name + ' ' + $_.Length + ' B'); Write-Host ('    [OVER]  ' + $_.Name + ' ' + $_.Length + ' B') } } }; if($bad.Count -gt 0){ Write-Host ''; Write-Host '    This weapon will NOT load and will crash the game if a .csc include_weapon()s'; Write-Host '    it for the box. Trim it below 20480 before building.'; exit 1 }; Write-Host '    [ok] every raw weapon file is under the ceiling'"
 if errorlevel 1 goto wpnfail
 
+REM ============================================================================
+REM  [0b/9] Pre-flight: cross-script GSC/CSC references          v2.17.5
+REM ----------------------------------------------------------------------------
+REM  Added after registering the Excavation Site survival location crashed Origins
+REM  at map load: zm_tomb_loc_excavation_site.gsc called loc_common::
+REM  spawn_wallbuy_plywood, the port never brought that body across, and the
+REM  engine answered with "Unresolved external" + SV_Shutdown.
+REM
+REM  Two reasons this needs its own gate rather than trusting gsc-tool:
+REM    1. gsc-tool PARSES THE FILE CLEAN. The syntax is fine; the target simply
+REM       is not there. A green parse says nothing about cross-script calls.
+REM    2. IT IS FATAL FOR THE WHOLE MAP. GSC resolves every script in the zone at
+REM       map load, so the crash landed on CHURCH - a location that never calls
+REM       the function. One dangling reference in any registered loc script takes
+REM       down every location on that map.
+REM ============================================================================
+echo [0b/9] Pre-flight: cross-script GSC/CSC references...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-loc-refs.ps1"
+if errorlevel 1 goto reffail
+
+REM ============================================================================
+REM  [0c/9] Pre-flight: perk-machine clientfield guard            v2.17.6
+REM ----------------------------------------------------------------------------
+REM  Added after the boot straight AFTER the [0b] gate was added died on a
+REM  different cause with an identical-looking LUI_ERROR dialog:
+REM      SV_Shutdown: Attempt to register ClientField electric_cherry_reload_fx
+REM      failed. Client Field set 'allplayers' already contains a field...
+REM  zm_tomb.gsc mirrors two clientfields that stock only registers when a perk
+REM  machine exists. Once a loc script registers machines, _zm_perks::init()
+REM  registers them itself and the mirror becomes a duplicate.
+REM  MOD_CATALOGUE.md §37e predicted this exact trap; nothing enforced it.
+REM  Now something does.
+REM ============================================================================
+echo [0c/9] Pre-flight: perk-machine clientfield guard...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-perk-guard.ps1"
+if errorlevel 1 goto guardfail
+
+REM ============================================================================
+REM  [0d/9] Pre-flight: pre-nerf recoil has not drifted          v2.16.14
+REM ----------------------------------------------------------------------------
+REM  This mod ships Treyarch's PRE-PATCH recoil. Unlike every other feature it
+REM  has no menu row, no dvar and no script behind it - the numbers in
+REM  weapons\zm\ ARE the feature, so the only way to lose it is a silent edit to
+REM  a weapon def, and nothing would report that. A player would just notice the
+REM  guns feel worse.
+REM
+REM  A GAME 3 row for it cannot come back: the toggle needs both versions of each
+REM  gun loaded at once (20 extra weapon assets) and this mod is AT the engine's
+REM  weapon-asset ceiling. Turning it on crashed every map load, and because the
+REM  dvar archived it was a crash loop that survived restarts. See branch
+REM  feature/recoil-toggle commit 2820514 and modding-jobs\recoil-toggle-001.
+REM  So the files are the only copy of this feature. Guard them.
+REM ============================================================================
+echo [0d/9] Pre-flight: pre-nerf recoil values...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-recoil-prenerf.ps1"
+if errorlevel 1 goto recoilfail
+
 REM  v2.11.8 (user, 2026-09-04): the nine camo_zmb_dlc2* textures are NEVER copied into
 REM  images\ (= mod.iwd). They are the ZM Dark Matter animated Pack-a-Punch camo, and
 REM  they are delivered ONLY as loose by-name files in %LOCALAPPDATA%\Plutonium\storage\r
@@ -308,6 +365,32 @@ echo.
 echo   BUILD STOPPED: a raw weapon file is at or over the 20480-byte ceiling.
 echo   Drop its 24 attachWorldModelOffset{Pitch,Yaw,Roll}1-8 fields (all '0') to
 echo   save 720 bytes, then build again.
+if not defined OFFLINE pause
+exit /b 1
+
+:guardfail
+echo.
+echo   BUILD STOPPED: a survival location registers perk machines but is missing
+echo   from zmqol_loc_spawns_perk_machines() in scripts\zm\zm_tomb\zm_tomb.gsc.
+echo   That is a duplicate clientfield registration and SV_Shutdown at map load.
+if not defined OFFLINE pause
+exit /b 1
+
+:recoilfail
+echo.
+echo   BUILD STOPPED: a weapon def no longer carries the pre-nerf recoil values.
+echo   This mod ships Treyarch's PRE-PATCH recoil and nothing in game switches it,
+echo   so a changed number here ships the patched recoil to every player silently.
+echo   Put the value back, or update the table in tools\check-recoil-prenerf.ps1.
+if not defined OFFLINE pause
+exit /b 1
+
+:reffail
+echo.
+echo   BUILD STOPPED: a cross-script call names a function this mod does not define.
+echo   That is "Unresolved external" + SV_Shutdown at map load, and it kills EVERY
+echo   location on the map - not just the script that holds the bad reference.
+echo   Define the function, or point the call at the file that really has it.
 if not defined OFFLINE pause
 exit /b 1
 

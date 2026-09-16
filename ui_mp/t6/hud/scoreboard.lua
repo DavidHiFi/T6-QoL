@@ -188,6 +188,11 @@ local ZmQolLocationNames = {
 	cornfield      = "Cornfield",
 	-- v2.17.0 - Maze (Buried), registered in the same change.
 	maze           = "Maze",
+	-- v2.17.4 - the last four.
+	trenches        = "Trenches",
+	excavation_site = "Excavation Site",
+	church          = "Church",
+	docks           = "Docks",
 }
 
 function GetMapDisplayName()

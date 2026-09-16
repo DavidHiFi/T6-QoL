@@ -31,6 +31,48 @@ struct_init()
 	intermission_cam_end.angles = (15, 315, 0);
 	intermission_cam_end.targetname = "intermission_trenches_end";
 	scripts\zm\replaced\utility::add_struct(intermission_cam_end);
+
+	// --- perk machines: Reimagined's own mapents positions -------------------
+	//  Same situation as the Church location, and the same fix. This mod ships
+	//  NO zm_tomb mapents, and the stock machines are all tagged
+	//  "zclassic_perks_tomb", which never matches "zstandard_trenches" - so
+	//  without these four the arena has no perks and no Pack-a-Punch at all.
+	//  Registering the structs from script is the technique documented in
+	//  MOD_CATALOGUE.md §37c and already shipping for Borough, Crazy Place,
+	//  Church and Docks.
+	//
+	//  Origins/angles parsed verbatim out of BO2-Reimagined's zm_tomb.d3dbsp,
+	//  entities tagged "zstandard_perks_trenches" (extract_tomb_perks.py). Their
+	//  angles carry float noise - 6.83245e-007 and the like - which is zero to
+	//  every decimal that matters; written as 0 here rather than transcribing
+	//  dirt. The same extractor reproduces Church's existing Double Tap line
+	//  exactly, which is what says the parse is right.
+	//
+	//  🌟 BOTH "FOREIGN" MODELS RESOLVE, CHECKED NOT ASSUMED. Deadshot's machine
+	//  is p6_zm_al_vending_ads_on - an ALCATRAZ model on an Origins map, which
+	//  would be fatal at load if it were absent. Unlinker --list says it is NOT
+	//  in zm_tomb.ff but IS in mod.ff, and mod.ff loads on every map. That is
+	//  the same reason Church's zombie_vending_doubletap2 works. The other three
+	//  are Origins' own and live in zm_tomb.ff.
+	scripts\zm\replaced\utility::register_perk_struct( "specialty_quickrevive", "p6_zm_tm_vending_revive", (2360, 5096, -304), (0, 0, 0) );
+	scripts\zm\replaced\utility::register_perk_struct( "specialty_fastreload", "zombie_vending_sleight", (888, 3288, -168), (0, 0, 0) );
+	scripts\zm\replaced\utility::register_perk_struct( "specialty_deadshot", "p6_zm_al_vending_ads_on", (-543, 3728, -296), (0, 0, 0) );
+	//  🛑 PACK-A-PUNCH GOES THROUGH loc_common, NOT register_perk_struct.
+	//  That helper special-cases specialty_weapupgrade and spawns a
+	//  "zombie_sign_please_wait" flag target, which draws the machine UNBUILT -
+	//  the generator-gated pose from classic Origins. User saw exactly that on
+	//  this location, 2026-09-15. Full reasoning on
+	//  loc_common::register_pap_struct_built.
+	//  Origins' dig sites are staff/quest furniture - no shovel, no quest, no
+	//  digs. Dropped from the struct index here, BEFORE dig_spots_init() reads
+	//  it, so no mound is ever spawned and the respawn loop has nothing to do.
+	scripts\zm\locs\loc_common::remove_dig_site_structs();
+
+	//  🛑 BEFORE registering ours: take Origins' own PaP out of the struct index.
+	//  With two specialty_weapupgrade structs, Instant PaP and the machine fx
+	//  bind to whichever is first - which was the map's, out in No Man's Land.
+	scripts\zm\locs\loc_common::drop_map_pap_structs();
+	scripts\zm\locs\loc_common::register_pap_struct_built( "p6_zm_tm_packapunch", (-704, 2653, -184), (0, 90, 0) );
 }
 
 // zm_qol: populated - see the note in zm_transit_loc_diner.gsc::precache.
@@ -54,6 +96,18 @@ main()
 	disable_zombie_spawn_locations();
 	scripts\zm\locs\loc_common::increase_pap_collision();
 	level thread scripts\zm\locs\loc_common::init();
+	//  Ghost the stone-heap machine; the client draws the assembled one. Without
+	//  this the Pack-a-Punch stands in its unbuilt, generator-gated pose even
+	//  though it works - see loc_common::pap_built_pose. The origin is passed
+	//  because Origins' OWN Pack-a-Punch also carries script_noteworthy
+	//  "specialty_weapupgrade" and was being ghosted instead of this one.
+	level thread scripts\zm\locs\loc_common::pap_built_pose( (-704, 2653, -184) );
+	//  No giant robots in a survival arena - and this is what was blocking prone.
+	level thread scripts\zm\locs\loc_common::disable_giant_robots();
+	level thread scripts\zm\locs\loc_common::force_prone_allowed();
+	//  "Rituals of the Ancients" - Origins' challenge slab. One sits in the
+	//  bunkers, inside this arena. Quest furniture with no quest here.
+	level thread scripts\zm\locs\loc_common::remove_challenge_boxes();
 }
 
 // ============================================================================
@@ -198,20 +252,88 @@ generatebuildabletarps()
 	tarp setModel("p6_zm_buildable_bench_tarp");
 }
 
+// ============================================================================
+//  open_doors
+//
+//  🛑 v2.17.13 - THIS IS THE ZOMBIE "FREEZE THEN VANISH" BUG, AND IT WAS A
+//  DISCONNECTED ARENA.
+//
+//  User: *"the zombies stop targeting me for a second and then instantly
+//  vanish."* Their log had 11 stock distance-cleanup removals in three rounds,
+//  every one a full-health zombie that had never been shot, and almost all in
+//  zone_bunker_3b / zone_bunker_4b.
+//
+//  🌟 WHY. Zone links on Origins are gated on flags, and the version of this
+//  function inherited from Reimagined opened only the 3b and 4b doors. Reading
+//  zm_tomb.gsc's add_adjacent_zone list, the chain from the spawn area to the
+//  bunkers needs FOUR flags this arena never set:
+//
+//      zone_start_a  --activate_zone_bunker_1--> zone_bunker_1a
+//      zone_bunker_1a--activate_zone_bunker_1--> zone_bunker_1
+//      zone_bunker_1 --activate_zone_bunker_3a-> zone_bunker_3a
+//      zone_start_b  --activate_zone_bunker_2--> zone_bunker_2a
+//      zone_bunker_2a--activate_zone_bunker_2--> zone_bunker_2
+//      zone_bunker_2 --activate_zone_bunker_4a-> zone_bunker_4a
+//
+//  With only 3b/4b set, 3a<->3b and 4a<->4b/4c/4f linked fine - so the bunker
+//  network was connected to ITSELF but severed from the start area. A zombie
+//  spawning in there had no path to the player, so it idled (the "stops
+//  targeting me"), and stock's distance cleanup then deleted it for being far
+//  and out of view (the "vanishes"). Both halves of the symptom, one cause.
+//
+//  Opening every door whose flag activates a zone in this arena's valid_zones
+//  makes the arena one connected graph. activate_zone_nml is deliberately NOT
+//  opened - No Man's Land is the Excavation Site's arena, not this one, and
+//  disable_zones() keeps it off.
+//
+//  📝 door.zombie_cost, not self.zombie_cost. Inside this foreach, `self` is
+//  the calling scope and not the door, so the old line read the cost off the
+//  wrong thing. Harmless as it happens - door_opened() only passes cost to
+//  set_hint_string - but it was wrong, and upstream has the same slip.
+// ============================================================================
 open_doors()
 {
+	//  🛑 v2.17.14 - REVERTED TO THE ORIGINAL TWO. READ THIS BEFORE WIDENING IT
+	//  AGAIN.
+	//
+	//  v2.17.13 opened all six (bunker_1, _2, _3a, _3b, _4a, _4b) on the
+	//  reasoning below - which is still correct about the adjacency graph. The
+	//  very next boot, the user spawned in and got an instant "GAME OVER - You
+	//  Survived 1 Round" at FULL HEALTH with "Zombies: 0" on the HUD. Not a
+	//  death: the round system collapsed outright.
+	//
+	//  The adjacency reasoning was sound and the consequence was still worse
+	//  than the bug it fixed. Opening 3a/4a pulls in links to zones this arena
+	//  deliberately switches off a moment later in disable_zones() -
+	//  zone_bunker_4e, the tank zones, zone_fire_stairs - and something in that
+	//  activate-then-disable ordering takes the round logic with it.
+	//
+	//  So: back to Reimagined's two. The freeze-then-vanish behaviour it causes
+	//  is a nuisance; an unplayable arena is not. If this is retried, the thing
+	//  to fix is the ORDERING (activate, then disable, then re-check what is
+	//  actually reachable) rather than simply opening more doors.
+	a_flags = [];
+	a_flags[0] = "activate_zone_bunker_3b";
+	a_flags[1] = "activate_zone_bunker_4b";
+
 	doors = getentarray("zombie_door", "targetname");
+	n_opened = 0;
 
 	foreach (door in doors)
 	{
-		if (isdefined(door.script_flag))
+		if (!isdefined(door.script_flag))
 		{
-			if (door.script_flag == "activate_zone_bunker_3b" || door.script_flag == "activate_zone_bunker_4b")
-			{
-				door maps\mp\zombies\_zm_blockers::door_opened(self.zombie_cost);
-			}
+			continue;
+		}
+
+		if (isinarray(a_flags, door.script_flag))
+		{
+			door maps\mp\zombies\_zm_blockers::door_opened(door.zombie_cost);
+			n_opened++;
 		}
 	}
+
+	println("[zm_qol] trenches: opened " + n_opened + " zone door(s) (expect 6) - the bunker network is now reachable from the spawn area, so zombies can path to the player instead of idling and being distance-cleaned");
 }
 
 disable_zones()

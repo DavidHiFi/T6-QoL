@@ -3332,3 +3332,65 @@ qol_opt_third_person_respawn()
         self.zmqol_tp_applied = -1;
     }
 }
+
+// ============================================================================
+//  zmqol_nb_near_player  -  A ZOMBIE IN CONTACT WITH A PLAYER IS NOT STRANDED
+//
+//  🛑 v2.17.25 - THIS IS THE "ZOMBIES JUST DISAPPEAR" BUG, AND IT IS ALSO THE
+//  "THEY STOP ATTACKING AND WANDER OFF" ONE. Same cause, two faces.
+//
+//  User, 2026-09-15: *"sometimes they would ignore my presence and stop
+//  attacking me whenever i was standing still ... whenever i moved they
+//  continued attacking"*, and then: *"the zombie was just attacking me and then
+//  i just like i ran away a tiny bit, i looked opposite direction, it just
+//  disappeared."*
+//
+//  🌟 THE FAILSAFE MEASURES THE ZOMBIE'S OWN MOVEMENT, AND AN ATTACKING ZOMBIE
+//  DOES NOT MOVE. Every copy of the stranded-zombie failsafe ends with
+//
+//      if ( distancesquared( self.origin, prevorigin ) < 576 )   // 24 units
+//          self dodamage( self.health + 100, ( 0, 0, 0 ) );
+//
+//  sampled every 30 s (maps\mp\zombies\_zm.gsc:3403) or every 15 s on Origins
+//  and Mob (zm_tomb.gsc:579, zm_prison.gsc). It exists to clear a zombie that
+//  spawned somewhere it can never path out of.
+//
+//  But a zombie standing in melee range swinging at a player is, by definition,
+//  not moving 24 units either - so it fails the same test and is killed. It
+//  reads as a zombie vanishing mid-fight. And it is WORST when the player holds
+//  still, because that is when the zombie has nowhere left to walk, which is
+//  exactly the condition the user isolated.
+//
+//  With NO BLEEDOUT on it does not kill - it teleports the zombie to a random
+//  spawn point instead, which is the other report: it stops attacking and walks
+//  off to a set location. Both faces, one test.
+//
+//  🛑 SO THE TEST IS NOT WRONG, IT IS INCOMPLETE. "Has not moved" only means
+//  stranded if there is nobody to be stuck ON. This adds the missing half: if a
+//  living player is within reach, the zombie is doing its job and the failsafe
+//  must leave it alone. A genuinely stranded zombie is far from everyone and is
+//  still cleared exactly as before, so the round can still end.
+//
+//  256 units: comfortably past melee (ai_meleeRange is 64) and past the shove
+//  radius, far short of "somewhere else in the map".
+//
+//  📝 IT LIVES IN THIS FILE ON PURPOSE. quality_of_life.gsc is on a compiled-
+//  bytecode ceiling and new code there takes unrelated imports down with it -
+//  it happened once already this session. The three call sites pay only for a
+//  call; the body is here, where there is room.
+// ============================================================================
+zmqol_nb_near_player()
+{
+    a_players = get_players();
+
+    for ( i = 0; i < a_players.size; i++ )
+    {
+        if ( !isdefined( a_players[i] ) || !isalive( a_players[i] ) )
+            continue;
+
+        if ( distancesquared( self.origin, a_players[i].origin ) < 65536 )
+            return 1;
+    }
+
+    return 0;
+}

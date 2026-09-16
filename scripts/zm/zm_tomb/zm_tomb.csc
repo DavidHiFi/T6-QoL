@@ -15,6 +15,10 @@
 
 main()
 {
+    // Origins omits Carpenter. Register the client half as well as the server
+    // drop entry so its stock pickup model and effects are initialized.
+    clientscripts\mp\zombies\_zm_utility::include_powerup( "carpenter" );
+
     replaceFunc(clientscripts\mp\zm_tomb::include_weapons, ::include_weapons);
 
     // --- Origins survival, The Crazy Place: client half. The server half is
@@ -61,9 +65,66 @@ main()
 //  Runs once per local client after waitforallclients(), as stock's
 //  init_custom_pap() does. No clientfield: the pose never changes.
 // ============================================================================
+//  🛑 v2.17.8 - NO LONGER CRAZY PLACE ONLY. Trenches and Excavation Site
+//  register a Pack-a-Punch of their own, and both drew the unbuilt stone heap
+//  for exactly the same reason ("still like broken up as if it was unpowered,
+//  but the functionality still works", 2026-09-15). Same cure, same numbers,
+//  one per arena - the origin/angles below are the ones each loc script's
+//  struct_init registers, and the server ghosts its machine at the same spot
+//  via loc_common::pap_built_pose().
+//
+//  Church is deliberately absent: it has no Pack-a-Punch, matching Reimagined.
 zmqol_cp_pap_client_model()
 {
-    if ( getdvar( "mapname" ) != "zm_tomb" || getdvar( "ui_zm_mapstartlocation" ) != "crazy_place" )
+    if ( getdvar( "mapname" ) != "zm_tomb" )
+        return;
+
+    str_loc = getdvar( "ui_zm_mapstartlocation" );
+
+    if ( str_loc == "crazy_place" )
+    {
+        v_origin = ( 10340, -7906, -412 );
+        v_angles = ( 0, 0, 0 );
+    }
+    else if ( str_loc == "trenches" )
+    {
+        v_origin = ( -704, 2653, -184 );
+        v_angles = ( 0, 90, 0 );
+    }
+    else if ( str_loc == "excavation_site" )
+    {
+        v_origin = ( -5.5, -8.5, 335.5 );
+        v_angles = ( 0, 270, 0 );
+    }
+    else if ( str_loc == "church" )
+    {
+        //  Church gained a Pack-a-Punch in v2.17.15 (this mod's own addition;
+        //  Reimagined's Church has none).
+        //
+        //  🛑 v2.17.24 - THESE FOUR NUMBERS ARE DUPLICATED IN GSC AND THE BUILD
+        //  NOW CHECKS THEM. They must equal zm_tomb_loc_church.gsc's
+        //  zmqol_church_pap_origin() / _yaw() exactly. The client spawns its own
+        //  p6_zm_tm_packapunch here while the server ghosts the real machine, so
+        //  a mismatch draws the visible machine somewhere the working one is not
+        //  - and that is not a subtle bug, it is two Pack-a-Punches.
+        //
+        //  A comment saying "must match" was already here and did not stop the
+        //  GSC side drifting 170 units away from it, so tools\check-perk-guard.ps1
+        //  now fails the build on any disagreement. Change one side and the build
+        //  tells you about the other.
+        //
+        //  🌟 MEASURED. (484,-2559,47) yaw 15. The origin is a traced wall
+        //  snap; the yaw is the crate plane's normal (285) PLUS 90, because
+        //  this model's face runs along its model X and so its front sits 90
+        //  degrees off its placement yaw. Full reading, including the joint
+        //  measurement that established the offset, is in the banner on
+        //  zm_tomb_loc_church.gsc::zmqol_church_pap_origin().
+        v_origin = ( getdvarintdefault( "zmqol_pap_church_x", 484 ),
+                     getdvarintdefault( "zmqol_pap_church_y", -2559 ),
+                     getdvarintdefault( "zmqol_pap_church_z", 47 ) );
+        v_angles = ( 0, getdvarintdefault( "zmqol_pap_church_yaw", 15 ), 0 );
+    }
+    else
         return;
 
     waitforallclients();
@@ -71,13 +132,13 @@ zmqol_cp_pap_client_model()
     a_players = getlocalplayers();
 
     for ( localclientnum = 0; localclientnum < a_players.size; localclientnum++ )
-        level thread zmqol_cp_pap_client_model_for( localclientnum );
+        level thread zmqol_cp_pap_client_model_for( localclientnum, v_origin, v_angles );
 }
 
-zmqol_cp_pap_client_model_for( localclientnum )
+zmqol_cp_pap_client_model_for( localclientnum, v_origin, v_angles )
 {
-    m_pap = spawn( localclientnum, ( 10340, -7906, -412 ), "script_model" );
-    m_pap.angles = ( 0, 0, 0 );
+    m_pap = spawn( localclientnum, v_origin, "script_model" );
+    m_pap.angles = v_angles;
     m_pap setmodel( "p6_zm_tm_packapunch" );
     m_pap waittill_dobj( localclientnum );
 
@@ -106,7 +167,7 @@ zmqol_cp_pap_client_model_for( localclientnum )
 
     level.zmqol_cp_pap_client_models[localclientnum] = m_pap;
 
-    println( "[zm_qol] CLIENT crazy place pap: built pose - own p6_zm_tm_packapunch spawned at (10340,-7906,-412) for local client " + localclientnum + ", 6 assembly anims snapped to their last frame (rate 0, time 1.0)" );
+    println( "[zm_qol] CLIENT pap built pose (" + getdvar( "ui_zm_mapstartlocation" ) + "): own p6_zm_tm_packapunch spawned at (" + int( v_origin[0] ) + "," + int( v_origin[1] ) + "," + int( v_origin[2] ) + ") for local client " + localclientnum + ", 6 assembly anims snapped to their last frame (rate 0, time 1.0)" );
 
     //  v2.14.26 - MEASUREMENT for the machine's collision (server side,
     //  zm_tomb_loc_crazy_place.gsc::zmqol_cp_pap_collision): where each of the
@@ -200,6 +261,21 @@ init_gamemodes()
     //  at zm_tomb_classic is what produced EXE_CLIENT_FIELD_MISMATCH.
     add_map_location_gamemode( "zstandard", "crazy_place", undefined, undefined, undefined );
     add_map_location_gamemode( "zgrief", "crazy_place", undefined, undefined, undefined );
+
+    //  v2.17.6 - the other three Origins arenas, registered client-side to match
+    //  the server's zm_tomb_gamemodes::init. All three funcs undefined for the
+    //  same measured reason as Crazy Place above: these locations run
+    //  scripts\zm\locs\zm_tomb_loc_* on the server, which register no
+    //  craftables, so pointing the client at zm_tomb_classic would register 37
+    //  clientfields the server does not have - the EXE_CLIENT_FIELD_MISMATCH
+    //  documented in the banner. Reimagined registers all four of its Origins
+    //  arenas exactly this way.
+    add_map_location_gamemode( "zstandard", "trenches", undefined, undefined, undefined );
+    add_map_location_gamemode( "zgrief", "trenches", undefined, undefined, undefined );
+    add_map_location_gamemode( "zstandard", "excavation_site", undefined, undefined, undefined );
+    add_map_location_gamemode( "zgrief", "excavation_site", undefined, undefined, undefined );
+    add_map_location_gamemode( "zstandard", "church", undefined, undefined, undefined );
+    add_map_location_gamemode( "zgrief", "church", undefined, undefined, undefined );
 }
 
 include_weapons()

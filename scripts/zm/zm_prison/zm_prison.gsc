@@ -797,6 +797,16 @@ zmqol_alcatraz_round_spawn_failsafe()
 
         if ( distancesquared( self.origin, prevorigin ) < 576 )
         {
+            //  🛑 A ZOMBIE NEXT TO A PLAYER IS NOT STRANDED - IT IS ATTACKING.
+            //  Mob runs this map-local copy on a 15s timer as well as the shared
+            //  30s one, so it needs the same guard. Reasoning on the helper,
+            //  scripts\zm\qol_options::zmqol_nb_near_player().
+            if ( self scripts\zm\qol_options::zmqol_nb_near_player() )
+            {
+                prevorigin = self.origin;
+                continue;
+            }
+
             //  🛑 THE PATCH — the same one the shared copy carries.
             if ( getdvarintdefault( "no_bleedout", 0 ) )
             {

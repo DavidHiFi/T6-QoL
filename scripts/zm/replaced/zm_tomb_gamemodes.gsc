@@ -56,4 +56,45 @@ init()
 
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zstandard", "crazy_place", scripts\zm\locs\zm_tomb_loc_crazy_place::struct_init );
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zgrief", "crazy_place", scripts\zm\locs\zm_tomb_loc_crazy_place::struct_init );
+
+	// ========================================================================
+	//  v2.17.4 - ORIGINS' OTHER THREE SURVIVAL ARENAS, restored.
+	//
+	//  Trenches, Excavation Site (No Man's Land) and Church went out in v1.15.0
+	//  with the rest of the ported locations. Their loc scripts never left
+	//  scripts\zm\locs\ and already carried their zm_qol adaptation (precache
+	//  lists populated, zm_tomb_reimagined -> loc_common namespace fixes, zone
+	//  and spawn handling).
+	//
+	//  Each registers its own perk machines from script in struct_init, because
+	//  this mod ships no zm_tomb mapents and the stock machines are all tagged
+	//  "zclassic_perks_tomb" - Church 1 (already shipped), Trenches 4 and
+	//  Excavation Site 3 (both added in this change, coordinates verbatim from
+	//  Reimagined's zm_tomb.d3dbsp).
+	//
+	//  🌟 THE EE SURFACE NEEDED NOTHING NEW. zm_tomb.gsc's
+	//  zmqol_remove_survival_ee_props() and replaced\zm_tomb_capture_zones.gsc's
+	//  five functions all guard on is_classic() ALONE, not on location, so the
+	//  tank removal and the generator ungating these three need were already
+	//  written by the Crazy Place work and apply here for free. Stock's own
+	//  quest self-gates at zm_tomb_ee_main.gsc:43 on
+	//  is_sidequest_allowed("zclassic"), which is false in zstandard.
+	// ========================================================================
+	add_map_location_gamemode( "zstandard", "trenches", scripts\zm\locs\zm_tomb_loc_trenches::precache, scripts\zm\locs\zm_tomb_loc_trenches::main );
+	add_map_location_gamemode( "zgrief", "trenches", scripts\zm\locs\zm_tomb_loc_trenches::precache, scripts\zm\locs\zm_tomb_loc_trenches::main );
+
+	add_map_location_gamemode( "zstandard", "excavation_site", scripts\zm\locs\zm_tomb_loc_excavation_site::precache, scripts\zm\locs\zm_tomb_loc_excavation_site::main );
+	add_map_location_gamemode( "zgrief", "excavation_site", scripts\zm\locs\zm_tomb_loc_excavation_site::precache, scripts\zm\locs\zm_tomb_loc_excavation_site::main );
+
+	add_map_location_gamemode( "zstandard", "church", scripts\zm\locs\zm_tomb_loc_church::precache, scripts\zm\locs\zm_tomb_loc_church::main );
+	add_map_location_gamemode( "zgrief", "church", scripts\zm\locs\zm_tomb_loc_church::precache, scripts\zm\locs\zm_tomb_loc_church::main );
+
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zstandard", "trenches", scripts\zm\locs\zm_tomb_loc_trenches::struct_init );
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zgrief", "trenches", scripts\zm\locs\zm_tomb_loc_trenches::struct_init );
+
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zstandard", "excavation_site", scripts\zm\locs\zm_tomb_loc_excavation_site::struct_init );
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zgrief", "excavation_site", scripts\zm\locs\zm_tomb_loc_excavation_site::struct_init );
+
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zstandard", "church", scripts\zm\locs\zm_tomb_loc_church::struct_init );
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func( "zgrief", "church", scripts\zm\locs\zm_tomb_loc_church::struct_init );
 }

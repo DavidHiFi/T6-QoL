@@ -162,6 +162,13 @@ if ZmQolDinerAllowed then
 	-- zm_buried.d3dbsp are already tagged zstandard_maze, so no re-tagging
 	-- struct_init is needed beyond the loc script's own.
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_buried",   "maze",           "MAZE")            -- added by this mod
+	-- v2.17.4: the last four. Origins' other three arenas and Mob's Docks.
+	-- Server halves are scripts/zm/replaced/zm_tomb_gamemodes.gsc and
+	-- zm_alcatraz_gamemodes.gsc.
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_tomb",     "trenches",        "TRENCHES")        -- added by this mod
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_tomb",     "excavation_site", "EXCAVATION SITE") -- added by this mod
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_tomb",     "church",          "CHURCH")          -- added by this mod
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_prison",   "docks",           "DOCKS")           -- added by this mod
 end
 
 CoD.SelectMapListZombie.GriefLocations = {}
