@@ -1763,8 +1763,10 @@ if zmQolMapListOk then
 
 		local gametypeTable = CoD.SelectMapListZombie.GameModes
 		local customMapIndex = CoD.SelectMapListZombie.GetKeyValueIndex(CoD.SelectMapListZombie.CustomMaps, "ui_mapname", map)
-		local isCustomMap = UIExpression.DvarBool(nil, "party_solo") == 0
-			and CoD.SelectMapListZombie.CustomMaps[customMapIndex].ui_mapname == map
+		-- Custom Maps is selectable in solo too (mode list shows it there), so
+		-- the lobby must recognise the map whichever party size is set.
+		local isCustomMap =
+			CoD.SelectMapListZombie.CustomMaps[customMapIndex].ui_mapname == map
 		local gametypeIndex
 		local mapTable = {}
 		local mapIndex = 1

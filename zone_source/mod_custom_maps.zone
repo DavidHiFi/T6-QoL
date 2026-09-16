@@ -99,6 +99,14 @@ material,menu_zm_octagonal_map_blur
 image,menu_zm_map_octagonal_zclassic
 material,menu_zm_octagonal_zclassic_octagonal
 
+// The lobby's bottom-left preview panel. ui/t6/mapinfoimage.lua derives the
+// name as "menu_" .. map .. "_" .. gamemode .. "_" .. location and folds every
+// non-zclassic gametype to zsurvival, so the Custom Maps route (zstandard)
+// asks for menu_zm_octagonal_zsurvival_octagonal. The pixels are the map card
+// image above; the material is authored in zone_assets/materials/ on the
+// menu_zm_transit_zsurvival_diner pattern.
+material,menu_zm_octagonal_zsurvival_octagonal
+
 // Loading screen, one material per gametype x start-location pair the engine
 // can ask for. The engine builds the name from the dvars and falls back to a
 // missing-material placeholder if the exact permutation is absent, so all

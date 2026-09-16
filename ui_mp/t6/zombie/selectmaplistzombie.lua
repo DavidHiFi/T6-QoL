@@ -306,7 +306,10 @@ function LUI.createMenu.SelectGameModeListZM(controller)
 	end
 
 	if UIExpression.DvarBool(nil, "party_solo") == 1 then
-		listBox:setTotalItems(2, index)
+		-- Solo shows Classic, Survival and Custom Maps. Grief (index 4) stays
+		-- multiplayer-only; Custom Maps runs its map on the Classic engine
+		-- group, so it is valid wherever Survival is.
+		listBox:setTotalItems(3, index)
 	else
 		listBox:setTotalItems(#CoD.SelectMapListZombie.GameModes, index)
 	end
