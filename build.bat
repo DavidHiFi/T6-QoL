@@ -62,6 +62,18 @@ if not exist "%~dp0pack_iwd.ps1" (
     color C & echo. & echo   pack_iwd.ps1 is missing next to build.bat - cannot build. & pause & exit /b 1
 )
 
+REM --- perk pop-up regression gate -------------------------------------------
+if not exist "%~dp0tools\check-perk-popup.ps1" (
+    color C & echo. & echo   tools\check-perk-popup.ps1 is missing - cannot verify the perk descriptions. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-perk-popup.ps1"
+if errorlevel 1 goto perkpopupfail
+if not exist "%~dp0tools\check-lobby-options.ps1" (
+    color C & echo. & echo   tools\check-lobby-options.ps1 is missing - cannot verify the permanent menu moves. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lobby-options.ps1"
+if errorlevel 1 goto lobbyoptionsfail
+
 REM --- resolve the project root (parent of this folder) for the send-ready copy ---
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "BUILD_DIR=%ROOT%\build\%MOD_NAME%"
@@ -391,6 +403,20 @@ echo   BUILD STOPPED: a cross-script call names a function this mod does not def
 echo   That is "Unresolved external" + SV_Shutdown at map load, and it kills EVERY
 echo   location on the map - not just the script that holds the bad reference.
 echo   Define the function, or point the call at the file that really has it.
+if not defined OFFLINE pause
+exit /b 1
+
+:perkpopupfail
+color C
+echo.
+echo   BUILD STOPPED: the perk pop-up description regression gate failed.
+if not defined OFFLINE pause
+exit /b 1
+
+:lobbyoptionsfail
+color C
+echo.
+echo   BUILD STOPPED: the permanent lobby-option regression gate failed.
 if not defined OFFLINE pause
 exit /b 1
 

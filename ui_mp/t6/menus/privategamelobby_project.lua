@@ -906,9 +906,9 @@ CoD.PrivateGameLobby.Dvars[3].modeGroups[1] = "zsurvival"
 --  therefore appears when the row is ENABLED, which is correct - Treyarch's
 --  Easter Eggs want four players.
 --
---  📝 ROW BUDGET. A classic map currently draws six rows (CHARACTER, plus
---  DIFFICULTY / STARTING ROUND / HEADSHOTS ONLY, plus CHEATS / PERK LIMIT);
---  this makes seven. Nuketown and Green Run survival already draw eight, so
+--  📝 ROW BUDGET. A classic map currently draws five rows (CHARACTER, plus
+--  DIFFICULTY / STARTING ROUND / HEADSHOTS ONLY, plus PERK LIMIT); this makes
+--  six. Nuketown and Green Run survival already draw seven, so
 --  the hint text sits no lower here than on a screen that already ships.
 --
 --  🛑 THE DVAR NAME IS FROZEN once this ships - it is what the console takes
@@ -1345,12 +1345,14 @@ CoD.PrivateGameLobby.PopulateButtons_Project_Zombie = function (PrivateGameLobby
 			CoD.PrivateGameLobby.GameTypeSettings[5].maps = {}
 			CoD.PrivateGameLobby.GameTypeSettings[5].maps[1] = "zm_transit"
 		end
-		-- MAGIC now lives under Options > Settings > GAME 3. Keep using the
-		-- stock "magic" gametype setting, but do not draw its old lobby row.
+		-- MAGIC and CHEATS now live under Options > Settings > GAME 3. Keep
+		-- using their original settings, but do not draw their old lobby rows.
 		if ZmQolLobbyModLoaded() then
 			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = {}
+			CoD.PrivateGameLobby.Dvars[1].gameTypes = {}
 		else
 			CoD.PrivateGameLobby.GameTypeSettings[3].gameTypes = { "zstandard", "zgrief" }
+			CoD.PrivateGameLobby.Dvars[1].gameTypes = nil
 		end
 		AddGameOptionsButtons(PrivateGameLobbyButtonPane, CoD.PrivateGameLobby.GameTypeSettings, "gts")
 		--  v2.15.50 - seed perk_limit BEFORE the row is built, or the selector
@@ -1364,12 +1366,9 @@ CoD.PrivateGameLobby.PopulateButtons_Project_Zombie = function (PrivateGameLobby
 		-- zm_qol: stop the hint wrapping onto a second line, which collides with the
 		-- map preview panel below it.
 		--
-		-- The hint sits under the settings list, so its Y follows the row count. This
-		-- mod's Dvars table has TWO rows (TARGET ASSIST, CHEATS) where Reimagined's has
-		-- one (ui_gametype_pro), so the hint starts one row lower than the stock layout
-		-- allows for. At that position line 1 still clears the top of the preview panel
-		-- but line 2 is drawn inside it - e.g. "Change the game mode to a traditional or
-		-- / custom rule set.", where only "custom rule set." overlaps.
+		-- The hint sits under the settings list, so its Y follows the row count. Keep
+		-- the wider element because map-specific rows can still push it near the preview
+		-- panel even though CHEATS no longer appears in this lobby.
 		--
 		-- Widening the element so the text fits on one line removes the overlapping line
 		-- rather than fighting the vertical layout. Same fix and same 800 width that

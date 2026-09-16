@@ -17913,49 +17913,21 @@ perk_bought( perk )
     hud.foreground = 1;
     hud setshader( shader, 64, 64 );
 
-    // --- Perk name (line 1, white, larger) ---
-    name_hud = newclienthudelem( self );
-    name_hud.alignx = "center";
-    name_hud.aligny = "middle";
-    name_hud.horzalign = "user_center";
-    name_hud.vertalign = "user_top";
-    name_hud.x = 0;
-    name_hud.y = 122;
-    name_hud.fontscale = 1.6;
-    name_hud.alpha = 0;
-    name_hud.color = ( 1, 1, 1 );
-    name_hud.hidewheninmenu = 1;
-    name_hud.foreground = 1;
-    name_hud settext( getPerkName( perk ) );
-
-    // --- Perk description (line 2) ---
-    //  🛑 v2.17.27 - BACK TO THE ORIGINAL THREE-ELEMENT LAYOUT. v2.17.26 merged
-    //  these two into one element to get the description drawing again; it drew,
-    //  but it also flattened the name to the description's size and moved the
-    //  block. User, 2026-09-16: *"revert it back to how it was ... it showed the
-    //  name of the perk and then the description."* So the geometry below is
-    //  byte-for-byte what shipped before the description went missing: y 122 at
-    //  fontscale 1.6 for the name, y 147 at 1.3 for the description.
-    //
-    //  📝 A separate description element is NOT the thing that was broken. The
-    //  hotload probe that settled v2.17.26 drew four rows on Docks, two of them
-    //  independent elements created second and third in the same pass, one
-    //  carrying the exact 36-character Juggernog string - all four drew, and
-    //  isdefined() returned 1 for every one. Long strings, third allocations and
-    //  \n all work. Whatever blanked this line, it was not the construction.
-    desc_hud = newclienthudelem( self );
-    desc_hud.alignx = "center";
-    desc_hud.aligny = "middle";
-    desc_hud.horzalign = "user_center";
-    desc_hud.vertalign = "user_top";
-    desc_hud.x = 0;
-    desc_hud.y = 147;
-    desc_hud.fontscale = 1.3;
-    desc_hud.alpha = 0;
-    desc_hud.color = ( 1, 1, 1 );
-    desc_hud.hidewheninmenu = 1;
-    desc_hud.foreground = 1;
-    desc_hud settext( getPerkDesc( perk ) );
+    // Keep both lines on one element. Origins can exhaust the client HUD pool
+    // before a separate description element draws.
+    text_hud = newclienthudelem( self );
+    text_hud.alignx = "center";
+    text_hud.aligny = "middle";
+    text_hud.horzalign = "user_center";
+    text_hud.vertalign = "user_top";
+    text_hud.x = 0;
+    text_hud.y = 130;
+    text_hud.fontscale = 1.4;
+    text_hud.alpha = 0;
+    text_hud.color = ( 1, 1, 1 );
+    text_hud.hidewheninmenu = 1;
+    text_hud.foreground = 1;
+    text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
@@ -17969,19 +17941,15 @@ perk_bought( perk )
     //  Re-add it the day it actually gets text, not before.
 
     self.perkhud = hud;
-    self.perkname_hud = name_hud;
-    self.perkdesc_hud = desc_hud;
+    self.perkname_hud = text_hud;
 
     // ---- Fade IN ----
     hud scaleovertime( 0.4, 64, 64 );
     hud fadeovertime( 0.4 );
     hud.alpha = 1;
 
-    name_hud fadeovertime( 0.4 );
-    name_hud.alpha = 1;
-
-    desc_hud fadeovertime( 0.4 );
-    desc_hud.alpha = 1;
+    text_hud fadeovertime( 0.4 );
+    text_hud.alpha = 1;
 
     wait 3.5;
 
@@ -17989,21 +17957,16 @@ perk_bought( perk )
     hud fadeovertime( 0.5 );
     hud.alpha = 0;
 
-    name_hud fadeovertime( 0.5 );
-    name_hud.alpha = 0;
-
-    desc_hud fadeovertime( 0.5 );
-    desc_hud.alpha = 0;
+    text_hud fadeovertime( 0.5 );
+    text_hud.alpha = 0;
 
     wait 0.55;
 
     hud destroy();
-    name_hud destroy();
-    desc_hud destroy();
+    text_hud destroy();
 
     self.perkhud = undefined;
     self.perkname_hud = undefined;
-    self.perkdesc_hud = undefined;
 }
 
 // Shader (icon material) for each perk

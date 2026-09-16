@@ -2309,7 +2309,7 @@ end
 --  v2.15.45 GAME 1 and GAME 2 both sit at 14.0. A 16th row on either is the
 --  reported bug, not a risk of it.
 --
---  📝 ROOM LEFT: 11 more rows (v2.16.14) before this tab reaches the same ceiling. When
+--  📝 ROOM LEFT: 10 more rows (v2.16.14) before this tab reaches the same ceiling. When
 --  the next option needs a home, it belongs here rather than on GAME 1 or 2.
 --
 --  📝 The label reads NO DENIZENS rather than DENIZENS so that ENABLED is the
@@ -2327,7 +2327,8 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 
 	-- v2.15.45 - NO DENIZENS MOVED TO GAME 2 (row balance, user 2026-09-12).
 	-- Its label and dvar are untouched; see the note beside it on GAME 2. This
-	-- tab now holds 3 rows, 12 short of the 15.0-pitch ceiling.
+	-- tab now holds 5 rows, 10 short of the 15.0-pitch ceiling - MAGIC and CHEATS
+	-- came down from the pre-game lobby after that note was written.
 
 	-- ========================================================================
 	--  v2.14.13 - THIRD PERSON. User request 2026-09-07: "put a 3rd person
@@ -2380,7 +2381,18 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 	MagicSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 
-	return QolGame3Container                          -- 3 rows + 0 spacers = 3.0
+	-- Moved from the pre-game lobby. Keep this as a direct dvar selector so it
+	-- controls the same server setting without archiving a per-match state.
+	local CheatsSelector = QolGame3Buttons:addDvarLeftRightSelector(
+		LocalClientIndex,
+		Engine.Localize("CHEATS"),
+		"sv_cheats",
+		Engine.Localize("Enable cheats on server.")
+	)
+	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
+	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
+
+	return QolGame3Container                          -- 5 rows + 0 spacers = 5.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
