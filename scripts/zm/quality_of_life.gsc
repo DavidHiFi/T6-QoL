@@ -17913,35 +17913,49 @@ perk_bought( perk )
     hud.foreground = 1;
     hud setshader( shader, 64, 64 );
 
-    // --- Perk name + description, ONE element, two lines ---
-    //  🛑 v2.17.26 - THE DESCRIPTION WAS GONE. User, 2026-09-16, screenshot of
-    //  the Juggernog pop-up: icon and "Jugger-Nog" drew, the line under it was
-    //  empty, on every perk and from the Wunderfizz too.
+    // --- Perk name (line 1, white, larger) ---
+    name_hud = newclienthudelem( self );
+    name_hud.alignx = "center";
+    name_hud.aligny = "middle";
+    name_hud.horzalign = "user_center";
+    name_hud.vertalign = "user_top";
+    name_hud.x = 0;
+    name_hud.y = 122;
+    name_hud.fontscale = 1.6;
+    name_hud.alpha = 0;
+    name_hud.color = ( 1, 1, 1 );
+    name_hud.hidewheninmenu = 1;
+    name_hud.foreground = 1;
+    name_hud settext( getPerkName( perk ) );
+
+    // --- Perk description (line 2) ---
+    //  🛑 v2.17.27 - BACK TO THE ORIGINAL THREE-ELEMENT LAYOUT. v2.17.26 merged
+    //  these two into one element to get the description drawing again; it drew,
+    //  but it also flattened the name to the description's size and moved the
+    //  block. User, 2026-09-16: *"revert it back to how it was ... it showed the
+    //  name of the perk and then the description."* So the geometry below is
+    //  byte-for-byte what shipped before the description went missing: y 122 at
+    //  fontscale 1.6 for the name, y 147 at 1.3 for the description.
     //
-    //  🌟 MEASURED IN GAME, not reasoned about. A hotload probe rebuilt this
-    //  construction on Docks and drew four test rows: a short string, the exact
-    //  36-character Juggernog description on its own element, and the name and
-    //  description together in ONE element separated by \n. All four drew. So
-    //  the long string is fine, a third clienthudelem allocates fine, and \n is
-    //  supported - the separate description element was the only thing that
-    //  did not draw, and nothing about the string or the pool explains it.
-    //
-    //  So it stops being a separate element. One element carries both lines,
-    //  which is the arrangement that was just watched working on the user's own
-    //  screen, and the pop-up drops from three client hudelems to two.
-    text_hud = newclienthudelem( self );
-    text_hud.alignx = "center";
-    text_hud.aligny = "middle";
-    text_hud.horzalign = "user_center";
-    text_hud.vertalign = "user_top";
-    text_hud.x = 0;
-    text_hud.y = 130;
-    text_hud.fontscale = 1.4;
-    text_hud.alpha = 0;
-    text_hud.color = ( 1, 1, 1 );
-    text_hud.hidewheninmenu = 1;
-    text_hud.foreground = 1;
-    text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );
+    //  📝 A separate description element is NOT the thing that was broken. The
+    //  hotload probe that settled v2.17.26 drew four rows on Docks, two of them
+    //  independent elements created second and third in the same pass, one
+    //  carrying the exact 36-character Juggernog string - all four drew, and
+    //  isdefined() returned 1 for every one. Long strings, third allocations and
+    //  \n all work. Whatever blanked this line, it was not the construction.
+    desc_hud = newclienthudelem( self );
+    desc_hud.alignx = "center";
+    desc_hud.aligny = "middle";
+    desc_hud.horzalign = "user_center";
+    desc_hud.vertalign = "user_top";
+    desc_hud.x = 0;
+    desc_hud.y = 147;
+    desc_hud.fontscale = 1.3;
+    desc_hud.alpha = 0;
+    desc_hud.color = ( 1, 1, 1 );
+    desc_hud.hidewheninmenu = 1;
+    desc_hud.foreground = 1;
+    desc_hud settext( getPerkDesc( perk ) );
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
@@ -17954,20 +17968,20 @@ perk_bought( perk )
     //  is not created when the pool is empty. One of those four was pure waste.
     //  Re-add it the day it actually gets text, not before.
 
-    //  📝 self.perkdesc_hud stays UNDEFINED now that there is no second text
-    //  element. It must not be aliased to text_hud: the teardown below and the
-    //  "destroy the previous pop-up" block at the top both destroy() every
-    //  handle they find, and destroying one element twice is a script error.
     self.perkhud = hud;
-    self.perkname_hud = text_hud;
+    self.perkname_hud = name_hud;
+    self.perkdesc_hud = desc_hud;
 
     // ---- Fade IN ----
     hud scaleovertime( 0.4, 64, 64 );
     hud fadeovertime( 0.4 );
     hud.alpha = 1;
 
-    text_hud fadeovertime( 0.4 );
-    text_hud.alpha = 1;
+    name_hud fadeovertime( 0.4 );
+    name_hud.alpha = 1;
+
+    desc_hud fadeovertime( 0.4 );
+    desc_hud.alpha = 1;
 
     wait 3.5;
 
@@ -17975,16 +17989,21 @@ perk_bought( perk )
     hud fadeovertime( 0.5 );
     hud.alpha = 0;
 
-    text_hud fadeovertime( 0.5 );
-    text_hud.alpha = 0;
+    name_hud fadeovertime( 0.5 );
+    name_hud.alpha = 0;
+
+    desc_hud fadeovertime( 0.5 );
+    desc_hud.alpha = 0;
 
     wait 0.55;
 
     hud destroy();
-    text_hud destroy();
+    name_hud destroy();
+    desc_hud destroy();
 
     self.perkhud = undefined;
     self.perkname_hud = undefined;
+    self.perkdesc_hud = undefined;
 }
 
 // Shader (icon material) for each perk
@@ -18062,6 +18081,11 @@ getPerkDesc( perk )
 {
     switch ( perk )
     {
+        //  📝 These strings are the ones this mod has shipped for over a month.
+        //  A v2.17.27 rewrite reworded all twelve for grammar; the user asked
+        //  for it and then asked for the original text back on the same day, so
+        //  they are restored verbatim. Do not "tidy" them again without being
+        //  asked - the pop-up is meant to read exactly as it always has.
         case "specialty_armorvest":
             return "Increase Your Health from 100 to 250";
         case "specialty_fastreload":
