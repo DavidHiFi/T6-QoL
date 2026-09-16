@@ -1924,8 +1924,41 @@ zmqol_wf_filter_to_zones( a_place, a_zones )
 //  scripts\zmeplaced\zm_alcatraz_gamemodes.gsc). Docks, cafeteria-side
 //  citadel, infirmary and roof are deliberately NOT in it.
 // ============================================================================
+//  🛑 v2.17.9 - AND IT IS THE CELL BLOCK'S LIST ONLY, WHICH IS WHY DOCKS HAD
+//  NO WUNDERFIZZ AT ALL.
+//
+//  User, 2026-09-16: *"Docks survival is missing its Wunderfizz machine. There's
+//  meant to be a Wunderfizz machine at the Docks."* There is - candidate 5 of
+//  the zm_prison list, (-900, 5585, -72), the spot v1.65.5 measured off the
+//  shield-dolly clash. It was being filtered out.
+//
+//  🌟 THE FILTER WAS RIGHT, ITS ZONE LIST WAS NOT. zmqol_wf_place() runs this
+//  zone filter for zm_prison in EVERY non-classic mode, and the list it got back
+//  was always the Cell Block arena. Zone volumes exist map-wide regardless of
+//  which location loaded (the v1.19.1 note above says exactly that), so on Docks
+//  the four Cell Block candidates still matched, a_near came back non-empty, and
+//  the "nothing matched, fall back to the play area" path never ran. Result: six
+//  candidates filtered down to the machines on the far side of a map the Docks
+//  player cannot cross - i.e. no Wunderfizz in the arena, the same failure the
+//  play-area filter was written to fix in v1.19.2.
+//
+//  📝 WHY DOCKS GETS A LIST RATHER THAN JUST FALLING THROUGH. Either would work:
+//  zm_prison_loc_docks::struct_init() rebuilds level.struct_class_names
+//  ["targetname"]["player_respawn_point"] down to the Docks zones only, so the
+//  map-wide untagged-spawn problem that defeated the distance filter on Cell
+//  Block does not exist here and zmqol_wf_filter_to_play_area() would keep the
+//  right one on its own. The named list is the tighter test, and the play-area
+//  filter stays behind it as the fallback if a zone lookup ever misses.
+//
+//  The Docks zone names are this map's own, taken from the zone graph in
+//  scripts\zm\replaced\zm_prison.gsc::working_zone_init() and from the
+//  script_noteworthy values zm_prison_loc_docks::struct_init() keeps respawn
+//  points for - not invented.
 zmqol_wf_prison_survival_zones()
 {
+	if ( getdvar( "ui_zm_mapstartlocation" ) == "docks" )
+		return zmqol_wf_prison_docks_zones();
+
 	a = [];
 	a[a.size] = "zone_start";
 	a[a.size] = "zone_library";
@@ -1937,6 +1970,29 @@ zmqol_wf_prison_survival_zones()
 	a[a.size] = "zone_cellblock_west_barber";
 	a[a.size] = "zone_cellblock_west";
 	a[a.size] = "zone_cellblock_west_gondola";
+	return a;
+}
+
+// ============================================================================
+//  zmqol_wf_prison_docks_zones  -  the Docks arena.
+//
+//  zone_dock_puzzle is IN the list. It only opens once the 2000 gate is bought
+//  (the edge restored in scripts\zm\replaced\zm_prison.gsc), and the filter asks
+//  get_zone_from_position() to ignore the enabled state anyway, so listing it
+//  costs nothing and keeps the arena description honest. As it happens the one
+//  Docks candidate, (-900, 5585, -72), sits on the DOCK side of the gate
+//  (cable_puzzle_gate_01 is at x -1343), so the machine is reachable from spawn
+//  without paying for anything.
+// ============================================================================
+zmqol_wf_prison_docks_zones()
+{
+	a = [];
+	a[a.size] = "zone_dock";
+	a[a.size] = "zone_dock_puzzle";
+	a[a.size] = "zone_dock_gondola";
+	a[a.size] = "zone_studio";
+	a[a.size] = "zone_citadel_basement";
+	a[a.size] = "zone_citadel_basement_building";
 	return a;
 }
 

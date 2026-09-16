@@ -10,7 +10,9 @@ struct_init()
 
 	scripts\zm\replaced\utility::register_perk_struct("specialty_armorvest", "zombie_vending_jugg", (473.92, 6638.99, 208), (0, 102, 0));
 	scripts\zm\replaced\utility::register_perk_struct("specialty_grenadepulldeath", "p6_zm_vending_electric_cherry_off", (-627, 6982, 63), (0, 100, 0));
-	scripts\zm\replaced\utility::register_perk_struct("specialty_weapupgrade", "p6_zm_al_vending_pap_on", (-1769, 5395, -72), (0, 100, 0));
+	//  PaP through loc_common so it draws BUILT, not the "please wait" pose -
+	//  see the banner on loc_common::register_pap_struct_built.
+	scripts\zm\locs\loc_common::register_pap_struct_built("p6_zm_al_vending_pap_on", (-1769, 5395, -72), (0, 100, 0));
 
 	level.struct_class_names["script_noteworthy"]["initial_spawn"] = [];
 
@@ -48,6 +50,19 @@ struct_init()
 			player_respawn_points[player_respawn_points.size] = player_respawn_point;
 		}
 		else if (player_respawn_point.script_noteworthy == "zone_dock_gondola")
+		{
+			player_respawn_points[player_respawn_points.size] = player_respawn_point;
+		}
+		//  v2.17.9 - the Pack-a-Punch side of the 2000 gate. It was dropped here
+		//  for as long as zone_dock_puzzle could never be enabled, which made it
+		//  dead weight; the zone edge restored in
+		//  scripts\zm\replaced\zm_prison.gsc::working_zone_init() now opens that
+		//  zone when the gate is bought, and enable_zone() unlocks exactly the
+		//  respawn points whose script_noteworthy matches the zone it opened
+		//  (_zm_zonemgr.gsc:459-468). Keeping this one is what gives a player who
+		//  goes down at Pack-a-Punch somewhere on that side to come back.
+		//  Locked until then, so it changes nothing before the purchase.
+		else if (player_respawn_point.script_noteworthy == "zone_dock_puzzle")
 		{
 			player_respawn_points[player_respawn_points.size] = player_respawn_point;
 		}
@@ -93,7 +108,15 @@ precache()
 	precachemodel( "p6_zm_al_desk_small" );
 	precachemodel( "p6_zm_al_horrific_bed_mattress_3" );
 	precachemodel( "p6_zm_al_infirmary_case" );
-	precachemodel( "p6_zm_al_shock_box_on" );
+
+	//  🛑 p6_zm_al_shock_box_on IS NOT LOADED IN SURVIVAL - see the banner on
+	//  zmqol_docks_shockbox_on_loaded(). Precaching it anyway is what put the
+	//  engine's black placeholder model next to Juggernog.
+	if ( zmqol_docks_shockbox_on_loaded() )
+	{
+		precachemodel( "p6_zm_al_shock_box_on" );
+	}
+
 	precachemodel( "p6_zm_buildable_bench_tarp" );
 	precachemodel( "zm_al_kitchen_table_01" );
 	precachemodel( "zm_collision_perks1" );   // loc_common::increase_pap_collision
@@ -109,6 +132,7 @@ main()
 	disable_gondola_call_triggers();
 	disable_craftable_triggers();
 	disable_afterlife_props();
+	disable_wolf_hurt_triggers();
 	create_key_door_unitrigger(4, 98, 112, 108);
 	level thread open_inner_gate();
 	level thread turn_afterlife_interacts_on();
@@ -209,6 +233,83 @@ disable_craftable_triggers()
 	}
 }
 
+// ============================================================================
+//  disable_wolf_hurt_triggers  -  the instant death on the way to Pack-a-Punch
+//
+//  🛑 v2.17.7 - USER DIED WALKING TO THE PACK-A-PUNCH. 2026-09-15, after paying
+//  2000 for the gate: *"there was like a death zone just before the Pack-a-Punch
+//  machine and I instantly died."*
+//
+//  MEASURED, NOT GUESSED. zm_prison's mapents carry five trigger_hurt volumes.
+//  Taking each one's distance to the nearest Docks arena spawn point, exactly
+//  one is inside the arena:
+//        wolf_hurt_trigger_docks   (19, 6252, 129)   410 units from a spawn
+//  The other four are up at the cellblock/warden end, 4000+ away.
+//  (Audit: modding-jobs\locs-restore-001\death_zones.py. The same sweep finds
+//  ZERO trigger_hurt on zm_tomb and zm_buried, so Trenches, Church, Excavation
+//  Site and Maze cannot have this bug - that is checked, not assumed.)
+//
+//  WHY IT IS LIVE IN SURVIVAL. It belongs to Hell's Retriever:
+//  maps\mp\zm_alcatraz_weap_quest::soul_catcher_state_manager() hide()s it at
+//  start and show()s it again after "first_zombie_killed_in_zone". That manager
+//  only runs on the classic quest path, so in a survival run NOTHING ever hides
+//  it and it is hot from the moment the map loads.
+//
+//  Deleted rather than hidden, matching the gondola/craftable/afterlife
+//  disables above: with no quest there is no legitimate state in which this
+//  trigger should ever fire on this location.
+//
+//  📝 Scoped to the Docks loc script on purpose. wolf_hurt_trigger (the other
+//  one) sits by the cellblock and is left alone - Cell Block is a separately
+//  shipped location and this change must not alter it.
+// ============================================================================
+disable_wolf_hurt_triggers()
+{
+	// ------------------------------------------------------------------------
+	//  🛑 v2.17.8 - WIDENED FROM ONE TRIGGER TO ALL OF THEM, AFTER THE NARROW
+	//  FIX DID NOT HOLD.
+	//
+	//  v2.17.7 deleted only wolf_hurt_trigger_docks. The log confirms that ran
+	//  ("removed 1 wolf_hurt_trigger_docks") and the user died anyway, in the
+	//  gated area on the way to Pack-a-Punch, at full health. So the killer was
+	//  one of the OTHER four, or a second one of the same class, and picking
+	//  them off one boot at a time is not a fix - it is a guessing loop.
+	//
+	//  🌟 SO: EVERY trigger_hurt ON THE MAP GOES, and the count is logged.
+	//  zm_prison ships exactly five and not one of them can legitimately fire in
+	//  a survival run - every one belongs to a mechanic this gametype does not
+	//  have:
+	//        wolf_hurt_trigger / wolf_hurt_trigger_docks   Hell's Retriever,
+	//            hidden and shown by zm_alcatraz_weap_quest::
+	//            soul_catcher_state_manager(), which only runs on the classic
+	//            quest path - so in survival nothing ever hides them
+	//        pulley_hurt_trigger_west / _east              the plane-build pulley
+	//        warden_fence_damage                           warden's-house fence
+	//
+	//  With no quest and no plane build, there is no state in which any of them
+	//  should hurt a player here, so "delete them all" is the correct scope
+	//  rather than a blunt one.
+	//
+	//  📝 SCOPED TO THIS LOC SCRIPT, so Cell Block - a separately shipped
+	//  location that uses the same map - is untouched. Nothing here runs unless
+	//  the Docks location is the one that loaded.
+	// ------------------------------------------------------------------------
+	a_hurt = getentarray("trigger_hurt", "classname");
+	n_removed = 0;
+
+	foreach (trigger in a_hurt)
+	{
+		if (isdefined(trigger))
+		{
+			println("[zm_qol] docks: deleting trigger_hurt '" + trigger.targetname + "' at (" + int(trigger.origin[0]) + "," + int(trigger.origin[1]) + "," + int(trigger.origin[2]) + ")");
+			trigger delete();
+			n_removed++;
+		}
+	}
+
+	println("[zm_qol] docks: removed " + n_removed + " trigger_hurt volume(s) - quest/trap kills that are never gated in survival (expect 5)");
+}
+
 disable_afterlife_props()
 {
 	a_afterlife_props = getentarray("afterlife_show", "targetname");
@@ -236,6 +337,48 @@ turn_afterlife_interacts_on()
 	m_docks_shockbox turn_afterlife_interact_on();
 }
 
+// ============================================================================
+//  zmqol_docks_shockbox_on_loaded  -  does THIS gametype load the "on" box?
+//
+//  🛑 v2.17.9 - THE BLACK BOX NEXT TO JUGGERNOG. User, 2026-09-16, with a
+//  screenshot taken at (564, 6616, 216) yaw 193 pitch 35: *"there's this weird
+//  black box to the left of it ... that's a weird bug."* The crosshair in that
+//  shot lands 2 units off the afterlife shock box at (472.3, 6595.9, 208) - the
+//  juggernog_on one - so the black rectangle IS that prop.
+//
+//  🌟 IT IS AN ASSET-OWNERSHIP BUG, MEASURED WITH THE OAT UNLINKER, not a
+//  material or lighting one. Listing the four Alcatraz fastfiles:
+//
+//      p6_zm_al_shock_box_off   xmodel + mc/mtl_..._off   zm_prison.ff
+//      p6_zm_al_shock_box_ON    xmodel + mc/mtl_..._on    so_zclassic_zm_prison.ff
+//                                                         so_zencounter_zm_prison.ff
+//
+//  There is no so_zsurvival_zm_prison.ff (TranZit is the only map with one, as
+//  the banner in scripts\zm\replaced\zm_alcatraz_gamemodes.gsc already
+//  established), so a zstandard run loads zm_prison + zm_prison_patch and the
+//  "on" model is simply not there. precachemodel() on a missing xmodel does not
+//  fail on Plutonium - it hands back the engine's placeholder, and setmodel()
+//  then draws that placeholder: an untextured black box.
+//
+//  Same class as the invisible-character bug this location already fixed, just
+//  the other way round: that one setmodel()'d a missing model WITHOUT
+//  precaching and drew nothing; this one precached first and drew the
+//  placeholder.
+//
+//  📝 THE ANIMS ARE FINE and are deliberately left alone - fxanim_zom_al_shock
+//  _box_on_anim / _off_anim both live in zm_prison.ff, so they load in every
+//  mode. Only the two "on" assets are classic/grief-only.
+//
+//  Gating on is_classic() || is_encounter() is gating on exactly the two
+//  gamemodegroups whose so_* fastfile carries the model ("zclassic" /
+//  "zencounter", maps\mp\zombies\_zm_utility.gsc:19 and :429), which is why
+//  this is a fastfile test written as a gametype test and not a guess.
+// ============================================================================
+zmqol_docks_shockbox_on_loaded()
+{
+	return ( is_classic() || is_encounter() );
+}
+
 #using_animtree("fxanim_props");
 
 turn_afterlife_interact_on()
@@ -248,6 +391,23 @@ turn_afterlife_interact_on()
 
 	if (issubstr(self.model, "p6_zm_al_shock_box"))
 	{
+		//  🛑 SURVIVAL LEAVES THE PROP COMPLETELY ALONE, and that is the whole
+		//  fix. The map's own p6_zm_al_shock_box_off is already standing there
+		//  and already renders correctly; the only thing this function was
+		//  adding in zstandard was the placeholder.
+		//
+		//  📝 NOT "off model + on anim". The _on_anim is authored against the
+		//  _on model's rig - stock only ever plays it after swapping the model
+		//  (zm_alcatraz_grief_cellblock.gsc:547-552) - so driving it on the
+		//  _off rig risks trading a black box for a deformed one. There is
+		//  nothing to gain: this whole function is cosmetic here. The perks
+		//  come from register_perk_struct(), not from an afterlife switch, and
+		//  disable_afterlife_props() has already deleted the afterlife dressing.
+		if (!zmqol_docks_shockbox_on_loaded())
+		{
+			return;
+		}
+
 		self useanimtree(#animtree);
 		self setmodel("p6_zm_al_shock_box_on");
 		self setanim(level.shockbox_anim["on"]);

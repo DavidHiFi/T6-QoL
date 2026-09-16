@@ -137,6 +137,59 @@ working_zone_init()
 	add_adjacent_zone("zone_studio", "zone_dock", "activate_dock_sally");
 	add_adjacent_zone("zone_dock_gondola", "zone_dock", "activate_dock_sally");
 	add_adjacent_zone("zone_dock", "zone_dock_gondola", "gondola_roof_to_dock");
+
+	// ========================================================================
+	//  🛑 v2.17.9 - THE DOCKS PACK-A-PUNCH EDGE IS BACK, AND *THIS* IS THE
+	//     INSTANT DEATH BEHIND THE 2000 GATE.
+	//
+	//  User, 2026-09-15 and again 2026-09-16: *"if I purchase that 2000 point
+	//  door to go to the Pack-a-Punch ... I don't die from some death barrier."*
+	//  v2.17.7 blamed wolf_hurt_trigger_docks and deleted it; v2.17.8 widened
+	//  that to all five trigger_hurt volumes on the map. The user died anyway.
+	//  Both were treating a symptom: there is no trigger there at all.
+	//
+	//  🌟 IT IS THE OUT-OF-PLAYABLE-AREA MONITOR, and the chain is all stock:
+	//    - _zm.gsc:1442 in_enabled_playable_area() only counts a player_volume
+	//      whose TARGETNAME IS AN **ENABLED** ZONE;
+	//    - the area behind the gate is one volume, targetname zone_dock_puzzle
+	//      (info_volume at (-1570, 5432, 329) in this map's mapents - and it
+	//      carries NO script_parameters "classic_only", so the survival sweep
+	//      lower down this function does not delete it);
+	//    - note 3 at the top of this file records that the restoration dropped
+	//      the pre-strip `zone_dock -> zone_dock_puzzle` edge because the Docks
+	//      loc script was excluded at the time. It is not excluded any more, but
+	//      the edge never came back - so nothing ever calls zone_init() on
+	//      zone_dock_puzzle and it can never be enabled;
+	//    - so the moment the player walks through the gate they are inside a
+	//      player_volume for a zone that does not exist, in_enabled_playable_area
+	//      returns false, and on Mob the kill is unconditional
+	//      (_zm_afterlife::player_out_of_playable_area returns true for anyone
+	//      not in afterlife).
+	//  That is the "death barrier just before the Pack-a-Punch", exactly.
+	//
+	//  🛑 ON THE FLAG, NOT "always_on". Classic uses a zone_dock_puzzle self-edge
+	//  on always_on (kept verbatim at the bottom of this function). Copying that
+	//  into survival would open the zone from round 1, and an enabled zone the
+	//  players cannot reach is its own bug - zombies spawn at the six
+	//  zone_dock_puzzle_spawner points behind a locked gate and can never target
+	//  anyone. "docks_inner_gate_unlocked" is set by
+	//  zm_prison_loc_docks::open_custom_door_master_key(), i.e. the moment the
+	//  2000 purchase actually opens the gate, which is the correct moment.
+	//
+	//  🛑 IT HAS TO BE HERE AND NOT IN THE LOC SCRIPT. _zm_zonemgr::manage_zones
+	//  calls setup_zone_flag_waits() immediately after this function returns, and
+	//  that is the ONLY pass that spawns a zone_flag_wait thread per flag. An
+	//  add_adjacent_zone() from the loc's main() would land after it, and the
+	//  flag would then have no listener - the edge would exist and never fire.
+	//
+	//  📝 SCOPED TO THE DOCKS LOCATION so Cell Block survival, which shares this
+	//  function, keeps the zone graph it was verified with.
+	// ========================================================================
+	if (!is_classic() && getdvar("ui_zm_mapstartlocation") == "docks")
+	{
+		add_adjacent_zone("zone_dock", "zone_dock_puzzle", "docks_inner_gate_unlocked");
+	}
+
 	add_adjacent_zone("zone_cellblock_west", "zone_cellblock_west_gondola", "gondola_dock_to_roof");
 	add_adjacent_zone("zone_cellblock_west_barber", "zone_cellblock_west_gondola", "gondola_dock_to_roof");
 	add_adjacent_zone("zone_cellblock_west_barber", "zone_cellblock_west_warden", "gondola_dock_to_roof");
