@@ -156,6 +156,30 @@ REM  These are a handful of small files, so copy unconditionally rather than dif
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$proj=$env:PROJ_DIR; $src=Join-Path $proj 'zone_assets\images'; $dst=Join-Path $proj 'images'; if(-not (Test-Path -LiteralPath $src)){ Write-Host '    [skip] no zone_assets\images folder'; exit 0 }; if(-not (Test-Path -LiteralPath $dst)){ New-Item -ItemType Directory -Path $dst | Out-Null }; $n=0; Get-ChildItem -LiteralPath $src -Filter *.iwi | Where-Object { $_.Name -notmatch 'camo_zmb_dlc2' } | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $dst $_.Name) -Force; $n++ }; Write-Host ('    [ok] ' + $n + ' .iwi copied to images\')"
 if errorlevel 1 goto packfail
 
+REM ----------------------------------------------------------------------------
+REM  EVERY .iwi IN images\ MUST BE EITHER TRACKED OR REGENERABLE.
+REM
+REM  images\ is what pack_iwd.ps1 packs into mod.iwd, and mod.iwd applies on
+REM  EVERY map. A file that is neither committed nor copied from zone_assets\ is
+REM  one of two bugs and both have shipped:
+REM
+REM    - a mod-owned picture that only exists on this PC. A fastfile carries no
+REM      pixels, so on a fresh checkout that image draws BLACK. That was the
+REM      black Diner loading screen, and again in v2.17.1 with the custom map's
+REM      loadscreen.iwi.
+REM    - somebody else's texture, leaking mod-wide. v2.17.1 also copied 16 .iwi
+REM      out of the Octagonal Ascension release, among them its own Pack-a-Punch
+REM      camo (sehteria's, not Treyarch's) and three perk HUD icons - all of
+REM      which would have replaced the stock art on every map. They belong in
+REM      octagonal.iwd, which only loads with that map.
+REM
+REM  Fix by committing it (add a "!images/name.iwi" line to .gitignore, which
+REM  blanket-ignores images/*.iwi) or by deleting it and letting the zone that
+REM  owns the name supply the pixels.
+REM ----------------------------------------------------------------------------
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$proj=$env:PROJ_DIR; $dst=Join-Path $proj 'images'; if(-not (Test-Path -LiteralPath $dst)){ exit 0 }; $g=(Get-Command git -ErrorAction SilentlyContinue); if(-not $g){ Write-Host '    [warn] git not found - images\ ownership check SKIPPED'; exit 0 }; Push-Location $proj; $tracked=@{}; (& git ls-files images 2>$null) | ForEach-Object { $tracked[$_.Split('/')[-1]]=$true }; Pop-Location; if($tracked.Count -eq 0){ Write-Host '    [warn] not a git checkout - images\ ownership check SKIPPED'; exit 0 }; $za=@{}; $s=Join-Path $proj 'zone_assets\images'; if(Test-Path -LiteralPath $s){ Get-ChildItem -LiteralPath $s -Filter *.iwi | ForEach-Object { $za[$_.Name]=$true } }; $bad=@(); Get-ChildItem -LiteralPath $dst -Filter *.iwi | ForEach-Object { if(-not $tracked.ContainsKey($_.Name) -and -not $za.ContainsKey($_.Name)){ $bad += $_.Name } }; if($bad.Count -gt 0){ Write-Host ''; Write-Host ('    ' + $bad.Count + ' .iwi in images\ are neither tracked nor in zone_assets\images:'); $bad | ForEach-Object { Write-Host ('      ' + $_) }; exit 1 }; Write-Host '    [ok] every .iwi in images\ is tracked or regenerable'"
+if errorlevel 1 goto imgfail
+
 echo.
 echo [2/9] Repacking mod.iwd from raw folders...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0pack_iwd.ps1"
@@ -360,6 +384,20 @@ exit /b 0
 color C
 echo.
 echo   FAILED to pack mod.iwd (see the PowerShell error above).
+if not defined OFFLINE pause
+exit /b 1
+
+:imgfail
+color C
+echo.
+echo   BUILD STOPPED: images\ holds a .iwi that a fresh checkout would not have.
+echo   mod.iwd applies on EVERY map, so it is either a mod-owned picture that
+echo   will draw BLACK for everyone else, or somebody else's texture about to
+echo   replace stock art game-wide.
+echo.
+echo   Commit it - add a "!images/name.iwi" line to .gitignore, which
+echo   blanket-ignores images/*.iwi - or delete it and let the zone that owns
+echo   the name supply the pixels.
 if not defined OFFLINE pause
 exit /b 1
 
