@@ -62,6 +62,18 @@ if not exist "%~dp0pack_iwd.ps1" (
     color C & echo. & echo   pack_iwd.ps1 is missing next to build.bat - cannot build. & pause & exit /b 1
 )
 
+REM --- perk pop-up regression gate -------------------------------------------
+if not exist "%~dp0tools\check-perk-popup.ps1" (
+    color C & echo. & echo   tools\check-perk-popup.ps1 is missing - cannot verify the perk descriptions. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-perk-popup.ps1"
+if errorlevel 1 goto perkpopupfail
+if not exist "%~dp0tools\check-lobby-options.ps1" (
+    color C & echo. & echo   tools\check-lobby-options.ps1 is missing - cannot verify the permanent menu moves. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lobby-options.ps1"
+if errorlevel 1 goto lobbyoptionsfail
+
 REM --- resolve the project root (parent of this folder) for the send-ready copy ---
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "BUILD_DIR=%ROOT%\build\%MOD_NAME%"
@@ -308,6 +320,20 @@ echo.
 echo   BUILD STOPPED: a raw weapon file is at or over the 20480-byte ceiling.
 echo   Drop its 24 attachWorldModelOffset{Pitch,Yaw,Roll}1-8 fields (all '0') to
 echo   save 720 bytes, then build again.
+if not defined OFFLINE pause
+exit /b 1
+
+:perkpopupfail
+color C
+echo.
+echo   BUILD STOPPED: the perk pop-up description regression gate failed.
+if not defined OFFLINE pause
+exit /b 1
+
+:lobbyoptionsfail
+color C
+echo.
+echo   BUILD STOPPED: the permanent lobby-option regression gate failed.
 if not defined OFFLINE pause
 exit /b 1
 
