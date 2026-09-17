@@ -581,6 +581,35 @@ QolCrewRow(4, { "zm_transit", "zm_nuked", "zm_highrise", "zm_buried" }, { "zsurv
 --  with the dvar write, which is the v1.93.0 bug in a new costume.
 CoD.PrivateGameLobby.DvarDefaults["character"] = 0
 -- ===========================================================================
+--  SOLO / CUSTOM GAMES CHARACTER ROW (Octagonal) - PlayerSelect table.
+-- ---------------------------------------------------------------------------
+--  The link pane draws CHARACTER from QolCrewRow above, but that table is
+--  rendered ONLY by PopulateButtons_Project_Zombie. The Solo/Custom Games
+--  pane (PrivateOnlineGameLobby, same menu the stock game opens for both)
+--  runs the stock populator, which reads CoD.PrivateGameLobby.PlayerSelect -
+--  a table this file never defined, so Octagonal got no row there while the
+--  link pane had one. Stock-shape entry (same fields the stock populator
+--  walks: id/name/hintText/labels/values/maps/gameTypes), proven by the
+--  community PlayerSelect mods that serve solo through this exact table.
+--
+--  It writes the SAME `character` dvar QolCrewRow uses (DEFAULT 0, CIA 1,
+--  CDC 2 - the (n_want-1)%4 contract in qol_opt_character), so the server
+--  side needs no change. gameTypes zstandard alone scopes it correctly:
+--  Octagonal ships survival-only, unlike the dual-mode stock maps that
+--  needed the modeGroups mechanism. Appended at #(t)+1 so it stays
+--  contiguous no matter what else defines entries.
+-- ===========================================================================
+CoD.PrivateGameLobby.PlayerSelect = CoD.PrivateGameLobby.PlayerSelect or {}
+local QolSoloCharacterRow = {}
+QolSoloCharacterRow.id = "character"
+QolSoloCharacterRow.name = "CHARACTER"
+QolSoloCharacterRow.hintText = "Which member of the crew you play as."
+QolSoloCharacterRow.labels = { "DEFAULT", "CIA", "CDC" }
+QolSoloCharacterRow.values = { 0, 1, 2 }
+QolSoloCharacterRow.maps = { "zm_octagonal" }
+QolSoloCharacterRow.gameTypes = { "zstandard" }
+CoD.PrivateGameLobby.PlayerSelect[#CoD.PrivateGameLobby.PlayerSelect + 1] = QolSoloCharacterRow
+-- ===========================================================================
 --  STARTING PISTOL  -  above CHARACTER, every map and mode (user, 2026-09-11)
 -- ===========================================================================
 --  *"add an option into the pregame lobby menu screen for all maps that you
