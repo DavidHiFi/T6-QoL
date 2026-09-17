@@ -87,7 +87,9 @@ main()
     // --- zm_expanded ---
     replaceFunc( maps\mp\zombies\_zm_perks::perks_register_clientfield, ::perks_register_clientfield );
     replaceFunc( maps\mp\zombies\_zm::init_client_flags, ::init_client_flags );
-    replaceFunc( maps\mp\zombies\_zm_perks::give_perk, ::give_perk );
+    //  give_perk's replaceFunc lives in scripts\zm\zmqol_dupguard.gsc now (duplicate
+    //  guard). Two replaceFuncs on one stock target cannot both take effect, so the
+    //  one here was removed rather than left to fight it - this file only shrinks.
     replaceFunc( maps\mp\zombies\_zm_perks::default_vending_precaching, ::default_vending_precaching );
 
     // --- animated_camo + buried_animated_camo (combined override, see notes on
@@ -17456,20 +17458,6 @@ init_client_flags()
 // entry of perks_active to work out which perk was just awarded.
 give_perk( perk, bought )
 {
-    //  REFUSE DUPLICATE GRANTS. Stock's own trigger will not sell an owned
-    //  perk, but free grants (EEs, round rewards, wait_give_perk calls made
-    //  outside any trigger) can land while the perk is already held - and
-    //  every effect below (burp exert, vox, blur, perks_active append,
-    //  num_perks++) then stacks. The stuck burp loop of 2026-09-17 traced to
-    //  exactly this shape. Same skip the Wunderfizz already does in givePerk()
-    //  (hasPerk / has_perk_paused). A paused perk reads as not-held, so
-    //  power-off re-grants still pass through.
-    if ( self hasperk( perk ) )
-    {
-        println( "[zm_qol] give_perk: already holds " + perk + ", duplicate refused" );
-        return;
-    }
-
     self setperk( perk );
     self.num_perks++;
     if ( isdefined( bought ) && bought )
