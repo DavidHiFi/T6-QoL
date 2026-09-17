@@ -7,12 +7,22 @@ if (-not $Source) {
 }
 $text = [IO.File]::ReadAllText((Resolve-Path -LiteralPath $Source))
 
-$combined = 'text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );'
-if (-not $text.Contains($combined)) {
-    Write-Error 'Perk name and description must share one HUD element.'
+# The pop-up is three elements: icon + name + description, each centred on
+# its own hudelem. Merging name + description onto one element centres the
+# block on its widest line, so under a long description (Quick Revive, 82
+# chars) the short name draws left of centre. Never recombine them.
+if ($text.Contains('getPerkName( perk ) + "\n" + getPerkDesc( perk )')) {
+    Write-Error 'Perk name and description must be separate centred elements, not one combined string.'
 }
-if ($text.Contains('desc_hud = newclienthudelem( self );')) {
-    Write-Error 'A separate description HUD element can disappear on Origins.'
+foreach ($marker in @('name_hud = newclienthudelem( self );', 'desc_hud = newclienthudelem( self );')) {
+    if (-not $text.Contains($marker)) {
+        Write-Error "Missing required pop-up element: $marker"
+    }
+}
+foreach ($marker in @('name_hud settext( getPerkName( perk ) );', 'desc_hud settext( getPerkDesc( perk ) );')) {
+    if (-not $text.Contains($marker)) {
+        Write-Error "Missing required pop-up text: $marker"
+    }
 }
 
 $perks = @(
@@ -28,4 +38,4 @@ foreach ($perk in $perks) {
     }
 }
 
-Write-Output '    [ok] perk pop-up keeps every description on the shared text element'
+Write-Output '    [ok] perk pop-up keeps name and description on separate centred elements'

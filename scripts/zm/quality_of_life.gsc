@@ -17913,21 +17913,42 @@ perk_bought( perk )
     hud.foreground = 1;
     hud setshader( shader, 64, 64 );
 
-    // Keep both lines on one element. Origins can exhaust the client HUD pool
-    // before a separate description element draws.
-    text_hud = newclienthudelem( self );
-    text_hud.alignx = "center";
-    text_hud.aligny = "middle";
-    text_hud.horzalign = "user_center";
-    text_hud.vertalign = "user_top";
-    text_hud.x = 0;
-    text_hud.y = 130;
-    text_hud.fontscale = 1.4;
-    text_hud.alpha = 0;
-    text_hud.color = ( 1, 1, 1 );
-    text_hud.hidewheninmenu = 1;
-    text_hud.foreground = 1;
-    text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );
+    // --- Perk name (line 1, white, larger) ---
+    //  Each line gets its OWN element, centred independently. The v2.17.28
+    //  single-element merge (name + "\n" + desc on one hudelem) centred the
+    //  block on its widest line, so under a long description the short name
+    //  stuck to the block's left edge - Quick Revive drew left of centre on
+    //  2026-09-17 while short descriptions looked fine. User: restore the
+    //  pop-up exactly as it drew for a month+ (y 122 / fontscale 1.6 name,
+    //  y 147 / fontscale 1.3 description).
+    name_hud = newclienthudelem( self );
+    name_hud.alignx = "center";
+    name_hud.aligny = "middle";
+    name_hud.horzalign = "user_center";
+    name_hud.vertalign = "user_top";
+    name_hud.x = 0;
+    name_hud.y = 122;
+    name_hud.fontscale = 1.6;
+    name_hud.alpha = 0;
+    name_hud.color = ( 1, 1, 1 );
+    name_hud.hidewheninmenu = 1;
+    name_hud.foreground = 1;
+    name_hud settext( getPerkName( perk ) );
+
+    // --- Perk description (line 2, white, smaller) ---
+    desc_hud = newclienthudelem( self );
+    desc_hud.alignx = "center";
+    desc_hud.aligny = "middle";
+    desc_hud.horzalign = "user_center";
+    desc_hud.vertalign = "user_top";
+    desc_hud.x = 0;
+    desc_hud.y = 147;
+    desc_hud.fontscale = 1.3;
+    desc_hud.alpha = 0;
+    desc_hud.color = ( 1, 1, 1 );
+    desc_hud.hidewheninmenu = 1;
+    desc_hud.foreground = 1;
+    desc_hud settext( getPerkDesc( perk ) );
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
@@ -17941,15 +17962,19 @@ perk_bought( perk )
     //  Re-add it the day it actually gets text, not before.
 
     self.perkhud = hud;
-    self.perkname_hud = text_hud;
+    self.perkname_hud = name_hud;
+    self.perkdesc_hud = desc_hud;
 
     // ---- Fade IN ----
     hud scaleovertime( 0.4, 64, 64 );
     hud fadeovertime( 0.4 );
     hud.alpha = 1;
 
-    text_hud fadeovertime( 0.4 );
-    text_hud.alpha = 1;
+    name_hud fadeovertime( 0.4 );
+    name_hud.alpha = 1;
+
+    desc_hud fadeovertime( 0.4 );
+    desc_hud.alpha = 1;
 
     wait 3.5;
 
@@ -17957,16 +17982,21 @@ perk_bought( perk )
     hud fadeovertime( 0.5 );
     hud.alpha = 0;
 
-    text_hud fadeovertime( 0.5 );
-    text_hud.alpha = 0;
+    name_hud fadeovertime( 0.5 );
+    name_hud.alpha = 0;
+
+    desc_hud fadeovertime( 0.5 );
+    desc_hud.alpha = 0;
 
     wait 0.55;
 
     hud destroy();
-    text_hud destroy();
+    name_hud destroy();
+    desc_hud destroy();
 
     self.perkhud = undefined;
     self.perkname_hud = undefined;
+    self.perkdesc_hud = undefined;
 }
 
 // Shader (icon material) for each perk

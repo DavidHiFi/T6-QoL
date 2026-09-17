@@ -1950,7 +1950,7 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	T(QolHudButtons, LocalClientIndex, "HITMARKERS",        "hitmarkers",     "Hit and kill markers on your crosshair.")
 	T(QolHudButtons, LocalClientIndex, "ROUND SUMMARY",     "round_summary",  "Stats pop-up after each round.")
 	-- v1.98.0, user request 2026-08-16.
-	T(QolHudButtons, LocalClientIndex, "PERK POP-UP",       "hud_perk_popup", "Icon and name shown when you buy a perk.")
+	T(QolHudButtons, LocalClientIndex, "PERK POP-UP",       "hud_perk_popup", "Icon, name and description shown when you buy a perk.")
 	-- v1.99.0, user request 2026-08-16.
 	T(QolHudButtons, LocalClientIndex, "POWER-UP TIMERS",   "hud_powerup_timers", "Seconds left under each power-up icon.")
 	-- ========================================================================
