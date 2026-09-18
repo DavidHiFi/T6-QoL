@@ -18,6 +18,23 @@ if (-not $text.Contains($descLine)) {
 if ($text.Contains('getPerkName( perk ) + "\n" + getPerkDesc( perk )')) {
     Write-Error 'Name and description must NOT share one HUD element: the merged element left-aligns the title.'
 }
+# Geometry lock (2026-09-18): the centered two-line look is these exact
+# positions. Any "tidy" that moves them re-breaks the title alignment.
+$geometry = @(
+    'name_hud.alignx = "center";',
+    'name_hud.horzalign = "user_center";',
+    'name_hud.y = 122;',
+    'name_hud.fontscale = 1.6;',
+    'desc_hud.alignx = "center";',
+    'desc_hud.horzalign = "user_center";',
+    'desc_hud.y = 147;',
+    'desc_hud.fontscale = 1.3;'
+)
+foreach ($line in $geometry) {
+    if (-not $text.Contains($line)) {
+        Write-Error "Perk pop-up geometry changed or missing: $line"
+    }
+}
 
 $perks = @(
     'specialty_armorvest', 'specialty_fastreload', 'specialty_quickrevive',
