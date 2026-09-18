@@ -195,6 +195,13 @@ if CoD.MapInfoImage ~= nil and CoD.MapInfoImage.ZombieUpdate ~= nil and CoD.MapI
 		diner          = "DINER",
 		cellblock      = "CELL BLOCK",
 		street         = "BOROUGH",
+		--  v2.16.10 - Cornfield was registered in v2.16.8 and given its row in
+		--  selectmaplistzombie.lua, but NOT a line here, so the lobby showed the
+		--  bare " / SURVIVAL" this whole block exists to fix. User, 2026-09-15,
+		--  with the solo lobby on screen: *"the map name is just missing"*.
+		--  Stock's gametypestable.csv has no cornfield survival row, so the
+		--  stock lookup above hands back "" - exactly the case this table covers.
+		cornfield      = "CORNFIELD",
 	}
 
 	CoD.MapInfoImage.ZombieUpdate = function (Widget, MapName, GameType)
@@ -325,6 +332,45 @@ CoD.PrivateGameLobby.GameTypeSettings[5].gameTypes = {}
 CoD.PrivateGameLobby.GameTypeSettings[5].gameTypes[1] = "zstandard"
 CoD.PrivateGameLobby.GameTypeSettings[5].maps = {}
 CoD.PrivateGameLobby.GameTypeSettings[5].maps[1] = "zm_transit"
+-- ===========================================================================
+--  zm_qol v2.16.10 - THE HELLHOUNDS ROW IS HIDDEN ON THE FOUR SURVIVAL
+--  LOCATIONS THIS MOD ADDS TO zm_transit.
+--
+--  User, 2026-09-15, looking at the Cornfield lobby: *"the hellhounds option
+--  is still available for it when obviously this was never an actual map that
+--  you could play without a mod so make sure you disable hellhounds for this
+--  map for now because it doesn't work."*
+--
+--  🌟 THE SERVER ALREADY REFUSES - THIS ROW WAS THE LAST THING STILL LYING.
+--  v2.16.9 (2026-09-15) turned dog rounds off on exactly these four locations
+--  in quality_of_life.gsc's enable_dog_rounds(): their arenas were never
+--  authored for dog rounds, so level.zombie_spawn_locations legitimately holds
+--  points outside the walls and hounds spawn through geometry, cannot path,
+--  and are deleted by the engine after 10-15 seconds. Reported live on Tunnel
+--  at round 2 the same day. So setting this row to ENABLED has had no effect
+--  since v2.16.9 - the lobby was offering a switch wired to nothing, which is
+--  worse than not offering it.
+--
+--  The four names are copied from that GSC test deliberately, so the lobby and
+--  the server cannot drift apart. If a location ever gets real dog support,
+--  delete it from BOTH lists in the same change.
+--
+--  🛑 STOCK'S OWN STARTS ARE UNTOUCHED. `maps[1] = "zm_transit"` above is
+--  Treyarch's and still admits Bus Depot, Farm and Town, which keep hellhounds
+--  exactly as they always have. This is a deny list precisely so no stock start
+--  can be removed by a mistyped token - see the filter in AddGameOptionsButtons.
+--
+--  📝 NO LAYOUT COMPENSATION IS NEEDED, unlike the v2.1.0 Nuketown row that
+--  ADDED one. Dropping a row moves the hint text UP by one 32-unit pitch,
+--  away from the preview panel, and the panel is bottom-anchored by
+--  CoD.MapInfoImage.new - so clearance only increases. The v2.1.0/v2.3.4
+--  note further down this file has the measurements.
+-- ===========================================================================
+CoD.PrivateGameLobby.GameTypeSettings[5].excludeLocations = {}
+CoD.PrivateGameLobby.GameTypeSettings[5].excludeLocations[1] = "cornfield"
+CoD.PrivateGameLobby.GameTypeSettings[5].excludeLocations[2] = "tunnel"
+CoD.PrivateGameLobby.GameTypeSettings[5].excludeLocations[3] = "diner"
+CoD.PrivateGameLobby.GameTypeSettings[5].excludeLocations[4] = "power"
 -- ===========================================================================
 --  zm_qol v2.1.0 - HELLHOUNDS ON NUKETOWN SURVIVAL.  User, 2026-08-21:
 --  *"add hellhounds as a pre-game option for nuketown survival as well ...
@@ -1098,6 +1144,11 @@ local AddGameOptionsButtons = function (PrivateGameLobbyButtonPane, GameOptions,
 	-- game, so gametype alone cannot tell "Origins with the Ultimis crew" from
 	-- "Diner survival with the CIA/CDC teams". ui_zm_gamemodegroup can.
 	local ModeGroup = UIExpression.DvarString(nil, "ui_zm_gamemodegroup")
+	-- zm_qol v2.16.10 - the survival START LOCATION, for the `excludeLocations`
+	-- filter below. Same dvar selectmaplistzombie.lua writes from its location
+	-- list and the same one the server reads in enable_dog_rounds(), so the
+	-- lobby row and the server's behaviour are driven off one value.
+	local Location = UIExpression.DvarString(nil, "ui_zm_mapstartlocation")
 	local GametypeIsValid = false
 	local MapIsValid = false
 	for GameOptionsIndex = 1, #GameOptions, 1 do
@@ -1140,6 +1191,24 @@ local AddGameOptionsButtons = function (PrivateGameLobbyButtonPane, GameOptions,
 			end
 			if not ModeGroupIsValid then
 				GametypeIsValid = false
+			end
+		end
+		-- zm_qol v2.16.10 - optional `excludeLocations` filter: drop the row on
+		-- the listed ui_zm_mapstartlocation values, keep it everywhere else.
+		--
+		-- 🛑 IT IS A DENY LIST, NOT AN ALLOW LIST, AND THAT IS DELIBERATE. The
+		-- rows it filters are stock's, whose `maps` list is a whole MAP - an
+		-- allow list would have to name every location on that map and would
+		-- silently drop the row from any stock start whose token was written
+		-- down wrong. A deny list can only ever remove the locations named, so
+		-- no base-game start can be switched off by accident. Same reasoning as
+		-- the server-side test in quality_of_life.gsc's enable_dog_rounds().
+		if GameOptions[GameOptionsIndex].excludeLocations ~= nil then
+			for ExcludeIndex = 1, #GameOptions[GameOptionsIndex].excludeLocations, 1 do
+				if GameOptions[GameOptionsIndex].excludeLocations[ExcludeIndex] == Location then
+					GametypeIsValid = false
+					break
+				end
 			end
 		end
 		if GametypeIsValid then

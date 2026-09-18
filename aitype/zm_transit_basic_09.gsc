@@ -21,6 +21,13 @@ reference_anims_from_animtree()
     dummy_anim_ref = %ai_zombie_crawl_microwave_death_walking_a;
     dummy_anim_ref = %ai_zombie_crawl_microwave_death_walking_b;
     dummy_anim_ref = %ai_zombie_crawl_microwave_death_walking_c;
+    dummy_anim_ref = %ai_zombie_freeze_death_a;
+    dummy_anim_ref = %ai_zombie_freeze_death_b;
+    dummy_anim_ref = %ai_zombie_freeze_death_c;
+    dummy_anim_ref = %ai_zombie_freeze_death_d;
+    dummy_anim_ref = %ai_zombie_freeze_death_e;
+    dummy_anim_ref = %ai_zombie_crawl_freeze_death_01;
+    dummy_anim_ref = %ai_zombie_crawl_freeze_death_02;
     dummy_anim_ref = %ai_zombie_idle_v1_delta;
     dummy_anim_ref = %ai_zombie_idle_crawl_delta;
     dummy_anim_ref = %ai_zombie_walk_v1;

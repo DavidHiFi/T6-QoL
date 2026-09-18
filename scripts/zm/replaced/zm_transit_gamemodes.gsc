@@ -15,7 +15,7 @@
 #include common_scripts\utility;
 
 // ============================================================================
-//  Everything here except the DINER / POWER / TUNNEL lines is a verbatim copy
+//  Everything here except the DINER / POWER / TUNNEL / CORNFIELD lines is a verbatim copy
 //  of stock maps\mp\zm_transit_gamemodes::init. Stock registers only transit,
 //  farm and town on each mode (verified against the stock dump), so all three
 //  custom locations are entirely additions here.
@@ -30,8 +30,17 @@
 //  removed it, it was fine, and add a mystery box to it"). Everything it needs
 //  came back in the same change: the loc script (now with a box), the
 //  transit_zone_init enable block, the client wall-buy twin in zm_expanded.csc,
-//  the lobby row and its two mod.ff materials. Cornfield has been out since
-//  the v2.10.0 restoration.
+//  the lobby row and its two mod.ff materials.
+//
+//  🛑 CORNFIELD was out from the v2.10.0 restoration until v2.16.8 (2026-09-15,
+//  user: "add cornfield to my mod"). It needed LESS than Tunnel did, because
+//  the loc script had survived in scripts\zm\locs\ the whole time and was
+//  simply never registered: the three lines below, the two-zone enable block in
+//  scripts\zm\replaced\zm_transit.gsc, and the lobby row. It needs NO
+//  zm_expanded.csc entry - it registers no wall-buys (see the note in
+//  zm_prison.csc, which already records that Diner and Cornfield have no client
+//  location entry) - and no new xmodel, because the play-area collision ships
+//  in the game's own so_zsurvival_zm_transit.ff.
 //
 //  Diner is the one location that never needed the transit_zone_init override -
 //  its zones (zone_gas / zone_roadside_east / zone_roadside_west) all have
@@ -55,6 +64,7 @@ init()
 	add_map_location_gamemode("zstandard", "diner", scripts\zm\locs\zm_transit_loc_diner::precache, scripts\zm\locs\zm_transit_loc_diner::main);
 	add_map_location_gamemode("zstandard", "power", scripts\zm\locs\zm_transit_loc_power::precache, scripts\zm\locs\zm_transit_loc_power::main);
 	add_map_location_gamemode("zstandard", "tunnel", scripts\zm\locs\zm_transit_loc_tunnel::precache, scripts\zm\locs\zm_transit_loc_tunnel::main);
+	add_map_location_gamemode("zstandard", "cornfield", scripts\zm\locs\zm_transit_loc_cornfield::precache, scripts\zm\locs\zm_transit_loc_cornfield::main);
 
 	add_map_location_gamemode("zgrief", "transit", maps\mp\zm_transit_grief_station::precache, maps\mp\zm_transit_grief_station::main);
 	add_map_location_gamemode("zgrief", "farm", maps\mp\zm_transit_grief_farm::precache, maps\mp\zm_transit_grief_farm::main);
@@ -62,6 +72,7 @@ init()
 	add_map_location_gamemode("zgrief", "diner", scripts\zm\locs\zm_transit_loc_diner::precache, scripts\zm\locs\zm_transit_loc_diner::main);
 	add_map_location_gamemode("zgrief", "power", scripts\zm\locs\zm_transit_loc_power::precache, scripts\zm\locs\zm_transit_loc_power::main);
 	add_map_location_gamemode("zgrief", "tunnel", scripts\zm\locs\zm_transit_loc_tunnel::precache, scripts\zm\locs\zm_transit_loc_tunnel::main);
+	add_map_location_gamemode("zgrief", "cornfield", scripts\zm\locs\zm_transit_loc_cornfield::precache, scripts\zm\locs\zm_transit_loc_cornfield::main);
 
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "diner", scripts\zm\locs\zm_transit_loc_diner::struct_init);
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "diner", scripts\zm\locs\zm_transit_loc_diner::struct_init);
@@ -69,4 +80,6 @@ init()
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "power", scripts\zm\locs\zm_transit_loc_power::struct_init);
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "tunnel", scripts\zm\locs\zm_transit_loc_tunnel::struct_init);
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "tunnel", scripts\zm\locs\zm_transit_loc_tunnel::struct_init);
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "cornfield", scripts\zm\locs\zm_transit_loc_cornfield::struct_init);
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "cornfield", scripts\zm\locs\zm_transit_loc_cornfield::struct_init);
 }

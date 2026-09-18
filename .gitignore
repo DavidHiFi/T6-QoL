@@ -20,6 +20,10 @@ zone_source/_regen/
 # Pure build artifacts — the real files are scripts/zm/**/*.csc.
 zone_assets/scripts/
 
+# Same again for the aitype overrides, written by build_ff.bat step "Staging aitype
+# overrides". The real files are aitype/**.
+zone_assets/aitype/
+
 # Ad-hoc backups made before risky edits.
 *.bak-*
 *.bak

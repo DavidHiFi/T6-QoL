@@ -183,6 +183,9 @@ local ZmQolLocationNames = {
 	dragon_rooftop = "Dragon Rooftop",
 	sweatshop      = "Sweatshop",
 	crazy_place    = "The Crazy Place",
+	-- v2.16.10 - cornfield joined them when the location was registered
+	-- (v2.16.8) and was missed in all three of these tables at the time.
+	cornfield      = "Cornfield",
 }
 
 function GetMapDisplayName()

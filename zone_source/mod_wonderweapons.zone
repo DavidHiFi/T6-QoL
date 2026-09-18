@@ -142,6 +142,55 @@ rawfile,animtrees/zm_prison_basic.atr
 rawfile,animstatedefs/zm_prison_basic.asd
 // still NOT shipped (guns gated off there): zm_tomb_basic, zm_buried_basic
 // ============================================================================
+//  🌟 THE AITYPE OVERRIDES THE .asd ABOVE HAS ALWAYS NEEDED.
+//
+//  v2.10.6 (above) concluded the reaction anims were unrestorable, from this:
+//    BG_AnimStateDef_Parse: state 'zm_death_tesla_t5' has subState with anim
+//    'ai_zombie_tesla_death_a' that was not found in its animtree.
+//  The read was right - the parser checks the anim list COMPILED INTO THE
+//  AITYPE, not the .atr text - but the conclusion was one step short. That list
+//  is baked from the aitype script's own reference_anims_from_animtree(), and
+//  an aitype script is a script: mod.ff loads before the map fastfiles and
+//  first-load wins, so our copy replaces Treyarch's. Adding the seven donor
+//  %anim refs there puts them in the compiled list, which is what the .asd is
+//  checked against. No converter needed.
+//
+//  Why zm_death_sizzle got away without this: every anim it names
+//  (ai_zombie_*microwave_death_*) is already in the stock aitypes' lists. The
+//  Winter's Howl freeze deaths are T5 donor anims and are not - which is why
+//  they, and the Tesla states before them, are the ones that needed it.
+//
+//  Each file is the stock decompile plus seven dummy_anim_ref lines, server and
+//  client, and both sides must ship or the client desyncs on the death.
+script,aitype/zm_transit_basic_01.gsc
+script,aitype/zm_transit_basic_02.gsc
+script,aitype/zm_transit_basic_03.gsc
+script,aitype/zm_transit_basic_05.gsc
+script,aitype/zm_transit_basic_08.gsc
+script,aitype/zm_transit_basic_09.gsc
+script,aitype/clientscripts/zm_transit_basic_01.csc
+script,aitype/clientscripts/zm_transit_basic_02.csc
+script,aitype/clientscripts/zm_transit_basic_03.csc
+script,aitype/clientscripts/zm_transit_basic_05.csc
+script,aitype/clientscripts/zm_transit_basic_08.csc
+script,aitype/clientscripts/zm_transit_basic_09.csc
+script,aitype/zm_nuked_basic_01.gsc
+script,aitype/zm_nuked_basic_02.gsc
+script,aitype/zm_nuked_basic_01_beyes.gsc
+script,aitype/zm_nuked_basic_02_beyes.gsc
+script,aitype/clientscripts/zm_nuked_basic_01.csc
+script,aitype/clientscripts/zm_nuked_basic_02.csc
+script,aitype/clientscripts/zm_nuked_basic_01_beyes.csc
+script,aitype/clientscripts/zm_nuked_basic_02_beyes.csc
+script,aitype/zm_highrise_basic_01.gsc
+script,aitype/zm_highrise_basic_02.gsc
+script,aitype/zm_highrise_basic_03.gsc
+script,aitype/clientscripts/zm_highrise_basic_01.csc
+script,aitype/clientscripts/zm_highrise_basic_02.csc
+script,aitype/clientscripts/zm_highrise_basic_03.csc
+script,aitype/zm_alcatraz_basic.gsc
+script,aitype/clientscripts/zm_alcatraz_basic.csc
+// ============================================================================
 //  🛑 v2.10.6 - REVERTED. BOOTED 2026-09-02 and the map refused to load with:
 //    BG_AnimStateDef_Parse: state 'zm_death_tesla_t5' has subState with anim
 //    'ai_zombie_tesla_death_a' that was not found in its animtree. A reconvert

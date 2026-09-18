@@ -145,6 +145,7 @@ ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit", "town",    "TOWN")
 if ZmQolDinerAllowed then
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit",  "power",          "POWER STATION")   -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit",  "tunnel",         "TUNNEL")          -- added by this mod (back in v2.14.30)
+	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_transit",  "cornfield",      "CORNFIELD")       -- added by this mod (back in v2.16.8)
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_highrise", "shopping_mall",  "SHOPPING MALL")   -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_highrise", "dragon_rooftop", "DRAGON ROOFTOP")  -- added by this mod
 	ZmQolAddLoc(CoD.SelectMapListZombie.Locations, "zm_highrise", "sweatshop",      "SWEATSHOP")       -- added by this mod

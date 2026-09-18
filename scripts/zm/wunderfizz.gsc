@@ -821,6 +821,123 @@ setupWunderfizz()
     	//  where the machine was wanted.
     	zmqol_wf_add((2117,593,-55), (0,4,0), zmqol_wf_machine_model());
     	level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_yaw = 184;
+
+    	//  ====================================================================
+    	//  🛑 CORNFIELD - THE SIXTH REGION, AND IT HAD NO MACHINE AT ALL.
+    	//
+    	//  User, 2026-09-15: *"add a wunderfizz machine to the cornfield map
+    	//  like just in the playable area somewhere like kind of near one of the
+    	//  cars ... make sure it's like not on a weird angle or anything ...
+    	//  because every other map has a wunderfizz machine."*
+    	//
+    	//  🌟 THE LIST ABOVE ALREADY CLAIMED TO COVER IT. The comment on
+    	//  zmqol_wf_filter_to_play_area() reads "TranZit's six are one per
+    	//  region: bus depot, diner, power, town, farm, cornfield" - but there
+    	//  were only ever six entries for SEVEN spots, and none of them is in
+    	//  the field. Nearest candidate to a Cornfield player spawn is
+    	//  (8371,-5408,264), about 5,100 units away and across the map, so the
+    	//  play-area filter's 2,500 threshold kept nothing and its never-return-
+    	//  nothing fallback handed Cornfield that one unreachable machine. In
+    	//  game that is a Wunderfizz the player can never walk to.
+    	//
+    	//  WHERE: beside the dead microbus, which the stock mapents puts at
+    	//  (10477.7, -364.5, -216.6) yaw 138.9 as a "game_mode_object" tagged
+    	//  script_noteworthy "cornfield" - one of the eight wrecks scattered
+    	//  through the field, and one this mod's loc script already re-tags for
+    	//  zstandard so it is present in survival. The seed steps 110 units off
+    	//  the bus along its own right (yaw 138.9 -> right (0.658, 0.753)),
+    	//  which is the side AWAY from the overturned truck cab 93 units off its
+    	//  other flank, and lands in open field about 200 units from the Pack-a-
+    	//  Punch this map's loc script registers at (10460,-564,-220) - so the
+    	//  ground is proven walkable by the machine already standing on it.
+    	//
+    	//  🛑 Z COMES FROM A TRACE, NOT FROM THIS LINE. The seed z is the bus's
+    	//  own, which is floor by construction, but the field is not flat and its
+    	//  pathnodes sit ~120 above the props rather than the usual ~30. snap_floor
+    	//  makes the number above a ray height instead of a claim - see the flag's
+    	//  note in zmqol_wf_place().
+    	//
+    	//  🛑 ANGLE: SQUARE TO THE WORLD AXES. v2.16.10 first shipped placement
+    	//  yaw 315, which put the machine on a 45-degree diagonal. User,
+    	//  2026-09-15, with a screenshot: *"it's on an angle and it needs to be
+    	//  pushed over to the left a little bit ... make sure it's squared up and
+    	//  its back is to the cornfield, right now it's on an angle."*
+    	//
+    	//  🛑 AND YAW 0 WAS STILL THE WRONG SQUARE ANGLE. User, 2026-09-15, with
+    	//  a third screenshot: *"it's on its side right now, it's on the wrong
+    	//  angle. you've got to line it up properly with its back to the cornfield
+    	//  hedges."* Square was right; which square face points at the player was
+    	//  not.
+    	//
+    	//  🌟 THE PLAYER COMES FROM THE WEST, and three independent things in the
+    	//  user's own screenshots agree on it:
+    	//    - the survival spawn cluster this arena registers is (10331,-227) /
+    	//      (10384,-192), due WEST of the machine at (10550,-200);
+    	//    - in their shot the microbus - which sits south-west at
+    	//      (10477.7,-364.5) - appears at the RIGHT frame edge, and south is
+    	//      on your right only when you are facing east;
+    	//    - their earlier "move it left" resolved to +Y, and +Y is left only
+    	//      when facing east.
+    	//  Facing east, the corn wall behind the machine is the one to its EAST.
+    	//
+    	//  So the front must face WEST: front = 180, and placement yaw = front +
+    	//  90 = 270. Front = placement yaw - 90 is the convention
+    	//  zmqol_wf_wall_snap documents, and it is corroborated by the Nuketown
+    	//  machine above - placement yaw 162 there, and that block's own
+    	//  clearance arithmetic treats the machine as facing ~66.
+    	//
+    	//  Yaw 0 put the front on 270 (south). Square to the world, but presenting
+    	//  its narrow side to everyone walking in from the spawns - exactly what
+    	//  "it's on its side" describes.
+    	//
+    	//  Flat in the other two axes as well. The wrecks in this field sit at up
+    	//  to 99 degrees of roll and matching one would be the "weird angle" the
+    	//  user asked to avoid, so pitch and roll stay 0 whatever the bus beside
+    	//  it is doing.
+    	//
+    	//  MOVED 82 UNITS +Y from (10550,-282). "Left" is +Y here, and that is
+    	//  reconstructed from the user's screenshot rather than assumed: for the
+    	//  wreck to sit at the right-hand frame edge the camera has to be near
+    	//  (10325,-84) looking ESE, which is the spawn cluster at (10331,-227) /
+    	//  (10384,-192). Walking east from there, the player's left is +Y.
+    	//
+    	//  🛑 AN EARLIER PASS MOVED 60 UNITS -X AND THAT WAS WRONG TWICE OVER.
+    	//  It was not "left" - -X is roughly back the way that player came - and
+    	//  the claim in its commit message that -X "opens the gap to the microbus
+    	//  rather than closing it" was simply false. The bus lies along yaw 138.9
+    	//  from (10477.7,-364.5), so its right axis is (0.658, 0.753) and -X has
+    	//  a component straight along it. Projected onto the bus's own axes:
+    	//
+    	//        seed              centre   off the flank   along the length
+    	//        (10550,-282)      109.7        109.7             -0.2
+    	//        (10490,-282)       83.4         70.3             45.0   <- wrong
+    	//        (10550,-200)      177.9        170.0             52.3   <- here
+    	//
+    	//  Microbus half-width is ~40-45 and this machine's half-depth ~28, so
+    	//  anything under ~70 off the flank while within ~120 along the length is
+    	//  touching it. The -X seed sat on roughly zero air - the same failure the
+    	//  user photographed with the Speed Cola machine wedged between two cars,
+    	//  and the reason that block in zm_transit_loc_cornfield.gsc now says to
+    	//  check placements against init_barriers() and the wrecks, not just
+    	//  against empty space in the mapents.
+    	//
+    	//  +Y also lands mid-cell in the map's 128-unit pathnode grid (78-103
+    	//  units from the four nodes at x 10496/10624, y -128/-256), so it stands
+    	//  in no zombie lane.
+    	//
+    	//  No snap_yaw: there is no wall within reach in an open field and the
+    	//  snap would log "found no wall" and change nothing.
+    	//
+    	//  The three dvars are for live tuning only - set them before the map
+    	//  loads. They default to the shipped position, so a normal boot reads
+    	//  nothing.
+    	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_cf_x", 10550 ),
+    	                getdvarintdefault( "zmqol_wf_cf_y", -200 ),
+    	                -216 ),
+    	              ( 0, getdvarintdefault( "zmqol_wf_cf_yaw", 270 ), 0 ),
+    	              zmqol_wf_machine_model() );
+    	level.zmqol_wf_pending[ level.zmqol_wf_pending.size - 1 ].snap_floor = 1;
+    	//  ====================================================================
     }
     else if(level.script == "zm_highrise")
     {
@@ -1091,6 +1208,36 @@ zmqol_wf_place()
 		{
 			if( isdefined( a_place[i].snap_yaw ) )
 				a_place[i] = zmqol_wf_wall_snap( a_place[i] );
+		}
+
+		//  🛑 v2.16.10 - SIT THE MACHINE ON THE GROUND WHEN ASKED TO.
+		//
+		//  zmqol_wf_wall_snap() ends on zmqol_wf_trace_floor(), so a wall-snapped
+		//  machine is floored for free - but ONLY if it found a wall. Its
+		//  no-wall path returns the seed untouched, and zmqol_wf_unclip() below
+		//  moves a machine horizontally and never vertically. So an OPEN-GROUND
+		//  seed keeps whatever z it was written with, exactly.
+		//
+		//  That is fine where the z came off a player standing there. It is not
+		//  fine for Cornfield, whose seed is derived from a parked car's origin
+		//  in the stock mapents: the cornfield floor is not flat, and its
+		//  pathnode grid sits ~120 units above the props (measured against the
+		//  stock dump - every other TranZit region has the usual ~30), so no
+		//  hand-written z for that field can be trusted to a few units.
+		//
+		//  One flag, the existing trace, no new machinery: ask for the floor and
+		//  the seed z becomes a starting height for the ray rather than the
+		//  answer. The +72/-160 window means the seed still has to be within
+		//  about a body height of the real floor, which a car's own origin is.
+		for( i = 0; i < a_place.size; i++ )
+		{
+			if( !is_true( a_place[i].snap_floor ) )
+				continue;
+
+			v_was = a_place[i].origin;
+			a_place[i].origin = ( v_was[0], v_was[1], zmqol_wf_trace_floor( v_was ) );
+
+			println( "[zm_qol] wunderfizz: floor snap (" + int( v_was[0] ) + "," + int( v_was[1] ) + ") z " + int( v_was[2] ) + " -> " + int( a_place[i].origin[2] ) );
 		}
 
 		//  Every machine, on every other map, gets pushed out of whatever it is
