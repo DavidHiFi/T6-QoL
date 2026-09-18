@@ -7,12 +7,16 @@ if (-not $Source) {
 }
 $text = [IO.File]::ReadAllText((Resolve-Path -LiteralPath $Source))
 
-$combined = 'text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );'
-if (-not $text.Contains($combined)) {
-    Write-Error 'Perk name and description must share one HUD element.'
+$nameLine = 'name_hud settext( getPerkName( perk ) );'
+if (-not $text.Contains($nameLine)) {
+    Write-Error 'Perk name must have its own centered HUD element (name_hud).'
 }
-if ($text.Contains('desc_hud = newclienthudelem( self );')) {
-    Write-Error 'A separate description HUD element can disappear on Origins.'
+$descLine = 'desc_hud settext( getPerkDesc( perk ) );'
+if (-not $text.Contains($descLine)) {
+    Write-Error 'Perk description must have its own centered HUD element (desc_hud).'
+}
+if ($text.Contains('getPerkName( perk ) + "\n" + getPerkDesc( perk )')) {
+    Write-Error 'Name and description must NOT share one HUD element: the merged element left-aligns the title.'
 }
 
 $perks = @(
@@ -28,4 +32,4 @@ foreach ($perk in $perks) {
     }
 }
 
-Write-Output '    [ok] perk pop-up keeps every description on the shared text element'
+Write-Output '    [ok] perk pop-up centers the name over its own description element'
