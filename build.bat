@@ -206,10 +206,31 @@ call :deploy "%BUILD_DIR%"
 if errorlevel 1 goto copyfail
 
 echo.
+REM  [5/9] DEPLOY - AND WHOSE BUILD IS ALREADY THERE.
+REM
+REM  %PLUTO_DIR% is a SHARED path. It is the only folder the game reads, so every
+REM  checkout and worktree of this project deploys to the same five filenames,
+REM  and this step overwrites whatever is there without asking. On 2026-09-16 two
+REM  sessions were building at once and one silently replaced the other's deploy
+REM  mid-test; the tell was that the mod under test stopped matching the tree the
+REM  tester was reading.
+REM
+REM  So: leave a note saying where this build came from, and read the previous
+REM  note first. This warns, it does not block - a solo build overwriting its own
+REM  last deploy is the normal case and must stay one keypress.
+REM ----------------------------------------------------------------------------
 echo [5/9] Installing to Plutonium (skipped if not installed):
 echo        %PLUTO_DIR%
+if exist "%PLUTO_DIR%\deployed-by.txt" (
+    "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$prev=Get-Content -LiteralPath (Join-Path $env:PLUTO_DIR 'deployed-by.txt') -First 1; if ($prev -and $prev -ne $env:PROJ_DIR0.TrimEnd('\')) { Write-Host ''; Write-Host '    [warn] the build already deployed here came from a DIFFERENT folder:'; Write-Host ('           ' + $prev); Write-Host '           If another session or window is testing it, you are about to'; Write-Host '           replace the mod under them.'; Write-Host '' }"
+)
 call :deploy "%PLUTO_DIR%"
-if errorlevel 1 echo    [skip] couldn't write to Plutonium - the send-ready copy above is still good.
+if errorlevel 1 (
+    echo    [skip] couldn't write to Plutonium - the send-ready copy above is still good.
+) else (
+    "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$p=$env:PROJ_DIR0.TrimEnd('\'); $b=''; $c=''; try { $b=(& git -C $p rev-parse --abbrev-ref HEAD 2>$null); $c=(& git -C $p rev-parse --short HEAD 2>$null) } catch { }; @($p, ('branch ' + $b + '  commit ' + $c), (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) | Set-Content -LiteralPath (Join-Path $env:PLUTO_DIR 'deployed-by.txt') -Encoding ASCII"
+)
+echo.
 echo.
 echo [6/9] Refreshing the installer's own bundled copy:
 echo        %~dp0installer\Mod Files
