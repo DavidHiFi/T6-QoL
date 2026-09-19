@@ -18,3 +18,26 @@ if (-not $lobby.Contains('CoD.PrivateGameLobby.Dvars[1].gameTypes = {}')) {
 }
 
 Write-Output '    [ok] MAGIC and CHEATS remain in GAME 3 and out of the mod lobby'
+
+$pageStart = $options.IndexOf('CoD.OptionsSettings.CreateQolPageMenu = function')
+if ($pageStart -lt 0) {
+    throw 'The shared HUD/CHEATS page builder is missing.'
+}
+$pageEnd = $options.IndexOf('LUI.createMenu.OptionsSettingsMenu = function', $pageStart)
+if ($pageEnd -le $pageStart) {
+    throw 'The shared HUD/CHEATS page builder is missing.'
+}
+$page = $options.Substring($pageStart, $pageEnd - $pageStart)
+if ($page -notmatch 'while FirstButton and not FirstButton\.m_focusable do\s+FirstButton = FirstButton:getNextSibling\(\)\s+end\s+if FirstButton then\s+FirstButton:processEvent\(\{ name = "gain_focus", controller = LocalClientIndex \}\)') {
+    throw 'HUD/CHEATS must skip non-focusable list children and focus a selectable row for the owning controller.'
+}
+foreach ($builder in @('CreateQolHudTab', 'CreateQolCheatsTab')) {
+    if (-not $page.Contains("CoD.OptionsSettings.$builder, LocalClientIndex")) {
+        throw "$builder must use the shared controller-focus page builder."
+    }
+}
+if (-not $page.Contains('not PageMenu:restoreState()') -or
+    -not $page.Contains('PageMenu:registerEventHandler("button_prompt_back", CoD.OptionsSettings.Back)')) {
+    throw 'HUD/CHEATS must preserve saved focus and the stock Back handler.'
+}
+Write-Output '    [ok] HUD and CHEATS retain stock controller focus, saved state and Back handling'

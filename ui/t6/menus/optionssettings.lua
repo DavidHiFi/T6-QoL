@@ -2622,13 +2622,22 @@ CoD.OptionsSettings.CreateQolPageMenu = function (MenuName, Title, PageBuilder, 
 	-- A normal settings tab gets this vertical separation from the tab manager.
 	-- Standalone HUD and Cheats pages need it explicitly or their first row
 	-- occupies the same band as the centered page title.
-	PageContainer:setTopBottom(true, true, 70, 70)
+	-- 2026-09-18: top inset 70 -> 50. The HUD page holds 16 rows, so its hint
+	-- line drew at ~1034 against the ESC prompt at 1036 (user screenshot, and
+	-- the hint_top = 234 + pitches * 50 formula above CreateQolHudTab). The
+	-- list is top-anchored and ButtonList never clips, so 20 units up puts the
+	-- hint at ~1014 - one ordinary row-gap clear - with the first row at ~214,
+	-- still well below the title. CHEATS (15 rows) rides the same builder.
+	PageContainer:setTopBottom(true, true, 50, 70)
 	PageMenu:addElement(PageContainer)
 
 	if not PageMenu:restoreState() and PageMenu.buttonList then
 		local FirstButton = PageMenu.buttonList:getFirstChild()
+		while FirstButton and not FirstButton.m_focusable do
+			FirstButton = FirstButton:getNextSibling()
+		end
 		if FirstButton then
-			FirstButton:processEvent({ name = "gain_focus" })
+			FirstButton:processEvent({ name = "gain_focus", controller = LocalClientIndex })
 		end
 	end
 
