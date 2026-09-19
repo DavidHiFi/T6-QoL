@@ -41,3 +41,19 @@ if (-not $page.Contains('not PageMenu:restoreState()') -or
     throw 'HUD/CHEATS must preserve saved focus and the stock Back handler.'
 }
 Write-Output '    [ok] HUD and CHEATS retain stock controller focus, saved state and Back handling'
+
+# The four rows Plutonium's own GAME tab ships. Dropping one reads to the user
+# as the mod removing a stock option (REDUCE ENGINE SLEEPS was missing until
+# v2.16.15). The dvar names are Plutonium's, read out of plutonium_zm.ff.
+$game1Start = $options.IndexOf('CoD.OptionsSettings.CreateQolTab = function')
+$game3End = $options.IndexOf('CoD.OptionsSettings.CreateQolCheatsTab = function')
+if ($game1Start -lt 0 -or $game3End -le $game1Start) {
+    throw 'The GAME 1..GAME 3 builders are missing or out of order.'
+}
+$gameTabs = $options.Substring($game1Start, $game3End - $game1Start)
+foreach ($dvar in @('cl_allowDownload', 'com_busyWait', 'cg_drawIdentifier', 'cg_flashScriptHashes')) {
+    if ($gameTabs -notmatch ('T\(\w+, LocalClientIndex, "[^"]+",\s*"' + [regex]::Escape($dvar) + '"')) {
+        throw "The Plutonium GAME row for $dvar is missing from GAME 1..3."
+    }
+}
+Write-Output '    [ok] all four Plutonium GAME rows are present (download, engine sleeps, identifier, hashes)'
