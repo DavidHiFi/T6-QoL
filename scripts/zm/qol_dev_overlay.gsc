@@ -21,13 +21,16 @@
 //  auto-runs init() for every .gsc under scripts\zm\, which is the same reason
 //  the loose copy worked with nothing but an init().
 //
-//  TOGGLE
-//      zmqol_dev_overlay 1     force on
-//      zmqol_dev_overlay 0     force off
-//  With the dvar unset it follows sv_cheats: on for a dev/console session,
-//  invisible to a normal player. That is deliberate - the overlay should never
-//  appear for someone who just installed the mod, and tying it to sv_cheats
-//  means no one has to remember to switch it off before a release.
+//  TOGGLE - console, either form:
+//      zmqol_dev_overlay 1     on
+//      zmqol_dev_overlay 0     off  (the default)
+//
+//  🛑 OFF UNLESS ASKED FOR, v2.16.17. This used to fall back to sv_cheats when
+//  the dvar was unset, which meant any player who turned CHEATS on in GAME 3
+//  got a developer readout in the corner of a shipped release - reported by the
+//  user on 2026-09-20 with a screenshot of the published build. sv_cheats is a
+//  gameplay switch, not a debug switch, so it no longer implies this overlay.
+//  It now draws only when the dvar is explicitly 1.
 //
 //  🛑 THE settext() TRAP, KEPT FROM THE PROBE'S OWN HISTORY. An earlier version
 //  painted the coordinate rows with settext() four times a second. Every unique
@@ -47,18 +50,11 @@ init()
     level thread zmqol_dev_overlay_watch();
 }
 
-//  Unset -> follow sv_cheats. Set -> obey it exactly.
+//  Explicit only: the overlay draws when zmqol_dev_overlay is 1 and never
+//  otherwise. Unset and 0 both mean off - see the banner above.
 zmqol_dev_overlay_on()
 {
-    str_on = getdvar( "zmqol_dev_overlay" );
-
-    if ( str_on == "1" )
-        return 1;
-
-    if ( str_on == "0" )
-        return 0;
-
-    return getdvarint( "sv_cheats" ) == 1;
+    return getdvar( "zmqol_dev_overlay" ) == "1";
 }
 
 zmqol_dev_overlay_watch()
@@ -147,7 +143,7 @@ zmqol_dev_overlay_for_player()
     e_pitch = self zmqol_dev_overlay_line( 76, 56 );
     e_pitch.label = &"pitch ";
 
-    println( "[zm_qol] dev overlay: installed for a player (toggle with zmqol_dev_overlay 0/1; unset follows sv_cheats, currently " + zmqol_dev_overlay_on() + ")" );
+    println( "[zm_qol] dev overlay: installed for a player (toggle with zmqol_dev_overlay 1/0, off unless explicitly 1, currently " + zmqol_dev_overlay_on() + ")" );
 
     for ( ;; )
     {
