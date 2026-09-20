@@ -1727,10 +1727,9 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	-- Same order as Plutonium: download, sleeps, identifier, hashes.
 	T(QolButtons, LocalClientIndex, "REDUCE ENGINE SLEEPS","com_busyWait",        "Busy-wait instead of sleeping between frames. Smoother, uses more CPU.")
 	T(QolButtons, LocalClientIndex, "DRAW IDENTIFIER",    "cg_drawIdentifier",    "Session watermark at the top of the screen.")
-	-- v2.16.15 - FLASH SCRIPT HASHES moved to GAME 3 to pay for REDUCE ENGINE
-	-- SLEEPS (user, 2026-09-18: add the row, move whichever option would
-	-- overflow to GAME 3). It is the developer readout, the one row nobody
-	-- reaches for in play. Dvar unchanged.
+	-- v2.16.15 moved FLASH SCRIPT HASHES to GAME 3 to pay for REDUCE ENGINE
+	-- SLEEPS; v2.16.16 brings it back and moves PERMA-PERKS instead (user,
+	-- 2026-09-20). It sits at the end of this tab, where PERMA-PERKS was.
 
 	-- 🛑 v1.99.54 - THE FOUR WORLD-RENDERING ROWS ARE GONE FROM THIS TAB.
 	-- NIGHT MODE, FOG and MODEL DETAIL FIX (now HIGHER DRAW DISTANCE) moved to
@@ -1873,7 +1872,10 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	--  client/session rows and the gameplay rows - restore the spacer and move
 	--  this row to CHEATS if that grouping matters more.
 	-- ========================================================================
-	T(QolButtons, LocalClientIndex, "PERMA-PERKS",        "perma_perks",        "Every perma-perk this map has, active from the start.")
+	-- v2.16.16 - PERMA-PERKS moved to GAME 3 (user, 2026-09-20: "move perma
+	-- perks from game one into game three"). Its dvar is unchanged. FLASH SCRIPT
+	-- HASHES comes back here so the four Plutonium rows stay together.
+	T(QolButtons, LocalClientIndex, "FLASH SCRIPT HASHES","cg_flashScriptHashes", "Developer readout. Leave it off unless you are debugging.")
 
 	-- ========================================================================
 	--  v2.1.2 - THE TWO MATCH-START FLASH ROWS MOVED HERE FROM THE HUD TAB.
@@ -1937,8 +1939,8 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	-- (see CreateQolHudTab) and this tab held 13 rows, one short of GAME 2.
 	-- Recounted against the T() calls, 2026-09-12. BACKSPEED FIX arrived from
 	-- GAME 2 in v2.15.45 to level the two tabs at 14 rows each.
-	-- v2.16.15 - REDUCE ENGINE SLEEPS in, FLASH SCRIPT HASHES out to GAME 3:
-	-- still 14 rows, one under the 15.0 ceiling, level with GAME 2.
+	-- v2.16.16 - REDUCE ENGINE SLEEPS in, PERMA-PERKS out to GAME 3, FLASH
+	-- SCRIPT HASHES back at the top: still 14 rows, one under the 15.0 ceiling.
 	return QolContainer                              -- 14 rows + 0 spacers = 14.0
 end
 
@@ -2381,9 +2383,10 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "NO MUD SLOWDOWN", "no_mud_slow", "Origins mud no longer drags you down. Run and walk at full speed through it.")
 
-	-- v2.16.15 - moved here from GAME 1 to make room for REDUCE ENGINE SLEEPS
-	-- (see the note in CreateQolTab). Same label, same dvar.
-	T(QolGame3Buttons, LocalClientIndex, "FLASH SCRIPT HASHES","cg_flashScriptHashes", "Developer readout. Leave it off unless you are debugging.")
+	-- v2.16.16 - PERMA-PERKS, moved here from GAME 1 at the user's request so
+	-- REDUCE ENGINE SLEEPS fits there. Same label, same dvar; the long note on
+	-- what the row does and does not register is in CreateQolTab's history.
+	T(QolGame3Buttons, LocalClientIndex, "PERMA-PERKS",        "perma_perks",        "Every perma-perk this map has, active from the start.")
 
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.
@@ -2643,7 +2646,13 @@ CoD.OptionsSettings.CreateQolPageMenu = function (MenuName, Title, PageBuilder, 
 	-- list is top-anchored and ButtonList never clips, so 20 units up puts the
 	-- hint at ~1014 - one ordinary row-gap clear - with the first row at ~214,
 	-- still well below the title. CHEATS (15 rows) rides the same builder.
-	PageContainer:setTopBottom(true, true, 50, 70)
+	-- 2026-09-20: 50 -> 20. The user's screenshot of the deployed build (16 rows,
+	-- hint on the ESC prompt) asked for the whole block "closer towards the top
+	-- in the middle where it says HUD". First row now ~184 against the title
+	-- band ending ~150; the 16-row hint lands ~984, the same clearance the SOUND
+	-- tab ships with at 15.0 pitches. The gate in check-lobby-options.ps1 locks
+	-- the value.
+	PageContainer:setTopBottom(true, true, 20, 70)
 	PageMenu:addElement(PageContainer)
 
 	if not PageMenu:restoreState() and PageMenu.buttonList then

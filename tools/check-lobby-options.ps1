@@ -57,3 +57,7 @@ foreach ($dvar in @('cl_allowDownload', 'com_busyWait', 'cg_drawIdentifier', 'cg
     }
 }
 Write-Output '    [ok] all four Plutonium GAME rows are present (download, engine sleeps, identifier, hashes)'
+if (-not $page.Contains('PageContainer:setTopBottom(true, true, 20, 70)')) {
+    throw 'HUD/CHEATS page inset must stay at top 20 / bottom 70 (user, 2026-09-20): lower values put the 16-row hint on the ESC prompt.'
+}
+Write-Output '    [ok] HUD and CHEATS pages sit at the 20/70 inset'
