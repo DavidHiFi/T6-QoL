@@ -36,6 +36,21 @@ foreach ($line in $geometry) {
     }
 }
 
+# Ordering lock (2026-09-21): newclienthudelem() fails quietly when the client
+# pool is empty, so whichever element the pop-up asks for LAST is the one that
+# silently does not appear. With the icon first that was always the description,
+# which is the "it only shows the perk name" the user has reported repeatedly.
+# Text must be requested before the picture. A tidy that moves the icon back to
+# the top re-breaks it in a way nothing else in the build would catch.
+$descAt = $text.IndexOf('desc_hud settext( getPerkDesc( perk ) );')
+$iconAt = $text.IndexOf('hud setshader( shader, 64, 64 );')
+if ($descAt -lt 0 -or $iconAt -lt 0) {
+    Write-Error 'Perk pop-up: could not find both the description and the icon to check their order.'
+}
+if ($iconAt -lt $descAt) {
+    Write-Error 'Perk pop-up: the icon is allocated BEFORE the description. On a full client HUD pool that silently drops the description - allocate name and description first.'
+}
+
 $perks = @(
     'specialty_armorvest', 'specialty_fastreload', 'specialty_quickrevive',
     'specialty_rof', 'specialty_longersprint', 'specialty_additionalprimaryweapon',
