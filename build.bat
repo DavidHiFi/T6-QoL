@@ -73,6 +73,11 @@ if not exist "%~dp0tools\check-lobby-options.ps1" (
 )
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lobby-options.ps1"
 if errorlevel 1 goto lobbyoptionsfail
+if not exist "%~dp0tools\check-lui-guard.ps1" (
+    color C & echo. & echo   tools\check-lui-guard.ps1 is missing - cannot verify the LUI crash guard. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lui-guard.ps1"
+if errorlevel 1 goto luiguardfail
 
 REM --- resolve the project root (parent of this folder) for the send-ready copy ---
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
@@ -438,6 +443,13 @@ exit /b 1
 color C
 echo.
 echo   BUILD STOPPED: the permanent lobby-option regression gate failed.
+if not defined OFFLINE pause
+exit /b 1
+
+:luiguardfail
+color C
+echo.
+echo   BUILD STOPPED: the LUI event guard regression gate failed.
 if not defined OFFLINE pause
 exit /b 1
 
