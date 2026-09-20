@@ -17968,21 +17968,23 @@ perk_bought( perk )
     hud.foreground = 1;
     hud setshader( shader, 64, 64 );
 
-    //  A line in console_zm.log every time the pop-up runs, so the next report
-    //  of a missing description is a measurement instead of another guess. It
-    //  names the perk token, both resolved strings and which elements actually
-    //  came back from the pool - the four things that have had to be inferred
-    //  every previous time this was looked at. Off with  zmqol_perk_popup_log 0.
-    if ( getdvarintdefault( "zmqol_perk_popup_log", 1 ) )
-    {
-        logprint( "[zm_qol] perk popup: token=" + perk
-                  + " name='" + getPerkName( perk ) + "'"
-                  + " desc='" + getPerkDesc( perk ) + "'"
-                  + " name_hud=" + isdefined( name_hud )
-                  + " desc_hud=" + isdefined( desc_hud )
-                  + " icon=" + isdefined( hud )
-                  + " map=" + getdvar( "mapname" ) + "\n" );
-    }
+    //  🛑 THE PERK POP-UP DIAGNOSTIC WAS HERE AND HAD TO COME BACK OUT.
+    //
+    //  2026-09-21: a ~15-line logprint() block added here to measure a missing
+    //  description took this file over its compiled-bytecode ceiling. The map
+    //  died with 12 script errors, all of them "Unresolved external:
+    //  getdvarintdefault with 2 parameters" -> SV_Shutdown, against a function
+    //  used 48 times in this file and working for months. That is the known
+    //  signature: the engine names whatever import landed on the wrong side of
+    //  the overflow, and the named symbol is never the cause.
+    //
+    //  The rule this broke is already written down: NEVER ADD CODE TO THIS
+    //  FILE. New behaviour, including diagnostics, goes in its own raw script
+    //  under scripts\zm\ that installs itself from its own init(). Comments are
+    //  free - they compile to nothing - which is why this note can stay.
+    //
+    //  The allocation order above is a MOVE, not an addition, so it costs no
+    //  bytecode and stays.
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
