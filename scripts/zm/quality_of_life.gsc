@@ -17899,19 +17899,25 @@ perk_bought( perk )
         self.perkspec_hud = undefined;
     }
 
-    // --- Perk icon ---
-    hud = newclienthudelem( self );
-    hud.alignx = "center";
-    hud.aligny = "middle";
-    hud.horzalign = "user_center";
-    hud.vertalign = "user_top";
-    hud.x = 0;
-    hud.y = 55;
-    hud.alpha = 0;
-    hud.color = ( 1, 1, 1 );
-    hud.hidewheninmenu = 1;
-    hud.foreground = 1;
-    hud setshader( shader, 64, 64 );
+    // ========================================================================
+    //  🛑 TEXT IS ALLOCATED BEFORE THE ICON. DO NOT PUT THE ICON BACK ON TOP.
+    //
+    //  User, 2026-09-21: *"i just got phd flopper on excavation site survival
+    //  and it's just showing the name of the perk and not showing the
+    //  description"* - reported against a build whose source, compiled script
+    //  and deployed mod.iwd all carried the right description for
+    //  specialty_flakjacket, so the STRING was never missing.
+    //
+    //  newclienthudelem() draws from a finite client pool and fails quietly
+    //  when it is empty - the same allocate-on-demand behaviour already
+    //  documented for Origins' generator capture ring a few lines below. This
+    //  pop-up asks for three elements in a row, so whichever is requested LAST
+    //  is the one that silently does not appear. With the icon first, that was
+    //  always the description.
+    //
+    //  Ordering name and description ahead of the icon means a short pool costs
+    //  the picture, not the words. It changes nothing when the pool is healthy.
+    // ========================================================================
 
     // --- Perk name (line 1, white, larger) ---
     name_hud = newclienthudelem( self );
@@ -17947,6 +17953,36 @@ perk_bought( perk )
     desc_hud.hidewheninmenu = 1;
     desc_hud.foreground = 1;
     desc_hud settext( getPerkDesc( perk ) );
+
+    // --- Perk icon (allocated LAST on purpose - see the note above) ---
+    hud = newclienthudelem( self );
+    hud.alignx = "center";
+    hud.aligny = "middle";
+    hud.horzalign = "user_center";
+    hud.vertalign = "user_top";
+    hud.x = 0;
+    hud.y = 55;
+    hud.alpha = 0;
+    hud.color = ( 1, 1, 1 );
+    hud.hidewheninmenu = 1;
+    hud.foreground = 1;
+    hud setshader( shader, 64, 64 );
+
+    //  A line in console_zm.log every time the pop-up runs, so the next report
+    //  of a missing description is a measurement instead of another guess. It
+    //  names the perk token, both resolved strings and which elements actually
+    //  came back from the pool - the four things that have had to be inferred
+    //  every previous time this was looked at. Off with  zmqol_perk_popup_log 0.
+    if ( getdvarintdefault( "zmqol_perk_popup_log", 1 ) )
+    {
+        logprint( "[zm_qol] perk popup: token=" + perk
+                  + " name='" + getPerkName( perk ) + "'"
+                  + " desc='" + getPerkDesc( perk ) + "'"
+                  + " name_hud=" + isdefined( name_hud )
+                  + " desc_hud=" + isdefined( desc_hud )
+                  + " icon=" + isdefined( hud )
+                  + " map=" + getdvar( "mapname" ) + "\n" );
+    }
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
