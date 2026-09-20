@@ -230,6 +230,10 @@ foreach ($f in $textFiles) {
     foreach ($blk in (Get-FunctionBlocks $lines)) {
         $bodyText = ($blk.Body | ForEach-Object { Remove-Comment $_ }) -join "`n"
         if ($bodyText -notmatch 'self\s+endon\s*\(\s*"disconnect"') { continue }
+        # A global console/menu dvar has one owner: the listen-server host.
+        # Accept an explicit fail-closed host guard, not a comment or a caller
+        # assumption. Remote-player threads must return before any write.
+        if ($bodyText -match 'self\s*!=\s*gethostplayer\s*\(\s*\)\s*\)\s*\r?\n\s*return\s*;') { continue }
         $sd = [regex]::Matches($bodyText, 'setdvar\s*\(\s*"([^"]+)"')
         foreach ($hit in $sd) {
             Add-Finding 'R4' $rel $blk.Start "$($blk.Name):$($hit.Groups[1].Value)" `
@@ -276,6 +280,14 @@ if (Test-Path $locDir) {
     foreach ($f in (Get-ChildItem $locDir -Filter *.gsc -File)) {
         # strip comments line-by-line, then join so multi-line calls survive
         $code = (Get-Content $f.FullName | ForEach-Object { Remove-Comment $_ }) -join "`n"
+
+        # Some locations generate spawns from every matching map respawn struct.
+        # Counting the two call sites would report "one usable spawn" even though
+        # each site runs repeatedly. Flag it for review without a false verdict.
+        if ($code -match 'register_map_spawn\s*\(\s*origin\s*,') {
+            $null = $info.Add(("R6  {0}  initial-spawn: dynamic generator [review runtime struct count]" -f (Get-Rel $f.FullName)))
+            continue
+        }
 
         $tagged = 0
         $plain  = 0

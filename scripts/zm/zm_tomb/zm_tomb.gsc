@@ -714,21 +714,28 @@ zmqol_capture_objectives_on_connect()
     for ( ;; )
     {
         level waittill( "connected", player );
-
-        player waittill( "spawned_player" );
-        wait 0.05;
-
-        //  v1.90.7 - same guard as above. A co-op player connecting while someone
-        //  else is mid-capture must not blank that player's ring.
-        if ( zmqol_any_zone_capturing() )
-        {
-            println( "[zm_qol] capture objectives: connect re-declare SKIPPED - a capture is live" );
-            continue;
-        }
-
-        maps\mp\zm_tomb_capture_zones::declare_objectives();
-        println( "[zm_qol] capture objectives: re-declared for a connecting player" );
+        player thread zmqol_capture_objectives_after_spawn();
     }
+}
+
+// Wait outside the connect loop. Otherwise one slow client can make the loop
+// miss every "connected" notify raised while it is parked on that player.
+zmqol_capture_objectives_after_spawn()
+{
+    self endon( "disconnect" );
+    self waittill( "spawned_player" );
+    wait 0.05;
+
+    // A co-op player connecting while someone else is mid-capture must not
+    // blank that player's ring.
+    if ( zmqol_any_zone_capturing() )
+    {
+        println( "[zm_qol] capture objectives: connect re-declare SKIPPED - a capture is live" );
+        return;
+    }
+
+    maps\mp\zm_tomb_capture_zones::declare_objectives();
+    println( "[zm_qol] capture objectives: re-declared for a connecting player" );
 }
 
 // ============================================================================

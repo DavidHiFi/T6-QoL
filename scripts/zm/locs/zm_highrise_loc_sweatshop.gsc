@@ -14,6 +14,7 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((2179, 371, 1300), (0, 150, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((2129, 285, 1300), (0, 150, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((2079, 198, 1300), (0, 150, 0), zone, 2);
+	scripts\zm\replaced\utility::register_map_spawn((2229, 285, 1300), (0, 210, 0), zone);
 
 	level.struct_class_names["targetname"]["intermission"] = [];
 

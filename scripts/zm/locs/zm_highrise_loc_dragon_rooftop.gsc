@@ -14,6 +14,9 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((2114, 248, 2880), (0, 150, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((2064, 162, 2880), (0, 150, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((2014, 75, 2880), (0, 150, 0), zone, 2);
+	// Untagged spare survives the engine's all-allies team filter and prevents a
+	// reconnect from falling back onto player one's occupied spawn.
+	scripts\zm\replaced\utility::register_map_spawn((2090, 375, 2880), (0, 240, 0), zone);
 }
 
 precache()

@@ -156,26 +156,34 @@ Write-Host "   pack-a-punch: all policed locations use register_pap_struct_built
 #  check anything.
 #
 #  GSC side is zmqol_church_pap_origin() / zmqol_church_pap_yaw(); CSC side is
-#  the church branch of zmqol_cp_pap_client_model(). Both read the same four
-#  dvars, so the defaults are compared by dvar name and nothing depends on the
-#  order they are written in.
+#  the church branch of zmqol_cp_pap_client_model(). They are fixed literals so
+#  remote clients cannot observe different local dvars.
 # ---------------------------------------------------------------------------
 $papGsc = Join-Path $Root 'scripts\zm\locs\zm_tomb_loc_church.gsc'
 $papCsc = Join-Path $Root 'scripts\zm\zm_tomb\zm_tomb.csc'
 
 if ((Test-Path $papGsc) -and (Test-Path $papCsc)) {
-    function Get-PapDefaults([string] $path) {
+    function Get-PapCoordinates([string] $path, [bool] $client) {
         $t = [IO.File]::ReadAllText($path)
         $d = @{}
-        foreach ($mm in [regex]::Matches($t, 'getdvarintdefault\s*\(\s*"(zmqol_pap_church_[a-z]+)"\s*,\s*(-?\d+)\s*\)')) {
-            $d[$mm.Groups[1].Value] = [int] $mm.Groups[2].Value
+        if ($client) {
+            $m = [regex]::Match($t, 'else\s+if\s*\(\s*str_loc\s*==\s*"church"\s*\).*?v_origin\s*=\s*\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\)\s*;.*?v_angles\s*=\s*\(\s*0\s*,\s*(-?\d+)\s*,\s*0\s*\)', 'Singleline')
+        }
+        else {
+            $m = [regex]::Match($t, 'zmqol_church_pap_origin\s*\(\s*\)\s*\{.*?return\s*\(\s*(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\s*\)\s*;.*?zmqol_church_pap_yaw\s*\(\s*\)\s*\{.*?return\s+(-?\d+)\s*;', 'Singleline')
+        }
+        if ($m.Success) {
+            $d['x'] = [int] $m.Groups[1].Value
+            $d['y'] = [int] $m.Groups[2].Value
+            $d['z'] = [int] $m.Groups[3].Value
+            $d['yaw'] = [int] $m.Groups[4].Value
         }
         return $d
     }
 
-    $gsc = Get-PapDefaults $papGsc
-    $csc = Get-PapDefaults $papCsc
-    $keys = @('zmqol_pap_church_x', 'zmqol_pap_church_y', 'zmqol_pap_church_z', 'zmqol_pap_church_yaw')
+    $gsc = Get-PapCoordinates $papGsc $false
+    $csc = Get-PapCoordinates $papCsc $true
+    $keys = @('x', 'y', 'z', 'yaw')
     $papDrift = @()
 
     foreach ($k in $keys) {
@@ -201,7 +209,7 @@ if ((Test-Path $papGsc) -and (Test-Path $papCsc)) {
         exit 1
     }
 
-    $shown = ($keys | ForEach-Object { "$($_ -replace '^zmqol_pap_church_','')=$($gsc[$_])" }) -join ' '
+    $shown = ($keys | ForEach-Object { "$_=$($gsc[$_])" }) -join ' '
     Write-Host "   church pap: gsc and csc agree  ($shown)"
 }
 

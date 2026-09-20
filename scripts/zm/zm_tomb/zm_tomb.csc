@@ -119,10 +119,11 @@ zmqol_cp_pap_client_model()
         //  degrees off its placement yaw. Full reading, including the joint
         //  measurement that established the offset, is in the banner on
         //  zm_tomb_loc_church.gsc::zmqol_church_pap_origin().
-        v_origin = ( getdvarintdefault( "zmqol_pap_church_x", 484 ),
-                     getdvarintdefault( "zmqol_pap_church_y", -2559 ),
-                     getdvarintdefault( "zmqol_pap_church_z", 47 ) );
-        v_angles = ( 0, getdvarintdefault( "zmqol_pap_church_yaw", 15 ), 0 );
+        //  These are constants on both halves. Custom dvars are not replicated
+        //  to remote clients, so using tuning dvars here could draw the machine
+        //  away from the server-owned trigger in co-op.
+        v_origin = ( 484, -2559, 47 );
+        v_angles = ( 0, 15, 0 );
     }
     else
         return;

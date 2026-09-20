@@ -290,7 +290,7 @@ zmqol_npc_powerup_intro_vox( powerup )
 
     flag_clear( "zombie_drop_powerups" );
     level.powerup_intro = 1;
-    org = spawn( "script_origin", get_players()[0].origin );
+    org = spawn( "script_origin", gethostplayer().origin );
     scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_zmba_first_drop_0", org, undefined, undefined );
     org playsoundwithnotify( "vox_zmba_first_drop_0", "first_powerup_intro_done" );
     org waittill( "first_powerup_intro_done" );

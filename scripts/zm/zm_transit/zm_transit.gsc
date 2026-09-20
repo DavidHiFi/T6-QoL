@@ -124,10 +124,10 @@ main()
 // ============================================================================
 zmqol_diner_shield_enabled()
 {
-    // Twin of zm_transit.csc::zmqol_diner_shield_enabled(). Same two dvars,
+    // Twin of zm_transit.csc::zmqol_diner_shield_enabled(). Same replicated dvars,
     // same order, same comparisons - if these ever disagree the server and
     // client clientfield sets differ in width and everyone is dropped at load.
-    return getdvarintdefault( "zmqol_diner_shield", 1 ) && getdvar( "ui_zm_mapstartlocation" ) == "diner" && getdvar( "ui_gametype" ) != "zgrief";
+    return getdvar( "ui_zm_mapstartlocation" ) == "diner" && getdvar( "ui_gametype" ) != "zgrief";
 }
 
 zmqol_diner_shield_init()
@@ -1245,7 +1245,7 @@ bunkerdoorrotate( open, time )
 
 is_not_busdepot()
 {
-	return !getdvar("g_gametype") == "zclassic" && getdvar("mapname") == "zm_transit" && getdvar("ui_zm_mapstartlocation") == "transit";
+	return !getdvar("ui_gametype") == "zclassic" && getdvar("mapname") == "zm_transit" && getdvar("ui_zm_mapstartlocation") == "transit";
 }
 
 added_weapons()
@@ -1426,4 +1426,3 @@ zmqol_no_power_transit_extras()
         }
     }
 }
-

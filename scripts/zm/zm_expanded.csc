@@ -111,9 +111,6 @@ main()
 // ============================================================================
 zmqol_mp_weapons_init()
 {
-	if ( !getdvarintdefault( "zmqol_mp_weapons", 1 ) )
-		return;
-
 	// ========================================================================
 	//  🛑 v2.9.4 - THE XPR-50 IS NOT INCLUDED ON ORIGINS, AND SKIPPING IT IS
 	//  WHAT STOPS THE MAP CRASHING.
@@ -258,7 +255,7 @@ zmqol_mp_weapons_init()
 	//
 	//  📝 mod.ff owns emp_grenade_zm and its models now, so the def exists on
 	//  every map and the as50/Origins missing-def crash class cannot apply.
-	if ( getdvarintdefault( "emp_all_maps", 1 ) && getdvar( "mapname" ) != "zm_transit" )
+	if ( getdvar( "mapname" ) != "zm_transit" )
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "emp_grenade_zm" );
 
 	// their upgraded halves - included, but never a box result
@@ -649,7 +646,7 @@ zmqol_semtex_wallbuy_origin()
 	// the wall's room-side face, measured from the doorway model - see the server
 	// copy for the full derivation and for why v1.69.10's -5172 was 3 units out.
 	// These two MUST stay identical: the clientfield name is built from the origin.
-	return ( getdvarintdefault( "zmqol_semtex_diner_x", -5176 ), getdvarintdefault( "zmqol_semtex_diner_y", -7925 ), getdvarintdefault( "zmqol_semtex_diner_z", -14 ) );
+	return ( -5176, -7925, -14 );
 }
 
 zmqol_client_add_struct( s_struct )
@@ -669,7 +666,7 @@ zmqol_add_semtex_wallbuy()
 	v_origin = zmqol_semtex_wallbuy_origin();
 	// 270, not 90 - see the server copy. At 90 the bag's body points world -X,
 	// i.e. straight into the wall, which is why only the wallbuy fx ever showed.
-	v_angles = ( 0, getdvarintdefault( "zmqol_semtex_diner_yaw", 270 ), 0 );
+	v_angles = ( 0, 270, 0 );
 
 	s_model = spawnstruct();
 	s_model.targetname = "zmqol_semtex_diner";
@@ -720,7 +717,7 @@ zmqol_claymore_wallbuy_origin()
 	//  via `/set zmqol_claymore_diner_y <value>` without a rebuild.
 	//  v2.6.5 - EXACT TWIN: y -7177 -> -7176, one more unit toward the wall
 	//  per the user's request. See server copy.
-	return ( getdvarintdefault( "zmqol_claymore_diner_x", -3560 ), getdvarintdefault( "zmqol_claymore_diner_y", -7176 ), getdvarintdefault( "zmqol_claymore_diner_z", -7 ) );
+	return ( -3560, -7176, -7 );
 }
 
 zmqol_add_claymore_wallbuy()
@@ -739,16 +736,10 @@ zmqol_add_claymore_wallbuy()
 	//  🛑 EXACT TWIN OF THE GATE ON THE SERVER COPY. Same dvar, same default.
 	//  Registering this pair on one side only is EXE_CLIENT_FIELD_MISMATCH at
 	//  load. If this default changes, the server's changes in the same edit.
-	if ( getdvarintdefault( "zmqol_claymore_diner_enabled", 1 ) == 0 )
-	{
-		println( "[zm_qol] CLIENT diner claymore: DISABLED (zmqol_claymore_diner_enabled 0)" );
-		return;
-	}
-
 	v_origin = zmqol_claymore_wallbuy_origin();
 	// v2.4.9 - corrected sign: the reading (269) IS the outward normal
 	// directly, rounded to 270. EXACT TWIN of the server copy's default.
-	n_yaw    = getdvarintdefault( "zmqol_claymore_diner_yaw", 270 );
+	n_yaw    = 270;
 
 	//  🛑 v2.2.5 - n_yaw IS THE WALL'S OUTWARD NORMAL, AND THE MODEL TAKES IT
 	//  DIRECTLY. It used to take normal + 90, which stood the mine edge-on and
@@ -1526,9 +1517,6 @@ zmqol_vulture_enabled()
 	//  probe exists lives there. Both halves run in one process, so they read
 	//  one value - but they must be changed together regardless, because a
 	//  disagreement here is EXE_CLIENT_FIELD_MISMATCH on every map.
-	if ( !getdvarintdefault( "zmqol_vulture", 1 ) )
-		return 0;
-
 	if ( map == "zm_buried" )
 		return 0;
 
@@ -3050,9 +3038,6 @@ zmqol_testsound_watch()
 // ============================================================================
 zmqol_wallbuy_box_init()
 {
-	if ( !getdvarintdefault( "zmqol_wallbuy_box", 1 ) )
-		return;
-
 	// the four that go in the box - v1.99.91 added the M14, and this list MUST
 	// stay identical to quality_of_life.gsc::zmqol_wallbuy_box_init()'s: the
 	// client's include_weapon builds level._display_box_weapons, which is what

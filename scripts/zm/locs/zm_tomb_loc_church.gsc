@@ -83,19 +83,18 @@
 //  against 29 of gap, which is the reported clipping. Rotated to 15 the narrow
 //  axis takes that gap instead, so the same origin now clears.
 //
-//  The dvars stay, for nudging from a known-good spot from console without a
-//  rebuild. They are not for re-deriving the spot: get another trace instead.
+//  The measured placement is fixed in source. The client half cannot read
+//  server-local tuning dvars in co-op, so runtime nudges would split the visible
+//  machine from its server-owned trigger.
 // ============================================================================
 zmqol_church_pap_origin()
 {
-	return ( getdvarintdefault( "zmqol_pap_church_x", 484 ),
-	         getdvarintdefault( "zmqol_pap_church_y", -2559 ),
-	         getdvarintdefault( "zmqol_pap_church_z", 47 ) );
+	return ( 484, -2559, 47 );
 }
 
 zmqol_church_pap_yaw()
 {
-	return getdvarintdefault( "zmqol_pap_church_yaw", 15 );
+	return 15;
 }
 
 struct_init()
@@ -120,6 +119,7 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((591, -2673, 37), (0, 105, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((446, -2712, 37), (0, 105, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((301, -2751, 37), (0, 105, 0), zone, 2);
+	scripts\zm\replaced\utility::register_map_spawn((500, -2698, 37), (0, 15, 0), zone);
 
 	// --- perk machine: Double Tap, Reimagined's own mapents position ----------
 	//  This mod ships no zm_tomb mapents, so the stock mapents' machines (all

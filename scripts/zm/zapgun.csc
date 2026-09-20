@@ -43,11 +43,6 @@
 
 init()
 {
-    str_ww = getdvar( "zmqol_ww" );
-
-    if ( str_ww != "" && str_ww != "1" && str_ww != "5" )
-        return;
-
     if ( getdvar( "mapname" ) == "zm_buried" || getdvar( "mapname" ) == "zm_tomb" )
         return;
 

@@ -2067,20 +2067,20 @@ zmqol_wait_out_intro_cutscene()
     //  ------------------------------------------------------------------
     n_deadline = gettime() + 210000;
     v_start = undefined;
-    a_players = get_players();
+    e_host = gethostplayer();
 
-    if ( isdefined( a_players ) && a_players.size > 0 && isdefined( a_players[0] ) )
-        v_start = a_players[0] getplayerangles();
+    if ( isdefined( e_host ) )
+        v_start = e_host getplayerangles();
 
     while ( getdvarintdefault( "zmqol_cutscene", 0 ) == 1 && gettime() < n_deadline )
     {
         if ( isdefined( v_start ) )
         {
-            a_players = get_players();
+            e_host = gethostplayer();
 
-            if ( isdefined( a_players ) && a_players.size > 0 && isdefined( a_players[0] ) )
+            if ( isdefined( e_host ) )
             {
-                v_now = a_players[0] getplayerangles();
+                v_now = e_host getplayerangles();
 
                 //  A degree of movement in any axis - far more than drift, far
                 //  less than a deliberate turn.
@@ -6551,7 +6551,7 @@ zmqol_console_command_watcher()
 
         //  The console belongs to the host, so the host is who the command runs
         //  as - the same player the chat path would have supplied.
-        e_host = a_players[0];
+        e_host = gethostplayer();
 
         str_line = getdvar( "qol" );
 
@@ -9423,6 +9423,9 @@ zmqol_boss_spawn_dvar_watch()
     if ( zmqol_minimal() )
         return;
 
+    if ( self != gethostplayer() )
+        return;
+
     self endon( "disconnect" );
     level endon( "game_ended" );
 
@@ -9661,6 +9664,9 @@ zmqol_velocity_think()
 zmqol_velocity_dvar_watch()
 {
     if ( zmqol_minimal() )
+        return;
+
+    if ( self != gethostplayer() )
         return;
 
     self endon( "disconnect" );
@@ -11042,6 +11048,9 @@ zmqol_toggle_dvar_watch()
     if ( zmqol_minimal() )
         return;
 
+    if ( self != gethostplayer() )
+        return;
+
     self endon( "disconnect" );
     level endon( "game_ended" );
 
@@ -11267,6 +11276,9 @@ zmqol_give_weapon_dvar_watch()
     if ( zmqol_minimal() )
         return;
 
+    if ( self != gethostplayer() )
+        return;
+
     self endon( "disconnect" );
     level endon( "game_ended" );
 
@@ -11296,6 +11308,9 @@ zmqol_give_weapon_dvar_watch()
 zmqol_ww_give_dvar_watch()
 {
     if ( zmqol_minimal() )
+        return;
+
+    if ( self != gethostplayer() )
         return;
 
     self endon( "disconnect" );
@@ -11446,16 +11461,8 @@ zmqol_ww_give_dvar_watch()
 //      zmqol_mp_weapons 0   registers none of them (stock box)
 //      zmqol_mp_weapons 1   DEFAULT
 // ============================================================================
-zmqol_mp_weapons_enabled()
-{
-    return getdvarintdefault( "zmqol_mp_weapons", 1 );
-}
-
 zmqol_mp_weapons_init()
 {
-    if ( !zmqol_mp_weapons_enabled() )
-        return;
-
     // ========================================================================
     //  🛑 THIS LINE IS THE PACK-A-PUNCH CRASH FIX (v1.89.3). It must run
     //  BEFORE the add_zombie_weapon calls below, because add_zombie_weapon ->
@@ -11798,12 +11805,6 @@ zmqol_mp_weapons_init()
 // ============================================================================
 zmqol_emp_grenade_init()
 {
-    if ( !getdvarintdefault( "emp_all_maps", 1 ) )
-    {
-        println( "[zm_qol] emp: disabled by emp_all_maps 0" );
-        return;
-    }
-
     //  TranZit ships the grenade itself - leave its own registration alone.
     if ( level.script == "zm_transit" )
     {
@@ -11930,11 +11931,6 @@ zmqol_emp_box_weight()
 //  the SAME weapons - the client's include_weapon builds
 //  level._display_box_weapons, which is what draws the gun over the box.
 // ============================================================================
-zmqol_wallbuy_box_enabled()
-{
-    return getdvarintdefault( "zmqol_wallbuy_box", 1 );
-}
-
 zmqol_wallbuy_box_names()
 {
     a = [];
@@ -11949,9 +11945,6 @@ zmqol_wallbuy_box_names()
 
 zmqol_wallbuy_box_init()
 {
-    if ( !zmqol_wallbuy_box_enabled() )
-        return;
-
     //  base, upgraded, hint, cost, vox - every value is the map script's own.
     zmqol_wallbuy_box_add( "m16_zm",        "m16_gl_upgraded_zm",     &"ZOMBIE_WEAPON_M16",        1200, "burstrifle" );
     zmqol_wallbuy_box_add( "rottweil72_zm", "rottweil72_upgraded_zm", &"ZOMBIE_WEAPON_ROTTWEIL72",  500, "shotgun" );
@@ -12013,9 +12006,6 @@ zmqol_wallbuy_box_reassert()
     level endon( "end_game" );
 
     wait 0.05;
-
-    if ( !zmqol_wallbuy_box_enabled() )
-        return;
 
     if ( !isdefined( level.zombie_weapons ) )
         return;
@@ -12742,6 +12732,9 @@ zmqol_fly_dvar_watch()
     if ( zmqol_minimal() )
         return;
 
+    if ( self != gethostplayer() )
+        return;
+
     self endon( "disconnect" );
     level endon( "game_ended" );
 
@@ -12774,6 +12767,9 @@ zmqol_fly_dvar_watch()
 
 zmqol_fly_key_toggle()
 {
+    if ( self != gethostplayer() )
+        return;
+
     self endon( "disconnect" );
     level endon( "game_ended" );
 
@@ -16881,9 +16877,6 @@ zmqol_vulture_enabled()
     //  server and client and every player is dropped with
     //  EXE_CLIENT_FIELD_MISMATCH. Change neither without the other.
     // ========================================================================
-    if ( !getdvarintdefault( "zmqol_vulture", 1 ) )
-        return 0;
-
     if ( map == "zm_buried" )   // ships the perk itself
         return 0;
 
@@ -21368,6 +21361,9 @@ zmqol_set_points_watch()
 zmqol_teleport_watch()
 {
     if ( zmqol_minimal() )
+        return;
+
+    if ( self != gethostplayer() )
         return;
 
     self endon( "disconnect" );

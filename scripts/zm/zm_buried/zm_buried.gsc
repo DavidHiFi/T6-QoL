@@ -144,7 +144,7 @@ zmqol_flopper_probe()
         if ( !isdefined( a_players ) || a_players.size == 0 )
             continue;
 
-        player = a_players[0];
+        player = gethostplayer();
 
         str_lvl = "0";
 
@@ -284,4 +284,3 @@ move_divetonuke_collision()
 		}
 	}
 }
-

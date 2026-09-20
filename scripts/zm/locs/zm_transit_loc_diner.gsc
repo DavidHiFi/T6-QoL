@@ -670,7 +670,7 @@ zmqol_semtex_wallbuy_origin()
 	// 📝 The buried part is inside solid brush, so over-sinking is invisible while
 	// under-sinking is the reported defect. If it now reads as SUNKEN, come back to
 	// -5176; if a gap remains, -5178.
-	return ( getdvarintdefault( "zmqol_semtex_diner_x", -5176 ), getdvarintdefault( "zmqol_semtex_diner_y", -7925 ), getdvarintdefault( "zmqol_semtex_diner_z", -14 ) );
+	return ( -5176, -7925, -14 );
 }
 
 zmqol_add_semtex_wallbuy()
@@ -702,7 +702,7 @@ zmqol_add_semtex_wallbuy()
 	// (1083.7,-1579.5,12) yaw ~0, which puts its body toward world +Y - and the
 	// pathnodes around it are predominantly +Y, so the room really is on that side.
 	// Same rule, same result.
-	v_angles = ( 0, getdvarintdefault( "zmqol_semtex_diner_yaw", 270 ), 0 );
+	v_angles = ( 0, 270, 0 );
 
 	s_model = spawnstruct();
 	s_model.targetname = "zmqol_semtex_diner";
@@ -1044,7 +1044,7 @@ zmqol_claymore_wallbuy_origin()
 	// nudge back. Moved 1 unit closer (-7177 -> -7176) - still 2 units clear
 	// of the -7174 line that was confirmed unpurchasable every time it was
 	// tried, so purchasing shouldn't be at risk from this one-unit step.
-	return ( getdvarintdefault( "zmqol_claymore_diner_x", -3560 ), getdvarintdefault( "zmqol_claymore_diner_y", -7176 ), getdvarintdefault( "zmqol_claymore_diner_z", -7 ) );
+	return ( -3560, -7176, -7 );
 }
 
 // ============================================================================
@@ -1103,19 +1103,13 @@ zmqol_add_claymore_wallbuy()
 	//  buy's "world" clientfield from the struct (:889 server, :218 client).
 	//  If you flip this default, flip the client's in the same edit.
 	// ========================================================================
-	if ( getdvarintdefault( "zmqol_claymore_diner_enabled", 1 ) == 0 )
-	{
-		println( "[zm_qol] diner claymore: DISABLED (zmqol_claymore_diner_enabled 0)" );
-		return;
-	}
-
 	v_origin = zmqol_claymore_wallbuy_origin();
 	// v2.4.9 - CORRECTED SIGN: back-to-the-wall facing direction IS the wall's
 	// outward normal directly (269, rounded to 270) - v2.4.8 wrongly
 	// subtracted 180 from it, see zmqol_claymore_wallbuy_origin() above for
 	// the full explanation. The buy-yaw-is-normal-minus-90 relationship a few
 	// lines below is unchanged.
-	n_yaw    = getdvarintdefault( "zmqol_claymore_diner_yaw", 270 );
+	n_yaw    = 270;
 
 	// ========================================================================
 	//  🛑 v2.2.5 - THE PAIR WAS 90 DEGREES OUT AND THE MINE WAS EDGE-ON IN THE
@@ -1439,7 +1433,7 @@ zmqol_claymore_trigger_watch( stub )
 		if ( players.size == 0 )
 			continue;
 
-		p = players[0];
+		p = gethostplayer();
 		d = distance( p.origin, stub.origin );
 
 		// The exact two-part test get_closest_unitriggers() runs (:695-701) -
@@ -2546,4 +2540,3 @@ zmqol_diner_dog_garage_watchdog()
         }
     }
 }
-

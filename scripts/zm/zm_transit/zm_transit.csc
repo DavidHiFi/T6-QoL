@@ -27,7 +27,8 @@ main()
 //  scripts\zm\zm_transit\zm_transit.gsc::zmqol_diner_shield_init().
 //
 //  🛑 THE GATE MUST MATCH THE SERVER'S CHARACTER FOR CHARACTER. Both sides read
-//  the same two dvars, so they cannot disagree - but if they ever did, the two
+//  only replicated route dvars, so a remote client cannot disagree with the server.
+//  If they ever did, the two
 //  clientfield sets would differ in width and every player is dropped at load
 //  with EXE_CLIENT_FIELD_MISMATCH.
 //
@@ -47,7 +48,7 @@ main()
 // ============================================================================
 zmqol_diner_shield_enabled()
 {
-	return getdvarintdefault( "zmqol_diner_shield", 1 ) && getdvar( "ui_zm_mapstartlocation" ) == "diner" && getdvar( "ui_gametype" ) != "zgrief";
+	return getdvar( "ui_zm_mapstartlocation" ) == "diner" && getdvar( "ui_gametype" ) != "zgrief";
 }
 
 zmqol_diner_shield_init()
@@ -70,7 +71,7 @@ zmqol_diner_init_buildables()
 
 is_not_busdepot()
 {
-	return !getdvar("g_gametype") == "zclassic" && getdvar("mapname") == "zm_transit" && getdvar("ui_zm_mapstartlocation") == "transit";
+	return !getdvar("ui_gametype") == "zclassic" && getdvar("mapname") == "zm_transit" && getdvar("ui_zm_mapstartlocation") == "transit";
 }
 
 include_weapons()

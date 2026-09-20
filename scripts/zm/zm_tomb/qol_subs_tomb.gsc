@@ -114,13 +114,15 @@ zmqol_samantha_intro_1()
 {
     players = getplayers();
 
-    if ( !isdefined( players[0] ) )
+    host = gethostplayer();
+
+    if ( !isdefined( host ) )
         return;
 
     flag_waitopen( "story_vo_playing" );
     flag_set( "story_vo_playing" );
     maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
-    maps\mp\zm_tomb_vo::samanthasay( "vox_sam_sam_help_5_0", players[0], 1, 1 );
+    maps\mp\zm_tomb_vo::samanthasay( "vox_sam_sam_help_5_0", host, 1, 1 );
     players = getplayers();
 
     foreach ( player in players )
@@ -169,13 +171,15 @@ zmqol_samantha_intro_3()
 {
     players = getplayers();
 
-    if ( !isdefined( players[0] ) )
+    host = gethostplayer();
+
+    if ( !isdefined( host ) )
         return;
 
     flag_waitopen( "story_vo_playing" );
     flag_set( "story_vo_playing" );
     maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
-    maps\mp\zm_tomb_vo::samanthasay( "vox_sam_hear_samantha_3_0", players[0], 1, 1 );
+    maps\mp\zm_tomb_vo::samanthasay( "vox_sam_hear_samantha_3_0", host, 1, 1 );
     players = getplayers();
     player = players[randomintrange( 0, players.size )];
 

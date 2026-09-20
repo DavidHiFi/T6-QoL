@@ -2512,11 +2512,11 @@ qol_opt_hud_watcher()
                 if ( !isdefined( self.qol_drawid_saved ) )
                     self.qol_drawid_saved = getdvarintdefault( "cg_drawIdentifier", 1 );
 
-                setdvar( "cg_drawIdentifier", 0 );
+                self setclientdvar( "cg_drawIdentifier", 0 );
             }
             else if ( isdefined( self.qol_drawid_saved ) )
             {
-                setdvar( "cg_drawIdentifier", self.qol_drawid_saved );
+                self setclientdvar( "cg_drawIdentifier", self.qol_drawid_saved );
                 self.qol_drawid_saved = undefined;
             }
         }
@@ -3231,9 +3231,6 @@ qol_opt_knife_lunge()
             self.zmqol_lunge_applied = n_want;
 
             self setclientdvar( "aim_automelee_enabled", n_want );
-
-            if ( getdvarintdefault( "aim_automelee_enabled", 1 ) != n_want )
-                setdvar( "aim_automelee_enabled", n_want );
 
             println( "[zm_qol] knife lunge -> " + n_want + " (aim_automelee_enabled now " + getdvar( "aim_automelee_enabled" ) + ")" );
         }

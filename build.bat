@@ -146,6 +146,10 @@ echo [0c/9] Pre-flight: perk-machine clientfield guard...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-perk-guard.ps1"
 if errorlevel 1 goto guardfail
 
+echo [0c-coop/9] Pre-flight: co-op parity and connect-loop defects...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\coop-gate.ps1" -Quiet
+if errorlevel 1 goto coopfail
+
 REM ============================================================================
 REM  [0d/9] Pre-flight: pre-nerf recoil has not drifted          v2.16.14
 REM ----------------------------------------------------------------------------
@@ -406,6 +410,13 @@ echo.
 echo   BUILD STOPPED: a survival location registers perk machines but is missing
 echo   from zmqol_loc_spawns_perk_machines() in scripts\zm\zm_tomb\zm_tomb.gsc.
 echo   That is a duplicate clientfield registration and SV_Shutdown at map load.
+if not defined OFFLINE pause
+exit /b 1
+
+:coopfail
+echo.
+echo   BUILD STOPPED: the co-op regression gate found a new client/server parity,
+echo   player-index, connect-loop, or global-dvar ownership defect.
 if not defined OFFLINE pause
 exit /b 1
 

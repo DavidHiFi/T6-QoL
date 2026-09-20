@@ -74,13 +74,6 @@
 
 init()
 {
-    //  Same kill switch as the other three wonder weapons, same reason
-    //  ("" or "1" = on, "5" = this gun alone; teslagun.gsc:26).
-    str_ww = getdvar( "zmqol_ww" );
-
-    if ( str_ww != "" && str_ww != "1" && str_ww != "5" )
-        return;
-
     if ( getdvar( "mapname" ) == "zm_buried" || getdvar( "mapname" ) == "zm_tomb" )
         return;
 
@@ -267,7 +260,7 @@ zmqol_mgun_selftest()
             a_players = get_players();
 
             if ( a_players.size )
-                a_players[0] setplayerangles( vectortoangles( level.zmqol_mgun_selftest_target.origin + ( 0, 0, 40 ) - a_players[0].origin - ( 0, 0, 55 ) ) );
+                gethostplayer() setplayerangles( vectortoangles( level.zmqol_mgun_selftest_target.origin + ( 0, 0, 40 ) - gethostplayer().origin - ( 0, 0, 55 ) ) );
 
             wait 0.05;
             continue;
@@ -307,7 +300,7 @@ zmqol_mgun_selftest()
             if ( !isdefined( a_zombies[i] ) || !isalive( a_zombies[i] ) )
                 continue;
 
-            n_d = distancesquared( a_players[0].origin, a_zombies[i].origin );
+            n_d = distancesquared( gethostplayer().origin, a_zombies[i].origin );
 
             if ( n_d < n_best )
             {
@@ -318,12 +311,12 @@ zmqol_mgun_selftest()
 
         if ( isdefined( e_target ) )
         {
-            a_players[0] setplayerangles( vectortoangles( e_target.origin - a_players[0].origin ) );
+            gethostplayer() setplayerangles( vectortoangles( e_target.origin - gethostplayer().origin ) );
             wait 0.2;
         }
 
         println( "[zm_qol] zapgun selftest: firing, " + a_zombies.size + " actor(s) up" );
-        a_players[0] thread microwavegun_fired( 0 );
+        gethostplayer() thread microwavegun_fired( 0 );
     }
 }
 
