@@ -1806,6 +1806,39 @@ function Act-InstallMod {
         try { Copy-Item -LiteralPath (Join-Path $src $f) -Destination (Join-Path $MODDIR $f) -Force; Say $f $C.Text }
         catch { Say "FAILED to copy $f - is Plutonium running?" $C.Bad; $ok = $false }
     }
+    # -------------------------------------------------------------------
+    #  v2.16.18 - THE 28 TEXTURES A MOD CANNOT SERVE.
+    #
+    #  The HD pack now ships inside mod.iwd, so the player no longer installs
+    #  textures separately. 28 of those files still have to go in loose, and
+    #  they are not a matter of taste: their image assets are owned by
+    #  code_post_gfx_zm / ui_zm / patch_zm, the zones the game loads at startup.
+    #  Measured with the OpenAssetTools Unlinker against the retail fastfiles -
+    #  the full 452-name list is in modding-jobs\pack-merge-001.
+    #
+    #  The three high-quality font atlases are in this set, which is exactly the
+    #  "the HQ font textures aren't being applied" the user reported on
+    #  2026-09-21 after the pack moved into the mod. The Ray Gun Mark II skin,
+    #  the four scope overlays and the TranZit load screens are here too.
+    #
+    #  Copied on every mod install so the player never has to think about it.
+    #  They also ship inside mod.iwd; whichever route the engine honours first,
+    #  the art is the same file either way.
+    # -------------------------------------------------------------------
+    $startupSrc = Join-Path $HERE 'startup-images'
+    if ((Test-Path -LiteralPath $startupSrc) -and -not $DryRun) {
+        if (-not (Test-Path $IMGDIR)) { New-Item -ItemType Directory -Force -Path $IMGDIR | Out-Null }
+        $copied = 0
+        foreach ($img in Get-ChildItem -LiteralPath $startupSrc -File -Filter '*.iwi') {
+            try { Copy-Item -LiteralPath $img.FullName -Destination (Join-Path $IMGDIR $img.Name) -Force; $copied++ }
+            catch { Say "could not copy $($img.Name)" $C.Warn }
+        }
+        if ($copied -gt 0) {
+            Say "$copied start-up texture(s) placed in your images folder (fonts, scopes, load screens)." $C.Dim
+            Write-Log "startup images installed: $copied"
+        }
+    }
+
     if ($ok) {
         $v = Get-ModVersion (Join-Path $MODDIR 'mod.json')
         Write-Host ''
@@ -2259,9 +2292,25 @@ function Act-InstallReShade {
         #  blocklisted sync into the player's own bin, nothing here is the
         #  player's; it is only ever this installer's own shipped payload.
         # -------------------------------------------------------------------
+        #  🛑 v2.16.18 - AND IT HAS TO BE CHECKED. This was [void](robocopy ...),
+        #  which threw the exit code away. Found 2026-09-21 on the user's PC: the
+        #  vault held dxgi.dll and the six .ini and NO reshade-shaders folder, so
+        #  the watchdog restored nothing all session and ReShade ran with zero
+        #  effects. Whatever dropped those 857 files did it silently, and nothing
+        #  downstream counted. Count here, and say so when it does not add up.
         if (-not $DryRun) {
             if (-not (Test-Path $RESHADEVAULT)) { New-Item -ItemType Directory -Force -Path $RESHADEVAULT | Out-Null }
             [void](robocopy $src $RESHADEVAULT /MIR /NFL /NDL /NJH /NJS /NP)
+            # robocopy exits 0-7 for success; 8 and above is a real failure.
+            $rcExit = $LASTEXITCODE
+            $srcFx = @(Get-ChildItem -LiteralPath $src -Recurse -File -Filter *.fx -ErrorAction SilentlyContinue).Count
+            $vaultFx = @(Get-ChildItem -LiteralPath $RESHADEVAULT -Recurse -File -Filter *.fx -ErrorAction SilentlyContinue).Count
+            Write-Log "reshade vault: robocopy exit $rcExit, $vaultFx of $srcFx shaders stored"
+            if ($vaultFx -lt $srcFx) {
+                Say "!⚠️  Only $vaultFx of $srcFx shaders reached the restore vault." $C.Warn
+                Say "!     ReShade will still work now, but the watchdog cannot put" $C.Warn
+                Say "!     the rest back after Plutonium clears it. Re-run this option." $C.Warn
+            }
         }
 
         Write-Host ''
