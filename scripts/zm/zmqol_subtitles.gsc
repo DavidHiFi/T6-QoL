@@ -608,6 +608,28 @@ zmqol_subs_names_on()
 }
 
 //  "[Name] " when names are on and there is a name, else nothing.
+//
+//  v2.16.19 - THE NAME IS RED (user, 2026-09-21: *"make the name for the
+//  subtitles, the person who's speaking, make that red, like kind of dark-ish
+//  but not too dark"*).
+//
+//  One function builds every bracketed name - the player lines, the NPC lines
+//  and the played-by-position lines all come through here - so colouring it
+//  here colours the whole feature, including the continuation rows that get the
+//  prefix re-applied in zmqol_subs_show().
+//
+//  🛑 A COLOUR CODE, NOT A SECOND HUD ELEMENT. Splitting the name onto its own
+//  element would give an exact RGB, and would also ask the client hudelem pool
+//  for one more element per visible caption row - the same finite pool that
+//  loses the perk pop-up's description when it runs dry. Subtitles can hold
+//  several rows at once, so that is the worst place in the mod to spend slots
+//  for a colour. ^1 costs nothing.
+//
+//  The shade is a dvar because this is a look, and a look is the user's call:
+//      zmqol_subs_name_color "^1"   red (default)
+//      zmqol_subs_name_color "^3"   yellow, the mod's own accent colour
+//      zmqol_subs_name_color "^7"   white, i.e. back to how it read before
+//  Changing it takes effect on the next line spoken, with no rebuild.
 zmqol_subs_prefix( str_name )
 {
     if ( !isdefined( str_name ) || str_name == "" )
@@ -616,7 +638,14 @@ zmqol_subs_prefix( str_name )
     if ( !zmqol_subs_names_on() )
         return "";
 
-    return "[" + str_name + "] ";
+    str_colour = getdvar( "zmqol_subs_name_color" );
+
+    if ( !isdefined( str_colour ) || str_colour == "" )
+        str_colour = "^1";
+
+    //  ^7 hands the caption body back to white. The row element still carries
+    //  its own colour for the own/other distinction set in zmqol_subs_redraw().
+    return str_colour + "[" + str_name + "]^7 ";
 }
 
 //  A line played by POSITION instead of by a speaker: Nuketown's Marlton in
