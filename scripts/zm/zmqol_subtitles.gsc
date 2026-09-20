@@ -947,6 +947,36 @@ zmqol_subs_redraw()
     if ( !isdefined( self.zmqol_subs_hud ) || !isdefined( self.zmqol_subs_st_id ) )
         return;
 
+    //  🛑 v2.16.20 - HAND THE ROWS BACK WHEN NOTHING IS BEING SAID.
+    //
+    //  createfontstring() is newclienthudelem() underneath (stock
+    //  maps\mp\gametypes\_hud_util.gsc:308), so these rows come out of the same
+    //  finite client pool as everything else the mod draws - and they used to
+    //  sit there allocated at alpha 0 for the whole match even though a caption
+    //  is on screen for a few seconds at a time.
+    //
+    //  That was costing the perk pop-up its third element. User, 2026-09-21:
+    //  with the icon allocated first the description never appeared; with the
+    //  text allocated first the description appeared and the ICON did not. Two
+    //  of three, either way, which is a pool with exactly two slots free - and
+    //  reordering can never fix that, it only chooses which one loses.
+    //
+    //  Releasing an idle stack gives those slots back for the ~99% of a match
+    //  when nobody is talking. zmqol_subs_ensure_hud() rebuilds on the next
+    //  caption; it takes the create path rather than the rebuild path, so no
+    //  "zmqol_subs_reset" is fired and no live caption thread is cut short.
+    if ( self.zmqol_subs_st_id.size == 0 )
+    {
+        for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
+        {
+            if ( isdefined( self.zmqol_subs_hud[i] ) )
+                self.zmqol_subs_hud[i] destroy();
+        }
+
+        self.zmqol_subs_hud = undefined;
+        return;
+    }
+
     n_now = gettime();
 
     for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
