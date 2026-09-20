@@ -303,10 +303,19 @@ init()
     //  mid-match in both directions.
     qol_opt_dvar( "better_speed_cola", "0" );
 
-    //  v2.2.0 - NO BLEEDOUT PATCH, user request 2026-08-21, the PATCHES tab.
-    //  OFF = stock. Read on every pass of zmqol_round_spawn_failsafe(), which is
-    //  stock's own 30-second per-zombie loop, so it is live mid-match too.
-    qol_opt_dvar( "no_bleedout", "0" );
+    //  🛑 NO BLEEDOUT FIX - REMOVED 2026-09-21 at the user's request: "it
+    //  doesn't work and it causes other shit to break ... nuke it so it's gone."
+    //  The row is gone from optionssettings.lua; see the note left in its place.
+    //
+    //  FORCED, not merely unregistered. qol_opt_dvar() only writes when the dvar
+    //  is empty, so a player who had turned this ON would have kept it on for
+    //  ever with no row left to turn it off. setdvar every load is what actually
+    //  makes it gone. Every remaining code path reads this dvar and is therefore
+    //  dead; leaving them beats a mass edit across four files, two of which are
+    //  the Origins and Mob failsafe replacements that also carry the below-world
+    //  kill the game needs to end a round.
+    setdvar( "no_bleedout", "0" );
+    setdvar( "no_bleedout_relocate", "0" );
 
     //  ========================================================================
     //  v2.14.7 - CROSSHAIR, user request (queued as B-CROSSHAIR, asked again

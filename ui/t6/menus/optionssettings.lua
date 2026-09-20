@@ -2218,25 +2218,29 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	--  is left reading a dvar no menu writes.
 	-- ========================================================================
 	-- ========================================================================
-	--  v2.2.0 - NO BLEEDOUT FIX (labelled "NO BLEEDOUT PATCH" until v2.15.45).
-	--  User, 2026-08-21: *"add an option to the
-	--  patches to tab called NO BLEEDOUT PATCH, which as the name suggests,
-	--  makes it so zombies don't die by themselves after being alive for too
-	--  long or getting stuck, so that way the player would have to actually kill
-	--  the zombies themself, so the zombies don't just randomly die."*
+	--  🛑 NO BLEEDOUT FIX IS REMOVED. DO NOT ADD THE ROW BACK.
 	--
-	--  🌟 IT IS STOCK'S OWN SWITCH. maps\mp\zombies\_zm::round_spawn_failsafe()
-	--  runs on every zombie: every 30 seconds it checks whether the zombie moved
-	--  24 units, and kills it if not. The whole loop is already gated on
-	--  level.zombie_vars["zombie_use_failsafe"]. Nothing is invented.
+	--  Shipped v2.2.0 on the user's request, removed 2026-09-21 on the user's
+	--  request: *"it doesn't work and it causes other shit to break, get rid of
+	--  the no bleed out fix thingy option from my mod, nuke it so it's gone."*
 	--
-	--  🛑 THE FALL-OUT-OF-THE-WORLD KILL IS KEPT ON. The same function also kills
-	--  a zombie that drops below level.zombie_vars["below_world_check"], and that
-	--  one has to stay: a zombie under the map cannot be shot, so removing it
-	--  would end the round forever rather than making the player earn the kill.
-	--  See zmqol_round_spawn_failsafe() in quality_of_life.gsc.
+	--  It was never one switch. Suppressing stock's stranded-zombie kill left
+	--  zombies that could not be reached, so a relocate step was added to move
+	--  them - and that is where the damage was. A zombie standing still to
+	--  ATTACK reads as stranded to the failsafe, so the rescue teleported
+	--  zombies away mid-swing, and a relocated zombie keeps its stale goal and
+	--  then shoves the player without attacking. Both are recorded separately in
+	--  the project's own notes, and both only exist because this row does.
+	--
+	--  The dvar is now forced to 0 in qol_options.gsc rather than merely
+	--  unregistered, because a player who had turned it ON would otherwise keep
+	--  it on forever with no row left to turn it off.
+	--
+	--  The GSC paths stay in place and are all gated on that dvar, so they are
+	--  dead code rather than a risky mass edit across four files - two of which
+	--  are the Origins and Mob failsafe replacements that also carry the
+	--  below-world kill the game needs. Nothing runs.
 	-- ========================================================================
-	T(QolPatchesButtons, LocalClientIndex, "NO BLEEDOUT FIX",      "no_bleedout",         "Stuck zombies stay alive. You have to kill every one yourself.")
 
 	-- ========================================================================
 	--  v2.7.0 - NO LAVA DAMAGE. User, 2026-08-28: *"add an option ... that lets
