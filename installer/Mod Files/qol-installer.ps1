@@ -1,4 +1,4 @@
-﻿<#
+<#
 ================================================================================
   Quality of Life Series Launcher - the installer for the Quality of Life mods.
 
@@ -939,6 +939,27 @@ $VIEWARMFILES = @(
     '~~-gviewarm_zom_strands_alpha~b94bebe4.iwi'
 )
 
+# The HD pack's 41 HASH-NAMED overrides. A numerically-named .iwi binds its
+# pixels onto whatever stock image owns that hash, so these paint custom art
+# (flagstone paving, house siding, wallpaper, signage, blinds) onto stock
+# texture slots the base game never used them on. That is what put a
+# fence-looking pattern on the diner wall. Never installed - the 9 hash-named
+# files the mod genuinely needs are its own menu art and ship inside mod.iwd,
+# not from this pack. Originals kept at Optionals\_excluded\hash-bound-overrides.
+$HASHBOUNDFILES = @(
+    '184130943.iwi', '203218850.iwi', '213664688.iwi', '248893139.iwi',
+    '310690366.iwi', '387107309.iwi', '414497708.iwi', '712299166.iwi',
+    '749883228.iwi', '1242089752.iwi', '1361229722.iwi', '1402996581.iwi',
+    '2139588580.iwi', '2193983524.iwi', '2402415086.iwi', '2463049788.iwi',
+    '2531095777.iwi', '2532865902.iwi', '2596739401.iwi', '2652134348.iwi',
+    '2696824118.iwi', '2696825333.iwi', '2897555984.iwi', '2963536512.iwi',
+    '3009761504.iwi', '3104746560.iwi', '3113946313.iwi', '3195629244.iwi',
+    '3277816579.iwi', '3343758740.iwi', '3353894529.iwi', '3355417974.iwi',
+    '3411929122.iwi', '3449947920.iwi', '3566024970.iwi', '3718463383.iwi',
+    '3818552282.iwi', '3958649079.iwi', '3971393839.iwi', '4094420848.iwi',
+    '4238982186.iwi'
+)
+
 # Which pack is installed right now, or $null. Kept next to the manifests.
 $PACKFILE = Join-Path $STATE 'controller-pack.txt'
 function Get-ControllerPack {
@@ -1492,7 +1513,7 @@ function Copy-Payload {
     #  CIA/CDC arms are not in the pack and are untouched.
     # -----------------------------------------------------------------------
     $blocked = @()
-    if ($Kind -eq 'images') { $blocked = @('hud_dpad_blood.iwi') + $ICONFILES + $VIEWARMFILES }
+    if ($Kind -eq 'images') { $blocked = @('hud_dpad_blood.iwi') + $ICONFILES + $VIEWARMFILES + $HASHBOUNDFILES }
     $blockLower = @{}
     foreach ($b in $blocked) { $blockLower[$b.ToLower()] = $true }
 
