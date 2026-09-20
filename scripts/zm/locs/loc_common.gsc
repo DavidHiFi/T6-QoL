@@ -10,12 +10,10 @@ init()
 	// signal that it died earlier (precache / struct_init / main).
 	println( "[zm_qol] loc_common::init reached - location=" + getdvar( "ui_zm_mapstartlocation" ) );
 
-	//  ⭐ v2.17.30 - every survival arena gets the fight-distance repair. It is
-	//  threaded here rather than from each loc script's main() because every
-	//  ported location already threads this function, and a zombie stuck on
-	//  pathenemyfightdist = 4 is not arena-specific - Origins is simply where it
-	//  shows up most. See the banner on fix_stuck_fight_distance().
-	level thread fix_stuck_fight_distance();
+	// Do not rewrite live AI distances here. Origins survival removes its
+	// barriers and the capture-zone replacement leaves find_flesh running.
+	// The old one-second repair loop also changed undefined fields on healthy
+	// zombies, which made ordinary attacks inconsistent.
 
 	level.enemy_location_override_func = ::enemy_location_override;
 	flag_wait("initial_blackscreen_passed");

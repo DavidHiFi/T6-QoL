@@ -166,6 +166,11 @@ echo [0d/9] Pre-flight: pre-nerf recoil values...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-recoil-prenerf.ps1"
 if errorlevel 1 goto recoilfail
 
+REM --- Origins survival AI contract -----------------------------------------
+echo [0e/9] Pre-flight: Origins survival AI...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-origins-survival-ai.ps1"
+if errorlevel 1 goto originsaifail
+
 REM  v2.11.8 (user, 2026-09-04): the nine camo_zmb_dlc2* textures are NEVER copied into
 REM  images\ (= mod.iwd). They are the ZM Dark Matter animated Pack-a-Punch camo, and
 REM  they are delivered ONLY as loose by-name files in %LOCALAPPDATA%\Plutonium\storage\r
@@ -415,6 +420,14 @@ echo   BUILD STOPPED: a weapon def no longer carries the pre-nerf recoil values.
 echo   This mod ships Treyarch's PRE-PATCH recoil and nothing in game switches it,
 echo   so a changed number here ships the patched recoil to every player silently.
 echo   Put the value back, or update the table in tools\check-recoil-prenerf.ps1.
+if not defined OFFLINE pause
+exit /b 1
+
+:originsaifail
+echo.
+echo   BUILD STOPPED: the Origins survival AI contract failed.
+echo   Survival must bypass the generator capture loop, ship no aitype override,
+echo   and must not run the old broad AI field-rewrite loop.
 if not defined OFFLINE pause
 exit /b 1
 
