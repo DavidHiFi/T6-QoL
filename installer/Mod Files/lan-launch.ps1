@@ -108,6 +108,21 @@ Write-Host ''
 $gameArgs = @('t6zm', ('"' + $t6Path.TrimEnd('\') + '"'), '+name', ('"' + $LanName + '"'), '-lan',
               '+set', 'fs_game', ('"mods/' + $Mod + '"'))
 
+#  The textures cannot be served from inside the mod - stock images stream from
+#  .ipak archives, an ipak outranks every file path, and the only thing that
+#  beats one is the folder Plutonium patches its image loader to check first.
+#  v1.99.81 booted every mod-side placement and all of them did nothing. So the
+#  folder stays, and this makes sure the player never has to think about it:
+#  count the files, put back anything that has gone, every launch.
+$texVerify = Join-Path $ScriptDir 'textures-verify.ps1'
+if (Test-Path -LiteralPath $texVerify) {
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $texVerify
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host '  Some textures are missing and could not be restored.' -ForegroundColor Yellow
+        Write-Host '  Run Windows Install.bat -> The mod to put them back.' -ForegroundColor Yellow
+    }
+}
+
 #  Verify and repair ReShade BEFORE the game starts, not after.
 #
 #  User, 2026-09-21: "when you click play with ReShade, make sure it verifies
