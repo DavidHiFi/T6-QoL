@@ -922,6 +922,23 @@ foreach ($k in $CONTROLLERS.Keys) {
 }
 $ICONFILES = @($ICONFILES | Sort-Object -Unique)
 
+# The HD pack's first-person arm re-textures for Victis, Mob of the Dead and
+# Richtofen. Never installed - see the note in Copy-Payload. Measured against
+# HD.Texture.Pack.zip v2.15.51 (18 files).
+$VIEWARMFILES = @(
+    '~-gviewarm_zom_armhair_alpha_c.iwi',
+    '~-gviewarm_zom_deluca_longsleeve_c.iwi',  'viewarm_zom_deluca_longsleeve_n.iwi',
+    '~-gviewarm_zom_engineer_c.iwi',           'viewarm_zom_engineer_n.iwi',
+    '~-gviewarm_zom_handsome_barea~031b2e1b.iwi',
+    '~-gviewarm_zom_handsome_barearm_left_c.iwi', 'viewarm_zom_handsome_barearm_n.iwi',
+    '~-gviewarm_zom_oldman_c.iwi',             'viewarm_zom_oldman_n.iwi',
+    '~-gviewarm_zom_oleary_shortsleeve_c.iwi', 'viewarm_zom_oleary_shortsleeve_n.iwi',
+    '~-gviewarm_zom_reporter_c.iwi',           'viewarm_zom_reporter_n.iwi',
+    '~-gviewarm_zom_richtofen_l_c.iwi',        '~-gviewarm_zom_richtofen_r_c.iwi',
+    'viewarm_zom_richtofen_n.iwi',
+    '~~-gviewarm_zom_strands_alpha~b94bebe4.iwi'
+)
+
 # Which pack is installed right now, or $null. Kept next to the manifests.
 $PACKFILE = Join-Path $STATE 'controller-pack.txt'
 function Get-ControllerPack {
@@ -1462,8 +1479,20 @@ function Copy-Payload {
     #  and then relied on the re-apply to put them back; not copying them at all
     #  cannot get that wrong, and it is faster.
     # -----------------------------------------------------------------------
+    #
+    #  v2.16.15, THE CHARACTER VIEW ARMS. User, 2026-09-14: *"remove the
+    #  textures that replace the characters like hands with like wrapped gloves
+    #  ... make sure that they're just using their stock like view arms."*
+    #  Done by hand that day, then undone on 2026-09-17 by the next texture
+    #  pack install, because the pack still carried them and nothing here
+    #  refused them (user, 2026-09-20: *"i told all my other agents to remove
+    #  that ... and it didn't work"*). The 18 names below are every viewarm_zom_*
+    #  file the pack contains: Victis, Mob of the Dead and Richtofen first-person
+    #  arms. Blocked at the copy, so no pack version can bring them back.
+    #  CIA/CDC arms are not in the pack and are untouched.
+    # -----------------------------------------------------------------------
     $blocked = @()
-    if ($Kind -eq 'images') { $blocked = @('hud_dpad_blood.iwi') + $ICONFILES }
+    if ($Kind -eq 'images') { $blocked = @('hud_dpad_blood.iwi') + $ICONFILES + $VIEWARMFILES }
     $blockLower = @{}
     foreach ($b in $blocked) { $blockLower[$b.ToLower()] = $true }
 

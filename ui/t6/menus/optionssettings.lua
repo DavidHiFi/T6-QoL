@@ -1390,10 +1390,9 @@ end
 --     god, ghost, infinite_ammo, infinite_sprint
 --         added in v1.94.0 by zmqol_toggle_dvar_watch() for exactly this menu
 --
---  📝 "REDUCE ENGINE SLEEPS" IS DELIBERATELY ABSENT. It is in the stock
---  Plutonium GAME tab the user screenshotted, but no dvar of that name exists
---  in this build's dump and inventing one would be a guess. The other three
---  standard entries are all here.
+--  📝 "REDUCE ENGINE SLEEPS" was absent until v2.16.15 because this note
+--  claimed no dvar existed for it. It is com_busyWait; see the row in
+--  CreateQolTab. All four standard Plutonium entries are here now.
 --
 --  📝 PERMA-PERKS WAS ABSENT HERE UNTIL v2.8.0 for the reason stated at the
 --  time - the mod had no perma-perk system at all. It has one now: the
@@ -1720,8 +1719,18 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 
 	-- The standard Plutonium game options.                            3 rows
 	T(QolButtons, LocalClientIndex, "ALLOW DOWNLOADING",  "cl_allowDownload",     "Lets a server send you its mod files when you join.")
+	-- v2.16.15 - REDUCE ENGINE SLEEPS. Plutonium's own GAME tab has this row
+	-- (user, 2026-09-18: "it's the only missing option"). The dvar is
+	-- com_busyWait, read straight out of Plutonium's optionssettings.lua in
+	-- storage\t6\zone\plutonium_zm.ff (line 708 of the dumped rawfile), not
+	-- guessed: the older note here that said no such dvar existed was wrong.
+	-- Same order as Plutonium: download, sleeps, identifier, hashes.
+	T(QolButtons, LocalClientIndex, "REDUCE ENGINE SLEEPS","com_busyWait",        "Busy-wait instead of sleeping between frames. Smoother, uses more CPU.")
 	T(QolButtons, LocalClientIndex, "DRAW IDENTIFIER",    "cg_drawIdentifier",    "Session watermark at the top of the screen.")
-	T(QolButtons, LocalClientIndex, "FLASH SCRIPT HASHES","cg_flashScriptHashes", "Developer readout. Leave it off unless you are debugging.")
+	-- v2.16.15 - FLASH SCRIPT HASHES moved to GAME 3 to pay for REDUCE ENGINE
+	-- SLEEPS (user, 2026-09-18: add the row, move whichever option would
+	-- overflow to GAME 3). It is the developer readout, the one row nobody
+	-- reaches for in play. Dvar unchanged.
 
 	-- 🛑 v1.99.54 - THE FOUR WORLD-RENDERING ROWS ARE GONE FROM THIS TAB.
 	-- NIGHT MODE, FOG and MODEL DETAIL FIX (now HIGHER DRAW DISTANCE) moved to
@@ -1928,6 +1937,8 @@ CoD.OptionsSettings.CreateQolTab = function (QolTab, LocalClientIndex)
 	-- (see CreateQolHudTab) and this tab held 13 rows, one short of GAME 2.
 	-- Recounted against the T() calls, 2026-09-12. BACKSPEED FIX arrived from
 	-- GAME 2 in v2.15.45 to level the two tabs at 14 rows each.
+	-- v2.16.15 - REDUCE ENGINE SLEEPS in, FLASH SCRIPT HASHES out to GAME 3:
+	-- still 14 rows, one under the 15.0 ceiling, level with GAME 2.
 	return QolContainer                              -- 14 rows + 0 spacers = 14.0
 end
 
@@ -2327,7 +2338,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 
 	-- v2.15.45 - NO DENIZENS MOVED TO GAME 2 (row balance, user 2026-09-12).
 	-- Its label and dvar are untouched; see the note beside it on GAME 2. This
-	-- tab now holds 5 rows, 10 short of the 15.0-pitch ceiling - MAGIC and CHEATS
+	-- tab now holds 6 rows, 9 short of the 15.0-pitch ceiling - MAGIC and CHEATS
 	-- came down from the pre-game lobby after that note was written.
 
 	-- ========================================================================
@@ -2370,6 +2381,10 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- ========================================================================
 	T(QolGame3Buttons, LocalClientIndex, "NO MUD SLOWDOWN", "no_mud_slow", "Origins mud no longer drags you down. Run and walk at full speed through it.")
 
+	-- v2.16.15 - moved here from GAME 1 to make room for REDUCE ENGINE SLEEPS
+	-- (see the note in CreateQolTab). Same label, same dvar.
+	T(QolGame3Buttons, LocalClientIndex, "FLASH SCRIPT HASHES","cg_flashScriptHashes", "Developer readout. Leave it off unless you are debugging.")
+
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.
 	local MagicSelector = QolGame3Buttons:addGametypeSettingLeftRightSelector(
@@ -2392,7 +2407,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 
-	return QolGame3Container                          -- 5 rows + 0 spacers = 5.0
+	return QolGame3Container                          -- 6 rows + 0 spacers = 6.0
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
@@ -2622,13 +2637,22 @@ CoD.OptionsSettings.CreateQolPageMenu = function (MenuName, Title, PageBuilder, 
 	-- A normal settings tab gets this vertical separation from the tab manager.
 	-- Standalone HUD and Cheats pages need it explicitly or their first row
 	-- occupies the same band as the centered page title.
-	PageContainer:setTopBottom(true, true, 70, 70)
+	-- 2026-09-18: top inset 70 -> 50. The HUD page holds 16 rows, so its hint
+	-- line drew at ~1034 against the ESC prompt at 1036 (user screenshot, and
+	-- the hint_top = 234 + pitches * 50 formula above CreateQolHudTab). The
+	-- list is top-anchored and ButtonList never clips, so 20 units up puts the
+	-- hint at ~1014 - one ordinary row-gap clear - with the first row at ~214,
+	-- still well below the title. CHEATS (15 rows) rides the same builder.
+	PageContainer:setTopBottom(true, true, 50, 70)
 	PageMenu:addElement(PageContainer)
 
 	if not PageMenu:restoreState() and PageMenu.buttonList then
 		local FirstButton = PageMenu.buttonList:getFirstChild()
+		while FirstButton and not FirstButton.m_focusable do
+			FirstButton = FirstButton:getNextSibling()
+		end
 		if FirstButton then
-			FirstButton:processEvent({ name = "gain_focus" })
+			FirstButton:processEvent({ name = "gain_focus", controller = LocalClientIndex })
 		end
 	end
 

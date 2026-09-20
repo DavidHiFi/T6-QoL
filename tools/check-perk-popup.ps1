@@ -7,12 +7,33 @@ if (-not $Source) {
 }
 $text = [IO.File]::ReadAllText((Resolve-Path -LiteralPath $Source))
 
-$combined = 'text_hud settext( getPerkName( perk ) + "\n" + getPerkDesc( perk ) );'
-if (-not $text.Contains($combined)) {
-    Write-Error 'Perk name and description must share one HUD element.'
+$nameLine = 'name_hud settext( getPerkName( perk ) );'
+if (-not $text.Contains($nameLine)) {
+    Write-Error 'Perk name must have its own centered HUD element (name_hud).'
 }
-if ($text.Contains('desc_hud = newclienthudelem( self );')) {
-    Write-Error 'A separate description HUD element can disappear on Origins.'
+$descLine = 'desc_hud settext( getPerkDesc( perk ) );'
+if (-not $text.Contains($descLine)) {
+    Write-Error 'Perk description must have its own centered HUD element (desc_hud).'
+}
+if ($text.Contains('getPerkName( perk ) + "\n" + getPerkDesc( perk )')) {
+    Write-Error 'Name and description must NOT share one HUD element: the merged element left-aligns the title.'
+}
+# Geometry lock (2026-09-18): the centered two-line look is these exact
+# positions. Any "tidy" that moves them re-breaks the title alignment.
+$geometry = @(
+    'name_hud.alignx = "center";',
+    'name_hud.horzalign = "user_center";',
+    'name_hud.y = 122;',
+    'name_hud.fontscale = 1.6;',
+    'desc_hud.alignx = "center";',
+    'desc_hud.horzalign = "user_center";',
+    'desc_hud.y = 147;',
+    'desc_hud.fontscale = 1.3;'
+)
+foreach ($line in $geometry) {
+    if (-not $text.Contains($line)) {
+        Write-Error "Perk pop-up geometry changed or missing: $line"
+    }
 }
 
 $perks = @(
@@ -28,4 +49,4 @@ foreach ($perk in $perks) {
     }
 }
 
-Write-Output '    [ok] perk pop-up keeps every description on the shared text element'
+Write-Output '    [ok] perk pop-up centers the name over its own description element'
