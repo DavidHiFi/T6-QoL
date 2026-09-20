@@ -20,6 +20,7 @@ title Quality Of Life - ReShade watchdog
 cd /d "%~dp0"
 
 set "PS1=%~dp0reshade-watchdog.ps1"
+set "VERIFY=%~dp0reshade-verify.ps1"
 
 if not exist "%PS1%" (
   echo.
@@ -29,6 +30,21 @@ if not exist "%PS1%" (
   echo.
   pause
   exit /b 1
+)
+
+rem  Check and repair BEFORE the watchdog starts watching. The watchdog restores
+rem  from the vault and only ever checked that the vault existed, so a vault with
+rem  no shaders in it left it reporting "bin is intact" for a whole session while
+rem  ReShade ran with no effects at all (user, 2026-09-21).
+if exist "%VERIFY%" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%VERIFY%"
+  if errorlevel 1 (
+    echo.
+    echo   ReShade could not be verified - see the message above.
+    echo   Starting the watchdog anyway, but effects may not load.
+    echo.
+    pause
+  )
 )
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PS1%" %*

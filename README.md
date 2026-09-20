@@ -32,7 +32,7 @@ Install Plutonium and run it once so its folders exist, then close it. Then pick
 
 1. [Download it](https://github.com/DavidHiFi/QualityOfLifeSeries/releases/latest) - the setup installs it like any other program, or the portable zip runs as-is.
 2. Open it and go to **Black Ops II (T6)**.
-3. Choose **The mod → Install**. The HD textures are part of the mod now, so there is nothing else to add.
+3. Choose **The mod → Install**. The HD textures go in with it, so there is nothing else to add.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
 It backs up anything it replaces, keeps your saved menu settings across updates, and tells you when a newer release is out.
@@ -50,9 +50,9 @@ The optional Start menu shortcuts open the installer and ReShade Watcher. They p
 
 ### Standalone downloads
 
-Neither needs the mod installed, and neither is needed *by* the mod — the HD
-textures ship inside it. These are here for anyone who wants the art on its own,
-and they are no longer updated.
+Neither needs the mod installed. Installing the mod already puts the HD textures
+in place for you, so you only need these if you want the art on its own — they
+are no longer updated.
 
 | Download | Size | What it is |
 |---|---|---|
@@ -221,7 +221,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 ## Presentation
 
 * **Animated Pack-a-Punch camo:**
-  * Every Pack-a-Punched gun gets the *Dark Matter* animated camo on all six maps; switch it off and each map uses its own stock PaP camo. The textures ship inside the mod, so the option works out of the box.
+  * Every Pack-a-Punched gun gets the *Dark Matter* animated camo on all six maps; switch it off and each map uses its own stock PaP camo. Installing the mod installs those textures too, so the option works out of the box.
 
 * **Ray Gun skin:**
   * Green Run, Die Rise, and Nuketown use the newer Ray Gun model for the upgraded gun, Mystery Box preview, dropped weapons, and other players.

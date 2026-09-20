@@ -108,6 +108,25 @@ Write-Host ''
 $gameArgs = @('t6zm', ('"' + $t6Path.TrimEnd('\') + '"'), '+name', ('"' + $LanName + '"'), '-lan',
               '+set', 'fs_game', ('"mods/' + $Mod + '"'))
 
+#  Verify and repair ReShade BEFORE the game starts, not after.
+#
+#  User, 2026-09-21: "when you click play with ReShade, make sure it verifies
+#  all the shaders are there and that it's using the configs, so you never start
+#  the game and have to close it and reinstall." Starting the watchdog after
+#  Start-Process cannot do that - it only reacts to the next wipe, and it treats
+#  a shader folder whose files are all gone but whose 138 directories remain as
+#  present. reshade-verify.ps1 counts instead, and heals the vault first.
+if ($Watchdog) {
+    $verifyPS1 = Join-Path $ScriptDir 'reshade-verify.ps1'
+    if (Test-Path -LiteralPath $verifyPS1) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $verifyPS1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host '  ReShade could not be verified - the game will start without effects.' -ForegroundColor Yellow
+            Write-Host '  Run Windows Install.bat -> ReShade to put it back properly.' -ForegroundColor Yellow
+        }
+    }
+}
+
 try {
     Start-Process -FilePath $Boot -ArgumentList $gameArgs -WorkingDirectory $PlutoRoot -ErrorAction Stop | Out-Null
 } catch {

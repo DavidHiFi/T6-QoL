@@ -1807,36 +1807,39 @@ function Act-InstallMod {
         catch { Say "FAILED to copy $f - is Plutonium running?" $C.Bad; $ok = $false }
     }
     # -------------------------------------------------------------------
-    #  v2.16.18 - THE 28 TEXTURES A MOD CANNOT SERVE.
+    #  🛑 v2.16.19 - THE TEXTURES CANNOT LIVE IN THE MOD, SO THE MOD INSTALLS
+    #  THEM FOR YOU. DO NOT "SIMPLIFY" THIS BACK INTO A SEPARATE CHOICE.
     #
-    #  The HD pack now ships inside mod.iwd, so the player no longer installs
-    #  textures separately. 28 of those files still have to go in loose, and
-    #  they are not a matter of taste: their image assets are owned by
-    #  code_post_gfx_zm / ui_zm / patch_zm, the zones the game loads at startup.
-    #  Measured with the OpenAssetTools Unlinker against the retail fastfiles -
-    #  the full 452-name list is in modding-jobs\pack-merge-001.
+    #  User, 2026-09-21: *"I just want to literally simply transfer the
+    #  implementation from being in the zone and images folder to the mod"* -
+    #  and then, after the pack was folded into mod.iwd: *"the high quality
+    #  fonts files are still not being streamed"*.
     #
-    #  The three high-quality font atlases are in this set, which is exactly the
-    #  "the HQ font textures aren't being applied" the user reported on
-    #  2026-09-21 after the pack moved into the mod. The Ray Gun Mark II skin,
-    #  the four scope overlays and the TranZit load screens are here too.
+    #  They cannot be. v1.99.81 (a14af3b) measured every mod-side placement and
+    #  recorded the result: a loose .iwi reaches the renderer from a mod ONLY
+    #  for an image that is in no ipak, and almost every pack file IS in a stock
+    #  ipak. mod.iwd by name, mod.iwd by hash, storage\t6\mods\zm_qol\images\
+    #  and <BO2>\mods\zm_qol\images\ were all booted and all did nothing. The
+    #  ipak beats every one of them. The player's own storage\t6\images is the
+    #  only path that wins, which is why the pack has always been installed
+    #  there. The mod's own ported weapon skins work from mod.iwd precisely
+    #  because no ipak contains them.
     #
-    #  Copied on every mod install so the player never has to think about it.
-    #  They also ship inside mod.iwd; whichever route the engine honours first,
-    #  the art is the same file either way.
+    #  So the split the user was trying to get rid of cannot be closed by moving
+    #  files - only by removing the DECISION. Installing the mod now installs
+    #  the textures too, in the same action, with no second menu row to miss.
+    #  That is the actual complaint fixed: never again a half-skinned mod
+    #  because one of two downloads was not run.
+    #
+    #  The SOUNDS genuinely did move into the mod - a soundbank the mod's own
+    #  zone declares is a real mod-side mechanism, unlike an ipak image - so
+    #  there is nothing to install for those.
     # -------------------------------------------------------------------
-    $startupSrc = Join-Path $HERE 'startup-images'
-    if ((Test-Path -LiteralPath $startupSrc) -and -not $DryRun) {
-        if (-not (Test-Path $IMGDIR)) { New-Item -ItemType Directory -Force -Path $IMGDIR | Out-Null }
-        $copied = 0
-        foreach ($img in Get-ChildItem -LiteralPath $startupSrc -File -Filter '*.iwi') {
-            try { Copy-Item -LiteralPath $img.FullName -Destination (Join-Path $IMGDIR $img.Name) -Force; $copied++ }
-            catch { Say "could not copy $($img.Name)" $C.Warn }
-        }
-        if ($copied -gt 0) {
-            Say "$copied start-up texture(s) placed in your images folder (fonts, scopes, load screens)." $C.Dim
-            Write-Log "startup images installed: $copied"
-        }
+    if ($ok -and -not $DryRun) {
+        Write-Host ''
+        Say "Installing the HD textures as part of the mod..." $C.Dim
+        Act-InstallImages -Pick 1
+        Write-Log 'textures installed as part of the mod install'
     }
 
     if ($ok) {
