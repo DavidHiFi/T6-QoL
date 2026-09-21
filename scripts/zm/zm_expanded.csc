@@ -439,12 +439,24 @@ zmqol_enable_fire_sale()
 zmqol_bonfire_sale_enabled()
 {
 	// 🛑 EXACT TWIN of quality_of_life.gsc::zmqol_bonfire_sale_enabled().
+	//
+	// v2.17.31 - the two exclusions are now CLASSIC AND GRIEF ONLY, because the
+	// clientfield measurement behind them was taken on the classic dumps alone.
+	// Stock toplayer totals: Mob classic 50, Mob survival 34; Buried classic 63,
+	// Buried survival 24. The survival halves clear the proven-safe 63 with this
+	// power-up's 2 bits and every one of this mod's own additions counted in.
+	// The full table and arithmetic are on the server twin - read that one.
+	//
+	// 🛑 THE TEST IS A RAW DVAR READ ON PURPOSE. is_survival() exists only in
+	// _zm_utility.gsc, not in the .csc, so calling it would compile here and
+	// answer differently on the two VMs - which for THIS function means one side
+	// registers toplayer/powerup_bon_fire and the other does not, and every
+	// player is dropped before the map starts. ui_zm_gamemodegroup is the dvar
+	// stock's own is_classic() reads on both sides, so both halves of this test
+	// are answering the same question from the same place.
 	map = getDvar( "mapname" );
 
-	if ( map == "zm_prison" )
-		return 0;
-
-	if ( map == "zm_buried" )
+	if ( ( map == "zm_prison" || map == "zm_buried" ) && getDvar( "ui_zm_gamemodegroup" ) != "zsurvival" )
 		return 0;
 
 	return 1;

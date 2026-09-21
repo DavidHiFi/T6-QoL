@@ -14367,15 +14367,46 @@ zmqol_fire_sale_custom_gate()
 //  really had no machine, so the gate was never the risk - only the 2 wasted
 //  bits, and Nuketown has 45 spare.
 // ============================================================================
+//  🌟 v2.17.31 - MOB AND BURIED ARE ONLY FULL IN CLASSIC, AND SURVIVAL IS
+//  WHERE THE USER PLAYS. Reported 2026-09-21: twenty rounds of Docks survival
+//  with no Bonfire Sale. The exclusion above was written per MAP, and the
+//  measurement behind it was taken on the classic dumps only. Re-counted from
+//  T6-Data-Archive\ZM\Clientfields with
+//      awk '$1=="toplayer"{s+=$4} END{print s}'
+//  over every zm_prison and zm_buried dump, stock toplayer bits are:
+//
+//      63  zm_buried  zclassic processing     <- the map the ceiling came from
+//      50  zm_prison  zclassic  prison
+//      41  zm_prison  zgrief    cellblock
+//      40  zm_buried  zgrief    street
+//      38  zm_prison  zgrief    docks
+//      34  zm_prison  ZSTANDARD prison        <- survival
+//      24  zm_buried  ZSTANDARD processing    <- survival
+//
+//  So survival on Mob is 34, not 50, and on Buried it is 24, not 63 - sixteen
+//  and thirty-nine bits below the classic totals that closed the door. Against
+//  the ERROR_CATALOGUE's proven-safe 63, with this mod's own additions counted
+//  at their worst (perk_marathon 2, perk_tombstone 2, vulture 1+1+5,
+//  perk_electric_cherry 1, perk_chugabud 1, deadshot_perk 1, whoswho 1+1,
+//  overlay_slot 1 + overlay_lerp 5 = 22) the survival totals land at 56 and 46
+//  WITH this power-up's 2 bits included. Classic and grief are left excluded
+//  exactly as they were - grief on Cell Block would be 41 + 22 + 2 = 65, past
+//  the only total ever seen to boot.
+//
+//  🛑 THE TEST MUST BE ONE BOTH VMs CAN ANSWER IDENTICALLY, or this becomes the
+//  EXE_CLIENT_FIELD_MISMATCH the twin's banner warns about. is_survival() is
+//  server-only (_zm_utility.gsc:382; the .csc defines is_classic and
+//  is_encounter and not this one), so the dvar it reads is written out here
+//  literally instead. ui_zm_gamemodegroup is the same dvar stock's own
+//  is_classic() reads on BOTH sides (_zm_utility.gsc:23 / _zm_utility.csc:392),
+//  which is the pattern zmqol_enable_electric_cherry() already depends on.
+// ============================================================================
 zmqol_bonfire_sale_enabled()
 {
     map = getDvar( "mapname" );
 
-    //  toplayer clientfield set is full - see the block above.
-    if ( map == "zm_prison" )
-        return 0;
-
-    if ( map == "zm_buried" )
+    //  toplayer clientfield set is full on these two in CLASSIC and GRIEF only.
+    if ( ( map == "zm_prison" || map == "zm_buried" ) && getDvar( "ui_zm_gamemodegroup" ) != "zsurvival" )
         return 0;
 
     return 1;
