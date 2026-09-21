@@ -11939,11 +11939,20 @@ zmqol_wallbuy_box_names()
 {
     a = [];
     a[a.size] = "m16_zm";
-    a[a.size] = "rottweil72_zm";
     a[a.size] = "m1911_zm";
-    //  v1.99.91 - the M14, user 2026-08-20. See the correction block above for
-    //  why it was held back and why that reason turned out not to apply.
-    a[a.size] = "m14_zm";
+    //  🛑 v2.17.31 - THE OLYMPIA AND THE M14 ARE OUT OF THIS LIST, and out of
+    //  the box. User, 2026-09-21: *"remove the olympia and m14 from the mystery
+    //  box ... all maps, no m14, no olympia."* They were added at the same
+    //  user's request (v1.99.58 / v1.99.91), so both halves of the decision are
+    //  theirs and the banner above is kept as the record of the first one.
+    //
+    //  This list only drives the re-assert below, which forces a gun back INTO
+    //  the box - so removing the two names is necessary and not sufficient.
+    //  zmqol_wallbuy_box_add() still runs for them (see the call site) and
+    //  still sets the flag at init; what actually holds them out is
+    //  scripts\zm\boxfix.gsc, a separate script because this file is on its
+    //  compiled-bytecode ceiling and the four lines would not fit. Read the
+    //  banner at the top of boxfix.gsc before changing either end.
     return a;
 }
 
