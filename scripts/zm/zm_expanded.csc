@@ -262,29 +262,6 @@ zmqol_mp_weapons_init()
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_upgraded_zm", 0 );
 
-	//  ============================================================
-	//  v2.17.35 - THE PARALYZER. Server twin is
-	//  scripts\zm\boxfix.gsc::zmqol_paralyzer_register(), and THE MAP TEST BELOW
-	//  MUST STAY CHARACTER-FOR-CHARACTER THE SAME AS ITS ONE. Buried registers
-	//  the gun itself, and Origins is refused because its actor clientfield set
-	//  is 31 of 32 stock against this gun's 8 actor bits. getdvar("mapname") is
-	//  the same read on both VMs - the co-op dvar rule lists mapname as one of
-	//  the three that are safe on a client.
-	//
-	//  📝 No client half of the BEHAVIOUR is needed here: stock's own
-	//  clientscripts\mp\zombies\_zm_weap_slowgun.csc gates itself on
-	//  is_weapon_included( "slowgun_zm" ), so including the weapon is what
-	//  switches it on. That is also why the include must not happen on the two
-	//  maps the server skips - the two sides would register different fields.
-	//  ============================================================
-	str_map = getDvar( "mapname" );
-
-	if ( str_map != "zm_buried" && str_map != "zm_tomb" )
-	{
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "slowgun_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "slowgun_upgraded_zm", 0 );
-	}
-
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
 	//  its pickup model.
