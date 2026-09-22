@@ -62,7 +62,55 @@
 
 init()
 {
+    zmqol_blundergat_register();
     level thread zmqol_boxfix_think();
+}
+
+// ============================================================================
+//  zmqol_blundergat_register  -  THE BLUNDERGAT ON EVERY MAP        (v2.17.32)
+//
+//  User, 2026-09-22: *"just the same way you've put weapons from other maps to
+//  other maps just do the same thing."*  So this is that mechanism, unchanged:
+//  the art is declared in zone_source\mod_blundergat.zone and linked into
+//  mod.ff, the two defs ship raw in weapons\zm\, and the gun is registered here
+//  from a root script the way scripts\zm\bouncingbetty.gsc registers the
+//  Bouncing Betty. Read mod_blundergat.zone for what the port needed and, more
+//  usefully, for the four things it did NOT need - the camo, the three icons
+//  and both display strings are all assets every map already loads.
+//
+//  🛑 ON MOB THIS ONLY MOVES THE FLAG. zm_prison registers the gun itself
+//  (zm_prison.gsc:775 via custom_add_weapons, included at :864) and re-running
+//  add_zombie_weapon there would rebuild a struct the map already built with
+//  its own cost and vox. Same shape as quality_of_life.gsc's
+//  zmqol_wallbuy_box_add(): if the struct exists, stop.
+//
+//  📝 VALUES ARE MOB'S OWN, copied not invented - cost 500 and vox "wpck_shot"
+//  from zm_prison.gsc:775, hint &"ZMWEAPON_BLUNDERGAT" from the def's own
+//  displayName. add_limited_weapon mirrors zm_prison.gsc:872 so the gun behaves
+//  on other maps exactly as it does on Mob; the mod's own no_box_limits row
+//  already governs whether that quota is enforced, through
+//  level.no_limited_weapons, so this adds no new rule of its own.
+//
+//  🛑 THE CLIENT TWIN IS zm_expanded.csc and it must include the same name.
+//  The client's include_weapon builds level._display_box_weapons, which is what
+//  draws the gun floating over an open box - a server-only registration gives a
+//  box that awards a weapon while showing nothing.
+// ============================================================================
+zmqol_blundergat_register()
+{
+    precacheitem( "blundergat_zm" );
+    precacheitem( "blundergat_upgraded_zm" );
+
+    include_weapon( "blundergat_zm" );              //  in_box defaults to 1
+    include_weapon( "blundergat_upgraded_zm", 0 );
+
+    if ( isdefined( level.zombie_weapons ) && isdefined( level.zombie_weapons[ "blundergat_zm" ] ) )
+    {
+        return;
+    }
+
+    add_zombie_weapon( "blundergat_zm", "blundergat_upgraded_zm", &"ZMWEAPON_BLUNDERGAT", 500, "wpck_shot", "", undefined );
+    add_limited_weapon( "blundergat_zm", 1 );
 }
 
 //  Named separately from the map test so a future map that carries one of these
@@ -80,13 +128,11 @@ zmqol_boxfix_forced_names()
 {
     a = [];
 
-    //  Mob only. blundergat_zm exists in no other map's fastfile, and naming a
-    //  weapon that was never registered here is harmless (every write below is
-    //  isdefined-guarded) but pointless.
-    if ( isdefined( level.script ) && level.script == "zm_prison" )
-    {
-        a[a.size] = "blundergat_zm";
-    }
+    //  v2.17.32 - EVERY MAP NOW, not just Mob. The art is in mod.ff and the
+    //  defs are in weapons\zm\, so zmqol_blundergat_register() above has
+    //  registered it wherever this script runs. On Mob the map registered it
+    //  first and this only holds the flag it already had.
+    a[a.size] = "blundergat_zm";
 
     return a;
 }

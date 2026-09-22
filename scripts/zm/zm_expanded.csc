@@ -247,6 +247,21 @@ zmqol_mp_weapons_init()
 	//  claymore_zm precedent above, so it does not change.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "bouncingbetty_zm", 0 );
 
+	//  ============================================================
+	//  v2.17.32 - THE BLUNDERGAT, now on every map. Server twin is
+	//  scripts\zm\boxfix.gsc::zmqol_blundergat_register(); its banner carries
+	//  the reasoning for the whole port and mod_blundergat.zone the asset list.
+	//
+	//  🌟 DISPLAY 1 HERE, unlike the Betty two lines up, and the difference is
+	//  the rule that banner spells out: equipment is kept out of the spin table,
+	//  a gun with a real world model belongs in it. blundergat_zm carries
+	//  t6_wpn_zmb_blundergat_world - a real mesh, now in mod.ff on every map -
+	//  so addzombieboxweapon() has something to draw and the box shows the
+	//  weapon floating above it the way it does on Mob.
+	//  ============================================================
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_upgraded_zm", 0 );
+
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
 	//  its pickup model.
