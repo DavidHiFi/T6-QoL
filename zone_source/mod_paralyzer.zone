@@ -65,3 +65,19 @@ xanim,viewmodel_paralyzer_sprint_out
 xanim,viewmodel_paralyzer_ads_fire
 xanim,viewmodel_paralyzer_ads_up
 xanim,viewmodel_paralyzer_ads_down
+
+// ============================================================================
+//  THE CLIENT HALF. Stock's clientscripts/mp/zombies/_zm_weap_slowgun.csc
+//  ships only in zm_buried.ff, and it is what registers the client side of
+//  this gun's five clientfields. Without it the server registers five fields
+//  off Buried that the client never does, which is EXE_CLIENT_FIELD_MISMATCH
+//  before the map starts. Declared here rather than dropped in mod.iwd because
+//  pack_iwd.ps1's folder list has no clientscripts entry - the mod's other
+//  ported client halves (_zm_weap_freezegun.csc, _zm_weap_tesla.csc,
+//  _zm_perk_vulture.csc) all come through the zone for the same reason.
+//
+//  Our copy carries the same five loadfx repoints as the server half. On
+//  Buried it replaces Buried's identical file rather than running beside it,
+//  so nothing registers twice.
+// ============================================================================
+script,clientscripts/mp/zombies/_zm_weap_slowgun.csc
