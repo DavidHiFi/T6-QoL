@@ -36,8 +36,87 @@
 #include maps\mp\zombies\_zm_utility;
 #include maps\mp\gametypes_zm\_hud_util;
 
+// ============================================================================
+//  THE PERK POP-UP'S THREE HUD ELEMENTS                            (v2.17.40)
+//
+//  User, after days of the pop-up drawing only the perk name: *"hard gate that
+//  issue so it can never happen again."*
+//
+//  🌟 THE CAUSE. perk_bought() asked for three client hudelems in a row at the
+//  instant a perk was bought. newclienthudelem() draws from a finite client
+//  pool and FAILS QUIETLY when it is empty, so whichever is asked for last does
+//  not draw. Twenty rounds in, the pool is gone and only the first of the three
+//  got a slot - the name. Reordering the calls, which a previous pass did, can
+//  only choose which part breaks.
+//
+//  So the allocation moved OFF the purchase path: the three elements are made
+//  once per player at spawn, when the pool is emptiest, and reused for every
+//  perk after that. They are never destroyed - handing the slots back between
+//  purchases is exactly how the next purchase failed to get them.
+//
+//  🛑 WHY THIS LIVES IN qol_options.gsc AND NOT IN ITS OWN FILE. The first cut
+//  was scripts\zm\perkpopup.gsc, and it booted with
+//      **** 11 script errors: Unresolved external "getdvarintdefault" with 2
+//           parameters in "scripts/zm/quality_of_life.gsc" at lines 1,1,1,...
+//  even though that file compiled to 222,861 bytes - UNDER its 223,029
+//  known-good. So this was not the compiled-size ceiling that
+//  [[gsc-compiled-size-ceiling]] documents. What changed was that
+//  quality_of_life.gsc gained a NEW cross-file import: it already imports
+//  qol_options, wunderfizz and zmqol_subtitles and nothing else, and perkpopup
+//  made a fourth. Hosting the helper in a file it ALREADY imports adds no
+//  import entry at all, and the errors go with it.
+//
+//  📝 The pop-up's geometry, font scales, fade timings and the twelve
+//  description strings stay in quality_of_life.gsc untouched - that is what
+//  tools\check-perk-popup.ps1 gates on, and the layout is the user's. This owns
+//  only where the elements come from.
+// ============================================================================
+zmqol_perkpop_reserve()
+{
+    self endon( "disconnect" );
+
+    self waittill( "spawned_player" );
+
+    //  Same order perk_bought() asks for them: name, description, icon.
+    self zmqol_perkpop_elem( 0 );
+    self zmqol_perkpop_elem( 1 );
+    self zmqol_perkpop_elem( 2 );
+}
+
+zmqol_perkpop_elem( n_slot )
+{
+    if ( !isdefined( self.zmqol_perkpop ) )
+    {
+        self.zmqol_perkpop = [];
+    }
+
+    if ( !isdefined( self.zmqol_perkpop[ n_slot ] ) )
+    {
+        self.zmqol_perkpop[ n_slot ] = newclienthudelem( self );
+    }
+
+    return self.zmqol_perkpop[ n_slot ];
+}
+
+zmqol_perkpop_watch()
+{
+    level endon( "end_game" );
+
+    for ( ;; )
+    {
+        level waittill( "connected", player );
+
+        if ( isdefined( player ) )
+        {
+            player thread zmqol_perkpop_reserve();
+        }
+    }
+}
+
 init()
 {
+    level thread zmqol_perkpop_watch();
+
     //  ========================================================================
     //  🛑 v1.95.5 - THE BISECT SWITCH WAS UNUSABLE AND THAT IS WHY IT HAS NEVER
     //  PRODUCED AN ANSWER.

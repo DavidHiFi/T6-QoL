@@ -17919,7 +17919,7 @@ perk_bought( perk )
 
     //  🛑 v2.17.39 - NOTHING IS DESTROYED AND NOTHING IS ALLOCATED HERE ANY MORE.
     //  The three elements are created once per player at spawn by
-    //  scripts\zm\perkpopup.gsc and reused for the rest of the match. Destroying
+    //  scripts\zm\qol_options.gsc and reused for the rest of the match. Destroying
     //  them between purchases handed their slots back to the client pool, and a
     //  pool that is full by round twenty is exactly why the description and the
     //  icon stopped drawing. Read that file's banner for the whole argument.
@@ -17948,7 +17948,7 @@ perk_bought( perk )
     // ========================================================================
 
     // --- Perk name (line 1, white, larger) ---
-    name_hud = self scripts\zm\perkpopup::zmqol_perkpop_elem( 0 );
+    name_hud = self scripts\zm\qol_options::zmqol_perkpop_elem( 0 );
     name_hud.alignx = "center";
     name_hud.aligny = "middle";
     name_hud.horzalign = "user_center";
@@ -17968,7 +17968,7 @@ perk_bought( perk )
     //  description instead of centering it, which is the off-to-the-left title
     //  in the user's 2026-09-18 screenshot. Each line centers on its own
     //  element, so the name sits centered above the description at all times.
-    desc_hud = self scripts\zm\perkpopup::zmqol_perkpop_elem( 1 );
+    desc_hud = self scripts\zm\qol_options::zmqol_perkpop_elem( 1 );
     desc_hud.alignx = "center";
     desc_hud.aligny = "middle";
     desc_hud.horzalign = "user_center";
@@ -17983,7 +17983,7 @@ perk_bought( perk )
     desc_hud settext( getPerkDesc( perk ) );
 
     // --- Perk icon (allocated LAST on purpose - see the note above) ---
-    hud = self scripts\zm\perkpopup::zmqol_perkpop_elem( 2 );
+    hud = self scripts\zm\qol_options::zmqol_perkpop_elem( 2 );
     hud.alignx = "center";
     hud.aligny = "middle";
     hud.horzalign = "user_center";
@@ -18055,7 +18055,7 @@ perk_bought( perk )
     wait 0.55;
 
     //  v2.17.39 - the three destroy() calls and the three = undefined writes
-    //  that stood here are gone. The elements are owned by perkpopup.gsc for
+    //  that stood here are gone. The elements are owned by qol_options.gsc for
     //  the life of the player; handing their slots back is what let the next
     //  purchase fail to get them.
 }
