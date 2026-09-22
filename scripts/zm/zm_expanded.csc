@@ -2807,9 +2807,50 @@ init_client_flag_callback_funcs()
 	{
 		registerclientfield("toplayer", "deadshot_perk", 1, 1, "int", ::player_deadshot_perk_handler, 0, 1);
 	}
+	// ========================================================================
+	//  🛑 v2.17.33 - THE NAVCARD GATE NOW READS THE DVAR THE SERVER READS.
+	//  This line was stock's, verbatim, and stock is WRONG - the two halves of
+	//  this one condition consult two different dvars:
+	//
+	//     server  _zm.gsc:74   scr_zm_ui_gametype_group = getdvar( ui_zm_gamemodegroup )
+	//             _zm.gsc:131  if ( scr_zm_ui_gametype_group == "zclassic" ... )
+	//     client  _zm.csc:32   scr_zm_ui_gametype       = getdvar( ui_gametype )
+	//             _zm.csc:406  if ( scr_zm_ui_gametype  == "zclassic" ... )
+	//
+	//  They agree on a cold classic launch, when both dvars read "zclassic", and
+	//  that is why this has stood. They DISAGREE when ui_gametype has not caught
+	//  up with ui_zm_gamemodegroup - which is exactly what happens going from a
+	//  survival game straight into a classic one. Reported 2026-09-22, and the
+	//  user's own log has it twice over:
+	//
+	//     line 4402  ui_zm_gamemodegroup "zclassic"   <- server registers
+	//     line 2674  g_gametype          "zstandard"  <- client does not
+	//     line 5599  Clientfield navcard_held in set [allplayers]
+	//                is not registered on the client
+	//     line 5602  Server Disconnected - EXE_CLIENT_FIELD_MISMATCH
+	//
+	//  and then, on the retry a minute later, line 7685 g_gametype "zclassic"
+	//  and the same map loaded. An intermittent that looks like whatever shipped
+	//  most recently and is really a stale dvar.
+	//
+	//  🌟 IT FAILS BOTH WAYS, which is why this is the right end to fix. Classic
+	//  into survival is the mirror image: ui_gametype still "zclassic" makes the
+	//  CLIENT register a field the server has skipped. Reading one dvar on both
+	//  sides closes both directions at once.
+	//
+	//  is_classic() is the client's own getdvar( ui_zm_gamemodegroup ) test
+	//  (_zm_utility.csc:392) - the same dvar, the same string, the same answer
+	//  the server captured at _zm.gsc:74. Nothing else about the registration
+	//  moves: same set, same name, same 4 bits, same version, same callback.
+	//
+	//  📝 SAFE TO EDIT HERE because this whole function REPLACES stock's -
+	//  see the replaceFunc on clientscripts\mp\zombies\_zm::
+	//  init_client_flag_callback_funcs at the top of this file. Stock's copy
+	//  never runs, so there is no second registration to collide with.
+	// ========================================================================
 	if (!is_true(level._no_navcards))
 	{
-		if (level.scr_zm_ui_gametype == "zclassic" && !level.createfx_enabled)
+		if (is_classic() && !level.createfx_enabled)
 		{
 			registerclientfield("allplayers", "navcard_held", 1, 4, "int", undefined, 0, 1);
 			level thread set_clientfield_navcard_code_callback("navcard_held");
