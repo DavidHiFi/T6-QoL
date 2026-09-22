@@ -1839,6 +1839,56 @@ function Act-InstallMod {
         Write-Host ''
         Say "Installing the HD textures as part of the mod..." $C.Dim
         Act-InstallImages -Pick 1
+
+        # ----------------------------------------------------------------
+        #  THE TEXTURES LIVE IN THE MOD FOLDER, AND storage\t6\images IS A
+        #  JUNCTION INTO IT.
+        #
+        #  User, 2026-09-22: *"stop relying on the images folder from the
+        #  plutonium storage and get all those textures to load from the mod."*
+        #
+        #  They cannot load FROM mod.iwd - stock images stream from .ipak and an
+        #  ipak outranks every mod-side path, measured in v1.99.81 and again on
+        #  2026-09-21. storage\t6\images is the only location that beats one,
+        #  because Plutonium patches its image loader to check there first.
+        #
+        #  So the PATH stays and the FILES move. The bytes now sit in
+        #  mods\zm_qol\images\, shipped and versioned with the mod, and the
+        #  images folder becomes an NTFS junction pointing at them. The loader
+        #  follows it transparently, the player has no second folder to maintain,
+        #  and removing the mod removes its textures with it - which is the
+        #  coupling that was actually being asked for.
+        #
+        #  A junction, not a symlink: junctions need no elevation.
+        # ----------------------------------------------------------------
+        $modImg = Join-Path $MODDIR 'images'
+        if (-not (Test-Path -LiteralPath $modImg)) { New-Item -ItemType Directory -Force -Path $modImg | Out-Null }
+
+        $link = $null
+        if (Test-Path -LiteralPath $IMGDIR) { $link = Get-Item -LiteralPath $IMGDIR -Force }
+        $isJunction = $link -and ($link.Attributes -band [IO.FileAttributes]::ReparsePoint)
+
+        if (-not $isJunction) {
+            # A real folder: carry whatever is in it into the mod before replacing
+            # it, so a controller pack or a hand-added texture is never lost.
+            $carried = 0
+            if ($link) {
+                foreach ($f in Get-ChildItem -LiteralPath $IMGDIR -File -ErrorAction SilentlyContinue) {
+                    $dst = Join-Path $modImg $f.Name
+                    if (-not (Test-Path -LiteralPath $dst)) { Copy-Item -LiteralPath $f.FullName -Destination $dst -Force; $carried++ }
+                }
+                Remove-Item -LiteralPath $IMGDIR -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            [void](cmd /c "mklink /J `"$IMGDIR`" `"$modImg`"" 2>&1)
+            if (Test-Path -LiteralPath $IMGDIR) {
+                Say "Textures now live in the mod folder; your images folder points at them." $C.Dim
+                if ($carried -gt 0) { Say "$carried file(s) you already had were carried across." $C.Dim }
+                Write-Log "images junction created -> $modImg (carried $carried)"
+            } else {
+                Say "!Could not link the images folder - textures were installed the old way." $C.Warn
+                Write-Log 'images junction FAILED'
+            }
+        }
         Write-Log 'textures installed as part of the mod install'
     }
 
