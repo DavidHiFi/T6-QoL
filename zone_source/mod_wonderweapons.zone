@@ -163,13 +163,13 @@ script,scripts/zm/thundergun.csc
 //  modding-jobs\church-pap-001\mod_wonderweapons.zone.bak-aitypes-on.
 // ============================================================================
 // [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_transit_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_transit_basic.asd
+rawfile,animstatedefs/zm_transit_basic.asd
 // [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_nuked_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_nuked_basic.asd
+rawfile,animstatedefs/zm_nuked_basic.asd
 // [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_highrise_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_highrise_basic.asd
+rawfile,animstatedefs/zm_highrise_basic.asd
 // [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_prison_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_prison_basic.asd
+rawfile,animstatedefs/zm_prison_basic.asd
 // still NOT shipped (guns gated off there): zm_tomb_basic, zm_buried_basic
 // ============================================================================
 //  🌟 THE AITYPE OVERRIDES THE .asd ABOVE HAS ALWAYS NEEDED.
