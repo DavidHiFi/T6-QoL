@@ -59,6 +59,17 @@
 #include maps\mp\_utility;
 #include common_scripts\utility;
 #include maps\mp\zombies\_zm_utility;
+//  🛑 _zm_weapons IS REQUIRED and its absence is not a compile error.
+//  add_zombie_weapon() and add_limited_weapon() live here; include_weapon()
+//  lives in _zm_utility above, which is why three of the four calls in
+//  zmqol_blundergat_register() resolved and two did not. gsc-tool compiles the
+//  file either way and build.bat's check-loc-refs only walks in-mod
+//  cross-script calls, so the first sign was the game's own dialog:
+//      Unresolved external : "add_zombie_weapon" with 7 parameters
+//      Unresolved external : "add_limited_weapon" with 2 parameters
+//  scripts\zm\bouncingbetty.gsc calls the same two functions and carries this
+//  same line - that file is the template and the include was dropped copying it.
+#include maps\mp\zombies\_zm_weapons;
 
 init()
 {
