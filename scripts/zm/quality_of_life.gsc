@@ -17917,27 +17917,15 @@ perk_bought( perk )
     if ( shader == "" )
         return;
 
-    // Destroy the previous HUD if the player quickly purchases another perk
-    if ( isdefined( self.perkhud ) )
-    {
-        self.perkhud destroy();
-        self.perkhud = undefined;
-    }
-    if ( isdefined( self.perkname_hud ) )
-    {
-        self.perkname_hud destroy();
-        self.perkname_hud = undefined;
-    }
-    if ( isdefined( self.perkdesc_hud ) )
-    {
-        self.perkdesc_hud destroy();
-        self.perkdesc_hud = undefined;
-    }
-    if ( isdefined( self.perkspec_hud ) )
-    {
-        self.perkspec_hud destroy();
-        self.perkspec_hud = undefined;
-    }
+    //  🛑 v2.17.39 - NOTHING IS DESTROYED AND NOTHING IS ALLOCATED HERE ANY MORE.
+    //  The three elements are created once per player at spawn by
+    //  scripts\zm\perkpopup.gsc and reused for the rest of the match. Destroying
+    //  them between purchases handed their slots back to the client pool, and a
+    //  pool that is full by round twenty is exactly why the description and the
+    //  icon stopped drawing. Read that file's banner for the whole argument.
+    //
+    //  A second purchase arriving mid-pop-up now simply re-uses the same three
+    //  elements, which is what the destroy block above was there to arrange.
 
     // ========================================================================
     //  🛑 TEXT IS ALLOCATED BEFORE THE ICON. DO NOT PUT THE ICON BACK ON TOP.
@@ -17960,7 +17948,7 @@ perk_bought( perk )
     // ========================================================================
 
     // --- Perk name (line 1, white, larger) ---
-    name_hud = newclienthudelem( self );
+    name_hud = self scripts\zm\perkpopup::zmqol_perkpop_elem( 0 );
     name_hud.alignx = "center";
     name_hud.aligny = "middle";
     name_hud.horzalign = "user_center";
@@ -17980,7 +17968,7 @@ perk_bought( perk )
     //  description instead of centering it, which is the off-to-the-left title
     //  in the user's 2026-09-18 screenshot. Each line centers on its own
     //  element, so the name sits centered above the description at all times.
-    desc_hud = newclienthudelem( self );
+    desc_hud = self scripts\zm\perkpopup::zmqol_perkpop_elem( 1 );
     desc_hud.alignx = "center";
     desc_hud.aligny = "middle";
     desc_hud.horzalign = "user_center";
@@ -17995,7 +17983,7 @@ perk_bought( perk )
     desc_hud settext( getPerkDesc( perk ) );
 
     // --- Perk icon (allocated LAST on purpose - see the note above) ---
-    hud = newclienthudelem( self );
+    hud = self scripts\zm\perkpopup::zmqol_perkpop_elem( 2 );
     hud.alignx = "center";
     hud.aligny = "middle";
     hud.horzalign = "user_center";
@@ -18066,13 +18054,10 @@ perk_bought( perk )
 
     wait 0.55;
 
-    hud destroy();
-    name_hud destroy();
-    desc_hud destroy();
-
-    self.perkhud = undefined;
-    self.perkname_hud = undefined;
-    self.perkdesc_hud = undefined;
+    //  v2.17.39 - the three destroy() calls and the three = undefined writes
+    //  that stood here are gone. The elements are owned by perkpopup.gsc for
+    //  the life of the player; handing their slots back is what let the next
+    //  purchase fail to get them.
 }
 
 // Shader (icon material) for each perk
