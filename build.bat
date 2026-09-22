@@ -166,6 +166,29 @@ echo [0d/9] Pre-flight: pre-nerf recoil values...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-recoil-prenerf.ps1"
 if errorlevel 1 goto recoilfail
 
+REM ============================================================================
+REM  [0e/9] Pre-flight: the wonder-weapon animation chain        v2.17.44
+REM ----------------------------------------------------------------------------
+REM  The Wave Gun's float and the Winter's Howl's ice block are not code in
+REM  those weapons' scripts - they are an ASSET CHAIN, and it has now broken
+REM  three separate times without a single error message.
+REM
+REM  Both guns ask for a death anim state and fall back to an ordinary death,
+REM  silently, when it is missing:
+REM      zapgun.gsc              hasanimstatefromasd( "zm_death_sizzle" )
+REM      _zm_weap_freezegun.gsc  HasAnimStateFromASD( "zm_death_freeze_t5" )
+REM  So the guns still fire, still kill, still pop. They just stop being the
+REM  guns, and nothing in any log says so. Days went into "fixing" zapgun.gsc
+REM  while the real switch sat commented out in mod_wonderweapons.zone.
+REM
+REM  That is exactly the shape a gate is for: silent, invisible offline, only
+REM  observable by a human firing the weapon. See tools\check-wonderweapon-anims.ps1
+REM  for the five links and why each one is checked.
+REM ============================================================================
+echo [0e/9] Pre-flight: wonder-weapon animation chain...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1"
+if errorlevel 1 goto wwanimfail
+
 REM  v2.11.8 (user, 2026-09-04): the nine camo_zmb_dlc2* textures are NEVER copied into
 REM  images\ (= mod.iwd). They are the ZM Dark Matter animated Pack-a-Punch camo, and
 REM  they are delivered ONLY as loose by-name files in %LOCALAPPDATA%\Plutonium\storage\r
@@ -190,6 +213,13 @@ echo.
 echo [2/9] Repacking mod.iwd from raw folders...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0pack_iwd.ps1"
 if errorlevel 1 goto packfail
+
+REM  The other half of the chain: the 28 aitype overrides have to be IN the
+REM  built mod.iwd, not merely in the repo. This project has shipped "fixed"
+REM  files that never reached the build before - the texture sync compared file
+REM  length and silently shipped nothing for weeks. Prove it after the pack.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1" -PostPack
+if errorlevel 1 goto wwanimfail
 
 echo.
 echo [3/9] Verifying all 5 source files are present...
@@ -467,6 +497,17 @@ echo   BUILD STOPPED: a weapon def no longer carries the pre-nerf recoil values.
 echo   This mod ships Treyarch's PRE-PATCH recoil and nothing in game switches it,
 echo   so a changed number here ships the patched recoil to every player silently.
 echo   Put the value back, or update the table in tools\check-recoil-prenerf.ps1.
+if not defined OFFLINE pause
+exit /b 1
+
+:wwanimfail
+echo.
+echo   BUILD STOPPED: the wonder-weapon animation chain is broken.
+echo   The Wave Gun would stop floating zombies and the Winter's Howl would stop
+echo   freezing them into ice - both guns still fire and still kill, so NOTHING
+echo   in any log would report it. The user finds it by shooting something.
+echo   Fix the chain the check named. Do NOT go looking in zapgun.gsc or
+echo   _zm_weap_freezegun.gsc - their scripts are almost never the cause.
 if not defined OFFLINE pause
 exit /b 1
 
