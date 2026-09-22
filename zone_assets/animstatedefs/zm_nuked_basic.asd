@@ -532,3 +532,19 @@ zm_death_sizzle_crawl : restart missing_legs notify death_anim
 	ai_zombie_crawl_microwave_death_walking_c
 }
 
+// T5 Winter's Howl freeze deaths (SRS donor - the state names the mod's
+// _zm_weap_freezegun.gsc already checks with HasAnimStateFromASD)
+zm_death_freeze_t5 : restart notify death_anim
+{
+	ai_zombie_freeze_death_a
+	ai_zombie_freeze_death_b
+	ai_zombie_freeze_death_c
+	ai_zombie_freeze_death_d
+	ai_zombie_freeze_death_e
+}
+
+zm_death_freeze_crawl_t5 : restart missing_legs notify death_anim
+{
+	ai_zombie_crawl_freeze_death_01
+	ai_zombie_crawl_freeze_death_02
+}
