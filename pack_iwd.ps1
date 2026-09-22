@@ -66,7 +66,20 @@ try {
     # the crash, and the real gap was THIRTEEN TECHNIQUESETS in mod.ff, seven of
     # them effect_* / distortion_*, the shaders particles draw with. See
     # zone_source\mod_wonderweapons.zone.
-    $folders  = @('aitype','attachmentunique','character','fx','images','maps','scripts','ui','ui_mp','weapons','xanim')
+    # 🛑 'images' IS DELIBERATELY NOT IN THIS LIST.  (v2.17.35, 2026-09-22)
+    #
+    #  It was added for one day on the theory that t6zm.exe's relative 'images/'
+    #  string is handed to the normal filesystem layer, which searches .iwd
+    #  archives. It is not: the mod's 1252 .iwi went in, mod.iwd went from 40 MB
+    #  to 1.48 GB, and the game still drew stock fonts and stock perk icons.
+    #  Textures stream from a real file handle, and a zip entry cannot give one.
+    #
+    #  So packing them here costs 1.4 GB on every build, every deploy and every
+    #  map load and buys nothing. The pack ships in the mod's own images\ folder
+    #  instead, and build.bat mirrors it into the deployed mod and points
+    #  storage\t6\images at it with a junction - see the texture-pack block
+    #  there. The bytes still live in the mod; only the doorway is outside it.
+    $folders  = @('aitype','attachmentunique','character','fx','maps','scripts','ui','ui_mp','weapons','xanim')
     # 'xanim' (v2.9.18-v2.10.13): raw xanims load from a mod's iwd the same way raw
     # weapon defs do (proven by the zm_ezz3.0 package, checkpoint 173). The Zap Gun's
     # 15 view anims shipped this way until v2.10.14, when the Wave Gun's 49 came in

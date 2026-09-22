@@ -429,12 +429,30 @@ microwavegun_fired( upgraded )
     //  effect: head_gibbed is read by head_should_gib, zombie_head_gib, the
     //  Electric Cherry tesla gib and _zm_turned's spawn-point pick, all of
     //  which are exactly the things a corpse must not do.
+    // ------------------------------------------------------------------------
+    //  🌟 v2.17.35 - AND nodeathragdoll TOO, FOR THE SAME REASON, AND IT IS
+    //  WHAT MADE THE FLOAT LAND "ONLY HALF THE TIME".
+    //
+    //  The lift in zmqol_mgun_microwave_burst() is a moveto on a corpse, and a
+    //  moveto cannot move a body the physics system already owns. That function
+    //  is reached by `self thread` AFTER dodamage() has returned, so on any
+    //  zombie whose death ragdoll had already started the lift was issued at a
+    //  corpse that was no longer script-driven and did nothing - which is
+    //  exactly the "it rises about half the time" the user reported on v2.16.2.
+    //
+    //  Same shape as the two flags above and the same fix: set it before the
+    //  damage, on the whole list, with no wait in between. Setting it on a
+    //  zombie that is about to die is what stock's own Moon copy does
+    //  (_zm_weap_microwavegun.gsc:290) - a microwaved zombie is meant to hold
+    //  rigid and cook, not flop.
+    // ------------------------------------------------------------------------
     for ( i = 0; i < shot.enemies.size; i++ )
     {
         if ( isdefined( shot.enemies[i] ) )
         {
             shot.enemies[i].no_gib = 1;
             shot.enemies[i].head_gibbed = 1;
+            shot.enemies[i].nodeathragdoll = 1;
         }
     }
 
@@ -709,6 +727,7 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
     self.no_gib = 1;
     self.gibbed = 1;
     self.head_gibbed = 1;   // v2.16.6 - blocks the post-death perma-perk head gib, see microwavegun_fired()
+    self.nodeathragdoll = 1; // v2.17.35 - BEFORE the damage, or the lift has nothing to lift
     self dodamage( self.health + 666, player.origin, player );
 
     if ( self.health <= 0 )
@@ -1112,48 +1131,49 @@ microwavegun_sizzle_death_ending()
 zmqol_mgun_microwave_burst()
 {
     // ========================================================================
-    //  🌟 v2.17.34 - THE LIFT IS BACK, AND IT IS NOT THE v2.16.2 MISTAKE.
+    //  🌟 v2.17.35 - THE v2.16.1 LIFT, RESTORED VERBATIM. READ THIS BEFORE
+    //  TOUCHING THIS FUNCTION AGAIN.
     //
-    //  The animation route is gone for good: zm_death_sizzle only parses when
-    //  its anims are in the aitype's COMPILED list, which needs the modified
-    //  aitypes, and those are the confirmed cause of the zombies-ignore-you
-    //  regression. Proven again 2026-09-22 - declaring the .asd alone made
-    //  every map refuse to load with BG_AnimStateDef_Parse naming
-    //  ai_zombie_microwave_death_a. So every Wave Gun kill arrives here, and
-    //  if the rise is going to happen at all it has to happen in this function.
+    //  This is not a new idea. It is the exact code the user signed off on in
+    //  9269c64 ("every kill floats", 2026-09-14 14:24), put back unchanged.
+    //  It was removed 29 minutes later by 13fe58a on the theory that the
+    //  moveto was popping zombies' heads. THAT THEORY WAS DISPROVEN TWICE BY
+    //  THIS MOD'S OWN MEASUREMENTS, and the removal was never revisited:
     //
-    //  🛑 WHY THIS IS NOT THE MOVETO THAT BROKE HEADS. The banner below is
-    //  kept because its reasoning is right: an AI owns its own movement, so
-    //  moveto() is fought or dropped, and a head riding a tag desyncs from a
-    //  body shoved out from under it. LaunchRagdoll is the opposite kind of
-    //  call - it hands the corpse to the physics system, which then owns every
-    //  bone including the head, so there is nothing left to desync from.
+    //    - a9b979f (v2.16.4) - the heads came off through stock's ordinary gib,
+    //      because no_gib was set per-target AFTER the network choke instead of
+    //      up front. Fixed in microwavegun_fired(). Nothing to do with a mover.
+    //    - 6f0b55a (v2.16.6) - the attach probe caught the rest in the user's
+    //      own session: the head model was still on at the kill and swapped for
+    //      c_zom_*_g_behead half a second LATER, which is stock's
+    //      zombie_head_gib() firing from zombie_death_event() because this
+    //      mod's perma_perks grants Head Popper to everyone. Fixed with
+    //      head_gibbed. Also nothing to do with a mover.
     //
-    //  🌟 AND IT IS ALREADY PROVEN IN THIS MOD, ON EVERY MAP. The Thundergun's
-    //  fling is these exact two builtins back to back
-    //  (maps\mp\zombies\_zm_weap_thundergun.gsc: StartRagdoll(); LaunchRagdoll(
-    //  fling_vec );), it ships today, it needs no animstatedef and no aitype,
-    //  and it has never been reported to pop a head.
+    //  Both causes are fixed and both fixes are still in place above. The
+    //  moveto was collateral - it was removed for something it did not do, and
+    //  the float has been missing ever since, which is the regression the user
+    //  spent days reporting.
     //
-    //  📝 nodeathragdoll = 1 IS DELIBERATELY GONE. It existed to hold the body
-    //  still so a mover could lift it; with physics doing the lift it would
-    //  cancel the very thing being asked for.
+    //  🛑 DO NOT "FIX" THIS WITH StartRagdoll/LaunchRagdoll. That was tried in
+    //  6843b8c and it is the wrong shape of motion: a launched ragdoll is a
+    //  corpse thrown and flopping, and what a microwaved zombie does is hold
+    //  rigid, rise, swell and burst. The body is deliberately held stiff by
+    //  nodeathragdoll - which is what stock's own Moon copy does at
+    //  _zm_weap_microwavegun.gsc:290 - and a rigid body is precisely what a
+    //  moveto can lift.
     //
-    //  The impulse is mostly vertical and modest so the corpse rises and hangs
-    //  rather than being thrown. Tunable live without a rebuild if it wants
-    //  more or less air:  zmqol_mgun_lift 120
+    //  🌟 WHY IT USED TO RISE "ONLY HALF THE TIME", AND WHY IT NOW ALWAYS
+    //  WILL. nodeathragdoll used to be set HERE, in a function reached by
+    //  `self thread` after dodamage() had already returned. Any zombie whose
+    //  death ragdoll had started by then was owned by physics, and a moveto
+    //  against a physics-owned body does nothing. It is now set on the whole
+    //  target list before the damage (microwavegun_fired), which is the same
+    //  correction v2.16.4 made to no_gib for the same reason.
+    //
+    //  Tunable live without a rebuild:  zmqol_mgun_lift 42   (0 disables)
     // ========================================================================
-    n_lift = getdvarintdefault( "zmqol_mgun_lift", 120 );
-
-    if ( n_lift > 0 )
-    {
-        self startragdoll();
-        self launchragdoll( ( 0, 0, n_lift ) );
-    }
-    else
-    {
-        self.nodeathragdoll = 1;
-    }
+    self.nodeathragdoll = 1;   // belt and braces; the real one is pre-damage
 
     self playsound( "wpn_mgun_dual_sizzle" );
 
@@ -1169,25 +1189,25 @@ zmqol_mgun_microwave_burst()
     self setclientfield( "zombie_actor_flag_microwavegun_expand_response", 1 );
     self playsound( "wpn_mgun_impact_zombie" );
 
-    //  🛑 v2.16.3 - NO moveto ON AN ACTOR. v2.16.2 lifted the corpse with
-    //  `self moveto( self.origin + (0,0,42), 1.6, 0.45, 0.45 )` and the user
-    //  reported two things at once on that build: heads popping off, and the
-    //  rise only happening about half the time. Both are the one mistake.
-    //  bouncingbetty.gsc:670 already wrote the rule down for a neighbouring
-    //  case - "a planted grenade entity cannot be moveto'd - which is exactly
-    //  why MP spawns its minemover" - and an AI is the same class: it owns its
-    //  own movement, so the move is fought or dropped (the rise that only
-    //  sometimes lands) and the head, a separate model riding a tag, desyncs
-    //  from a body being shoved from underneath (the popping).
-    //
-    //  The float is NOT reimplemented here with a stand-in mover. The engine
-    //  already floats corpses correctly in the anim branch, and the honest way
-    //  to make the rise consistent is to get more kills INTO that branch
-    //  rather than to hand-roll a second rise that has to look identical. The
-    //  print below is what decides which, with evidence instead of a guess.
-    //  The swell above stays: it is Moon's own clientfield and the user
-    //  confirmed inflation working.
-    wait 2.5;
+    //  A short beat of microwave before the lift, so the rise reads as a
+    //  consequence of the sizzle rather than starting on the same frame.
+    wait 0.4;
+
+    if ( !isdefined( self ) )
+        return;
+
+    //  42 units over 1.6 s, eased in and out (0.45 s accelerate, 0.45 s
+    //  settle), which lands inside the 2.5 s swell rather than after it, so
+    //  the body is still inflating as it rises and bursts at the top at full
+    //  size - the same shape the anim branch has on Moon.
+    n_lift = getdvarintdefault( "zmqol_mgun_lift", 42 );
+
+    if ( n_lift > 0 )
+        self moveto( self.origin + ( 0, 0, n_lift ), 1.6, 0.45, 0.45 );
+
+    //  Hold for the rest of Moon's 2.5 s swell so the burst lands at the top
+    //  of the rise, at full size.
+    wait 2.1;
 
     if ( !isdefined( self ) )
         return;

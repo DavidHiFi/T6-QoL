@@ -230,6 +230,45 @@ if errorlevel 1 (
 ) else (
     "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$p=$env:PROJ_DIR0.TrimEnd('\'); $b=''; $c=''; try { $b=(& git -C $p rev-parse --abbrev-ref HEAD 2>$null); $c=(& git -C $p rev-parse --short HEAD 2>$null) } catch { }; @($p, ('branch ' + $b + '  commit ' + $c), (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) | Set-Content -LiteralPath (Join-Path $env:PLUTO_DIR 'deployed-by.txt') -Encoding ASCII"
 )
+
+REM ----------------------------------------------------------------------------
+REM  THE TEXTURE PACK, AND WHY THE DEPLOY HAS TO DO THIS EVERY TIME
+REM ----------------------------------------------------------------------------
+REM  🛑 v2.17.35 - THIS WAS REMOVED ONCE AND IT COST THE USER THEIR FONTS, THEIR
+REM  PERK ICONS AND AN ENTIRE EVENING. DO NOT REMOVE IT AGAIN WITHOUT READING
+REM  THIS AND TESTING THE ALTERNATIVE IN GAME FIRST.
+REM
+REM  The pack REPLACES stock texture names (the three font sheets, every
+REM  specialty_* perk icon, the hash-named diner wall). A replacement only wins
+REM  if it outranks the game's .ipak archives, and the single path that does is
+REM  storage\t6\images, because Plutonium patches its image loader to check
+REM  there before the archives.
+REM
+REM  📝 mod.iwd WAS TRIED AND IT DOES NOT WORK - measured, not assumed. All 1252
+REM  .iwi were packed at images/ inside mod.iwd on 2026-09-22. mod.iwd went 40 MB
+REM  -> 1.48 GB and the game still drew stock fonts. Textures stream from a real
+REM  file handle and a zip entry cannot provide one. mod.ff does not work either:
+REM  the linker accepted 993 images and wrote 13,184 bytes - 13 bytes each,
+REM  headers with no pixel data. Both routes are closed.
+REM
+REM  🌟 SO THE BYTES LIVE IN THE MOD AND ONLY THE DOORWAY IS OUTSIDE IT. The pack
+REM  is images\ in this tree, mirrored into the DEPLOYED mod at
+REM  <storage>\mods\zm_qol\images, and storage\t6\images is an NTFS junction onto
+REM  that folder - a link, not a copy, so it costs zero extra bytes. Installing
+REM  the mod installs the textures; there is no separate download and nothing for
+REM  anyone to manage by hand.
+REM
+REM  The deploy owns this, not the installer. When the installer owned it the
+REM  junction existed only at install time, so once something replaced the folder
+REM  it never came back - which is exactly how it vanished on 2026-09-22. A plain
+REM  build.bat now repairs it.
+REM
+REM  A junction, not a symlink: junctions need no elevation. If the path is a
+REM  real folder its contents are carried into the mod first, so a controller
+REM  pack or a hand-added texture is never lost.
+echo    syncing the texture pack and its images junction...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path $env:PROJ_DIR 'images'; if(-not (Test-Path -LiteralPath $src)){ Write-Host '    [skip] no images\ folder in this tree'; exit 0 }; $modImg=Join-Path $env:PLUTO_DIR 'images'; if(-not (Test-Path -LiteralPath $modImg)){ New-Item -ItemType Directory -Force -Path $modImg | Out-Null }; $n=0; Get-ChildItem -LiteralPath $src -File | ForEach-Object { $d=Join-Path $modImg $_.Name; if((-not (Test-Path -LiteralPath $d)) -or ((Get-Item -LiteralPath $d).Length -ne $_.Length)){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $n++ } }; $img=Join-Path (Split-Path $env:PLUTO_DIR -Parent | Split-Path -Parent) 'images'; $link=$null; if(Test-Path -LiteralPath $img){ $link=Get-Item -LiteralPath $img -Force }; $isJ=$link -and ($link.Attributes -band [IO.FileAttributes]::ReparsePoint); if(-not $isJ){ $carried=0; if($link){ Get-ChildItem -LiteralPath $img -File | ForEach-Object { $d=Join-Path $modImg $_.Name; if(-not (Test-Path -LiteralPath $d)){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $carried++ } }; Remove-Item -LiteralPath $img -Recurse -Force }; try { New-Item -ItemType Junction -Path $img -Target $modImg -ErrorAction Stop | Out-Null; Write-Host ('    [ok] images junction created (carried ' + $carried + ')') } catch { Write-Host '    [warn] could not create the images junction - loose textures will not load' } } ; Write-Host ('    [ok] ' + $n + ' texture(s) refreshed, ' + (Get-ChildItem -LiteralPath $modImg -File).Count + ' in the mod')"
+
 echo.
 echo.
 echo [6/9] Refreshing the installer's own bundled copy:
