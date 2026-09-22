@@ -1111,10 +1111,49 @@ microwavegun_sizzle_death_ending()
 //  then burst at the top.
 zmqol_mgun_microwave_burst()
 {
-    //  Keep the body still for the sizzle instead of ragdoll-flopping - a
-    //  microwaved zombie holds, rises, then bursts. Safe: a plain field write,
-    //  and it is what makes the moveto below read as a lift and not a drag.
-    self.nodeathragdoll = 1;
+    // ========================================================================
+    //  🌟 v2.17.34 - THE LIFT IS BACK, AND IT IS NOT THE v2.16.2 MISTAKE.
+    //
+    //  The animation route is gone for good: zm_death_sizzle only parses when
+    //  its anims are in the aitype's COMPILED list, which needs the modified
+    //  aitypes, and those are the confirmed cause of the zombies-ignore-you
+    //  regression. Proven again 2026-09-22 - declaring the .asd alone made
+    //  every map refuse to load with BG_AnimStateDef_Parse naming
+    //  ai_zombie_microwave_death_a. So every Wave Gun kill arrives here, and
+    //  if the rise is going to happen at all it has to happen in this function.
+    //
+    //  🛑 WHY THIS IS NOT THE MOVETO THAT BROKE HEADS. The banner below is
+    //  kept because its reasoning is right: an AI owns its own movement, so
+    //  moveto() is fought or dropped, and a head riding a tag desyncs from a
+    //  body shoved out from under it. LaunchRagdoll is the opposite kind of
+    //  call - it hands the corpse to the physics system, which then owns every
+    //  bone including the head, so there is nothing left to desync from.
+    //
+    //  🌟 AND IT IS ALREADY PROVEN IN THIS MOD, ON EVERY MAP. The Thundergun's
+    //  fling is these exact two builtins back to back
+    //  (maps\mp\zombies\_zm_weap_thundergun.gsc: StartRagdoll(); LaunchRagdoll(
+    //  fling_vec );), it ships today, it needs no animstatedef and no aitype,
+    //  and it has never been reported to pop a head.
+    //
+    //  📝 nodeathragdoll = 1 IS DELIBERATELY GONE. It existed to hold the body
+    //  still so a mover could lift it; with physics doing the lift it would
+    //  cancel the very thing being asked for.
+    //
+    //  The impulse is mostly vertical and modest so the corpse rises and hangs
+    //  rather than being thrown. Tunable live without a rebuild if it wants
+    //  more or less air:  zmqol_mgun_lift 120
+    // ========================================================================
+    n_lift = getdvarintdefault( "zmqol_mgun_lift", 120 );
+
+    if ( n_lift > 0 )
+    {
+        self startragdoll();
+        self launchragdoll( ( 0, 0, n_lift ) );
+    }
+    else
+    {
+        self.nodeathragdoll = 1;
+    }
 
     self playsound( "wpn_mgun_dual_sizzle" );
 
