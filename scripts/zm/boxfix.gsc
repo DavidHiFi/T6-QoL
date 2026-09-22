@@ -74,7 +74,64 @@
 init()
 {
     zmqol_blundergat_register();
+    zmqol_paralyzer_register();
     level thread zmqol_boxfix_think();
+}
+
+// ============================================================================
+//  zmqol_paralyzer_register  -  BURIED'S PARALYZER, OFF BURIED     (v2.17.35)
+//
+//  Art in zone_source\mod_paralyzer.zone, behaviour in scripts\zm\paralyzer.gsc
+//  (stock's _zm_weap_slowgun with its seven map-locked loadfx calls repointed
+//  at effects this mod already ships). Read either banner for the reasoning.
+//
+//  🛑 TWO MAPS REFUSE IT, and paralyzer.gsc::init() refuses on the same pair,
+//  so the weapon list and the behaviour can never disagree:
+//    zm_buried  already has the gun, registered by the map with its own values
+//               and already in the box (zm_buried.gsc:1236 include_weapon(
+//               "slowgun_zm", 1 )). Registering again would rebuild the struct
+//               and run the core init twice.
+//    zm_tomb    Origins' ACTOR clientfield set is 31 of 32 stock and this gun
+//               wants 8 of them (slowgun_fx 3 + anim_rate 5). TranZit and Die
+//               Rise sit at 4-5, Nuketown 4, Mob 11-13.
+//
+//  📝 THE HINT IS THE GUN'S OWN NAME, NOT STOCK'S BOX STRING. Buried passes
+//  &"ZOMBIE_WEAPON_SLOWGUN", which is NOT in en_patch_zm.ff - dumped that
+//  zone's .str and it is absent, so off Buried it would draw as a raw token.
+//  &"ZMWEAPON_PARALYZER" is in there (it is the defs' own displayName) and
+//  reads "Paralyzer".
+//
+//  📝 Cost and vox are Buried's own (zm_buried.gsc:1157), as is the
+//  one-per-match limit on both halves.
+// ============================================================================
+zmqol_paralyzer_register()
+{
+    //  🛑 getdvar( "mapname" ), NOT level.script, and the client twin reads the
+    //  same dvar. Two sides gating one registration on two different sources is
+    //  exactly how navcard_held desynced (see zm_expanded.csc's banner on it):
+    //  they agree almost always, and the day they do not, one VM registers
+    //  fields the other has not and everybody is dropped.
+    str_map = getdvar( "mapname" );
+
+    if ( str_map == "zm_buried" || str_map == "zm_tomb" )
+    {
+        return;
+    }
+
+    precacheitem( "slowgun_zm" );
+    precacheitem( "slowgun_upgraded_zm" );
+
+    include_weapon( "slowgun_zm" );                 //  in_box defaults to 1
+    include_weapon( "slowgun_upgraded_zm", 0 );
+
+    if ( isdefined( level.zombie_weapons ) && isdefined( level.zombie_weapons[ "slowgun_zm" ] ) )
+    {
+        return;
+    }
+
+    add_zombie_weapon( "slowgun_zm", "slowgun_upgraded_zm", &"ZMWEAPON_PARALYZER", 10, "wpck_paralyzer", "", undefined );
+    add_limited_weapon( "slowgun_zm", 1 );
+    add_limited_weapon( "slowgun_upgraded_zm", 1 );
 }
 
 // ============================================================================
@@ -144,6 +201,11 @@ zmqol_boxfix_forced_names()
     //  registered it wherever this script runs. On Mob the map registered it
     //  first and this only holds the flag it already had.
     a[a.size] = "blundergat_zm";
+
+    //  Buried and Origins are skipped by zmqol_paralyzer_register(); naming it
+    //  here anyway is harmless because zmqol_boxfix_set() is isdefined-guarded,
+    //  and on Buried the flag it would assert is the one the map already set.
+    a[a.size] = "slowgun_zm";
 
     return a;
 }
