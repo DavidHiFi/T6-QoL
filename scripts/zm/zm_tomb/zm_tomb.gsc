@@ -1742,9 +1742,7 @@ added_weapons()
         include_weapon( "uzi_upgraded_zm", 0 );
         add_zombie_weapon( "uzi_zm", "uzi_upgraded_zm", &"ZOMBIE_WEAPON_UZI", 1500, "wpck_smg", "", undefined );
 
-        include_weapon( "ak47_zm" );
-        include_weapon( "ak47_upgraded_zm", 0 );
-        add_zombie_weapon( "ak47_zm", "ak47_upgraded_zm", &"ZOMBIE_WEAPON_AK47", 500, "wpck_mg", "", undefined, 1 );
+        //  AK-47 cut here - see the v2.17.36 banner below.
 
         include_weapon( "minigun_alcatraz_zm" );
         include_weapon( "minigun_alcatraz_upgraded_zm", 0 );
@@ -1762,13 +1760,40 @@ added_weapons()
         include_weapon( "an94_upgraded_zm", 0 );
         add_zombie_weapon( "an94_zm", "an94_upgraded_zm", &"ZOMBIE_WEAPON_AN94", 1200, "", "", undefined );
 
-        include_weapon( "lsat_zm" );
-        include_weapon( "lsat_upgraded_zm", 0 );
-        add_zombie_weapon( "lsat_zm", "lsat_upgraded_zm", &"ZOMBIE_WEAPON_LSAT", 2000, "wpck_lsat", "", undefined, 1 );
-
-        include_weapon( "svu_zm" );
-        include_weapon( "svu_upgraded_zm", 0 );
-        add_zombie_weapon( "svu_zm", "svu_upgraded_zm", &"ZOMBIE_WEAPON_SVU", 1000, "wpck_svuas", "", undefined );
+        // ======================================================================
+        //  🛑 v2.17.36 - AK-47, LSAT AND SVU ARE CUT ON ORIGINS, BY USER CHOICE
+        //  (2026-09-23), TO PAY FOR THE FOUR BLACK OPS 1 GUNS.
+        //
+        //  The four BO1 guns (M60, L96A1, Browning HP, RPG-7) cost 8 precache
+        //  slots - 2 each, base + upgraded - and v2.15.3 held all four back
+        //  because the seven pairs cut in v2.14.4 left only FIVE spare. The
+        //  user chose which three to give up rather than go without the guns.
+        //
+        //  The arithmetic, same method as v2.14.4 and v2.15.3:
+        //      5 spare + 3 pairs cut x 2 = 11 available
+        //      the four BO1 guns              -8
+        //      margin                          3
+        //  v2.15.3 rejected a margin of 1 as "not a margin"; three is the same
+        //  headroom v2.14.4 shipped and booted on.
+        //
+        //  ⚠️ WHAT THE PLAYER LOSES, PLAINLY: on Origins - every location,
+        //  classic and survival - the box no longer offers the AK-47, the LSAT
+        //  or the SVU. It now offers the M60, the L96A1, the Browning HP and
+        //  the RPG-7. Every other map is untouched: the AK-47, LSAT and SVU
+        //  are cut HERE only, and the BO1 four were already on all five others.
+        //
+        //  🛑 zm_tomb.csc::include_weapons() CUTS THE SAME THREE. Its
+        //  include_weapon ends in addzombieboxweapon( w, getweaponmodel( w ), ...)
+        //  - a model lookup on a weapon nothing precached, which is the as50_zm
+        //  client crash. Change one list, change both. Likewise the BO1 four are
+        //  ungated in BOTH quality_of_life.gsc and zm_expanded.csc.
+        //
+        //  🛑 NOT PROVEN UNTIL ORIGINS BOOTS. Every previous slot estimate on
+        //  this map was wrong in the same direction, and the failure is always
+        //  "unknown weapon '<an innocent gun>'" inside include_zombie_weapon,
+        //  never the gun you just added. Read the crashdump .txt, not the log.
+        // ======================================================================
+        println( "[zm_qol] origins: ak47/lsat/svu cut - 6 precache slot(s) freed for the four BO1 guns (v2.17.36)" );
 
         include_weapon( "xm8_zm" );
         include_weapon( "xm8_upgraded_zm", 0 );

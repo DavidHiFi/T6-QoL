@@ -11698,15 +11698,16 @@ zmqol_mp_weapons_init()
     //  both. .give needs no guard: every give path already tests
     //  isdefined( level.zombie_weapons[...] ) before offering a name.
     // ========================================================================
-    if ( !isdefined( level.script ) || level.script != "zm_tomb" )
-    {
-        zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-        zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
-        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
-        zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
-    }
-    else
-        println( "[zm_qol] origins: the four Black Ops 1 box guns are held back - 8 precache slot(s) freed (v2.15.3)" );
+    //  v2.17.36 - THE ORIGINS HOLD-BACK ABOVE IS LIFTED. The four now ship on
+    //  every map, Origins included. The 8 slots they cost are paid for by
+    //  cutting the AK-47, LSAT and SVU there - the user's choice of which
+    //  three to give up, 2026-09-23. The arithmetic and the warning live in
+    //  scripts\zm\zm_tomb\zm_tomb.gsc's v2.17.36 banner; read it before
+    //  touching either list. zm_expanded.csc's matching gate is lifted too.
+    zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
+    zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
+    zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+    zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
 
 
     // Reachable only via a PaP attachment or as a projectile - never a box

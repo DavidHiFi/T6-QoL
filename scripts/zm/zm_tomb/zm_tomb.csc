@@ -378,8 +378,7 @@ include_weapons()
     // Added weapons
     include_weapon( "uzi_zm" );
     include_weapon( "uzi_upgraded_zm", 0 );
-    include_weapon( "ak47_zm" );
-    include_weapon( "ak47_upgraded_zm", 0 );
+    //  AK-47 cut - twin of zm_tomb.gsc's v2.17.36 banner.
     include_weapon( "minigun_alcatraz_zm" );
     include_weapon( "minigun_alcatraz_upgraded_zm", 0 );
     include_weapon( "hk416_zm" );
@@ -388,10 +387,9 @@ include_weapons()
     include_weapon( "rnma_upgraded_zm", 0 );
     include_weapon( "an94_zm" ); 
     include_weapon( "an94_upgraded_zm", 0 );
-    include_weapon( "lsat_zm" );
-    include_weapon( "lsat_upgraded_zm", 0 );
-    include_weapon( "svu_zm" );
-    include_weapon( "svu_upgraded_zm", 0 );
+    //  LSAT and SVU cut - twin of zm_tomb.gsc's v2.17.36 banner. The server
+    //  registers neither on this map now; including them here would hand
+    //  addzombieboxweapon() a model lookup on an unprecached weapon.
     // Tranzit weapons
     include_weapon( "xm8_zm" );
     include_weapon( "xm8_upgraded_zm", 0 );
