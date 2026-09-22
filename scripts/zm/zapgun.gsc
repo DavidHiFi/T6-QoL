@@ -749,6 +749,43 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
         //  zone_source\mod_wonderweapons.zone) with the twelve Moon microwave
         //  xanims behind them, so the anim branch is reachable where those load
         //  and instant_explode is the honest fallback everywhere else.
+        //  ====================================================================
+        //  🛑 v2.17.42 - THE FALLBACK SETS a.nodeath = 1, NOT undefined, AND
+        //  THAT IS THE WHOLE REASON THE FLOAT NEVER CAME BACK.
+        //
+        //  User, 2026-09-23: *"they just fall over and die and then they pop ...
+        //  they're meant to float up into the sky"*, and the log agreed - 15
+        //  kills in that session, 15 x "fallback:no-sizzle-asd".
+        //
+        //  🌟 THE FLOAT WAS NEVER THE moveto. It came from the sizzle DEATH
+        //  ANIMATION, which is why the user last saw it while the .asd route
+        //  was reachable. With the .asd gone (it cannot be re-enabled alone -
+        //  see the aitypes note) every kill lands here, and this branch handed
+        //  the corpse to stock's ordinary death path by clearing a.nodeath:
+        //
+        //      zm_death.gsc::main()
+        //        if ( isDefined( self.a.nodeath ) && self.a.nodeath == 1 )
+        //            { wait 3; return; }          <- rigid, script-owned
+        //        self unlink();
+        //        self animmode( "gravity" );      <- FALLS OVER, pinned down
+        //        self setanimstatefromasd( self.deathanim, ... );
+        //
+        //  animmode( "gravity" ) is what beats the lift. A moveto cannot raise
+        //  a body the gravity mode owns, so zmqol_mgun_microwave_burst()'s
+        //  moveto has been issuing into the void on every fallback kill - the
+        //  v2.16.1 lift, the v2.17.35 restore and the nodeathragdoll fix were
+        //  all correct and all invisible behind this one line.
+        //
+        //  nodeath = 1 returns from main() before unlink, before gravity and
+        //  before the death anim, so the corpse holds its last pose and stays
+        //  script-driven - exactly what "hold rigid, rise, swell, burst" needs,
+        //  and exactly what the sizzle anim used to provide. do_gib() is
+        //  skipped with it, which agrees with the no_gib / head_gibbed flags
+        //  this file already sets before the damage.
+        //
+        //  📝 main() returns at wait 3, so the burst must finish inside 3s.
+        //  It does: 0.4 + 1.6 rise + 0.8 hold = 2.8s to the pop.
+        //  ====================================================================
         if ( !self.isdog )
         {
             if ( self.has_legs )
@@ -757,7 +794,7 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
                     self.deathanim = "zm_death_sizzle";
                 else
                 {
-                    self.a.nodeath = undefined;
+                    self.a.nodeath = 1;
                     instant_explode = 1;
                 }
             }
@@ -765,19 +802,25 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
                 self.deathanim = "zm_death_sizzle_crawl";
             else
             {
-                self.a.nodeath = undefined;
+                self.a.nodeath = 1;
                 instant_explode = 1;
             }
         }
         else
         {
-            self.a.nodeath = undefined;
+            self.a.nodeath = 1;
             instant_explode = 1;
         }
 
+        //  🛑 A TRAVERSING OR CEILING ZOMBIE KEEPS STOCK'S PATH AND GETS NO
+        //  LIFT. It may be linked to a traversal mover, and nodeath = 1 skips
+        //  the unlink() that frees it; raising one mid-traversal is also the
+        //  wrong picture. These die the ordinary way and still pop.
         if ( is_true( self.is_traversing ) || is_true( self.in_the_ceiling ) )
         {
             self.deathanim = undefined;
+            self.a.nodeath = undefined;
+            self.zmqol_mgun_no_lift = 1;
             instant_explode = 1;
         }
 
@@ -1202,12 +1245,20 @@ zmqol_mgun_microwave_burst()
     //  size - the same shape the anim branch has on Moon.
     n_lift = getdvarintdefault( "zmqol_mgun_lift", 42 );
 
+    if ( is_true( self.zmqol_mgun_no_lift ) )
+        n_lift = 0;
+
     if ( n_lift > 0 )
         self moveto( self.origin + ( 0, 0, n_lift ), 1.6, 0.45, 0.45 );
 
-    //  Hold for the rest of Moon's 2.5 s swell so the burst lands at the top
-    //  of the rise, at full size.
-    wait 2.1;
+    //  🛑 v2.17.42 - 0.8, NOT 2.1, AND THE TOTAL IS WHAT MATTERS.
+    //  The fallback now runs with a.nodeath = 1, and zm_death.gsc::main()
+    //  returns at `wait 3` - after that the corpse is nobody's. The whole
+    //  burst has to land inside that window: 0.4 + 1.6 rise + 0.8 = 2.8 s.
+    //  It also sits better against Moon's 2.5 s swell than 4.1 s did, so the
+    //  body bursts at the top of the rise at full size instead of hanging
+    //  there fully inflated for a second and a half first.
+    wait 0.8;
 
     if ( !isdefined( self ) )
         return;
