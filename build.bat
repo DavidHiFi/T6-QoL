@@ -230,6 +230,32 @@ if errorlevel 1 (
 ) else (
     "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$p=$env:PROJ_DIR0.TrimEnd('\'); $b=''; $c=''; try { $b=(& git -C $p rev-parse --abbrev-ref HEAD 2>$null); $c=(& git -C $p rev-parse --short HEAD 2>$null) } catch { }; @($p, ('branch ' + $b + '  commit ' + $c), (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) | Set-Content -LiteralPath (Join-Path $env:PLUTO_DIR 'deployed-by.txt') -Encoding ASCII"
 )
+
+REM ----------------------------------------------------------------------------
+REM  THE TEXTURE PACK, AND WHY THE DEPLOY HAS TO DO THIS EVERY TIME
+REM ----------------------------------------------------------------------------
+REM  The loose textures cannot load from mod.iwd: stock images stream from .ipak
+REM  archives, an ipak outranks every mod-side path, and storage\t6\images wins
+REM  only because Plutonium patches its image loader to look there first. So the
+REM  PATH stays and the FILES live in the mod - images\ here, mirrored into
+REM  <storage>\mods\zm_qol\images, with storage\t6\images an NTFS junction onto
+REM  that folder.
+REM
+REM  v2.17.37 - THIS MOVED OUT OF THE INSTALLER. qol-installer.ps1 made the
+REM  junction at INSTALL time only, so it existed until something replaced the
+REM  folder and then never came back. On 2026-09-22 storage\t6\images was simply
+REM  gone, the deployed mod copy was 282 files short of this tree, and the user
+REM  reported "some textures load but not all" - the missing ones being the three
+REM  font sheets (devfonts, distfont, gamefonts_pc_720). Nothing rebuilt it
+REM  because no build step owned it. Now the deploy does, so a plain build.bat
+REM  repairs it.
+REM
+REM  A junction, not a symlink: junctions need no elevation. If the path is a
+REM  real folder its contents are carried into the mod first, so a controller
+REM  pack or a hand-added texture is never lost.
+echo    syncing the texture pack and its images junction...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path $env:PROJ_DIR 'images'; if(-not (Test-Path -LiteralPath $src)){ Write-Host '    [skip] no images\ folder in this tree'; exit 0 }; $modImg=Join-Path $env:PLUTO_DIR 'images'; if(-not (Test-Path -LiteralPath $modImg)){ New-Item -ItemType Directory -Force -Path $modImg | Out-Null }; $n=0; Get-ChildItem -LiteralPath $src -File | ForEach-Object { $d=Join-Path $modImg $_.Name; if((-not (Test-Path -LiteralPath $d)) -or ((Get-Item -LiteralPath $d).Length -ne $_.Length)){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $n++ } }; $img=Join-Path (Split-Path $env:PLUTO_DIR -Parent | Split-Path -Parent) 'images'; $link=$null; if(Test-Path -LiteralPath $img){ $link=Get-Item -LiteralPath $img -Force }; $isJ=$link -and ($link.Attributes -band [IO.FileAttributes]::ReparsePoint); if(-not $isJ){ $carried=0; if($link){ Get-ChildItem -LiteralPath $img -File | ForEach-Object { $d=Join-Path $modImg $_.Name; if(-not (Test-Path -LiteralPath $d)){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $carried++ } }; Remove-Item -LiteralPath $img -Recurse -Force }; try { New-Item -ItemType Junction -Path $img -Target $modImg -ErrorAction Stop | Out-Null; Write-Host ('    [ok] images junction created (carried ' + $carried + ')') } catch { Write-Host '    [warn] could not create the images junction - loose textures will not load' } } ; Write-Host ('    [ok] ' + $n + ' texture(s) refreshed, ' + (Get-ChildItem -LiteralPath $modImg -File).Count + ' in the mod')"
+
 echo.
 echo.
 echo [6/9] Refreshing the installer's own bundled copy:
