@@ -189,6 +189,20 @@ echo [0e/9] Pre-flight: wonder-weapon animation chain...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1"
 if errorlevel 1 goto wwanimfail
 
+REM ============================================================================
+REM  [0f/9] Pre-flight: the menu art is mod-gated                v2.17.45
+REM ----------------------------------------------------------------------------
+REM  storage\t6\images is a junction into the deployed mod's images\ folder, so
+REM  everything in there is GLOBAL - stock game, other mods, nothing loaded. The
+REM  HD texture pack needs that; the main-menu art must never have it. The user
+REM  has rejected the loose route for this art twice, on 2026-09-14 and again on
+REM  2026-09-23 with a screenshot of the QoL title screen on an unmodded boot.
+REM  images_menu\ is the mod-gated home; pack_iwd.ps1 packs it into mod.iwd.
+REM ============================================================================
+echo [0f/9] Pre-flight: menu art is mod-gated...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1"
+if errorlevel 1 goto menuartfail
+
 REM  v2.11.8 (user, 2026-09-04): the nine camo_zmb_dlc2* textures are NEVER copied into
 REM  images\ (= mod.iwd). They are the ZM Dark Matter animated Pack-a-Punch camo, and
 REM  they are delivered ONLY as loose by-name files in %LOCALAPPDATA%\Plutonium\storage\r
@@ -220,6 +234,11 @@ REM  files that never reached the build before - the texture sync compared file
 REM  length and silently shipped nothing for weeks. Prove it after the pack.
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1" -PostPack
 if errorlevel 1 goto wwanimfail
+
+REM  Same reasoning for the menu art: prove the 20 textures are actually inside
+REM  the archive, under images/, and not merely sitting in images_menu\.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1" -PostPack
+if errorlevel 1 goto menuartfail
 
 echo.
 echo [3/9] Verifying all 5 source files are present...
@@ -309,8 +328,32 @@ REM  Length is still the fast path; the SHA1 only runs when lengths match.
 REM  The hash is .NET's SHA1 and NOT Get-FileHash: the shell this script calls
 REM  raises CommandNotFoundException for that cmdlet, which left $stale true and
 REM  silently re-copied all 1,252 textures on every deploy instead of erroring.
+REM  v2.17.45 - EVICT THE MENU ART FROM THE JUNCTION BEFORE SYNCING.
+REM  storage\t6\images is a junction into the deployed mod's images\ folder, and
+REM  that junction is GLOBAL - it applies to the stock game and to every other
+REM  mod, with nothing loaded. The menu art must not be reachable that way; it
+REM  ships inside mod.iwd instead, which is only mounted while this mod is
+REM  loaded. See images_menu\ in pack_iwd.ps1.
+REM
+REM  This exists because the sync below only ever COPIES. It has no delete pass,
+REM  so moving a file out of images\ in the repo leaves the deployed copy sitting
+REM  in the junction forever, still overriding the stock game. That is exactly
+REM  how the art came back on 2026-09-23 after being mod-gated on 2026-09-14.
+REM  The list is read from images_menu\ itself so it cannot drift from the pack.
+echo    evicting menu art from the global images junction...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$menu=Join-Path $env:PROJ_DIR 'images_menu'; if(-not (Test-Path -LiteralPath $menu)){ Write-Host '    [skip] no images_menu folder'; exit 0 }; $modImg=Join-Path $env:PLUTO_DIR 'images'; $n=0; Get-ChildItem -LiteralPath $menu -Filter *.iwi -File | ForEach-Object { foreach($d in @((Join-Path $modImg $_.Name), (Join-Path (Join-Path $env:PROJ_DIR 'images') $_.Name))){ if(Test-Path -LiteralPath $d){ Remove-Item -LiteralPath $d -Force; $n++ } } }; Write-Host ('    [ok] ' + $n + ' menu texture(s) evicted; they ship inside mod.iwd')"
+if errorlevel 1 goto copyfail
+
 echo    syncing the texture pack and its images junction...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path $env:PROJ_DIR 'images'; if(-not (Test-Path -LiteralPath $src)){ Write-Host '    [skip] no images\ folder in this tree'; exit 0 }; $modImg=Join-Path $env:PLUTO_DIR 'images'; if(-not (Test-Path -LiteralPath $modImg)){ New-Item -ItemType Directory -Force -Path $modImg | Out-Null }; $sha=[Security.Cryptography.SHA1]::Create(); $H={ param($p) $fs=[IO.File]::OpenRead($p); try { [BitConverter]::ToString($sha.ComputeHash($fs)) } finally { $fs.Close() } }; $n=0; Get-ChildItem -LiteralPath $src -File | ForEach-Object { $d=Join-Path $modImg $_.Name; $stale=$true; if(Test-Path -LiteralPath $d){ if((Get-Item -LiteralPath $d).Length -eq $_.Length){ $stale=(&$H $d) -ne (&$H $_.FullName) } } ; if($stale){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $n++ } }; $img=Join-Path (Split-Path $env:PLUTO_DIR -Parent | Split-Path -Parent) 'images'; $link=$null; if(Test-Path -LiteralPath $img){ $link=Get-Item -LiteralPath $img -Force }; $isJ=$link -and ($link.Attributes -band [IO.FileAttributes]::ReparsePoint); if(-not $isJ){ $carried=0; if($link){ Get-ChildItem -LiteralPath $img -File | ForEach-Object { $d=Join-Path $modImg $_.Name; if(-not (Test-Path -LiteralPath $d)){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $carried++ } }; Remove-Item -LiteralPath $img -Recurse -Force }; try { New-Item -ItemType Junction -Path $img -Target $modImg -ErrorAction Stop | Out-Null; Write-Host ('    [ok] images junction created (carried ' + $carried + ')') } catch { Write-Host '    [warn] could not create the images junction - loose textures will not load' } } ; Write-Host ('    [ok] ' + $n + ' texture(s) refreshed, ' + (Get-ChildItem -LiteralPath $modImg -File).Count + ' in the mod')"
+
+REM  Final word on the menu art, now that the eviction has run and PLUTO_DIR
+REM  points at the deployed mod: prove the junction itself is clean. This is the
+REM  check that would have caught 2026-09-23 - the repo was fine, the deployed
+REM  folder was not. -CheckDeployed is separate from -PostPack precisely because
+REM  the call after the repack runs BEFORE the eviction.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1" -PostPack -CheckDeployed
+if errorlevel 1 goto menuartfail
 
 echo.
 echo.
@@ -497,6 +540,16 @@ echo   BUILD STOPPED: a weapon def no longer carries the pre-nerf recoil values.
 echo   This mod ships Treyarch's PRE-PATCH recoil and nothing in game switches it,
 echo   so a changed number here ships the patched recoil to every player silently.
 echo   Put the value back, or update the table in tools\check-recoil-prenerf.ps1.
+if not defined OFFLINE pause
+exit /b 1
+
+:menuartfail
+echo.
+echo   BUILD STOPPED: the main-menu art is not mod-gated.
+echo   A menu texture in images\ is mirrored into storage\t6\images, which is a
+echo   GLOBAL junction - the art would show on the stock game and under every
+echo   other mod, with nothing loaded. It belongs in images_menu\, which is
+echo   packed into mod.iwd and mounted only while this mod is loaded.
 if not defined OFFLINE pause
 exit /b 1
 
