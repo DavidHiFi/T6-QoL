@@ -33,8 +33,9 @@ REM ============================================================================
 set "PROJ=%~dp0"
 if "%PROJ:~-1%"=="\" set "PROJ=%PROJ:~0,-1%"
 
-REM  Check all registered cross-map weapon dependencies before linking.
-python "%PROJ%\tools\check-weapon-port.py"
+REM  Check all registered cross-map weapon sources before linking. The readback
+REM  half runs again after the link, against the mod.ff this run produced.
+python "%PROJ%\tools\check-weapon-port.py" --source-only
 if errorlevel 1 exit /b 1
 
 REM --- OpenAssetTools ---------------------------------------------------------
@@ -570,5 +571,15 @@ for %%B in (mod.all.sabl mod.all.sabs) do (
 rmdir /s /q "%PROJ%\zone_out"
 
 for %%F in ("%PROJ%\mod.ff") do echo   mod.ff rebuilt: %%~zF bytes
+
+REM  Read the new mod.ff back: every model, fx, tracer and icon a registered
+REM  port names must be in it or on every stock map, and every image must have
+REM  pixels in a bank the client opens. The Blundergat linked clean without its
+REM  armor attachment and muzzle flashes; this is the check that sees that.
+python "%PROJ%\tools\check-weapon-port.py" --pixels
+if errorlevel 1 (
+    echo   ERROR: mod.ff was rebuilt but a registered weapon port is incomplete.
+    exit /b 1
+)
 echo   Now run build.bat to repack and deploy.
 exit /b 0

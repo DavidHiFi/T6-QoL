@@ -7,7 +7,9 @@
       "camo": "camo_qol_blundergat",
       "camoBaseMaterials": ["mc/mtl_t6_wpn_zmb_blundergat"],
       "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["wpn_blundergat_", "fly_blundergat_"]
+      "soundPrefixes": ["wpn_blundergat_", "fly_blundergat_"],
+      "donorZone": "zm_prison",
+      "imageMatch": ["mtl_t6_wpn_zmb_blundergat"]
     }
   ]
 }
