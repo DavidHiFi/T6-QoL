@@ -14,6 +14,9 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((2114, 248, 2880), (0, 150, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((2064, 162, 2880), (0, 150, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((2014, 75, 2880), (0, 150, 0), zone, 2);
+	//  Fix 8: untagged spares (never half-filtered) — midpoints of existing points.
+	scripts\zm\replaced\utility::register_map_spawn((1959, 280, 2880), (0, 330, 0), zone);
+	scripts\zm\replaced\utility::register_map_spawn((2089, 205, 2880), (0, 150, 0), zone);
 }
 
 precache()

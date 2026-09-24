@@ -14,6 +14,9 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((1750, 1906, 3415), (0, 180, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((1750, 1806, 3415), (0, 180, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((1750, 1706, 3415), (0, 180, 0), zone, 2);
+	//  Fix 8: untagged spares (never half-filtered) — midpoints of existing points.
+	scripts\zm\replaced\utility::register_map_spawn((1675, 2006, 3415), (0, 0, 0), zone);
+	scripts\zm\replaced\utility::register_map_spawn((1675, 1706, 3415), (0, 0, 0), zone);
 
 	level.struct_class_names["targetname"]["intermission"] = [];
 

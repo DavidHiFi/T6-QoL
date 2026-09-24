@@ -124,6 +124,12 @@ Black Ops II Zombies mod; the T4, T5 and T7 releases use the same menu.
    ·  Everything can be removed again from the same menu, one
       piece at a time.
 
+   ·  CO-OP: every player needs this mod, and versions must match
+      exactly (mismatched mod.ff causes animation errors). Online,
+      each player picks Zombies > Mods > Quality Of Life by hand.
+      If anyone uses the HD Texture Pack, everyone should, or guns
+      look different mid-match.
 
- ─────────────────────────────────────────────────────────────
- github.com/DavidHiFi/T6-QoL
+
+  ─────────────────────────────────────────────────────────────
+  github.com/DavidHiFi/T6-QoL

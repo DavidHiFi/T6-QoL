@@ -14,6 +14,9 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((-985, 521, 104), (0, 235, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((-1286, 108, 102), (0, 55, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((-1473, -474, 104), (0, 80, 0), zone, 2);
+	//  Fix 8: untagged spares (never half-filtered) — midpoints of nearby same-side points.
+	scripts\zm\replaced\utility::register_map_spawn((1506, 582, 118), (0, 315, 0), zone);
+	scripts\zm\replaced\utility::register_map_spawn((-987, 671, 105), (0, 235, 0), zone);
 
 	// --- perk machines: Reimagined's own mapents positions -------------------
 	//  This mod ships no zm_tomb mapents and the stock machines are tagged

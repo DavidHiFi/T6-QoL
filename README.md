@@ -86,6 +86,14 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 > [!WARNING]
 > **Known issue.** Using **INSTANT EXIT** straight after **FAST RESTART** can cause a `LUI_ERROR`. This comes from Plutonium's `MainMenuOG.lua`, not the mod. **INSTANT EXIT** works normally otherwise.
 
+### Playing co-op (2–8 players)
+
+- **Every player needs the mod installed** into their own Plutonium profile.
+- **Versions must match exactly.** `mod.ff` loads before the map fastfiles and first-load wins, so a mismatch produces `animation ... not defined in anim tree` or a silent feature split.
+- **The optional HD Texture Pack changes what guns look like** (animated Pack-a-Punch camo and higher-res skins). Either everyone installs it or nobody does, or players see different weapons in the same match.
+- **Online co-op:** each player must pick **Zombies → Mods → Quality Of Life** by hand. `fs_game` auto-load only works on the LAN route.
+- Personal HUD preferences can be set per player in-game with `.my <option> <value>` (e.g. `.my hud_master 0` is yours only; `.my hud_master clear` returns to the lobby setting). Match rules (perk limit, prices, etc.) stay host-controlled.
+
 ---
 
 <details>
