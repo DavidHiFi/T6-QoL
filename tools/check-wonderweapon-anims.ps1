@@ -144,6 +144,36 @@ if (-not (Test-Path -LiteralPath $zap)) {
     }
 }
 
+# --- 5b. mod.ff is not stale against the zone source ------------------------
+#  THE HOLE THIS CLOSES, found by writing the commit message for c628139.
+#  Everything above reads SOURCE - the zone text, the .asd, the raw aitypes.
+#  None of it proves the .asd rawfiles are in the linked mod.ff, and they only
+#  get there via build_ff.bat. build.bat does NOT relink. So a tree with the
+#  zone lines uncommented but a mod.ff built before them passes every check
+#  above, deploys, and ships both wonder weapons dead with the gate green.
+#
+#  mod.ff is TAffu100 with custom compression - it cannot be read without a
+#  real unlinker, so this compares timestamps instead. That is a proxy, not a
+#  proof: a fresh git checkout rewrites mtimes and can mask a genuine staleness.
+#  It is one-directional on purpose - it can tell you to relink when you need
+#  not have, which costs a build; it cannot tell you not to when you must.
+$ff = Join-Path $proj 'mod.ff'
+if (Test-Path -LiteralPath $ff) {
+    $ffTime = (Get-Item -LiteralPath $ff).LastWriteTimeUtc
+    $newer = @()
+    $sources = @(Join-Path $proj 'zone_source\mod_wonderweapons.zone')
+    if (Test-Path -LiteralPath $asdDir) {
+        $sources += (Get-ChildItem -LiteralPath $asdDir -Filter *.asd -File | ForEach-Object { $_.FullName })
+    }
+    foreach ($s in $sources) {
+        if (-not (Test-Path -LiteralPath $s)) { continue }
+        if ((Get-Item -LiteralPath $s).LastWriteTimeUtc -gt $ffTime) { $newer += (Split-Path $s -Leaf) }
+    }
+    if ($newer.Count -gt 0) {
+        $fail += "mod.ff is older than $($newer.Count) anim source(s) - run build_ff.bat, build.bat does not relink: $(($newer | Select-Object -First 4) -join ', ')"
+    }
+}
+
 # --- 6. the freezegun still has its death path ------------------------------
 $fg = Join-Path $proj 'maps\mp\zombies\_zm_weap_freezegun.gsc'
 if (-not (Test-Path -LiteralPath $fg)) {
