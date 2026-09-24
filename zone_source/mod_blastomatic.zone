@@ -1,0 +1,88 @@
+// ============================================================================
+//  mod_blastomatic.zone  -  THE BLAST-O-MATIC, ON EVERY MAP
+//
+//  User, 2026-09-25: port the Black Ops Cold War Gallo SA12 "Blast-O-Matic"
+//  mastercraft into the mod, with its sounds, animations, Pack-a-Punch camos
+//  (stock and animated), on every map it fits.
+//
+//  SOURCE: SadSlothXL's t6-ports, Weapons/zm/blasrtomatic (commit e7043b72,
+//  "BO:CW Blast-O-Matic"). Sloth's own README asks for credit; the README's
+//  credits carry it. Nothing below comes from a retail fastfile - every model,
+//  anim, material, image and sound is Sloth's raw source, read off disk by the
+//  Linker from zone_assets\, so no --load in build_ff.bat supplies any of it
+//  and no stock asset changes owner.
+//
+//  WHAT IS DECLARED AND WHY:
+//    4 xmodels   view + world, base and Pack-a-Punched. Raw GLB, the route
+//                qolwf_vending_diesel_magic already ships on (mod_locations).
+//                The world models carry 4 LODs each; the materials and images
+//                come along as xmodel sub-assets.
+//   27 xanims    every *Anim key and dtp_* the two defs name, read out of the
+//                defs, not typed. vm_t9_gallo_inspect is in Sloth's tree but
+//                no key names it, so it is not staged.
+//    1 camo      camo_t9_gallo. A name no retail fastfile defines, so no map
+//                can shadow it (the ERROR_CATALOGUE 50 trap). Slots 3, 8 and
+//                12 all map the eleven camo-able parts - Sloth's slots 8 and
+//                12 skipped the forend and now use the body's camo material
+//                there. A raw camo JSON is INERT unless the zone declares it.
+//    1 bank      no line needed: the 29 t9_gallo_* alias rows live in
+//                soundbank\mod.all.aliases.additions.csv and ride in mod.all.
+//
+//  WHAT IS NOT DECLARED:
+//    - the two weapon defs. They ship raw in weapons\zm\ (blastomatic_zm
+//      19,719 B, blastomatic_upgraded_zm 19,768 B, both under the 20,480
+//      ceiling after trim 1), the mechanism every ported gun uses.
+//    - fx. The defs name fx_muz_sg_buck_flash_1p/_3p (base),
+//      muzzleflashes_zmb_ug/fx_zmb_muz_buck_1p/_3p (PaP) and
+//      shellejects/fx_shotgun. Unlinker --list finds all five in all six map
+//      fastfiles AND in mod.ff already, so nothing is missing on any map.
+//    - the icon (menu_mp_weapons_870mcs, every map), tracer "shotgun" and
+//      rumble shotgun_fire (every map + mod.ff), reticle_side_small (mod.ff),
+//      the three techsets (mod.ff / every map) and camo_off_pattern (mod.ff).
+//
+//  🛑 THE CHAMBER'S CRYSTAL. Sloth's power materials named Origins' crystal
+//  images (mtl_p6_zm_tm_crystal_n, ~-gmtl_p6_zm_tm_crystal_bubbles_c,
+//  ~-gmtl_p6_zm_tm_crystal_c). Those are in zm_tomb.ff ONLY and are streamed
+//  ("Could not find data" from Unlinker), so they have no pixels off Origins,
+//  and declaring them here would have made mod.ff own three zm_tomb names.
+//  The materials now point at qolwf_crystal_n / _bub_c / _c, the same crystal
+//  art this mod already ships WITH pixels for its Wunderfizz.
+// ============================================================================
+
+// --- view / world models --------------------------------------------------
+xmodel,vm_t9_gallo_blastomatic
+xmodel,vm_t9_gallo_blastomatic_pap
+xmodel,wm_t9_gallo_blastomatic
+xmodel,wm_t9_gallo_blastomatic_pap
+
+// --- Pack-a-Punch camo: slots 3 (index 39), 8 (40, animated), 12 (45) -----
+camo,camo_t9_gallo
+
+// --- every view-model animation the two defs name (27) --------------------
+xanim,vm_t9_gallo_ads_down
+xanim,vm_t9_gallo_ads_up
+xanim,vm_t9_gallo_crawl_b
+xanim,vm_t9_gallo_crawl_f
+xanim,vm_t9_gallo_crawl_in
+xanim,vm_t9_gallo_crawl_l
+xanim,vm_t9_gallo_crawl_out
+xanim,vm_t9_gallo_crawl_r
+xanim,vm_t9_gallo_d2p_in
+xanim,vm_t9_gallo_d2p_loop
+xanim,vm_t9_gallo_d2p_out
+xanim,vm_t9_gallo_drop
+xanim,vm_t9_gallo_drop_quick
+xanim,vm_t9_gallo_fire
+xanim,vm_t9_gallo_fire_ads
+xanim,vm_t9_gallo_fire_last
+xanim,vm_t9_gallo_fire_last_ads
+xanim,vm_t9_gallo_idle
+xanim,vm_t9_gallo_raise
+xanim,vm_t9_gallo_raise_first
+xanim,vm_t9_gallo_raise_quick
+xanim,vm_t9_gallo_reload_in
+xanim,vm_t9_gallo_reload_loop
+xanim,vm_t9_gallo_reload_out
+xanim,vm_t9_gallo_sprint_in
+xanim,vm_t9_gallo_sprint_loop
+xanim,vm_t9_gallo_sprint_out

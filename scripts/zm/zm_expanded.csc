@@ -268,6 +268,18 @@ zmqol_mp_weapons_init()
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_upgraded_zm", 0 );
 
+	//  ============================================================
+	//  THE BLAST-O-MATIC, SadSlothXL's Cold War Gallo SA12 mastercraft. Server
+	//  twin is scripts\zm\blastomatic.gsc; mod_blastomatic.zone has the assets.
+	//  Off Origins on the same test as the server, which has no precache slot
+	//  for it - a client include with no server precache is the as50_zm crash.
+	//  ============================================================
+	if ( !b_tomb )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "blastomatic_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "blastomatic_upgraded_zm", 0 );
+	}
+
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
 	//  its pickup model.
