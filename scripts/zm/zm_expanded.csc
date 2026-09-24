@@ -191,12 +191,18 @@ zmqol_mp_weapons_init()
 	//  registration with no client twin is a box result the client cannot draw,
 	//  and a client include with no server twin is the v2.14.27 Betty crash.
 	//
+	//  🛑 v2.17.37 - THE L96A1 IS NOW ON ORIGINS TOO, TRADED 1:1 FOR THE
+	//  XPR-50; the other three stay held back here to match the server.
+	//  quality_of_life.gsc carries the evidence: the M60 and Browning HP drag
+	//  attachment permutations the precache table pays for, so a "pair" is not
+	//  a fixed price and a net-zero swap of all four still overflowed Origins.
 	//  📝 A root .csc cannot read level.script (it is server state), so the map
 	//  test is getdvar( "mapname" ) - the same one the EMP gate below uses.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
+
 	if ( getdvar( "mapname" ) != "zm_tomb" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
 	}

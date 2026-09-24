@@ -11504,7 +11504,14 @@ zmqol_mp_weapons_init()
     //
     //  📝 WEAPON_AS50 is NOT shipped in mod.str: it already resolves from
     //  en_patch_zm.ff and en_code_post_gfx_zm.ff. Only the PaP name is ours.
-    zmqol_add_mp_weapon( "as50_zm",        "as50_upgraded_zm",        &"WEAPON_AS50",               1000, "sniper" );
+    //  v2.17.37 - the XPR-50 is OFF Origins. It is one of the four pairs the
+    //  user gave up to pay for the Black Ops 1 guns; zm_tomb.gsc's banner has
+    //  the arithmetic. It is gated here rather than in the map script because
+    //  this call is global, and on Origins zmqol_tomb_weapon() would swap it to
+    //  the private as50qol copy - zm_tomb.csc drops that twin to match.
+    //  No new symbol: isdefined is a builtin and level.script is a variable.
+    if ( !isdefined( level.script ) || level.script != "zm_tomb" )
+        zmqol_add_mp_weapon( "as50_zm",        "as50_upgraded_zm",        &"WEAPON_AS50",               1000, "sniper" );
 
     //  v2.9.18 - the campaign SPAS-12, user request 2026-08-31 ("SPAS-12 ...
     //  into the Mystery Box on all Zombie maps ... official BO1 Pack-a-Punch
@@ -11698,15 +11705,40 @@ zmqol_mp_weapons_init()
     //  both. .give needs no guard: every give path already tests
     //  isdefined( level.zombie_weapons[...] ) before offering a name.
     // ========================================================================
+    // ========================================================================
+    //  v2.17.37 - ORIGINS GETS THE L96A1 ONLY, TRADED 1:1 FOR THE XPR-50.
+    //  User's call 2026-09-24. The other three stay held back on zm_tomb.
+    //
+    //  🌟 A PAIR IS NOT A FIXED PRICE. Two boots settled this. v2.17.36 cut 3
+    //  pairs for the four guns (net +2) and died on box_init's FIRST precache;
+    //  the next build cut 4 pairs for four (net ZERO, by gun count) and still
+    //  died - three precaches further in, on rottweil72qol_upgraded_zm. Net
+    //  zero by pair count cannot overflow a table unless the incoming guns
+    //  cost MORE than the outgoing ones, and console_zm.log says why:
+    //
+    //      Couldn't find attachmentunique 'au_m60_none' ... _acog, _extclip,
+    //      _grip, _reflex, _silencer, _acog+grip, _grip+reflex   (8, M60)
+    //      Couldn't find attachmentunique 'au_browninghp_none' ... (3)
+    //
+    //  The M60 and the Browning HP drag attachment permutations the table pays
+    //  for; the L96A1 and the RPG-7 logged none. So "2 slots per gun" is only
+    //  true for a gun with no attachment spread - do not budget with it again.
+    //
+    //  The L96A1 is the cheap one and the one the user asked for by name, and
+    //  the XPR-50 it replaces is also a sniper, so the box keeps its shape.
+    //  Origins' real headroom stays 0-1 slots; this trade does not touch it.
+    //
+    //  🛑 zm_expanded.csc HOLDS BACK THE SAME THREE, on the same map test, and
+    //  zm_tomb.csc drops the as50qol twin. Change one list, change all of them.
+    // ========================================================================
+    zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
+
     if ( !isdefined( level.script ) || level.script != "zm_tomb" )
     {
         zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-        zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
         zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
         zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
     }
-    else
-        println( "[zm_qol] origins: the four Black Ops 1 box guns are held back - 8 precache slot(s) freed (v2.15.3)" );
 
 
     // Reachable only via a PaP attachment or as a projectile - never a box

@@ -439,8 +439,11 @@ include_weapons()
     //  🛑 ONLY the XPR-50 here. The M16 and the Olympia are already included
     //  above - this map's own list carries them - and include_weapon() twice
     //  for one name would be a duplicate, not a second entry.
-    include_weapon( "as50qol_zm" );
-    include_weapon( "as50qol_upgraded_zm", 0 );
+    //  v2.17.37 - XPR-50 cut on Origins, traded 1:1 for the L96A1. The server
+    //  no longer registers as50 here (gated in quality_of_life.gsc), and this
+    //  map was the only place it ran as the private as50qol copy, so both
+    //  names now exist nowhere on zm_tomb. Including them would hand
+    //  addzombieboxweapon() a model lookup on an unprecached weapon.
 
 
     if ( is_true( level.raygun2_included ) && !isdemoplaying() )
