@@ -33,6 +33,10 @@ REM ============================================================================
 set "PROJ=%~dp0"
 if "%PROJ:~-1%"=="\" set "PROJ=%PROJ:~0,-1%"
 
+REM  Check all registered cross-map weapon dependencies before linking.
+python "%PROJ%\tools\check-weapon-port.py"
+if errorlevel 1 exit /b 1
+
 REM --- OpenAssetTools ---------------------------------------------------------
 REM  v2.15.49: the Wave Gun swell techsets compile from raw and need the PATCHED
 REM  Linker in tools\oat-dlc5 (OpenAssetTools v0.33 + local patches). One of those

@@ -1,0 +1,13 @@
+{
+  "ports": [
+    {
+      "name": "Blundergat",
+      "zone": "zone_source/mod_blundergat.zone",
+      "weapons": ["blundergat_zm", "blundergat_upgraded_zm"],
+      "camo": "camo_qol_blundergat",
+      "camoBaseMaterials": ["mc/mtl_t6_wpn_zmb_blundergat"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["wpn_blundergat_", "fly_blundergat_"]
+    }
+  ]
+}

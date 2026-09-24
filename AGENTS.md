@@ -47,3 +47,11 @@ gameplay checks. These are local development references, not release payloads.
 - Keep developer-specific paths out of shipped source comments and UI text.
 - Record build, installation, startup, gameplay and performance separately.
   Successful offline checks do not close gameplay items in the queue.
+- Register every new cross-map weapon in `tools/weapon-port-contracts.json`.
+  Before linking, run `python tools/check-weapon-port.py`. Check normal and
+  upgraded definitions, every attached model, all reload and fire animations,
+  sound aliases and notetracks, muzzle and impact effects, and the PaP camo
+  material on slots 3, 8 and 12. Test the upgraded gun with animated camos on
+  and off, including a reload, on each target map. `build.bat` and
+  `build_ff.bat` run the asset check, but only a live test proves the rendered
+  gun and its effects.
