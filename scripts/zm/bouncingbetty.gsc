@@ -98,10 +98,7 @@
 //      mine you hold - one mine at a time, which is what is wanted. The
 //      registry also hands the Betty three stock mine rules, claymore parity
 //      all three: a mine hit adds level.round_number * randomintrange(100,200)
-//      to the zombie (_zm_spawner.gsc:1934 - the hand-rolled loop at the end
-//      of zmqol_betty_jump_and_explode() applies the same number, so standard
-//      zombies get it from both and the loop stays only to cover the AI that
-//      never runs enemy_death_detection, exactly as v2.11.20 shipped); a mine
+//      to the zombie (_zm_spawner.gsc:1934); a mine
 //      cannot hurt a PLAYER at all (_zm.gsc:4152 returns 0 - which is why the
 //      v2.12.8 overrideplayerdamage chain is gone again); and holding one in
 //      hand blocks a box or perk purchase the way a held claymore does.
@@ -284,12 +281,13 @@ init()
     level._effect["betty_launch"] = loadfx( "weapon/bouncing_betty/fx_betty_launch_dust" );
     level._effect["betty_light"] = loadfx( "weapon/bouncing_betty/fx_betty_light_green" );
 
-    //  MP's own tuning block, maps\mp\_bouncingbetty.gsc:16-27, verbatim.
+    //  Keep MP's trigger and jump timing. Match the Zombies claymore's
+    //  explosion radius and damage from claymore_zm.
     level.zmqol_betty_radius = 192;
     level.zmqol_betty_mindist = 20;
-    level.zmqol_betty_damage_radius = 256;
-    level.zmqol_betty_damage_max = 210;
-    level.zmqol_betty_damage_min = 70;
+    level.zmqol_betty_damage_radius = 200;
+    level.zmqol_betty_damage_max = 200;
+    level.zmqol_betty_damage_min = 50;
     level.zmqol_betty_jump_height = 65;
     level.zmqol_betty_jump_time = 0.65;
     level.zmqol_betty_rotate_velocity = ( 0, 750, 32 );
@@ -664,7 +662,7 @@ zmqol_betty_light()
 }
 
 //  claymore_detonation() with the betty's ending. Differences, each measured:
-//  no damageconetrace/cone test (MP betty ignoredirection=1), radius 192
+//  no damageconetrace/cone test (MP betty ignoredirection=1), trigger radius 192
 //  (level.bettyradius), and instead of self detonate() the MP jump-and-explode
 //  sequence runs on a stand-in model, because a planted grenade entity cannot
 //  be moveto'd - which is exactly why MP spawns its minemover.
@@ -842,37 +840,8 @@ zmqol_betty_jump_and_explode()
     else
         minemover radiusdamage( minemover.origin, level.zmqol_betty_damage_radius, level.zmqol_betty_damage_max, level.zmqol_betty_damage_min, undefined, "MOD_EXPLOSIVE", "bouncingbetty_zm" );
 
-    //  🛑 v2.9.16 - AND THE CLAYMORE'S OWN KILL RULE, because the MP numbers
-    //  alone are why the mine "worked" and killed nothing. A zombie has
-    //  round-scaled health; a claymore still one-shots deep into the rounds
-    //  because _zm_spawner's damage handler gives any placeable-mine hit a
-    //  bonus of level.round_number * randomintrange( 100, 200 )
-    //  (_zm_spawner.gsc:1935-1942). The Betty is deliberately NOT registered
-    //  as a placeable mine (that registry is what would make it evict
-    //  claymores from the equipment slot), so its hits fell into the plain
-    //  explosive branch - round * randomintrange( 0, 100 ), which can roll
-    //  ZERO. So the mine's own damage rule is applied here explicitly, with
-    //  stock's claymore numbers, to every live reachable zombie in the blast:
-    a_zombies = getaispeciesarray( level.zombie_team, "all" );
-
-    for ( i = 0; i < a_zombies.size; i++ )
-    {
-        if ( !isdefined( a_zombies[i] ) || !isalive( a_zombies[i] ) )
-            continue;
-
-        if ( distance( a_zombies[i].origin, minemover.origin ) > level.zmqol_betty_damage_radius )
-            continue;
-
-        //  Scripted and boss zombies keep their protection - damaging one
-        //  breaks the map script waiting on it (the zmqol_kill_horde lesson).
-        if ( is_magic_bullet_shield_enabled( a_zombies[i] ) )
-            continue;
-
-        if ( isdefined( owner ) && isalive( owner ) )
-            a_zombies[i] dodamage( level.round_number * randomintrange( 100, 200 ), a_zombies[i].origin, owner, a_zombies[i], "none", "MOD_EXPLOSIVE", 0, "bouncingbetty_zm" );
-        else
-            a_zombies[i] dodamage( level.round_number * randomintrange( 100, 200 ), a_zombies[i].origin, undefined, a_zombies[i], "none", "MOD_EXPLOSIVE", 0, "bouncingbetty_zm" );
-    }
+    //  The registered mine already receives the claymore's round-scaled
+    //  bonus in _zm_spawner. Applying it again here doubled Betty damage.
 
     wait 0.2;
 
