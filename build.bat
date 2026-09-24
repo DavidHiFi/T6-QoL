@@ -189,6 +189,12 @@ echo [0e/9] Pre-flight: wonder-weapon animation chain...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1"
 if errorlevel 1 goto wwanimfail
 
+REM  Cross-map ports need both weapon forms, attachments and all PaP camo slots.
+REM  A missing attachment or short camo table can still produce a clean build.
+echo [0e/9] Pre-flight: registered weapon ports...
+python "%PROJ_DIR0%tools\check-weapon-port.py"
+if errorlevel 1 goto weaponportfail
+
 REM ============================================================================
 REM  [0f/9] Pre-flight: the menu art is mod-gated                v2.17.45
 REM ----------------------------------------------------------------------------
@@ -561,6 +567,13 @@ echo   freezing them into ice - both guns still fire and still kill, so NOTHING
 echo   in any log would report it. The user finds it by shooting something.
 echo   Fix the chain the check named. Do NOT go looking in zapgun.gsc or
 echo   _zm_weap_freezegun.gsc - their scripts are almost never the cause.
+if not defined OFFLINE pause
+exit /b 1
+
+:weaponportfail
+echo.
+echo   BUILD STOPPED: a registered weapon port is missing a model, animation,
+echo   sound alias, or a stock/animated Pack-a-Punch camo mapping.
 if not defined OFFLINE pause
 exit /b 1
 
