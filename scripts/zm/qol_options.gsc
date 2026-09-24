@@ -2464,7 +2464,7 @@ qol_opt_hud_watcher()
 
     for ( ;; )
     {
-        b_all = getdvarintdefault( "hud_all", 0 );
+        b_all = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_all", 0 );
 
         // ====================================================================
         //  v1.85.0 - hud_master, the ".hud off" switch.
@@ -2490,7 +2490,7 @@ qol_opt_hud_watcher()
         //  Re-written every 2s, and ONLY while the switch is off, which is a
         //  state the user asked for explicitly. At the normal setting this costs
         //  exactly one write, on the first pass.
-        b_master = getdvarintdefault( "hud_master", 1 );
+        b_master = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_master", 1 );
         n_tick++;
 
         if ( b_master != n_prev_master || ( !b_master && n_tick % 8 == 0 ) )
@@ -2575,7 +2575,7 @@ qol_opt_hud_watcher()
 
         //  v2.1.3 - one dvar, four states. See qol_opt_timer_seed() for the
         //  table and for why nobody's old setting was lost in the merge.
-        n_timers = getdvarintdefault( "hud_timers", 1 );
+        n_timers = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_timers", 1 );
 
         self qol_opt_show( self.qol_hud_timer, b_master && ( b_all || n_timers == 1 || n_timers == 2 ) );
 
@@ -2604,8 +2604,8 @@ qol_opt_hud_watcher()
         //  bar, so there is exactly one owner now: that loop reads hud_health_bar
         //  and hud_color_health itself.
 
-        self qol_opt_zone_hud( b_master && ( b_all || getdvarintdefault( "hud_zone", 0 ) ) );
-        self qol_opt_compass_hud( b_master && ( b_all || getdvarintdefault( "hud_compass", 0 ) ) );
+        self qol_opt_zone_hud( b_master && ( b_all || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_zone", 0 ) ) );
+        self qol_opt_compass_hud( b_master && ( b_all || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_compass", 0 ) ) );
         self qol_opt_round_timer_hud( b_master && ( b_all || n_timers == 1 || n_timers == 3 ) );
 
         //  Colour is only re-applied when the string actually changes. Writing
@@ -3156,7 +3156,7 @@ qol_opt_crosshair()
 
     for ( ;; )
     {
-        n_now = getdvarintdefault( "crosshair", 1 ) != 0;
+        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "crosshair", 1 ) != 0;
 
         if ( n_now != n_last )
         {
@@ -3302,7 +3302,7 @@ qol_opt_third_person()
 
     for ( ;; )
     {
-        n_now = getdvarintdefault( "third_person", 0 ) != 0;
+        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "third_person", 0 ) != 0;
 
         if ( n_now != self.zmqol_tp_applied )
         {
