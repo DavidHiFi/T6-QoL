@@ -46,16 +46,14 @@
 //  reproduces this mod's own shipped copy of that file apart from the one camo
 //  key v2.11.0 deliberately changed.
 //
-//  📝 NO fx ENTRIES, AND NONE ARE NEEDED. The def names
-//  weapon/blundersplat/fx_blundersplat_muzzleflash{,_3p,_ug,_ug_3p}, which live
-//  in zm_prison.ff only, and OpenAssetTools cannot read or write FxEffectDef at
-//  all (tested again 2026-09-22: --include-assets fx over zm_prison.ff produces
-//  a zone file and zero effects). That is not a blocker here, and the proof is
-//  this mod's own Olympia: rottweil72_zm names
-//  weapon/muzzleflashes/fx_shotgun_flash_base, a name that is in NONE of the six
-//  map fastfiles, and it has shipped on all six maps for weeks with nobody
-//  reporting it. A weapon def's fx string resolves leniently. A GSC loadfx()
-//  does not - which is exactly why the Paralyzer could not come with it.
+//  The four muzzle flashes ARE declared below (2026-09-25). The first port left
+//  them out on the theory that a def's fx string "resolves leniently", and it
+//  does - to nothing. Every non-Mob boot logged
+//      Could not load fx "weapon/blundersplat/fx_blundersplat_muzzleflash"
+//  and the gun fired with no flash. The Unlinker cannot DUMP an FxEffectDef,
+//  but the Linker copies one out of a --load'ed zone like any other asset;
+//  mod_betty.zone and mod_bo1guns.zone already ship map-only fx this way.
+//  zm_prison.ff is --load'ed, so these resolve with no raw .efx.
 // ============================================================================
 
 // View and world models. Both forms use the main pair; the upgraded form also
@@ -65,6 +63,12 @@ xmodel,t6_wpn_zmb_blundergat_world
 xmodel,t6_wpn_zmb_blundergat_armor_view
 xmodel,t6_wpn_zmb_blundergat_armor_world
 camo,camo_qol_blundergat
+
+// Muzzle flashes named by viewFlashEffect / worldFlashEffect; zm_prison.ff only.
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash_3p
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash_ug
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash_ug_3p
 
 // all 41 view-model animations, taken from the zone's own order
 xanim,viewmodel_blundergat_idle
