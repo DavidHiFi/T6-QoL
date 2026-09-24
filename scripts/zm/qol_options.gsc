@@ -955,6 +955,42 @@ qol_opt_player_init()
     {
         self waittill( "spawned_player" );
 
+        // ====================================================================
+        //  🛑 v2.17.40 - THIS BLOCK RUNS ON EVERY SPAWN, NOT JUST THE FIRST.
+        //  IT SITS ABOVE THE b_first CHECK ON PURPOSE. DO NOT MOVE IT BACK.
+        //
+        //  Each line is guarded by isdefined(), so a spawn that already has its
+        //  three elements allocates nothing - this costs a respawn three reads.
+        //  What it buys is self-healing: if anything ever drops these handles
+        //  again, the very next spawn takes the slots back instead of leaving
+        //  the pop-up quietly short for the rest of the match. That is exactly
+        //  what v2.17.39 could not survive - vpa_onplayerspawned() nulled all
+        //  three on every spawn without destroying them, so the reservation was
+        //  orphaned on the same notify that created it. See the v2.17.40 banner
+        //  in quality_of_life.gsc::vpa_onplayerspawned().
+        //
+        //  🛑 alpha 0 IS SET INSIDE EACH GUARD, NOT AFTER THE THREE. Writing it
+        //  unconditionally every spawn would blank a pop-up that is mid-
+        //  animation when the player respawns. Only a freshly created element
+        //  needs hiding; a reused one is owned by perk_bought(), which rewrites
+        //  every field on every purchase.
+        // ====================================================================
+        if ( !isdefined( self.perkname_hud ) )
+        {
+            self.perkname_hud = newclienthudelem( self );
+            self.perkname_hud.alpha = 0;
+        }
+        if ( !isdefined( self.perkdesc_hud ) )
+        {
+            self.perkdesc_hud = newclienthudelem( self );
+            self.perkdesc_hud.alpha = 0;
+        }
+        if ( !isdefined( self.perkhud ) )
+        {
+            self.perkhud = newclienthudelem( self );
+            self.perkhud.alpha = 0;
+        }
+
         if ( !b_first )
             continue;
 
@@ -995,16 +1031,13 @@ qol_opt_player_init()
         //  perk_bought() keeps its own isdefined guards, so this is a
         //  reservation and not a dependency: if it never ran, the pop-up still
         //  allocates on demand exactly as before.
+        //
+        //  📝 v2.17.40 - THE CODE THIS BANNER DESCRIBES HAS MOVED UP, above the
+        //  b_first check, so it re-asserts on every spawn instead of only the
+        //  first. The reasoning above is unchanged and still correct; only the
+        //  placement moved. The banner is kept here because it is the record of
+        //  why the reservation exists at all.
         // ====================================================================
-        if ( !isdefined( self.perkname_hud ) )
-            self.perkname_hud = newclienthudelem( self );
-        if ( !isdefined( self.perkdesc_hud ) )
-            self.perkdesc_hud = newclienthudelem( self );
-        if ( !isdefined( self.perkhud ) )
-            self.perkhud = newclienthudelem( self );
-        self.perkname_hud.alpha = 0;
-        self.perkdesc_hud.alpha = 0;
-        self.perkhud.alpha = 0;
 
         self thread qol_opt_cherry_sound();
         self thread qol_opt_rapid_fire();

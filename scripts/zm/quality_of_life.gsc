@@ -17939,10 +17939,53 @@ vpa_onplayerspawned()
     for ( ;; )
     {
         self waittill( "spawned_player" );
-        self.perkhud = undefined;
-        self.perkname_hud = undefined;
-        self.perkdesc_hud = undefined;
-        self.perkspec_hud = undefined;
+
+        // ====================================================================
+        //  🛑 v2.17.40 - THE FOUR "= undefined" LINES THAT USED TO BE HERE ARE
+        //  GONE, AND MUST NOT COME BACK. THEY WERE A HUD-ELEMENT LEAK.
+        //
+        //  User, 2026-09-24, Origins / The Crazy Place: the pop-up drew the
+        //  perk NAME and nothing else - no icon, no description. Their words:
+        //  "sometimes it works, sometimes it doesn't ... make sure the HUD
+        //  elements don't have that issue and work properly".
+        //
+        //  THE LEAK. This runs on EVERY "spawned_player", and it dropped the
+        //  handles to the pop-up's three client hudelems WITHOUT DESTROYING
+        //  THEM. The elements stayed allocated with nothing left pointing at
+        //  them, so every respawn orphaned three slots out of a pool that is
+        //  only a few slots deep - permanently, for the rest of the match. The
+        //  next purchase then allocated three MORE. newclienthudelem() fails
+        //  quietly when the pool is empty, and the icon is requested last, so
+        //  the symptom walks backwards as the pool drains: first the icon goes,
+        //  then the description, and the name is the last thing standing. That
+        //  is exactly the sequence this mod has been reporting for weeks, and
+        //  it is why it looked intermittent - it is cumulative, not random.
+        //
+        //  🛑 WHY IT ONLY BECAME FATAL IN v2.17.39. It was inherited verbatim
+        //  from the upstream Vanguard Perk HUD, where perk_bought() DESTROYED
+        //  the three elements at the end of every pop-up - so by the next spawn
+        //  the handles were normally already undefined and clearing them cost
+        //  nothing. v2.17.39 correctly made the elements permanent and reused,
+        //  which turned this line from near-harmless into the thing that threw
+        //  three slots away per spawn. It also raced v2.17.39's spawn-time
+        //  reservation on the very same notify, which is why that fix appeared
+        //  to do nothing at all.
+        //
+        //  Nothing needs to replace these lines. The elements are owned for the
+        //  life of the player, perk_bought() rewrites every field on every
+        //  purchase, and its generation counter handles a respawn that lands
+        //  mid-animation. qol_opt_player_init() re-asserts the reservation on
+        //  every spawn, so a missing element is re-taken rather than leaked.
+        //
+        //  📝 perkspec_hud went with them: v1.53.0 removed the element and
+        //  nothing recreates it, and perk_bought() still destroys it on sight -
+        //  so nulling the handle here could only ever have orphaned it too.
+        //
+        //  Audited 2026-09-24: every other HUD handle in this mod (health,
+        //  shield, zone, compass, round timer, help, give list, velocity,
+        //  subtitles) calls destroy() before it nulls. This was the only leak.
+        // ====================================================================
+
         self thread listen_for_perks();
     }
 }
