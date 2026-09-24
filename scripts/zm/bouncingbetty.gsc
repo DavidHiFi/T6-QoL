@@ -604,6 +604,8 @@ zmqol_betty_watch()
         if ( weapname != "bouncingbetty_zm" )
             continue;
 
+        self thread zmqol_betty_keep_empty_slot();
+
         betty.owner = self;
         betty.team = self.team;
 
@@ -644,6 +646,29 @@ zmqol_betty_watch()
         //  say exactly which stage died. Remove once detonation is confirmed.
         println( "[zm_qol] betty: plant caught (grenade_fire), waiting to settle" );
     }
+}
+
+//  The MP Equipment slot removes an empty Betty from inventory. Keep the
+//  owned weapon at zero ammo so action slot 4 can show its icon and x0, as a
+//  claymore does. Wait until the throw has finished before restoring it.
+zmqol_betty_keep_empty_slot()
+{
+    self endon( "disconnect" );
+    wait 0.2;
+
+    if ( !self is_player_placeable_mine( "bouncingbetty_zm" ) )
+        return;
+
+    if ( self hasweapon( "bouncingbetty_zm" ) && self getweaponammoclip( "bouncingbetty_zm" ) > 0 )
+        return;
+
+    if ( !self hasweapon( "bouncingbetty_zm" ) )
+        self giveweapon( "bouncingbetty_zm" );
+
+    self setweaponammoclip( "bouncingbetty_zm", 0 );
+    self setweaponammostock( "bouncingbetty_zm", 0 );
+    self setactionslot( 4, "weapon", "bouncingbetty_zm" );
+    println( "[zm_qol] betty: empty slot retained at x0" );
 }
 
 zmqol_betty_wait_and_detonate()
