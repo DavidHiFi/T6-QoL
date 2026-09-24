@@ -707,6 +707,10 @@ zmqol_ring_hud_failsafe()
     self setclientuivisibilityflag( "hud_visible", 1 );
 }
 
+//  NOTE: this function is NOT currently started from main()/init() — the
+//  capture re-declare loops were deliberately stopped (see init() banner).
+//  The shape below is still corrected so re-enabling it cannot park every
+//  later joiner on one player's spawn.
 zmqol_capture_objectives_on_connect()
 {
     level endon( "end_game" );
@@ -715,20 +719,31 @@ zmqol_capture_objectives_on_connect()
     {
         level waittill( "connected", player );
 
-        player waittill( "spawned_player" );
-        wait 0.05;
-
-        //  v1.90.7 - same guard as above. A co-op player connecting while someone
-        //  else is mid-capture must not blank that player's ring.
-        if ( zmqol_any_zone_capturing() )
-        {
-            println( "[zm_qol] capture objectives: connect re-declare SKIPPED - a capture is live" );
-            continue;
-        }
-
-        maps\mp\zm_tomb_capture_zones::declare_objectives();
-        println( "[zm_qol] capture objectives: re-declared for a connecting player" );
+        //  Thread the per-player wait: parking spawned_player inside the
+        //  connect loop means a disconnect-before-spawn hangs every later
+        //  joiner, and players connecting in the same burst never re-declare.
+        player thread zmqol_capture_objectives_for_player();
     }
+}
+
+zmqol_capture_objectives_for_player()
+{
+    level endon( "end_game" );
+    self endon( "disconnect" );
+
+    self waittill( "spawned_player" );
+    wait 0.05;
+
+    //  v1.90.7 - same guard as above. A co-op player connecting while someone
+    //  else is mid-capture must not blank that player's ring.
+    if ( zmqol_any_zone_capturing() )
+    {
+        println( "[zm_qol] capture objectives: connect re-declare SKIPPED - a capture is live" );
+        return;
+    }
+
+    maps\mp\zm_tomb_capture_zones::declare_objectives();
+    println( "[zm_qol] capture objectives: re-declared for a connecting player" );
 }
 
 // ============================================================================

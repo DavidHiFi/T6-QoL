@@ -1571,12 +1571,22 @@ qol_opt_character()
         //  `.character N` sets self.zmqol_char_want on whoever typed it, and
         //  that is what this loop reads first.
         //
-        //  The dvar stays as the fallback, so nothing that worked before stops
-        //  working: the lobby/menu row is still the default for anyone who has
-        //  not made a personal pick, and solo is completely unchanged.
+        //  🛑 v2.17.x - WHEN NO PERSONAL PICK EXISTS, ONLY THE HOST MAY FALL
+        //  BACK TO THE SERVER DVAR. In co-op a remote client without
+        //  zmqol_char_want used to read getdvarintdefault("character") and
+        //  inherit the host's menu pick, so every non-host wore the same face.
+        //  Remote clients now fall back to 0 (the map's own pick) unless they
+        //  type `.character N`. Solo and the host are unchanged.
+        //
+        //  The dvar stays as the host/solo fallback, so nothing that worked
+        //  before stops working: the lobby/menu row is still the default for
+        //  anyone who has not made a personal pick, and solo is completely
+        //  unchanged.
         //  ====================================================================
         if ( isdefined( self.zmqol_char_want ) )
             n_want = self.zmqol_char_want;
+        else if ( get_players().size > 1 && isdefined( gethostplayer() ) && self != gethostplayer() )
+            n_want = 0;
         else
             n_want = getdvarintdefault( "character", 0 );
 
