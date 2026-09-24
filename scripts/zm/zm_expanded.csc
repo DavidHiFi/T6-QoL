@@ -191,15 +191,15 @@ zmqol_mp_weapons_init()
 	//  registration with no client twin is a box result the client cannot draw,
 	//  and a client include with no server twin is the v2.14.27 Betty crash.
 	//
-	//  🛑 v2.17.36 - THE ORIGINS HOLD-BACK IS LIFTED, TO MATCH THE SERVER.
-	//  The 8 slots are paid for by cutting the AK-47, LSAT and SVU in
-	//  scripts\zm\zm_tomb\zm_tomb.{gsc,csc} - the user's choice, 2026-09-23.
-	//  That file's v2.17.36 banner carries the arithmetic. These two lists
-	//  MUST stay identical, in both directions, for the reasons above.
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
+	//  📝 A root .csc cannot read level.script (it is server state), so the map
+	//  test is getdvar( "mapname" ) - the same one the EMP gate below uses.
+	if ( getdvar( "mapname" ) != "zm_tomb" )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
+	}
 
 	//  🛑 v2.14.27 - THE BETTY IS NOT IN THE BOX'S *DISPLAY* TABLE, AND
 	//  SAYING IT WAS CRASHED THE GAME. v2.9.9 added this line with no in_box flag
