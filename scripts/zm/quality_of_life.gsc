@@ -18000,22 +18000,46 @@ perk_bought( perk )
     if ( shader == "" )
         return;
 
-    // Destroy the previous HUD if the player quickly purchases another perk
-    if ( isdefined( self.perkhud ) )
-    {
-        self.perkhud destroy();
-        self.perkhud = undefined;
-    }
-    if ( isdefined( self.perkname_hud ) )
-    {
-        self.perkname_hud destroy();
-        self.perkname_hud = undefined;
-    }
-    if ( isdefined( self.perkdesc_hud ) )
-    {
-        self.perkdesc_hud destroy();
-        self.perkdesc_hud = undefined;
-    }
+    // ========================================================================
+    //  🛑 v2.17.39 - THE THREE ELEMENTS ARE NOW ALLOCATED ONCE AND REUSED.
+    //  THEY ARE NOT DESTROYED BETWEEN PURCHASES. DO NOT PUT THE DESTROYS BACK.
+    //
+    //  User, 2026-09-24, Origins Laboratory: bought Quick Revive after the first
+    //  generator and the pop-up drew the name and the description with NO ICON;
+    //  the icon appeared for a split second at the very end as the pop-up faded.
+    //  Second time it had happened. Screenshot confirms name + description
+    //  present, icon absent.
+    //
+    //  THE CAUSE, already written into the note below: newclienthudelem() draws
+    //  from a finite client pool and FAILS QUIETLY when it is empty, so whichever
+    //  of the three is requested LAST is the one that does not appear. The icon
+    //  is deliberately last so a short pool costs the picture rather than the
+    //  words. Allocating three fresh elements on every single purchase is what
+    //  kept putting the pop-up at the mercy of the pool - on Origins especially,
+    //  where the generator capture ring allocates on demand from the same pool.
+    //
+    //  Reusing them means the allocation happens ONCE per player, on the first
+    //  perk of the match, and every purchase after that costs the pool nothing.
+    //  This is what b32602e did and it worked; it was lost in the f4b95af revert
+    //  only because b32602e implemented it with a HELPER FUNCTION, which
+    //  overflowed this file's symbol table. This version defines no helper and
+    //  adds no cross-file call - isdefined and newclienthudelem are builtins.
+    //  See [[qol-symbol-table-not-size]] and [[getdvarintdefault-is-not-a-builtin]].
+    //
+    //  🌟 THE GENERATION COUNTER IS WHY REUSE IS SAFE. The destroys used to
+    //  double as the hand-off when a player bought a second perk mid-animation:
+    //  the old elements died under the first thread. Reused elements cannot be
+    //  destroyed, so the older thread would fade out the NEWER pop-up half way
+    //  through it. Each run now takes a ticket and simply stops if a later
+    //  purchase has taken a newer one.
+    // ========================================================================
+    if ( !isdefined( self.zmqol_perkpop_gen ) )
+        self.zmqol_perkpop_gen = 0;
+    self.zmqol_perkpop_gen = self.zmqol_perkpop_gen + 1;
+    n_perkpop_gen = self.zmqol_perkpop_gen;
+
+    //  The legacy fourth element is still destroyed on sight: v1.53.0 removed it
+    //  and nothing recreates it, so this only cleans up a pre-v1.53.0 save.
     if ( isdefined( self.perkspec_hud ) )
     {
         self.perkspec_hud destroy();
@@ -18043,7 +18067,11 @@ perk_bought( perk )
     // ========================================================================
 
     // --- Perk name (line 1, white, larger) ---
-    name_hud = newclienthudelem( self );
+    //  v2.17.39 - allocate only if we do not already own one. Every field below
+    //  is written on every purchase, so a reused element carries nothing over.
+    if ( !isdefined( self.perkname_hud ) )
+        self.perkname_hud = newclienthudelem( self );
+    name_hud = self.perkname_hud;
     name_hud.alignx = "center";
     name_hud.aligny = "middle";
     name_hud.horzalign = "user_center";
@@ -18063,7 +18091,9 @@ perk_bought( perk )
     //  description instead of centering it, which is the off-to-the-left title
     //  in the user's 2026-09-18 screenshot. Each line centers on its own
     //  element, so the name sits centered above the description at all times.
-    desc_hud = newclienthudelem( self );
+    if ( !isdefined( self.perkdesc_hud ) )
+        self.perkdesc_hud = newclienthudelem( self );
+    desc_hud = self.perkdesc_hud;
     desc_hud.alignx = "center";
     desc_hud.aligny = "middle";
     desc_hud.horzalign = "user_center";
@@ -18078,7 +18108,12 @@ perk_bought( perk )
     desc_hud settext( getPerkDesc( perk ) );
 
     // --- Perk icon (allocated LAST on purpose - see the note above) ---
-    hud = newclienthudelem( self );
+    //  v2.17.39 - last is now harmless: after the first perk of the match this
+    //  element already exists, so being last no longer means being the one the
+    //  pool drops. The ordering stays as documented for the very first purchase.
+    if ( !isdefined( self.perkhud ) )
+        self.perkhud = newclienthudelem( self );
+    hud = self.perkhud;
     hud.alignx = "center";
     hud.aligny = "middle";
     hud.horzalign = "user_center";
@@ -18137,6 +18172,11 @@ perk_bought( perk )
 
     wait 3.5;
 
+    //  v2.17.39 - a later purchase now owns these elements; leave them alone.
+    //  Without this the older thread would fade out the newer pop-up mid-show.
+    if ( self.zmqol_perkpop_gen != n_perkpop_gen )
+        return;
+
     // ---- Fade OUT ----
     hud fadeovertime( 0.5 );
     hud.alpha = 0;
@@ -18149,13 +18189,18 @@ perk_bought( perk )
 
     wait 0.55;
 
-    hud destroy();
-    name_hud destroy();
-    desc_hud destroy();
+    //  🛑 NO destroy() HERE, AND THE self.* REFERENCES STAY DEFINED. That is the
+    //  whole fix - see the v2.17.39 banner at the top of this function. The
+    //  elements are now owned for the life of the player and reused by every
+    //  later purchase, which is what stops the pool dropping the icon. They are
+    //  left at alpha 0 and fully rewritten on the next perk, so an invisible
+    //  element costs a pool slot and nothing else.
+    if ( self.zmqol_perkpop_gen != n_perkpop_gen )
+        return;
 
-    self.perkhud = undefined;
-    self.perkname_hud = undefined;
-    self.perkdesc_hud = undefined;
+    hud.alpha = 0;
+    name_hud.alpha = 0;
+    desc_hud.alpha = 0;
 }
 
 // Shader (icon material) for each perk

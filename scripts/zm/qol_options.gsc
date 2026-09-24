@@ -960,6 +960,52 @@ qol_opt_player_init()
 
         b_first = 0;
 
+        // ====================================================================
+        //  🛑 v2.17.39 - RESERVE THE PERK POP-UP'S THREE HUDELEMS AT SPAWN.
+        //
+        //  User, 2026-09-24, Origins Laboratory: bought Quick Revive after the
+        //  first generator and the pop-up drew its name and description with NO
+        //  ICON - the icon flashed for an instant at the very end as it faded.
+        //  Twice now.
+        //
+        //  newclienthudelem() draws from a finite client pool and FAILS QUIETLY
+        //  when it is empty. perk_bought() asks for three in a row and the icon
+        //  is deliberately last, so a short pool costs the picture. Origins is
+        //  the worst case: the generator capture rings allocate on demand from
+        //  that same pool, so buying a perk right after a generator is exactly
+        //  when the pool is thinnest.
+        //
+        //  perk_bought() now REUSES these three instead of building and
+        //  destroying them per purchase, which fixes every perk after the first.
+        //  Claiming them here, at first spawn, closes the remaining hole: the
+        //  FIRST perk of the match. At spawn the pool is untouched - no capture
+        //  ring, no other pop-up - so the reservation always succeeds.
+        //
+        //  🛑 IT LIVES IN THIS FILE, NOT quality_of_life.gsc, AND IT IS INLINE.
+        //  b32602e did this correctly and was reverted only because it used a
+        //  HELPER FUNCTION in quality_of_life.gsc, which is at its symbol and
+        //  import-reference ceiling - that overflow killed every map load and
+        //  cost three boots. This file has headroom, isdefined and
+        //  newclienthudelem are builtins, and no new function is defined.
+        //  See [[qol-symbol-table-not-size]] and
+        //  [[getdvarintdefault-is-not-a-builtin]].
+        //
+        //  Alpha 0 so nothing draws until perk_bought() fills them in - it
+        //  rewrites every field on every purchase, so nothing carries over.
+        //  perk_bought() keeps its own isdefined guards, so this is a
+        //  reservation and not a dependency: if it never ran, the pop-up still
+        //  allocates on demand exactly as before.
+        // ====================================================================
+        if ( !isdefined( self.perkname_hud ) )
+            self.perkname_hud = newclienthudelem( self );
+        if ( !isdefined( self.perkdesc_hud ) )
+            self.perkdesc_hud = newclienthudelem( self );
+        if ( !isdefined( self.perkhud ) )
+            self.perkhud = newclienthudelem( self );
+        self.perkname_hud.alpha = 0;
+        self.perkdesc_hud.alpha = 0;
+        self.perkhud.alpha = 0;
+
         self thread qol_opt_cherry_sound();
         self thread qol_opt_rapid_fire();
         self thread qol_opt_voice_lines();
