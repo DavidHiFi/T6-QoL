@@ -2182,7 +2182,13 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	-- its behaviour; see the note in CreateAdvancedTab. The "10 rows + 2
 	-- half-spacers = 11.0 pitches" this note used to end with was the v2.1.2
 	-- count; the footer below carries the current one.
-	T(QolPatchesButtons, LocalClientIndex, "ANIMATED CAMO FIX",   "anim_pap_camo",       "Animated Pack-a-Punch camo on every map.")
+	-- v2.17.38 - was "ANIMATED CAMO FIX". Renamed at the user's request
+	-- (2026-09-24): it is not a fix, it is a choice, and the row reads as a
+	-- plain on/off. Off gives the map its own stock Pack-a-Punch camo, which
+	-- is 39 on most maps, 40 on Mob and 45 on Origins - see the OFF path in
+	-- quality_of_life.gsc. Dvar name is unchanged so nobody's saved setting
+	-- moves.
+	T(QolPatchesButtons, LocalClientIndex, "ANIMATED CAMOS",     "anim_pap_camo",       "Animated Pack-a-Punch camo on every map. Off uses the map's own stock camo.")
 
 
 	-- The legacy / pre-patch restorations.                            5 rows

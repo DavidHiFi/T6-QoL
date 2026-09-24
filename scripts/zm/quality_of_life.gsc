@@ -2336,8 +2336,43 @@ get_pack_a_punch_weapon_options( weapon )
         zmqol_papcamo_probe( weapon, 0, 0, 0 );
         return self calcweaponoptions( 0, 0, 0, 0 );
     }
-    if ( isdefined( self.pack_a_punch_weapon_options[weapon] ) )
-        return self.pack_a_punch_weapon_options[weapon];
+    // ------------------------------------------------------------------------
+    //  🛑 v2.17.38 - THE CACHE MADE THE ANIMATED CAMOS ROW A DEAD SWITCH, AND
+    //  THE EARLY RETURN THAT USED TO SIT HERE HAS MOVED DOWN THE FUNCTION.
+    //
+    //  User, 2026-09-24, on Origins: packed the L96A1 with ANIMATED CAMOS on
+    //  and got the animated camo, turned the row OFF in Options, swapped the
+    //  gun away, re-gave it with .give and packed it again - and it came back
+    //  animated. Not an L96 problem; every gun behaved that way.
+    //
+    //  The cache is keyed on the WEAPON NAME ALONE and was never invalidated,
+    //  so the first pack of a weapon decided its camo for the rest of the match
+    //  and every later pack returned that stored answer without re-reading the
+    //  dvar. Re-giving the gun does not help - the cache lives on the PLAYER.
+    //  The note further down claiming the row "changes every gun PaP'd from
+    //  then on" was simply untrue for any weapon already packed once.
+    //
+    //  THE FIX: decide camo_index FIRST, then return the cached options only if
+    //  the cached camo still matches. Reticle and lens stay cached, so a gun
+    //  keeps its look across packs; only a real settings change re-rolls it.
+    //
+    //  🛑 WHY IT IS SHAPED LIKE THIS AND NOT AS A DVAR FINGERPRINT. The first
+    //  attempt read the seven anim_pap_camo* dvars up here to fingerprint them,
+    //  and that KILLED EVERY MAP: "Unresolved external getdvarintdefault with 2
+    //  parameters in scripts/zm/quality_of_life.gsc" -> 11 script errors ->
+    //  SV_Shutdown -> the fatal LUI_ERROR process_events crash. getdvarintdefault
+    //  is NOT an engine builtin, it is a script function, so every call site is
+    //  an IMPORT REFERENCE - and this file is at its ceiling with 216 of them
+    //  already. Seven more overflowed the table. Measured 2026-09-24, boot log
+    //  console_zm.log:1316.
+    //  So this version adds NO new cross-file call at all: it reuses the
+    //  getdvarintdefault the function was already making below, and needs only
+    //  isdefined, which IS a builtin. Keep it that way - see
+    //  [[qol-symbol-table-not-size]].
+    // ------------------------------------------------------------------------
+    if ( !isdefined( self.zmqol_camo_index ) )
+        self.zmqol_camo_index = [];
+
     smiley_face_reticle_index = 1;
     base = get_base_name( weapon );
     camo_index = 39;
@@ -2504,6 +2539,18 @@ get_pack_a_punch_weapon_options( weapon )
              && ( level.script == "zm_transit" || level.script == "zm_highrise" || level.script == "zm_nuked" ) )
             camo_index = 39;
     }
+    //  v2.17.38 - THE CACHE READ, moved down here from the top of the function
+    //  so it can see the camo this pack would actually use. Same weapon and the
+    //  same camo means the stored options are still right, so the gun keeps its
+    //  reticle and lens. A different camo means the player changed the ANIMATED
+    //  CAMOS row (or a per-map anim_pap_camo_* dvar) since this weapon was last
+    //  packed, so fall through and rebuild. isdefined is a builtin; nothing
+    //  here adds an import reference to this symbol-full file.
+    if ( isdefined( self.pack_a_punch_weapon_options[weapon] )
+         && isdefined( self.zmqol_camo_index[weapon] )
+         && self.zmqol_camo_index[weapon] == camo_index )
+        return self.pack_a_punch_weapon_options[weapon];
+
     lens_index = randomintrange( 0, 6 );
     reticle_index = randomintrange( 0, 16 );
     reticle_color_index = randomintrange( 0, 6 );
@@ -2527,6 +2574,10 @@ get_pack_a_punch_weapon_options( weapon )
     if ( reticle_index == letter_e_reticle_index )
         reticle_color_index = green_reticle_color_index;
     self.pack_a_punch_weapon_options[weapon] = self calcweaponoptions( camo_index, lens_index, reticle_index, reticle_color_index );
+    //  v2.17.38 - remember WHICH camo this entry was built for, so the read
+    //  above can tell a still-valid cache from one the player has invalidated
+    //  by changing the ANIMATED CAMOS row.
+    self.zmqol_camo_index[weapon] = camo_index;
     zmqol_papcamo_probe( weapon, 1, camo_index, self.pack_a_punch_weapon_options[weapon] );
     return self.pack_a_punch_weapon_options[weapon];
 }
