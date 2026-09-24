@@ -2556,6 +2556,40 @@ camo,camo_qol_rpd
 camo,camo_qol_saiga
 camo,camo_qol_saritch
 camo,camo_qol_slowgun
+// ============================================================================
+//  v2.17.41 - THE PACK-A-PUNCHED SLIQUIFIER GETS A CAMO. User, 2026-09-25:
+//  *"the Sliquifier Pack-a-Punchable works completely fine on my mod, however
+//  the only thing that's wrong with it is it's missing its Pack-a-Punch
+//  texture - make sure the animated Pack-a-Punch camo and the regular Die Rise
+//  stock Pack-a-Punch camo work properly with the Pack-a-Punch version"*.
+//
+//  NOT A BUG IN THE PACK ROUTE - TREYARCH NEVER GAVE IT ONE. v2.14.17 made the
+//  gun packable, and zm_highrise.gsc's banner already records that retail's
+//  slipgun_upgraded_zm has `camo` EMPTY: the two defs differ in exactly two
+//  fields (displayName, grenadeWeapon) out of 1,027. With no camo asset named,
+//  every camo_index the mod picks - 39 static, 40 animated - has nothing to
+//  index into, so the packed gun draws exactly like the plain one.
+//
+//  🌟 THE ROUTE IS THE PARALYZER'S, BYTE FOR BYTE, BECAUSE IT IS THE SAME CASE:
+//  a map-only wonder weapon mod.ff does not own. Two files, no new code:
+//    - weapons\zm\slipgun_upgraded_zm - retail's def, raw in mod.iwd, with the
+//      60 grenade-bounce coefficients dropped (exactly the Paralyzer's trim,
+//      967 fields, 20,291 B, under the 20,480 loose-def ceiling) and `camo`
+//      set to camo_qol_slipgun. verify_def.py checks key-for-key that nothing
+//      else changed and field order is preserved.
+//    - camo_qol_slipgun (declared here) - camo_qol_slowgun with its four
+//      materialOverrides' baseMaterial retargeted from the Paralyzer's body
+//      material to mc/mtl_t6_wpn_zmb_slipgun. Same slots, same shaderConsts,
+//      same flags: slot 3 static (index 39 = ANIMATED CAMOS off, Die Rise's
+//      stock value), slot 8 Dark Matter (index 40 = on), slot 12 3layer.
+//      A name no retail fastfile has, so mod.ff's copy is the only copy.
+//
+//  📝 The body material only - the glass, scroll and glass_sort materials are
+//  left alone, the way Treyarch's own zombies camo slot treats the Paralyzer.
+//  mc/mtl_t6_wpn_zmb_slipgun lives in zm_highrise.ff and is only ever drawn on
+//  Die Rise, the one map that can hand out this gun.
+// ============================================================================
+camo,camo_qol_slipgun
 camo,camo_qol_srm1216
 camo,camo_qol_svu
 camo,camo_qol_type95
