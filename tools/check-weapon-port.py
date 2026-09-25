@@ -288,6 +288,73 @@ def pixel_pass(port, unlinker, bo2, errors):
     print(f"[weapon-port] {name}: {len(images)} image(s) checked for pixels")
 
 
+def iwi_is_black(path):
+    """True when the full-size mip of a DXT .iwi is (almost) all zero bytes.
+
+    An all-zero DXT1/DXT5 block decodes to black, so byte zeros are enough to
+    see it without a decoder. Mips are stored smallest first: the top mip is
+    the tail of the file.
+    """
+    data = path.read_bytes()
+    if data[:3] != b"IWi":
+        return False
+    fmt = data[4]
+    width, height = struct.unpack_from("<HH", data, 6)
+    block = {11: 8, 12: 16, 13: 16}.get(fmt)
+    if not block:
+        return False
+    top = data[-(((width + 3) // 4) * ((height + 3) // 4) * block):]
+    sample = top[::61]
+    return sum(1 for b in sample if b) < len(sample) * 0.001
+
+
+def camo_colour_pass(port, errors):
+    """The gun's main surface must not take a camo whose colour map is black.
+
+    The installed HD pack replaces some camo textures in storage\\t6\\images,
+    and a loose file there beats every bank. Its ~-gcamo_zmb_dlc2_alt_col is
+    solid black. Stock guns use that "_alt" material for small trim parts, so
+    black trim is the pack's look. The Blundergat has one material, and its
+    table sent it to dlc2_alt_2: the whole gun drew black on every map.
+
+    So the first entry of camoBaseMaterials is the gun's main surface, and it
+    must not resolve to a black colour map in any PaP slot. A glow material
+    (it has an Ember map) passes, because its colour comes from the glow.
+    """
+    name = port["name"]
+    main = port["camoBaseMaterials"][0]
+    camo = json.loads((ROOT / "zone_assets" / "camo" / f"{port['camo']}.json").read_text(encoding="utf-8"))
+    sources = []
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        sources.append(Path(local) / "Plutonium" / "storage" / "t6" / "images")
+    sources += [ROOT / "images", ROOT / "zone_assets" / "images"]
+    slots = camo.get("camoMaterials", [])
+    for index in port["camoSlots"]:
+        if index >= len(slots):
+            continue
+        for material in slots[index]["materials"]:
+            for override in material["materialOverrides"]:
+                if override["baseMaterial"] != main:
+                    continue
+                path = ROOT / "zone_assets" / "materials" / f"{override['camoMaterial']}.json"
+                if not path.is_file():
+                    continue
+                textures = json.loads(path.read_text(encoding="utf-8")).get("textures", [])
+                if any(t.get("name") == "Ember" for t in textures):
+                    continue
+                for texture in textures:
+                    if texture.get("name") != "colorMap":
+                        continue
+                    image = next((s / f"{texture['image']}.iwi" for s in sources
+                                  if (s / f"{texture['image']}.iwi").is_file()), None)
+                    if image and iwi_is_black(image):
+                        errors.append(f"{name}: slot {index} paints the main surface {main} with "
+                                      f"{override['camoMaterial']}, whose colour map {image} is solid black, "
+                                      f"so the Pack-a-Punched gun draws black; use the body camo other guns use "
+                                      f"(mtl_weapon_camo_zmb_dlc2_1 in slot 8)")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pixels", action="store_true", help="also check image pixels in the client's banks")
@@ -329,6 +396,7 @@ def main():
         forms = source_pass(port, errors, all_zones, sound_aliases)
         if forms is None:
             continue
+        camo_colour_pass(port, errors)
         if linked is not None:
             readback_pass(port, forms, errors, linked, everywhere)
         if args.pixels and oat and bo2:

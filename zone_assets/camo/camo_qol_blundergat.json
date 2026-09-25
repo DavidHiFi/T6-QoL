@@ -408,7 +408,7 @@
                         },
                         {
                             "baseMaterial": "mc/mtl_t6_wpn_zmb_blundergat",
-                            "camoMaterial": "mc/mtl_weapon_camo_zmb_dlc2_alt_2"
+                            "camoMaterial": "mc/mtl_weapon_camo_zmb_dlc2_1"
                         }
                     ],
                     "shaderConsts": [
@@ -628,6 +628,10 @@
                         {
                             "baseMaterial": "mc/mtl_t6_wpn_shotgun_shells_red",
                             "camoMaterial": "mc/mtl_weapon_camo_3layer_3"
+                        },
+                        {
+                            "baseMaterial": "mc/mtl_t6_wpn_zmb_blundergat",
+                            "camoMaterial": "mc/mtl_weapon_camo_3layer_1"
                         }
                     ],
                     "shaderConsts": [
@@ -653,10 +657,6 @@
                         {
                             "baseMaterial": "mc/mtl_t6_wpn_shotty_870mcs_camo2",
                             "camoMaterial": "mc/mtl_weapon_camo_zmb_dlc4_alt_1"
-                        },
-                        {
-                            "baseMaterial": "mc/mtl_t6_wpn_zmb_blundergat",
-                            "camoMaterial": "mc/mtl_weapon_camo_zmb_dlc4_alt_2"
                         }
                     ],
                     "shaderConsts": [
