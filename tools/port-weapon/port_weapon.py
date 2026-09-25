@@ -280,15 +280,25 @@ def build_plan(a):
     camo_src = next((c for c in s['camos'] if c.stem == camo_src_name), None) if camo_src_name else None
     if not camo_src and s['camos']:
         camo_src = s['camos'][0]
+    p['camo_synth'] = None
     if not camo_src:
-        p['refuse'].append('no camo table in the source. Build one from a same-class stock table in '
-                           'zone_assets/camo (camo_spas / camo_qol_870mcs) with this gun\'s base materials '
-                           'renamed in, then rerun')
-        return p
+        # A gun from BO1 or another game has no T6 camo table. Synthesise one
+        # from zm_qol's proven 13-slot table (camo_qol_870mcs): same slots and
+        # shader constants, with this gun's camo-able parts mapped into every
+        # PaP slot (3, 8, 12) and the gun/gold slots it already fills.
+        camo_src = ROOT / 'zone_assets' / 'camo' / 'camo_qol_870mcs.json'
+        p['camo_synth'] = True
+        p['notes'].append('no camo table in the source: synthesising one from camo_qol_870mcs (13 slots) '
+                          'with this gun\'s materials mapped into slots 3, 8 and 12')
     p['camo_src'] = camo_src
 
     # --- materials the camo must cover: every camo-able material on the models
-    mats = {m.stem: json.loads(m.read_text(encoding='utf-8')) for m in s['materials']}
+    # A material's asset name is its path under materials\ without .json:
+    # mtl_t9_gallo_blastomatic_body, or mc/t5_weapon_mtl_ak47_gunset for a
+    # material dumped with its mc\ folder (the name the GLB uses).
+    mat_root = src / 'materials'
+    mats = {m.relative_to(mat_root).with_suffix('').as_posix(): json.loads(m.read_text(encoding='utf-8'))
+            for m in s['materials']}
     glb_mats = set()
     for g in s['glbs']:
         glb_mats |= material_names_in_glb(g)
@@ -302,6 +312,10 @@ def build_plan(a):
         if i < len(slots):
             authored |= {o['baseMaterial'] for m in slots[i]['materials'] for o in m['materialOverrides']}
     detail = {m for m, d in mats.items() if any(t.get('name') == 'colorDetailMap' for t in d.get('textures', []))}
+    if p['camo_synth']:
+        # the template maps the 870's parts; this gun's parts are every material
+        # with a camo detail slot, and the 870's overrides are removed at apply
+        authored = set()
     camo_able = sorted(authored & set(mats)) or sorted(detail)
     bare = sorted(detail - set(camo_able))
     if bare:
@@ -337,6 +351,10 @@ def build_plan(a):
         for t in d.get('textures', []):
             img = t['image']
             if img in shipped or img in mod_images:
+                continue
+            if img.startswith('$'):
+                # engine built-ins ($gray, $white, $identitynormalmap, $black):
+                # present on every map; the shipped BO1 L96A1 uses $gray
                 continue
             owners = sorted(stock_img.get(img, []))
             shared = [o for o in owners if o in ('common_zm', 'patch_zm')]
@@ -397,8 +415,14 @@ def build_plan(a):
     named = set()
     for d in (bd, ud):
         for k, v in d.items():
-            if v and (k.endswith('Anim') or k in ANIM_KEYS):
+            if v and (k.endswith('Anim') or k in ANIM_KEYS) and not k.endswith('CameraAnim'):
                 named.add(v)
+    # *CameraAnim fields (mantleCameraAnim ...) name player-camera anims the
+    # engine owns, not the gun's view anims; BO1 defs carry t5_viewmodel_camera_*
+    # there. Clear them in the port rather than ship a camera anim.
+    p['camera_anims'] = sorted({k for d in (bd, ud) for k, v in d.items() if v and k.endswith('CameraAnim')})
+    if p['camera_anims']:
+        p['notes'].append(f'camera anim fields {p["camera_anims"]} are cleared in the port (engine-owned, not view anims)')
     missing_anim = sorted(n for n in named if n not in xanims)
     p['xanims'] = sorted(n for n in named if n in xanims)
     if missing_anim:
@@ -530,6 +554,10 @@ def apply(p, a):
         edits = {'camo': p['camo_out']}
         if p['ammo_fix']:
             edits.update(ammoName=p['ammo_fix'], clipName=p['ammo_fix'])
+        for k in p.get('camera_anims', []):
+            edits[k] = ''
+        for k, v in p.get('alias_renames', {}).items():
+            pass  # applied below, on values
         pairs = [(k, edits.get(k, v)) for k, v in pairs]
         if 'camo' not in dict(pairs):
             pairs.append(('camo', p['camo_out']))
@@ -544,6 +572,29 @@ def apply(p, a):
         copy(xanims[n], za / 'xanim' / n)
     # camo: renamed, gaps filled from the part nearest in the slot's first material
     camo = json.loads(p['camo_src'].read_text(encoding='utf-8'))
+    if p['camo_synth']:
+        # Template table (camo_qol_870mcs). Each slot's FIRST material entry is
+        # the body-camo entry; its shader constants are the ones the working
+        # guns' main surfaces use. Every part of this gun goes there, on the
+        # body camo material each Pack-a-Punch slot is proven with:
+        #   slot 3  -> mtl_weapon_camo_zombies    (stock PaP, animated off)
+        #   slot 8  -> mtl_weapon_camo_zmb_dlc2_1 (animated; the glow one, NOT
+        #              dlc2_alt*, whose colour map is solid black in the HD pack)
+        #   slot 12 -> mtl_weapon_camo_3layer_1   (Origins)
+        # Other slots keep their first camo material. Second entries (trim on
+        # the template gun) are emptied, so no part lands on a trim-only camo.
+        body_camo = {3: 'mc/mtl_weapon_camo_zombies', 8: 'mc/mtl_weapon_camo_zmb_dlc2_1',
+                     12: 'mc/mtl_weapon_camo_3layer_1'}
+        for i, slot in enumerate(camo['camoMaterials']):
+            for j, m in enumerate(slot['materials']):
+                targets = [o['camoMaterial'] for o in m['materialOverrides']]
+                if j == 0 and (targets or i in body_camo):
+                    target = body_camo.get(i, targets[0] if targets else None)
+                    m['materialOverrides'] = [{'baseMaterial': base, 'camoMaterial': target}
+                                              for base in p['camo_able']]
+                else:
+                    m['materialOverrides'] = []
+        p['camo_fill'] = {}
     for i, gap in p['camo_fill'].items():
         mats = camo['camoMaterials'][i]['materials']
         first = mats[0]['materialOverrides']

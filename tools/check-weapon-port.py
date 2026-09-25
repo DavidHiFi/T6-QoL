@@ -283,6 +283,10 @@ def pixel_pass(port, unlinker, bo2, errors):
         if not images:
             errors.append(f"{name}: {donor}.ff owns no image matching {match}; fix imageMatch")
     for image in sorted(images):
+        if image.startswith("$"):
+            # engine built-ins ($gray, $white, $black, $identitynormalmap) exist on
+            # every map; the shipped BO1 L96A1's materials use $gray
+            continue
         if r_hash_string(image) not in banks and image.lower() not in loose:
             errors.append(f"{name}: image {image} has no pixels in any startup bank or mod image; it will draw black")
     print(f"[weapon-port] {name}: {len(images)} image(s) checked for pixels")
