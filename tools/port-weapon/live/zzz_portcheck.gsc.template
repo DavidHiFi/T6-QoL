@@ -1,0 +1,68 @@
+// zzz_portcheck.gsc - read-only live probe for a weapon port.
+// Replace every GUN with the port's name, save as
+//   %LOCALAPPDATA%\Plutonium\storage\t6\raw\scripts\zm\zzz_portcheck.gsc
+// and run tools\hotload-gate.ps1 check on it before the map loads.
+// Prints, never spawns: the gun's registration on this map and, once per
+// second while a player holds either form, its clip and stock. A reload shows
+// as the clip climbing back; a PaP give shows the upgraded name.
+// Remove it from raw\scripts\zm\ when the check is done: a loose script
+// shadows the mod on every boot.
+
+#include maps\mp\_utility;
+#include common_scripts\utility;
+
+init()
+{
+    level thread portcheck_report();
+    level thread portcheck_watch();
+}
+
+portcheck_report()
+{
+    wait 5;
+
+    if ( !isdefined( level.zombie_weapons ) )
+    {
+        println( "[portcheck] map=" + level.script + " level.zombie_weapons undefined" );
+        return;
+    }
+
+    b_reg = isdefined( level.zombie_weapons[ "GUN_zm" ] );
+    println( "[portcheck] map=" + level.script + " registered=" + b_reg + " weapons=" + level.zombie_weapons.size );
+
+    if ( b_reg )
+    {
+        s = level.zombie_weapons[ "GUN_zm" ];
+        println( "[portcheck] upgrade=" + s.upgrade_name + " cost=" + s.cost + " in_box=" + s.is_in_box + " vox=" + s.vox );
+    }
+
+    println( "[portcheck] anim_pap_camo=" + getdvar( "anim_pap_camo" ) );
+}
+
+portcheck_watch()
+{
+    level endon( "end_game" );
+    last = "";
+
+    for ( ;; )
+    {
+        wait 1;
+        players = getplayers();
+
+        for ( i = 0; i < players.size; i++ )
+        {
+            w = players[i] getcurrentweapon();
+
+            if ( w != "GUN_zm" && w != "GUN_upgraded_zm" )
+                continue;
+
+            line = w + " clip=" + players[i] getweaponammoclip( w ) + " stock=" + players[i] getweaponammostock( w );
+
+            if ( line != last )
+            {
+                println( "[portcheck] holding " + line );
+                last = line;
+            }
+        }
+    }
+}

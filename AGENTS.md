@@ -47,6 +47,14 @@ gameplay checks. These are local development references, not release payloads.
 - Keep developer-specific paths out of shipped source comments and UI text.
 - Record build, installation, startup, gameplay and performance separately.
   Successful offline checks do not close gameplay items in the queue.
+- To port a weapon, start with the `port-weapon` skill
+  (`H:\Claude\tools\skills\port-weapon\SKILL.md`). It picks the route from what
+  source exists: someone's T6 port, a retail zone, another mod, or an extraction
+  from any Call of Duty on this PC. `tools/port-weapon/port_weapon.py plan` /
+  `apply` does the mechanical half from a T6 raw source tree, and
+  `tools/port-weapon/live/` holds the probe, headless capture, deploy and
+  installed-build check. The Blast-O-Matic (SadSlothXL, 2026-09-25) went through
+  this route and the player accepted it on the first build.
 - Every weapon port, map-to-map or game-to-game, is registered in
   `tools/weapon-port-contracts.json` BEFORE its first link. `build_ff.bat`
   runs `tools/check-weapon-port.py` before linking (sources) and after
