@@ -20,7 +20,7 @@
 //   27 xanims    every *Anim key and dtp_* the two defs name, read out of the
 //                defs, not typed. vm_t9_gallo_inspect is in Sloth's tree but
 //                no key names it, so it is not staged.
-//    1 camo      camo_t9_gallo. A name no retail fastfile defines, so no map
+//    1 camo      camo_qol_t9_gallo. A name no retail fastfile defines, so no map
 //                can shadow it (the ERROR_CATALOGUE 50 trap). Slots 3, 8 and
 //                12 all map the eleven camo-able parts - Sloth's slots 8 and
 //                12 skipped the forend and now use the body's camo material
@@ -56,7 +56,7 @@ xmodel,wm_t9_gallo_blastomatic
 xmodel,wm_t9_gallo_blastomatic_pap
 
 // --- Pack-a-Punch camo: slots 3 (index 39), 8 (40, animated), 12 (45) -----
-camo,camo_t9_gallo
+camo,camo_qol_t9_gallo
 
 // --- every view-model animation the two defs name (27) --------------------
 xanim,vm_t9_gallo_ads_down
