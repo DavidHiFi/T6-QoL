@@ -206,6 +206,14 @@ echo [0e/9] Pre-flight: registered weapon ports...
 python "%PROJ_DIR0%tools\check-weapon-port.py"
 if errorlevel 1 goto weaponportfail
 
+REM  The Bouncing Betty matches the claymore: its damage, the slot-4 icon that
+REM  stays at x0 when both are thrown, and a box re-pull that refills to 2. The
+REM  user asked (2026-09-25) never to see those three bugs again, and none of
+REM  them shows in a build or a map load. See tools\check-betty-parity.py.
+echo [0e/9] Pre-flight: Bouncing Betty claymore parity...
+python "%PROJ_DIR0%tools\check-betty-parity.py"
+if errorlevel 1 goto bettyfail
+
 REM ============================================================================
 REM  [0f/9] Pre-flight: the menu art is mod-gated                v2.17.45
 REM ----------------------------------------------------------------------------
@@ -585,6 +593,14 @@ exit /b 1
 echo.
 echo   BUILD STOPPED: a registered weapon port is missing a model, animation,
 echo   sound alias, or a stock/animated Pack-a-Punch camo mapping.
+if not defined OFFLINE pause
+exit /b 1
+
+:bettyfail
+color C
+echo.
+echo   BUILD STOPPED: the Bouncing Betty lost claymore parity - see the [betty]
+echo   lines above. Each one names the bug it would bring back.
 if not defined OFFLINE pause
 exit /b 1
 
