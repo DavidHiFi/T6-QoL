@@ -846,6 +846,17 @@ zmqol_subs_ensure_hud()
     for ( i = 0; i < n_rows; i++ )
     {
         e_line = self createfontstring( "small", n_scale );
+        //  🛑 v2.17.41 - NON-ARCHIVED, AND THIS IS THE SUBTITLE FIX.
+        //  A client is sent at most 31 archived and 31 non-archived hudelems
+        //  per snapshot, walked in pool-slot order, and the rest are silently
+        //  never drawn (HudElem_UpdateClient, 2013 PC server PDB; the same 0x1F
+        //  caps are in the live r5346 image). These rows are built on demand
+        //  and handed back when idle (v2.16.20), so they took whatever slot was
+        //  free that moment - and the archived group measured 30/31 at a fresh
+        //  TranZit spawn. A caption landing in a slot above the 31st logged
+        //  "-> shown" and never appeared. That is the power-up caption the
+        //  user saw work one time and not the next.
+        e_line.archived = 0;
         //  Row 0 is the bottom row at -17 (v2.14.21: ink ends ~4 units above
         //  the safe line); each row above it is 13 units higher. Row 1 is the
         //  old OTHER row at -30, under the velocity meter (-45).

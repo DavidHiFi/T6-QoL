@@ -120,33 +120,66 @@ zmqol_dev_overlay_for_player()
 
     self.zmqol_dev_overlay_running = 1;
 
-    hud_head = self zmqol_dev_overlay_line( 8, 8 );
-    hud_head.color = ( 0.5, 0.8, 1 );
-    hud_head settext( getdvar( "mapname" ) + " / " + getdvar( "ui_zm_mapstartlocation" ) + " / " + getdvar( "ui_gametype" ) );
+    println( "[zm_qol] dev overlay: watching for a player (toggle with zmqol_dev_overlay 1/0, off unless explicitly 1, currently " + zmqol_dev_overlay_on() + ")" );
 
-    e_round = self zmqol_dev_overlay_line( 8, 24 );
-    e_round.label = &"round ";
-    e_round.color = ( 0.5, 0.8, 1 );
-
-    e_x = self zmqol_dev_overlay_line( 8, 40 );
-    e_x.label = &"x ";
-
-    e_y = self zmqol_dev_overlay_line( 64, 40 );
-    e_y.label = &"y ";
-
-    e_z = self zmqol_dev_overlay_line( 120, 40 );
-    e_z.label = &"z ";
-
-    e_yaw = self zmqol_dev_overlay_line( 8, 56 );
-    e_yaw.label = &"yaw ";
-
-    e_pitch = self zmqol_dev_overlay_line( 76, 56 );
-    e_pitch.label = &"pitch ";
-
-    println( "[zm_qol] dev overlay: installed for a player (toggle with zmqol_dev_overlay 1/0, off unless explicitly 1, currently " + zmqol_dev_overlay_on() + ")" );
+    // ========================================================================
+    //  🛑 v2.17.41 - ALLOCATED ONLY WHILE IT IS ON. DO NOT GO BACK TO FADING.
+    //
+    //  This used to build its seven elements for every player at connect and
+    //  hide them at alpha 0 when off - which is always, for a player. A hidden
+    //  hudelem still occupies one of the 31 ARCHIVED slots the engine sends a
+    //  client per snapshot (HudElem_UpdateClient; see the HUD SLOT BUDGET
+    //  banner in qol_options.gsc), and a fresh TranZit spawn measured 30/31.
+    //  These seven were the biggest single tenant, and every one was invisible.
+    //  The stock HUD built after them - the buildable bench bar, the revive
+    //  bar - is what went missing. Off now means destroyed, not transparent.
+    // ========================================================================
+    a_hud = undefined;
 
     for ( ;; )
     {
+        if ( !zmqol_dev_overlay_on() )
+        {
+            if ( isdefined( a_hud ) )
+            {
+                for ( i = 0; i < a_hud.size; i++ )
+                    a_hud[i] destroy();
+
+                a_hud = undefined;
+            }
+
+            wait 0.25;
+            continue;
+        }
+
+        if ( !isdefined( a_hud ) )
+        {
+            a_hud = [];
+
+            a_hud[0] = self zmqol_dev_overlay_line( 8, 8 );
+            a_hud[0].color = ( 0.5, 0.8, 1 );
+            a_hud[0] settext( getdvar( "mapname" ) + " / " + getdvar( "ui_zm_mapstartlocation" ) + " / " + getdvar( "ui_gametype" ) );
+
+            a_hud[1] = self zmqol_dev_overlay_line( 8, 24 );
+            a_hud[1].label = &"round ";
+            a_hud[1].color = ( 0.5, 0.8, 1 );
+
+            a_hud[2] = self zmqol_dev_overlay_line( 8, 40 );
+            a_hud[2].label = &"x ";
+
+            a_hud[3] = self zmqol_dev_overlay_line( 64, 40 );
+            a_hud[3].label = &"y ";
+
+            a_hud[4] = self zmqol_dev_overlay_line( 120, 40 );
+            a_hud[4].label = &"z ";
+
+            a_hud[5] = self zmqol_dev_overlay_line( 8, 56 );
+            a_hud[5].label = &"yaw ";
+
+            a_hud[6] = self zmqol_dev_overlay_line( 76, 56 );
+            a_hud[6].label = &"pitch ";
+        }
+
         v_o = self.origin;
         v_a = self getplayerangles();
 
@@ -155,25 +188,12 @@ zmqol_dev_overlay_for_player()
         if ( isdefined( level.round_number ) )
             n_round = level.round_number;
 
-        zmqol_dev_overlay_push( e_round, n_round );
-        zmqol_dev_overlay_push( e_x, int( v_o[0] ) );
-        zmqol_dev_overlay_push( e_y, int( v_o[1] ) );
-        zmqol_dev_overlay_push( e_z, int( v_o[2] ) );
-        zmqol_dev_overlay_push( e_yaw, int( v_a[1] ) );
-        zmqol_dev_overlay_push( e_pitch, int( v_a[0] ) );
-
-        n_alpha = 0;
-
-        if ( zmqol_dev_overlay_on() )
-            n_alpha = 1;
-
-        hud_head.alpha = n_alpha;
-        e_round.alpha = n_alpha;
-        e_x.alpha = n_alpha;
-        e_y.alpha = n_alpha;
-        e_z.alpha = n_alpha;
-        e_yaw.alpha = n_alpha;
-        e_pitch.alpha = n_alpha;
+        zmqol_dev_overlay_push( a_hud[1], n_round );
+        zmqol_dev_overlay_push( a_hud[2], int( v_o[0] ) );
+        zmqol_dev_overlay_push( a_hud[3], int( v_o[1] ) );
+        zmqol_dev_overlay_push( a_hud[4], int( v_o[2] ) );
+        zmqol_dev_overlay_push( a_hud[5], int( v_a[1] ) );
+        zmqol_dev_overlay_push( a_hud[6], int( v_a[0] ) );
 
         wait 0.25;
     }

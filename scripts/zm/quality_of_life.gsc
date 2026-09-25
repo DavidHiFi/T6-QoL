@@ -2837,7 +2837,27 @@ qol_health_hud_create()
     if ( isdefined( self.qol_hud_health ) && self.qol_hud_health.size == 6 )
         return;
 
+    //  🛑 v2.17.41 - EVERY ELEMENT BELOW CARRIES .archived = 0. DO NOT DROP IT.
+    //  The engine sends a client at most 31 ARCHIVED and 31 NON-ARCHIVED
+    //  hudelems per snapshot (HudElem_UpdateClient, disassembled from the 2013
+    //  PC server PDB; the same 0x1F caps are in the live r5346 t6zm image), and
+    //  anything past the 31st in its group is silently never drawn. .archived
+    //  defaults to 1, so this whole mod had piled into ONE group: a fresh
+    //  TranZit spawn measured 30/31 archived and 8/31 non-archived. Stock's
+    //  on-demand HUD - the buildable bench bar, revive bars, the power-up text -
+    //  then lost whatever it allocated past the 31st. The permanent corner HUD
+    //  lives in the non-archived group now, the way stock's own _hud_message
+    //  elements do. Budget table: tools\hud-budget.json, enforced by
+    //  tools\check-hud-budget.ps1 on every build.
+    //
+    //  v2.17.41 - THE BORDER IS BLACK, NOT GREY. User, 2026-09-25: *"the color
+    //  of the shield health bar and the border are the same ... make the border
+    //  around the health bars ... black with like a slightly lowered opacity,
+    //  so it's very very slightly see-through"*. The grey plate matched the
+    //  shield bar sitting on top of it. The shield bar's own colour is
+    //  unchanged, as asked. first_spawn() restores the same 0.9.
     frame = newclienthudelem( self );
+    frame.archived = 0;
     frame.x = 0;
     frame.y = 0;
     frame setshader( "white", 104, 5 );
@@ -2847,12 +2867,13 @@ qol_health_hud_create()
     frame.vertalign = "bottom";
     frame.x = frame.x + -45;
     frame.y = frame.y + 7;
-    frame.color = ( 0.5, 0.5, 0.5 );
-    frame.alpha = 1;
+    frame.color = ( 0, 0, 0 );
+    frame.alpha = 0.9;
     frame.hidewheninmenu = 1;
     frame.sort = -2;
 
     track = newclienthudelem( self );
+    track.archived = 0;
     track.x = 0;
     track.y = 0;
     track setshader( "white", 102, 3 );
@@ -2868,6 +2889,7 @@ qol_health_hud_create()
     track.sort = -1;
 
     healthbar = newclienthudelem( self );
+    healthbar.archived = 0;
     healthbar.x = 0;
     healthbar.y = 0;
     healthbar setshader( "white", zmqol_hud_bar_width(), 3 );
@@ -2888,6 +2910,7 @@ qol_health_hud_create()
     //  goes 1.2 -> 1.1 with it; the two numbers to the right of the bar stay
     //  at 1.2 - they were not asked about. Rows stay at y 16 / 27.
     playername = self createfontstring( "small", 1.1 );
+    playername.archived = 0;
     //  v2.14.21 - y 18 -> 16, user 2026-09-08 with a screenshot: *"move the text
     //  for the name and current area up just a tiny little bit, it's just too
     //  close to the bottom of the screen ... make sure you don't move them up
@@ -2902,11 +2925,13 @@ qol_health_hud_create()
     playername.hidewheninmenu = 1;
 
     healthvalue = self createfontstring( "small", 1.2 );
+    healthvalue.archived = 0;
     healthvalue setpoint( "RIGHT", "BOTTOM_LEFT", 80, 7 );
     healthvalue.hidewheninmenu = 1;
     healthvalue.sort = 1;
 
     shieldvalue = self createfontstring( "small", 1.2 );
+    shieldvalue.archived = 0;
     shieldvalue setpoint( "LEFT", "BOTTOM_LEFT", 84, 7 );
     shieldvalue.label = &"| ";
     shieldvalue.alpha = 0;
@@ -3256,7 +3281,7 @@ first_spawn()
         }
         if ( frame.alpha == 0 || track.alpha == 0 || healthbar.alpha == 0 || playername.alpha == 0 || healthvalue.alpha == 0 )
         {
-            frame.alpha = 1;
+            frame.alpha = 0.9;     // v2.17.41 - the black border, see qol_health_hud_create()
             track.alpha = 0.5;
             healthbar.alpha = 1;
             playername.alpha = 1;
@@ -3434,6 +3459,7 @@ timer()
     //  between the two origins is already baked into the number. Switching the
     //  frame would throw the one calibration away.
     timer = newclienthudelem( self );
+    timer.archived = 0;             // v2.17.41 - see qol_health_hud_create()
     timer.alignx = "center";        // == round_hud()'s measured alignment
     timer.aligny = "top";
     timer.vertalign = "user_top";
@@ -3517,6 +3543,7 @@ zombiecounter()
     //  "small" is the name from the engine's own list. Changed with the user's
     //  explicit approval, 2026-08-22, because it alters how the text looks.
     self.zombietext = createfontstring( "small", 1.2 );
+    self.zombietext.archived = 0;   // v2.17.41 - see qol_health_hud_create()
 
     //  y -7 -> -12, v1.77.0. The shield bar (v1.75.0) now occupies -0.5..4.5,
     //  which used to be the empty clearance under this counter, so the text was
@@ -3649,7 +3676,10 @@ qol_shield_hud_create()
     if ( isdefined( self.qol_hud_shield ) && self.qol_hud_shield.size == 3 )
         return;
 
+    //  v2.17.41 - .archived = 0 and a black border, both for the reasons in
+    //  qol_health_hud_create(). The two borders are one pair and must match.
     frame = newclienthudelem( self );
+    frame.archived = 0;
     frame.x = 0;
     frame.y = 0;
     frame setshader( "white", 104, 5 );
@@ -3659,12 +3689,13 @@ qol_shield_hud_create()
     frame.vertalign = "bottom";
     frame.x = frame.x + -45;
     frame.y = frame.y + 2;
-    frame.color = ( 0.5, 0.5, 0.5 );
-    frame.alpha = 1;
+    frame.color = ( 0, 0, 0 );
+    frame.alpha = 0.9;
     frame.hidewheninmenu = 1;
     frame.sort = -2;
 
     track = newclienthudelem( self );
+    track.archived = 0;
     track.x = 0;
     track.y = 0;
     track setshader( "white", 102, 3 );
@@ -3680,6 +3711,7 @@ qol_shield_hud_create()
     track.sort = -1;
 
     shieldbar = newclienthudelem( self );
+    shieldbar.archived = 0;
     shieldbar.x = 0;
     shieldbar.y = 0;
     shieldbar setshader( "white", zmqol_hud_bar_width(), 3 );
@@ -3885,7 +3917,8 @@ cs_player_thread()
     // Prevent instant spam during early init
     self.cs_last_popup_time = getTime();
 
-    cs_hud_create();
+    //  v2.17.41 - no spawn-time cs_hud_create() any more: cs_popup() builds
+    //  the card when a round ends and hands the slots back when it fades.
 
     for (;;)
     {
@@ -4025,6 +4058,21 @@ cs_popup(round_num, round_time, round_kills, pb_time, pb_kills, new_pb_time, new
     self.cs_line4 fadeOverTime(0.28); self.cs_line4.alpha = 0;
 
     wait 0.28;
+
+    //  🛑 v2.17.41 - HAND THE FOUR SLOTS BACK AFTER EVERY CARD. They sat
+    //  allocated at alpha 0 for the whole match and counted against the 31
+    //  hudelems a client is sent per group - the buildable bar and the
+    //  subtitles lost to invisible elements. cs_hud_create() rebuilds them for
+    //  the next card; a card cut short by cs_popup_kill3 is always followed by
+    //  a new one, which reuses them before this runs.
+    if (isDefined(self.cs_title)) self.cs_title destroy();
+    if (isDefined(self.cs_line2)) self.cs_line2 destroy();
+    if (isDefined(self.cs_line3)) self.cs_line3 destroy();
+    if (isDefined(self.cs_line4)) self.cs_line4 destroy();
+    self.cs_title = undefined;
+    self.cs_line2 = undefined;
+    self.cs_line3 = undefined;
+    self.cs_line4 = undefined;
 }
 
 cs_hud_create()
@@ -9566,6 +9614,7 @@ zmqol_velocity_set( b_on, b_quiet )
             return;
 
         self.zmqol_vel_hud = self createfontstring( "default", 1.4 );
+        self.zmqol_vel_hud.archived = 0;   // v2.17.41 - see qol_health_hud_create()
         self.zmqol_vel_hud.alignx = "center";
         self.zmqol_vel_hud.aligny = "middle";
         self.zmqol_vel_hud.horzalign = "center";
