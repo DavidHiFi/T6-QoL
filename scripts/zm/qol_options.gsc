@@ -25,10 +25,11 @@
 //       c_zom_player_cdc_fb and c_zom_player_cia_fb - survival uses the CDC/CIA
 //       teams, not the TranZit crew - so Remix's setmodel( "c_zom_player_
 //       oldman_fb" ) would give an INVISIBLE PLAYER there. See qol_opt_character.
-//    3. A client's HUD-element allowance is finite and this mod already spends
-//       ~13 of it. That is what silently truncated the .help panel. So the two
-//       NEW hud elements here are created only when their dvar is on, and never
-//       on a player who has not asked for them.
+//    3. A client's HUD-element allowance is finite: 31 archived + 31
+//       non-archived per snapshot, measured - see the HUD SLOT BUDGET banner
+//       above qol_opt_player_init(). So the two NEW hud elements here are
+//       created only when their dvar is on, and never on a player who has not
+//       asked for them.
 // ============================================================================
 
 #include maps\mp\_utility;
@@ -944,6 +945,53 @@ qol_opt_connect_loop()
         player thread qol_opt_player_init();
     }
 }
+
+// ============================================================================
+//  🛑 HUD SLOT BUDGET  -  31 + 31, AND THE ENGINE NEVER SAYS WHEN IT IS FULL
+//                                                                   (v2.17.41)
+// ----------------------------------------------------------------------------
+//  User, 2026-09-25, after a long TranZit session: power-up subtitles showing
+//  one time and not the next, and the turbine's build bar at the bench drawing
+//  only its white fill - no border, no background, no "Building" text.
+//
+//  🌟 MEASURED, NOT GUESSED. HudElem_UpdateClient (disassembled from the 2013
+//  PC dedicated server, which ships with its PDB) copies a client's hudelems
+//  into its snapshot in TWO groups of 31 - ps.hud.archival for elements with
+//  .archived = 1 and ps.hud.current for .archived = 0 - walking the server pool
+//  in SLOT order and silently skipping everything past the 31st in a group.
+//  The live r5346 t6zm image carries the same four 0x1F caps. There is no
+//  error, no log line, and the script handle stays valid: the element simply
+//  never reaches the screen. That is why every earlier "newclienthudelem
+//  failed quietly" theory could never be caught with isdefined().
+//
+//  .archived DEFAULTS TO 1 (HudElem_Alloc writes it), so every element this
+//  mod ever made landed in ONE group. Read out of the running game's memory
+//  (modding-jobs\hud-regress-001\hud_census.py) at a fresh TranZit spawn:
+//        archived group      30 / 31      <- this mod, plus 4 stock
+//        non-archived group   8 / 31      <- stock's _hud_message elements
+//  One free slot. Stock's buildable bar is FOUR elements (createbar() makes
+//  fill, frame and background, then the text), so it got its fill and lost the
+//  rest - exactly the white bar the user described. A subtitle row created
+//  while that group was full logged "-> shown" and drew nothing.
+//
+//  THE FIX HAS TWO HALVES:
+//    1. The permanent corner HUD - health and shield bars, their numbers, the
+//       name, zone, compass, both timers, the zombie counter, the velocity
+//       meter - and the subtitle rows set .archived = 0 and live in the group
+//       stock barely uses.
+//    2. Nothing sits allocated while invisible. The developer overlay (seven
+//       elements, always hidden for a player) and the round-summary card (four,
+//       hidden 99% of the match) are built when they show and destroyed after.
+//  Result: the archived group keeps ~8 for stock's own on-demand HUD's use
+//  instead of 1, and the non-archived group peaks near 27 with every option on.
+//
+//  🛑 THIS IS NOW A BUILD GATE. tools\hud-budget.json lists every place this
+//  mod creates a hudelem, which group it goes in and whether it is permanent;
+//  tools\check-hud-budget.ps1 fails the build if a creation site is missing
+//  from the table, if a "current" site lost its .archived = 0, or if either
+//  group's permanent total would leave stock less than its reserve. Adding a
+//  HUD element means adding a row - and doing the arithmetic.
+// ============================================================================
 
 qol_opt_player_init()
 {
@@ -2891,6 +2939,9 @@ qol_opt_zone_hud( b_on )
         //  (quality_of_life.gsc::qol_health_hud_create): user 2026-09-08,
         //  *"the area and username text ... a tiny bit smaller"*.
         self.qol_hud_zone = self createfontstring( "small", 1.1 );
+        //  v2.17.41 - the non-archived group; see the HUD SLOT BUDGET banner
+        //  above qol_opt_player_init().
+        self.qol_hud_zone.archived = 0;
 
         //  🛑 setpoint(), AND THE SAME CALL THE PLAYER NAME MAKES. The old
         //  position hand-assigned horzalign/vertalign "user_left"/"user_bottom"
@@ -2971,6 +3022,7 @@ qol_opt_compass_hud( b_on )
     if ( !isdefined( self.qol_hud_compass ) )
     {
         self.qol_hud_compass = self createfontstring( "small", 1.4 );
+        self.qol_hud_compass.archived = 0;     // v2.17.41 - HUD SLOT BUDGET
         //  Top centre. Clear of the round counter (top right) and of the
         //  power-up row, which is centred lower down.
         self.qol_hud_compass setpoint( "TOP", "TOP", 0, 10 );
@@ -3056,6 +3108,7 @@ qol_opt_round_timer_hud( b_on )
         //  one size and one (absent) outline. y stays 94: both are aligny "top",
         //  and the 14-unit row was measured glyph-top to glyph-top.
         self.qol_hud_roundtimer = newclienthudelem( self );
+        self.qol_hud_roundtimer.archived = 0;  // v2.17.41 - HUD SLOT BUDGET
         self.qol_hud_roundtimer.fontscale = 1.4;
         self.qol_hud_roundtimer.alignx = "center";
         self.qol_hud_roundtimer.aligny = "top";

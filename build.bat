@@ -74,6 +74,17 @@ if not exist "%~dp0tools\check-lobby-options.ps1" (
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lobby-options.ps1"
 if errorlevel 1 goto lobbyoptionsfail
 
+REM --- client HUD slot budget (v2.17.41) --------------------------------------
+REM  The engine draws at most 31 archived + 31 non-archived hudelems per client
+REM  and silently drops the rest. Every creation site must be in
+REM  tools\hud-budget.json and both groups must leave stock its reserve, or the
+REM  buildable bar and the subtitles start disappearing again.
+if not exist "%~dp0tools\check-hud-budget.ps1" (
+    color C & echo. & echo   tools\check-hud-budget.ps1 is missing - cannot verify the HUD slot budget. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-hud-budget.ps1"
+if errorlevel 1 goto hudbudgetfail
+
 REM --- resolve the project root (parent of this folder) for the send-ready copy ---
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "BUILD_DIR=%ROOT%\build\%MOD_NAME%"
@@ -577,6 +588,14 @@ exit /b 1
 color C
 echo.
 echo   BUILD STOPPED: the perk pop-up description regression gate failed.
+if not defined OFFLINE pause
+exit /b 1
+
+:hudbudgetfail
+color C
+echo.
+echo   BUILD STOPPED: the client HUD slot budget failed - see the HUD BUDGET lines
+echo   above and the banner above qol_opt_player_init() in qol_options.gsc.
 if not defined OFFLINE pause
 exit /b 1
 

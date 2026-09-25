@@ -1,0 +1,73 @@
+{
+  "about": [
+    "Every place zm_qol creates a HUD element, which of the engine's two groups it lands in, and how long it lives.",
+    "The engine sends a client at most 31 archived (.archived = 1, the default) and 31 non-archived (.archived = 0)",
+    "hudelems per snapshot and silently drops the rest (HudElem_UpdateClient, 2013 PC server PDB; same 0x1F caps in",
+    "the live r5346 t6zm image). Measured 2026-09-25 at a fresh TranZit spawn: archived 30/31, non-archived 8/31, which",
+    "is why stock's buildable bar drew only its fill and subtitles came and went. See the HUD SLOT BUDGET banner in",
+    "scripts/zm/qol_options.gsc. tools/check-hud-budget.ps1 enforces this table on every build.",
+    "group: archived | current | server (a server element counts against EVERY client, in the archived group).",
+    "life: permanent (held all match while its option is on) | ondemand (held while its thing exists, can overlap the",
+    "permanent set) | transient (a user-invoked panel or a short pop-up) | dev (developer only) | alias (same element as",
+    "another row, not counted twice)."
+  ],
+  "cap": 31,
+  "stock": {
+    "archived": 2,
+    "archived_note": "measured: _zm_playerhealth _health_overlay and _zm_laststand revive_hud, both held all match",
+    "archived_reserve": 10,
+    "archived_reserve_note": "left free for stock's on-demand HUD: a buildable/craftable bench bar (createbar = 3 + text), a revive or suicide bar (3 + text), the equipment hint, the Max Ammo team text",
+    "current": 8,
+    "current_note": "measured: _hud_message notifytitle/notifytext/notifytext2/notifyicon, lowermessage/lowertimer, customgametypeheader/subheader",
+    "archived_transient_reserve": 4,
+    "archived_transient_reserve_note": "a chat panel (.help, .give list) open at the same time as one stock progress bar",
+    "current_reserve": 3,
+    "current_reserve_note": "left free for stock's game-over outcome text"
+  },
+  "sites": [
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "round_hud", "var": "roundcounter", "group": "server", "life": "permanent", "count": 1, "what": "round counter (one element for everyone, recreated in place)" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_health_hud_create", "var": "frame", "group": "current", "life": "permanent", "count": 1, "what": "health bar border" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_health_hud_create", "var": "track", "group": "current", "life": "permanent", "count": 1, "what": "health bar backing" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_health_hud_create", "var": "healthbar", "group": "current", "life": "permanent", "count": 1, "what": "health bar fill" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_health_hud_create", "var": "playername", "group": "current", "life": "permanent", "count": 1, "what": "player name" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_health_hud_create", "var": "healthvalue", "group": "current", "life": "permanent", "count": 1, "what": "health number" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_health_hud_create", "var": "shieldvalue", "group": "current", "life": "permanent", "count": 1, "what": "shield number" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "timer", "var": "timer", "group": "current", "life": "permanent", "count": 1, "what": "game timer" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "zombiecounter", "var": "self.zombietext", "group": "current", "life": "permanent", "count": 1, "what": "zombies remaining" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_shield_hud_create", "var": "frame", "group": "current", "life": "ondemand", "count": 1, "what": "shield bar border, only while a shield is carried" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_shield_hud_create", "var": "track", "group": "current", "life": "ondemand", "count": 1, "what": "shield bar backing" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "qol_shield_hud_create", "var": "shieldbar", "group": "current", "life": "ondemand", "count": 1, "what": "shield bar fill" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "zmqol_velocity_set", "var": "self.zmqol_vel_hud", "group": "current", "life": "permanent", "count": 1, "what": "velocity meter" },
+    { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_zone_hud", "var": "self.qol_hud_zone", "group": "current", "life": "permanent", "count": 1, "what": "zone name" },
+    { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_compass_hud", "var": "self.qol_hud_compass", "group": "current", "life": "permanent", "count": 1, "what": "compass heading" },
+    { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_round_timer_hud", "var": "self.qol_hud_roundtimer", "group": "current", "life": "permanent", "count": 1, "what": "round timer" },
+    { "file": "scripts/zm/zmqol_subtitles.gsc", "function": "zmqol_subs_ensure_hud", "var": "e_line", "group": "current", "life": "ondemand", "count": 4, "what": "subtitle rows (zmqol_subs_rows, 1..4), released when nobody is talking" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "perk_bought", "var": "self.perkname_hud", "group": "archived", "life": "permanent", "count": 1, "what": "perk pop-up name (reserved at spawn, reused)" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "perk_bought", "var": "self.perkdesc_hud", "group": "archived", "life": "permanent", "count": 1, "what": "perk pop-up description" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "perk_bought", "var": "self.perkhud", "group": "archived", "life": "permanent", "count": 1, "what": "perk pop-up icon" },
+    { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_player_init", "var": "self.perkname_hud", "group": "archived", "life": "alias", "count": 1, "what": "spawn reservation of the perk pop-up name" },
+    { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_player_init", "var": "self.perkdesc_hud", "group": "archived", "life": "alias", "count": 1, "what": "spawn reservation of the perk pop-up description" },
+    { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_player_init", "var": "self.perkhud", "group": "archived", "life": "alias", "count": 1, "what": "spawn reservation of the perk pop-up icon" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "init_hitmarkers", "var": "player.hud_damagefeedback", "group": "archived", "life": "permanent", "count": 1, "what": "hitmarker" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "init_hitmarkers", "var": "player.hud_damagefeedback_red", "group": "archived", "life": "permanent", "count": 1, "what": "kill hitmarker" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "zmqol_print_help", "var": "e_line", "group": "archived", "life": "transient", "count": 14, "what": ".help panel (chat command, capped at 14 lines)" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "zmqol_give_list_toggle", "var": "e_line", "group": "archived", "life": "transient", "count": 14, "what": ".give list panel (chat command, capped at 14 lines, never open with .help)" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "show_grief_hud_msg", "var": "notifier_hudmsg", "group": "archived", "life": "transient", "count": 1, "what": "zone-entry banner, ~5 s" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "cs_hud_create", "var": "self.cs_title", "group": "archived", "life": "transient", "count": 1, "what": "round summary card title, built per card and destroyed after" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "cs_hud_create", "var": "self.cs_line2", "group": "archived", "life": "transient", "count": 1, "what": "round summary card line 2" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "cs_hud_create", "var": "self.cs_line3", "group": "archived", "life": "transient", "count": 1, "what": "round summary card line 3" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "cs_hud_create", "var": "self.cs_line4", "group": "archived", "life": "transient", "count": 1, "what": "round summary card line 4" },
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "fade_out_intro_screen_zm_instant", "var": "level.introscreen", "group": "server", "life": "transient", "count": 1, "what": "intro black screen, destroyed when it lifts" },
+    { "file": "scripts/zm/bleedout_bar.gsc", "function": "bleedout_bar", "var": "self.ProcessBar2", "group": "archived", "life": "transient", "count": 3, "what": "bleedout bar (createbar: fill, frame, background) while downed" },
+    { "file": "scripts/zm/bleedout_bar.gsc", "function": "bleedout_bar", "var": "self.Bleedout_text", "group": "archived", "life": "transient", "count": 1, "what": "bleedout countdown text while downed" },
+    { "file": "scripts/zm/qol_dev_overlay.gsc", "function": "zmqol_dev_overlay_line", "var": "hud", "group": "archived", "life": "dev", "count": 7, "what": "developer overlay, only while zmqol_dev_overlay is 1" }
+  ],
+  "forbid": [
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "cs_player_thread", "pattern": "^\\s*cs_hud_create\\s*\\(", "why": "the round summary card must not reserve its four elements at spawn; cs_popup() builds and destroys them per card" },
+    { "file": "scripts/zm/qol_dev_overlay.gsc", "function": "zmqol_dev_overlay_for_player", "pattern": "\\.alpha\\s*=\\s*n_alpha", "why": "the developer overlay must be destroyed when off, not faded - hidden elements still take archived slots" }
+  ],
+  "require": [
+    { "file": "scripts/zm/quality_of_life.gsc", "function": "cs_popup", "pattern": "self\\.cs_title destroy\\(\\)", "why": "the round summary card hands its slots back after every card" },
+    { "file": "scripts/zm/qol_dev_overlay.gsc", "function": "zmqol_dev_overlay_for_player", "pattern": "a_hud\\[i\\] destroy\\(\\)", "why": "the developer overlay is destroyed when switched off" }
+  ]
+}
