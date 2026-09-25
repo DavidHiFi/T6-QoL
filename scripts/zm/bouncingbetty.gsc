@@ -193,7 +193,8 @@
 //    - the jump-and-explode is MP's own spawnminemover()/
 //      bouncingbettyjumpandexplode()/mineexplode(), killcam plumbing dropped
 //      (no killcam in zombies), numbers verbatim: jump 65 units over 0.65s,
-//      rotatevelocity (0,750,32), damage 256/210/70;
+//      rotatevelocity (0,750,32); the blast itself is claymore_zm's
+//      200/200/50 since 2026-09-25 (MP's was 256/210/70);
 //    - the green owner light is what MP's client half draws
 //      (_bouncingbetty.csc:38, fx on tag_origin) - played server-side here,
 //      the same way this mod plays every other broadcast fx.
@@ -648,27 +649,59 @@ zmqol_betty_watch()
     }
 }
 
-//  The MP Equipment slot removes an empty Betty from inventory. Keep the
-//  owned weapon at zero ammo so action slot 4 can show its icon and x0, as a
-//  claymore does. Wait until the throw has finished before restoring it.
+//  🌟 2026-09-25 - THE EMPTY BETTY KEEPS ITS ICON AT x0, CLAYMORE PARITY.
+//  User: "when you put down both of them the icon doesn't disappear. it just
+//  shows that the amount is zero make it behave the same way with the
+//  bouncing betty's".
+//
+//  The engine takes the weapon, not a script. BG_TakeClipOnlyWeaponIfEmpty
+//  (bg_weapons, read out of the 2013 dedicated server with its PDB) runs from
+//  PM_Weapon_FinishWeaponChange and takes any clipOnly weapon with 0 in the
+//  clip and 0 in reserve UNLESS its def sets `plantable` or `hasDetonator`
+//  (WeaponDef +0x738/+0x739, mapped through the engine's own field table).
+//  claymore_zm is
+//  plantable 1, so it stays held at 0 and slot 4 draws "x 0". The Betty must
+//  stay plantable 0 (MP donor parity - see the v2.10.11 banner), so the
+//  engine takes it the moment the switch back to the gun finishes.
+//  offhandSlot has no part in it: "Specific use" (the engine's name for the
+//  claymore's slot 4) loads, and the Betty was still taken, measured live.
+//
+//  Measured on Nuketown, second plant: clip 0 at the throw, weapon taken
+//  0.9s later. v2.17.x's fixed `wait 0.2` re-gave it BEFORE the take, so the
+//  engine took it again and the icon still vanished. So this polls: wait for
+//  the take, then give the owned mine back at 0 and rebind slot 4. A refill
+//  (clip > 0), a claymore swap, or going down ends the watch.
 zmqol_betty_keep_empty_slot()
 {
     self endon( "disconnect" );
-    wait 0.2;
+    self notify( "zmqol_betty_keep_empty_slot" );
+    self endon( "zmqol_betty_keep_empty_slot" );
 
-    if ( !self is_player_placeable_mine( "bouncingbetty_zm" ) )
-        return;
+    for ( i = 0; i < 100; i++ )
+    {
+        wait 0.05;
 
-    if ( self hasweapon( "bouncingbetty_zm" ) && self getweaponammoclip( "bouncingbetty_zm" ) > 0 )
-        return;
+        if ( !self is_player_placeable_mine( "bouncingbetty_zm" ) )
+            return;
 
-    if ( !self hasweapon( "bouncingbetty_zm" ) )
+        if ( self hasweapon( "bouncingbetty_zm" ) )
+        {
+            if ( self getweaponammoclip( "bouncingbetty_zm" ) > 0 )
+                return;
+
+            continue;
+        }
+
+        if ( self maps\mp\zombies\_zm_laststand::player_is_in_laststand() || self.sessionstate != "playing" )
+            return;
+
         self giveweapon( "bouncingbetty_zm" );
-
-    self setweaponammoclip( "bouncingbetty_zm", 0 );
-    self setweaponammostock( "bouncingbetty_zm", 0 );
-    self setactionslot( 4, "weapon", "bouncingbetty_zm" );
-    println( "[zm_qol] betty: empty slot retained at x0" );
+        self setweaponammoclip( "bouncingbetty_zm", 0 );
+        self setweaponammostock( "bouncingbetty_zm", 0 );
+        self setactionslot( 4, "weapon", "bouncingbetty_zm" );
+        println( "[zm_qol] betty: empty slot retained at x0" );
+        return;
+    }
 }
 
 zmqol_betty_wait_and_detonate()
