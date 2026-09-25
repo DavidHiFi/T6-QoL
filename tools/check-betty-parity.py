@@ -14,6 +14,13 @@ again:
    the icon still vanishes.
 3. Box refill. weapon_give() tops up a held weapon with givestartammo, which
    sharedAmmoCap caps. At 1, a re-pull left the player holding one Betty.
+4. Reach. Reported the same afternoon: "it's just not affecting the zombies at
+   all". The fix for bug 1 deleted the loop that hit every zombie in the blast
+   and cut the reach from MP's 256 to 200. The Betty goes off 65 units up,
+   0.8 s after the trip, so the engine's radiusdamage alone missed the zombie
+   that had tripped it. The reach is 256 again, and zmqol_betty_blast_fill_in()
+   hits only the zombies that radiusdamage missed, once each, so bug 1 stays
+   fixed.
 
 None of these shows up in a build or a map load. The player finds them in a
 match, so each is checked here against the source.
@@ -81,19 +88,38 @@ def check_def(fields, where, errors):
 def check_script(text, where, errors):
     code = strip_comments(text)
 
-    # Bug 1: the only damage the Betty deals is one radiusdamage at claymore values.
-    for field, want in (("zmqol_betty_damage_radius", "200"), ("zmqol_betty_damage_max", "200"),
-                        ("zmqol_betty_damage_min", "50")):
+    # Bug 1: claymore damage, one mine hit per zombie. Bug 4: MP's 256 reach.
+    for field, want, bug in (("zmqol_betty_damage_radius", "256", "bug 4: MP blast reach"),
+                             ("zmqol_betty_damage_max", "200", "bug 1: claymore damage"),
+                             ("zmqol_betty_damage_min", "50", "bug 1: claymore damage")):
         match = re.search(r"level\." + field + r"\s*=\s*(\d+)\s*;", code)
         if not match or match.group(1) != want:
             got = match.group(1) if match else "missing"
-            errors.append(f"{where}: level.{field} is {got}, must be {want} (bug 1: claymore damage)")
+            errors.append(f"{where}: level.{field} is {got}, must be {want} ({bug})")
     if re.search(r"round_number", code):
         errors.append(f"{where}: uses round_number. Stock _zm_spawner already gives a registered mine "
                       "the round bonus; adding it here doubles Betty damage (bug 1)")
-    if re.search(r"\bdodamage\s*\(", code):
-        errors.append(f"{where}: calls dodamage(). The Betty must hurt zombies through its one "
-                      "radiusdamage only, like the claymore (bug 1)")
+
+    # Bug 4: the fill-in reaches the zombies radiusdamage missed. Bug 1: only those.
+    fill = function_body(code, "zmqol_betty_blast_fill_in")
+    blast = function_body(code, "zmqol_betty_jump_and_explode")
+    if fill is None:
+        errors.append(f"{where}: zmqol_betty_blast_fill_in() is gone, so a Betty that goes off after "
+                      "the zombie walked on hits nothing (bug 4)")
+    else:
+        if not re.search(r"\.health\s*<\s*a_health\s*\[", fill):
+            errors.append(f"{where}: zmqol_betty_blast_fill_in() no longer skips zombies the blast "
+                          "already hurt, so they take the mine hit twice (bug 1)")
+        if not re.search(r"\"bouncingbetty_zm\"\s*\)", fill):
+            errors.append(f"{where}: zmqol_betty_blast_fill_in() must pass \"bouncingbetty_zm\" to "
+                          "dodamage, or stock's mine branch never sees the hit (bug 4)")
+    if blast is None or not re.search(r"\bzmqol_betty_blast_fill_in\s*\(", blast or ""):
+        errors.append(f"{where}: zmqol_betty_jump_and_explode() does not call "
+                      "zmqol_betty_blast_fill_in() (bug 4)")
+    outside = code.replace(fill, "") if fill else code
+    if re.search(r"\bdodamage\s*\(", outside):
+        errors.append(f"{where}: calls dodamage() outside zmqol_betty_blast_fill_in(). That is the "
+                      "double hit of bug 1")
 
     # Bug 2: the empty Betty is given back at 0 after the engine takes it.
     body = function_body(code, "zmqol_betty_keep_empty_slot")
@@ -155,7 +181,7 @@ def main():
         for error in errors:
             print(f"[betty] FAIL: {error}", file=sys.stderr)
         return 1
-    print(f"[betty] PASS ({checked}): claymore damage, x0 icon re-give, box refill to 2")
+    print(f"[betty] PASS ({checked}): claymore damage, 256 reach, x0 icon re-give, box refill to 2")
     return 0
 
 
