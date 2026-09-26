@@ -3,9 +3,8 @@
 Constant buffer layouts are copied member-for-member (with packoffset) from
 the retail char_cloth / effectsimple shader reflection dumps so the RDEF the
 engine and OAT see matches retail. Bodies are transcribed from the retail
-DXBC disassembly (job wavegun-swell-002/shader). SWELL=1 adds the torso-ball
-SwellOffset() push (v2.15.51) after the world transform, the stomach-limited
-version of BO1 Moon's "world position += world normal * scriptVector3.x".
+DXBC disassembly (job wavegun-swell-002/shader). SWELL=1 adds BO1 Moon's
+"world position += world normal * scriptVector3.x" after the world transform.
 """
 import re, os
 J2 = r'H:\Plutonium\modding-jobs\wavegun-swell-002\shader'
@@ -62,29 +61,22 @@ float3 DecodeNormal(float3 v)
     return (v >= 0.5) ? (v * 2.0 - 2.0) : (v * 2.0);
 }}
 
-// Wave Gun swell (v2.15.51). Runs on the WORLD position the shader already
-// has. Zombies are skinned on the CPU, so IN.pos arrives in eye-relative
-// world space and worldMatrix is identity (the fog code measures
-// length(wp) as the distance from the eye - that is the proof). So the
-// centre must be eye-relative too: scriptVector3.yzw is the J_SpineLower
-// tag minus the local player's eye, sent by the client ramp every tick;
-// scriptVector3.x is the amount (0 -> 4 over 2.5 s, BO1's values). BO1
-// pushed every vertex out along its normal by the same amount, so hands,
-// head and legs ballooned as much as the belly. This is a torso ball: an
-// ellipsoid 30 units wide and 22 tall around that point, growing over the
-// ramp, whose push along the normal falls smoothly to ZERO at its edge.
-// Hands, feet, legs and the attached head/eyes are outside it and do not
-// move. Zero amount = zero offset, so an actor that never swells renders
-// exactly as retail.
+// Wave Gun swell (v2.17.46) - BO1 Moon's bloat, one line, nothing else.
+// pimp_shader_sw4_3d_char_cloth_bloat pushed each vertex out along its world
+// normal by scriptVector3.x; the client ramps it 0 -> 4 over 2.5 s. This is the
+// same instruction stream as the working Der Riese build 11 (disassembled,
+// modding-jobs\wavegun-build11-001\disasm) and as our own v2.15.49.
+//
+// v2.15.51-v2.17.45 limited the push to a ball around the stomach because the
+// uniform push tore the mesh at every hard edge. The tear was in the MESH, not
+// the formula: a stock zombie splits the normal at each seam. The Wave Gun now
+// swaps the corpse to a copy whose normals are welded (zqwg_*, zapgun.gsc
+// zmqol_mgun_swell_swap), so Moon's push inflates it as one skin - the
+// Der Riese build's route. Zero amount = zero offset, so every zombie that is
+// not being microwaved renders exactly as retail.
 float3 SwellOffset(float3 wp, float3 n)
 {{
-    float amt = scriptVector3.x;
-    float f = saturate(amt * 0.25);
-    float3 d = wp - scriptVector3.yzw;
-    float dm = length(d * float3(1.0 / 30.0, 1.0 / 30.0, 1.0 / 22.0));
-    float t = saturate(dm / lerp(0.7, 1.0, f));
-    float w = 1.0 - t * t * (3.0 - 2.0 * t);
-    return n * (amt * 2.5 * w);
+    return n * scriptVector3.x;
 }}
 '''
 open('hlsl/t6_consts.hlsli', 'w').write(header)
@@ -126,9 +118,8 @@ VS_OUT main(VS_IN IN)
     float3 t = normalize(mul(DecodeNormal(IN.tan), (float3x3)worldMatrix));
 
 #ifdef SWELL
-    // BO1 Moon pimp_shader_sw4_3d_char_cloth_bloat pushed each vertex out along
-    // its world normal by scriptVector3.x. SwellOffset (t6_consts.hlsli) is
-    // that push limited to a ball around the stomach (v2.15.51).
+    // BO1 Moon pimp_shader_sw4_3d_char_cloth_bloat: push each vertex out along
+    // its world normal by scriptVector3.x (SwellOffset, t6_consts.hlsli).
     wp.xyz += SwellOffset(wp.xyz, n);
 #endif
 
@@ -188,7 +179,7 @@ float4 main(VS_IN IN) : SV_Position
 {
     float4 wp = mul(float4(IN.pos, 1.0), worldMatrix);
 #ifdef SWELL
-    // torso-ball swell in eye-relative world space, see SwellOffset (v2.15.51)
+    // BO1 Moon's bloat, see SwellOffset (t6_consts.hlsli)
     float3 n = normalize(mul(DecodeNormal(IN.nrm), (float3x3)worldMatrix));
     wp.xyz += SwellOffset(wp.xyz, n);
 #endif

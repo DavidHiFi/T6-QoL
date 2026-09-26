@@ -1,5 +1,5 @@
 // ============================================================================
-//  zapgun.csc  -  client half of the Wave Gun / Zap Guns          (v2.15.51)
+//  zapgun.csc  -  client half of the Wave Gun / Zap Guns          (v2.17.46)
 // ----------------------------------------------------------------------------
 //  Two jobs:
 //
@@ -9,21 +9,27 @@
 //     clientscripts\mp\zombies\_zm_weapons.csc already lists microwavegundw_zm
 //     among the dual-wield names it draws the second gun for.
 //
-//  2. THE BODY SWELL (v2.15.45). This is Moon's own
-//     microwavegun_zombie_expand_response -> microwavegun_bloat() pair, carried
-//     from _zm_weap_microwavegun.csc (DLC5 decompile, 2026-09-03). The server
-//     registers the same 1-bit actor field (zapgun.gsc init) and raises it on
-//     the sizzle death's "expand" notetrack; this file answers it by mapping
-//     the actor's shader constant 0 to "scriptVector3" and ramping its W from
-//     0 to 0.5 over Moon's own 2500 ms (1000 ms when the rig has no
-//     J_SpineLower tag). The zombie body/head materials that ramp deforms ship
-//     in mod_wavegun_swell.zone (MaximumSwell added, Moon's literal 20).
+//  2. THE BODY SWELL. Moon's own microwavegun_zombie_expand_response ->
+//     microwavegun_bloat() pair (BO1 _zombiemode_weap_microwavegun.csc). The
+//     server registers the same 1-bit actor field (zapgun.gsc init), swaps the
+//     corpse to its welded zqwg_ copy and raises the field; this file answers
+//     it by ramping "scriptVector3".x from 0 to 4.0 over Moon's 2500 ms (1000 ms
+//     when the rig has no J_SpineLower tag). The swell vertex shader pushes each
+//     vertex out along its normal by exactly that amount - Moon's one line.
+//
+//  🛑 v2.17.46 - SHADER CONSTANT SLOT 2, NOT 0. Stock maps slot 0 of every
+//  zombie to "scriptVector2" for the eye glow, and does it again from
+//  zombie_eyes_clientfield_cb() when zombie_has_eyes drops at death
+//  (_zm.csc, reached from zombie_death_event -> zombie_eye_glow_stop). On a
+//  fallback kill that clientfield and ours arrive together, so slot 0 could be
+//  remapped away from scriptVector3 under the ramp and the swell never showed.
+//  The working Der Riese build 11 uses slot 2 for exactly this; so does stock
+//  Origins for its staff shaders. The gun is gated off Origins.
 //
 //  The eye-blood fx / mist / sounds stay server-side broadcasts - that part of
 //  the original was already ported that way and verified; only the bloat is
 //  moved here, because mapshaderconstant()/setshaderconstant() are client
-//  builtins and must run on the viewer. (Same calls stock uses for the Origins
-//  staff crystals and the Buried wonderfizz glow - they are not DLC5-only.)
+//  builtins and must run on the viewer.
 //
 //  🛑 BOTH GATES BELOW MUST STAY IDENTICAL TO zapgun.gsc's, and the include
 //  list must mirror its two include_weapon calls exactly - a weapon included on
@@ -75,9 +81,9 @@ microwavegun_zombie_expand_response( localclientnum, oldval, newval, bnewent, bi
 }
 
 //  Moon's microwavegun_bloat(), carried over name-for-name apart from this
-//  function's zmqol_ prefix and the commented dev println. endon
-//  "entityshutdown" is Moon's own; the burst ghosts and deletes the corpse
-//  0.1 s after it fires, and this thread dies with the entity.
+//  function's zmqol_ prefix and the slot. endon "entityshutdown" is Moon's
+//  own; the burst ghosts and deletes the corpse 0.1 s after it fires, and this
+//  thread dies with the entity.
 zmqol_mgun_client_bloat( localclientnum )
 {
     self endon( "entityshutdown" );
@@ -85,15 +91,12 @@ zmqol_mgun_client_bloat( localclientnum )
 
     durationmsec = 2500;
     tag_pos = self gettagorigin( "J_SpineLower" );
-    //  v2.15.49: BO1's own values (_zombiemode_weap_microwavegun.csc): the
-    //  fraction runs to 1.0 and the shader gets fraction * 4.0 in X. The T6
-    //  DLC5 decompile had 0.5 / W, which matched the shader it never had.
     bloat_max_fraction = 1.0;
 
     if ( !isdefined( tag_pos ) )
         durationmsec = 1000;
 
-    self mapshaderconstant( localclientnum, 0, "scriptVector3" );
+    self mapshaderconstant( localclientnum, 2, "scriptVector3" );
     begin_time = getrealtime();
 
     while ( true )
@@ -107,37 +110,14 @@ zmqol_mgun_client_bloat( localclientnum )
         if ( !isdefined( self ) )
             return;
 
-        //  X is BO1's amount (fraction * 4.0). YZW carry the stomach
-        //  (J_SpineLower) RELATIVE TO THE LOCAL VIEWER'S EYE, because the
-        //  zombie shaders see eye-relative world positions (retail's fog code
-        //  measures length(worldPos) as the eye distance).
-        //
-        //  🛑 v2.16.2 - THE EYE SUBTRACTION IS LOAD-BEARING. v2.16.1 removed
-        //  it and had SwellOffset reconstruct world space from
-        //  inverseViewMatrix instead; measured in game, zombies stopped
-        //  inflating at all, because that matrix row is not the camera
-        //  position on this engine. Restored. See the banner on SwellOffset
-        //  in t6_consts.hlsli before touching either half again - they are one
-        //  change in two files and must always agree about the space.
-        //  A rig without the tag uses its origin plus 42 units.
-        v_center = self gettagorigin( "J_SpineLower" );
-
-        if ( !isdefined( v_center ) )
-            v_center = self.origin + ( 0, 0, 42 );
-
-        v_center = v_center - getlocalclienteyepos( localclientnum );
-
-        self setshaderconstant( localclientnum, 0, bloat_fraction * 4.0, v_center[0], v_center[1], v_center[2] );
+        //  BO1's values: the fraction runs to 1.0 and the shader gets
+        //  fraction * 4.0 in X. Moon waited 0.05 s between steps; one frame
+        //  (as the Der Riese build does) reads as a smooth inflation.
+        self setshaderconstant( localclientnum, 2, bloat_fraction * 4.0, 0, 0, 0 );
 
         if ( bloat_fraction >= bloat_max_fraction )
             break;
 
-        //  🌟 v2.16.2 - RESEND EVERY FRAME, NOT EVERY 50 ms. This is the safe
-        //  half of the wobble fix. The shader rebuilds its side of the
-        //  comparison every frame, so at 50 ms the centre was up to three
-        //  frames stale and a strafing player dragged the ball across the
-        //  body. One frame of lag is small enough not to read as motion.
-        //  Cheap: one setshaderconstant on one dying actor, for 2.5 s.
         waitrealtime( 0.016 );
     }
 }
