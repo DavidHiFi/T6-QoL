@@ -509,6 +509,15 @@ zmqol_subs_music( str_alias )
             if ( zmqol_subs_enabled() )
                 level thread zmqol_subs_broadcast( undefined, "", str_text, 3, undefined, 0 );
 
+            //  🛑 v2.17.43 - THE LYRIC CLOCK IS THE SONG'S START, NOT ITS LENGTH.
+            //  soundgetplaybacktime() answered 78 s for Carrion on Town, a song
+            //  that runs 256 s (measured from the retail bank), and the first cut
+            //  of this loop stopped at that figure - the first verse, then
+            //  nothing. The lines are timed from the song's first sample, so
+            //  they run to the end of the table; a newer song or the game ending
+            //  still stops them through the endons above.
+            n_song_start = gettime();
+
             for ( i = 0; i < a_lyrics.size; i++ )
             {
                 a_fields = strtok( a_lyrics[i], "|" );
@@ -519,10 +528,7 @@ zmqol_subs_music( str_alias )
                 n_start = int( a_fields[0] ) * 100;
                 n_stop = int( a_fields[1] ) * 100;
 
-                if ( n_ms > 0 && n_start >= n_ms )
-                    break;
-
-                n_wait = n_end - n_ms + n_start - gettime();
+                n_wait = n_song_start + n_start - gettime();
 
                 if ( n_wait > 0 )
                     wait n_wait * 0.001;
