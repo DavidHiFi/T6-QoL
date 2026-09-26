@@ -92,6 +92,7 @@ zmqol_npc_nixie_935_audio()
     if ( !( isdefined( level.music_override ) && level.music_override ) )
     {
         level.music_override = 1;
+        level thread scripts\zm\zmqol_subtitles::zmqol_subs_music( "mus_zmb_secret_song_2" );    //  v2.17.42, hand-added: the generator only captions vox_
         playsoundatposition( "mus_zmb_secret_song_2", ( 0, 0, 0 ) );
         wait 140;
         level.music_override = 0;
