@@ -1133,6 +1133,10 @@ weapon_is_dual_wield( name )
         case "microwavegundw_upgraded_zm":
         case "microwavegundw_zm":
         case "pm63_upgraded_zm":
+        //  2026-09-26 - the Browning HP dual wield (scripts\zm\oldschool.gsc), so
+        //  the box, Pack-a-Punch and the random-weapon drop show both pistols.
+        case "browninghpdw_upgraded_zm":
+        case "browninghpdw_zm":
             return true;
         default:
             return false;
@@ -1222,6 +1226,12 @@ get_left_hand_weapon_model_name( name )
             return getweaponmodel( "microwavegunlh_zm" );
         case "microwavegundw_upgraded_zm":
             return getweaponmodel( "microwavegunlh_upgraded_zm" );
+        //  The Browning's left pistol is its own model (bones renamed *1), the
+        //  one the player holds in the left hand; oldschool.gsc precaches it.
+        case "browninghpdw_zm":
+            return getweaponmodel( "browninghplh_zm" );
+        case "browninghpdw_upgraded_zm":
+            return getweaponmodel( "browninghplh_upgraded_zm" );
         default:
             return getweaponmodel( name );
     }

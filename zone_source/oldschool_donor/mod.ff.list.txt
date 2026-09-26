@@ -1,0 +1,60 @@
+Loaded zone "mod" (T6)
+Loaded search path "<zone_source/oldschool_donor>"
+Zone 'mod' (T6)
+Content:
+techniqueset, mc_lit_sm_r0c0n0s0o0_3z86zq2z
+image, ~~-gmtl_t6_wpn_launch_mm1_spc~4f465e72
+image, mtl_t6_wpn_launch_mm1_nml
+image, ~mtl_t6_wpn_launch_mm1_ao-l&m~4f0e45e4
+image, ~-gmtl_t6_wpn_launch_mm1_col
+image, weapon_camo_neutral
+material, mc/mtl_t6_wpn_launch_mm1
+xmodel, t6_wpn_launch_mm1_view
+xmodel, t6_wpn_launch_mm1_world
+image, ~~-gmtl_t6_wpn_pistol_brownin~d89397d4
+image, mtl_t6_wpn_pistol_browninghp_nml
+image, ~mtl_t6_wpn_pistol_browninghp~60061a35
+image, ~-gmtl_t6_wpn_pistol_browninghp_col
+techniqueset, mc_sw4_3d_thermal_weapon_e4q357fj
+image, thermal_gradient2
+image, ~mtl_t6_wpn_pistol_browninghp~5ce38ab3
+image, sw_radiant_default
+material, mc/mtl_t6_wpn_pistol_browninghp_thermal
+material, mc/mtl_t6_wpn_pistol_browninghp
+xmodel, t6_wpn_pistol_browninghp_view_lh
+xmodel, t6_wpn_pistol_browninghp_world_lh
+techniqueset, trivial_9z33feqw
+image, menu_mp_weapons_mm1
+material, menu_mp_weapons_mm1
+techniqueset, effect_7104842q
+image, fxt_smk_trail
+material, gfx_fxt_smk_trail_ds64
+techniqueset, effect_3z0w0424
+material, gfx_fxt_smk_trail
+fx, maps/angola/fx_ang_trail_grenade
+xanim, viewmodel_mm1_ads_down
+xanim, viewmodel_mm1_ads_up
+xanim, viewmodel_mm1_crawl_back
+xanim, viewmodel_mm1_crawl_forward
+xanim, viewmodel_mm1_crawl_in
+xanim, viewmodel_mm1_crawl_left
+xanim, viewmodel_mm1_crawl_out
+xanim, viewmodel_mm1_crawl_right
+xanim, viewmodel_mm1_d2p_in
+xanim, viewmodel_mm1_d2p_loop
+xanim, viewmodel_mm1_d2p_out
+xanim, viewmodel_mm1_fire
+xanim, viewmodel_mm1_first_raise
+xanim, viewmodel_mm1_idle
+xanim, viewmodel_mm1_pullout
+xanim, viewmodel_mm1_putaway
+xanim, viewmodel_mm1_quick_pullout
+xanim, viewmodel_mm1_quick_putaway
+xanim, viewmodel_mm1_reload_empty
+xanim, viewmodel_mm1_sprint_in
+xanim, viewmodel_mm1_sprint_loop
+xanim, viewmodel_mm1_sprint_out
+
+Unloaded zone "mod"
+Unloaded search path "H:/Plutonium/modding-jobs/motd-port-001/checkout/zone_source/oldschool_donor"
+Finished with 0 warnings, 0 errors

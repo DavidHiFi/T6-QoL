@@ -280,6 +280,21 @@ zmqol_mp_weapons_init()
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "blastomatic_upgraded_zm", 0 );
 	}
 
+	//  ============================================================
+	//  THE MM1 GRENADE LAUNCHER AND THE BROWNING HP DUAL WIELD, from Mario
+	//  Woopsie's MOTD Old School Weapons. Server twin is scripts\zm\oldschool.gsc;
+	//  mod_oldschool.zone has the assets. Off Origins on the same test as the
+	//  server, which has no precache slots for them. The dual wield's left-hand
+	//  half is never included, on either side - stock's fivesevenlh_zm is not.
+	//  ============================================================
+	if ( !b_tomb )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_upgraded_zm", 0 );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
+	}
+
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
 	//  its pickup model.

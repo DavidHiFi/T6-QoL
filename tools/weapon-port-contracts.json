@@ -27,6 +27,28 @@
       "camoSlots": [3, 8, 12],
       "soundPrefixes": ["t9_gallo_"],
       "rawMaterials": "mtl_t9_gallo_blastomatic_"
+    },
+    {
+      "name": "MM1",
+      "zone": "zone_source/mod_oldschool.zone",
+      "weapons": ["mm1_zm", "mm1_upgraded_zm"],
+      "camo": "camo_qol_mm1",
+      "camoBaseMaterials": ["mc/mtl_t6_wpn_launch_mm1"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["wpn_m32_fire_npc_pap", "wpn_m32_fire_plr_pap", "wpn_m32_proj_explode"],
+      "donorZone": "angola",
+      "imageMatch": ["mtl_t6_wpn_launch_mm1", "menu_mp_weapons_mm1"]
+    },
+    {
+      "name": "Browning HP Dual Wield",
+      "zone": "zone_source/mod_oldschool.zone",
+      "weapons": ["browninghpdw_zm", "browninghplh_zm", "browninghpdw_upgraded_zm", "browninghplh_upgraded_zm"],
+      "camo": "camo_qol_browninghpdw",
+      "camoBaseMaterials": ["mc/mtl_t6_wpn_pistol_browninghp"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["wpn_browninghp_"],
+      "donorZone": "angola",
+      "imageMatch": ["mtl_t6_wpn_pistol_browninghp"]
     }
   ]
 }
