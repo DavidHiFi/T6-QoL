@@ -1,0 +1,44 @@
+oldschool_donor\mod.ff - HOW IT WAS BUILT (2026-09-26)
+
+For:      the MM1 grenade launcher and the Browning HP dual wield, from Mario Woopsie's
+          "MOTD Old School Weapons" (Nexus Mods, beta 1.3). User directive 2026-09-26: port
+          those two guns into the box on every map they fit.
+
+Contents: mod.zone beside this file, 28 lines. What the four new defs name and no retail
+          zombies zone offers:
+            - the MM1's view/world models, its 22 view anims, its HUD icon and its grenade trail
+              fx (maps/angola/fx_ang_trail_grenade). All of these are Treyarch's, and they come
+              out of retail angola.ff (the BO2 campaign mission the MM1 is used in). MOTD's copies
+              were compared first: all 22 anims, both models and the material are byte-identical,
+              so this donor takes them from the retail file.
+            - the Browning HP's two LEFT-HAND models, t6_wpn_pistol_browninghp_view_lh and
+              _world_lh. No retail file has them; MOTD built them (the right-hand models with
+              every bone renamed *1, the way stock's t6_wpn_pistol_fiveseven_view_lh is built).
+          The Linker pulls in their materials, images and techsets: 53 assets in all.
+          Every image has pixels in base.ipak, which the client opens on every map.
+
+Not in here, on purpose:
+  - the Browning's right-hand models, material and the 34 viewmodel_m1911_dw_* anims: mod.ff
+    already carries them (refreshed_donor and mod_base).
+  - weapon defs: they ship raw in weapons\zm\ (the Linker never reads them from a donor).
+  - sounds: see soundbank\mod.all.aliases.additions.csv (MM1 uses stock wpn_m32_*; the
+    dual wield uses the mod's own wpn_browninghp_* chain).
+
+Tool:     H:\Plutonium\tools\oat-dlc5\Linker.exe
+Command (Git Bash):
+          export MSYS2_ARG_CONV_EXCL='*'
+          B="F:/SteamLibrary/steamapps/common/Call of Duty Black Ops II/zone/all"
+          Linker.exe \
+            --load "$B/zm_transit.ff" --load "$B/zm_buried.ff" --load "$B/zm_highrise.ff" \
+            --load "$B/zm_prison.ff" --load "$B/zm_tomb.ff" --load "$B/common_zm.ff" \
+            --load "$B/patch_zm.ff" --load "$B/code_post_gfx_zm.ff" \
+            --load "$B/angola.ff" --load "<MOTD zip>/zm_MOTDOldSchoolWeapons/mod.ff" \
+            --base-folder "H:/Plutonium/tools/oat-dlc5" \
+            --add-source-search-path "<folder holding this mod.zone>" \
+            --output-folder "<out>" mod
+          then move out\mod.ff here. mod.ff.list.txt is the Unlinker --list of the result.
+Result:   315,840 bytes, 53 assets, 0 warnings / 0 errors. Asset sources (link log):
+          angola 40, MOTD 2 (the two _lh xmodels), zm_transit 6, common_zm 3, code_post_gfx_zm 1.
+
+It is --load'ed LAST in build_ff.bat, so first-load-wins means it can only supply names nothing
+above it offers. A/B the mod.ff asset list if it ever moves.

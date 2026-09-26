@@ -1,0 +1,108 @@
+// ============================================================================
+//  mod_oldschool.zone  -  the MM1 grenade launcher and the Browning HP dual wield
+// ----------------------------------------------------------------------------
+//  User, 2026-09-26: port these two out of Mario Woopsie's "MOTD Old School
+//  Weapons" (Nexus Mods, beta 1.3) into the box on every map they fit.
+//
+//  SOURCE: zone_source\oldschool_donor\mod.ff, --load'ed last in build_ff.bat.
+//  how_this_was_built.zone.txt beside it has the Linker command. The MM1's art
+//  is Treyarch's own, out of retail angola.ff (the campaign MM1, mgl_sp); MOTD's
+//  copies were compared and are byte-identical. Only the Browning's two
+//  left-hand models are MOTD's, because no retail file has them.
+//
+//  THE DEFS ARE NOT DECLARED HERE. They ship raw in weapons\zm\ like every
+//  other port: mm1_zm, mm1_upgraded_zm, browninghpdw_zm, browninghplh_zm and
+//  the two _upgraded_ forms. modding-jobs\motd-port-001\make_defs.py lists each
+//  field that moved from MOTD's defs.
+//
+//  WHAT THE DEFS NAME AND NEED NOTHING NEW FOR, measured against the six map
+//  listings and mod.ff: the Browning's icon, both muzzle flashes, the shell
+//  ejects, the pistol tracer, the m203 flash, dud fx, projectile model and
+//  reticle.
+//
+//  📝 THE LAST BLOCK RE-DECLARES NAMES mod_bo1guns.zone AND mod_base.zone
+//  ALREADY LINK - the Browning's right-hand models and the 34 M1911 dual-wield
+//  anims the Browning defs play. Re-declaring costs nothing (the Linker takes
+//  each name once) and is what lets tools\check-weapon-port.py hold this zone
+//  to everything the four Browning defs name: drop one from the other zones
+//  and the build fails here instead of the gun losing an animation.
+// ============================================================================
+
+// --- models ------------------------------------------------------------------
+xmodel,t6_wpn_launch_mm1_view
+xmodel,t6_wpn_launch_mm1_world
+xmodel,t6_wpn_pistol_browninghp_view_lh
+xmodel,t6_wpn_pistol_browninghp_world_lh
+
+// --- HUD icon (the Browning's menu_mp_weapons_browning is already in mod.ff) --
+material,menu_mp_weapons_mm1
+
+// --- the MM1 grenade's smoke trail. angola.ff only; declared so every map has it.
+fx,maps/angola/fx_ang_trail_grenade
+
+// --- Pack-a-Punch camo tables, raw in zone_assets\camo\ (names no stock zone owns)
+camo,camo_qol_mm1
+camo,camo_qol_browninghpdw
+
+// --- the 22 view anims the two MM1 defs name --------------------------------
+xanim,viewmodel_mm1_ads_down
+xanim,viewmodel_mm1_ads_up
+xanim,viewmodel_mm1_crawl_back
+xanim,viewmodel_mm1_crawl_forward
+xanim,viewmodel_mm1_crawl_in
+xanim,viewmodel_mm1_crawl_left
+xanim,viewmodel_mm1_crawl_out
+xanim,viewmodel_mm1_crawl_right
+xanim,viewmodel_mm1_d2p_in
+xanim,viewmodel_mm1_d2p_loop
+xanim,viewmodel_mm1_d2p_out
+xanim,viewmodel_mm1_fire
+xanim,viewmodel_mm1_first_raise
+xanim,viewmodel_mm1_idle
+xanim,viewmodel_mm1_pullout
+xanim,viewmodel_mm1_putaway
+xanim,viewmodel_mm1_quick_pullout
+xanim,viewmodel_mm1_quick_putaway
+xanim,viewmodel_mm1_reload_empty
+xanim,viewmodel_mm1_sprint_in
+xanim,viewmodel_mm1_sprint_loop
+xanim,viewmodel_mm1_sprint_out
+
+// --- already in mod.ff, re-declared for the gate (see the banner) -----------
+xanim,viewmodel_m1911_dw_ads_down
+xanim,viewmodel_m1911_dw_ads_up
+xanim,viewmodel_m1911_dw_crawl_back
+xanim,viewmodel_m1911_dw_crawl_back_empty
+xanim,viewmodel_m1911_dw_crawl_forward
+xanim,viewmodel_m1911_dw_crawl_forward_empty
+xanim,viewmodel_m1911_dw_crawl_in
+xanim,viewmodel_m1911_dw_crawl_in_empty
+xanim,viewmodel_m1911_dw_crawl_left
+xanim,viewmodel_m1911_dw_crawl_left_empty
+xanim,viewmodel_m1911_dw_crawl_out
+xanim,viewmodel_m1911_dw_crawl_out_empty
+xanim,viewmodel_m1911_dw_crawl_right
+xanim,viewmodel_m1911_dw_crawl_right_empty
+xanim,viewmodel_m1911_dw_d2p_in
+xanim,viewmodel_m1911_dw_d2p_in_empty
+xanim,viewmodel_m1911_dw_d2p_loop
+xanim,viewmodel_m1911_dw_d2p_loop_empty
+xanim,viewmodel_m1911_dw_d2p_out
+xanim,viewmodel_m1911_dw_d2p_out_empty
+xanim,viewmodel_m1911_dw_first_raise
+xanim,viewmodel_m1911_dw_pullout
+xanim,viewmodel_m1911_dw_putaway
+xanim,viewmodel_m1911_dw_right_fire
+xanim,viewmodel_m1911_dw_right_idle
+xanim,viewmodel_m1911_dw_right_idle_empty
+xanim,viewmodel_m1911_dw_right_lastshot
+xanim,viewmodel_m1911_dw_right_reload_empty
+xanim,viewmodel_m1911_dw_sprint_in
+xanim,viewmodel_m1911_dw_sprint_in_empty
+xanim,viewmodel_m1911_dw_sprint_loop
+xanim,viewmodel_m1911_dw_sprint_loop_empty
+xanim,viewmodel_m1911_dw_sprint_out
+xanim,viewmodel_m1911_dw_sprint_out_empty
+xmodel,t6_wpn_pistol_browninghp_view
+xmodel,t6_wpn_pistol_browninghp_world
+xmodel,projectile_m203grenade

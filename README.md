@@ -168,6 +168,11 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Blast-O-Matic, the Gallo SA12 mastercraft. It Pack-a-Punches into the **H-NGM-N**, with its own sounds, animations and the stock and animated Pack-a-Punch camos.
   * It appears on every map except Origins, which lacks enough weapon precache slots.
 
+* **Old-school guns in the box:**
+  * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
+  * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
+  * Both appear on every map except Origins, which lacks enough weapon precache slots.
+
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
   * The Python loads all six rounds at once, the way its Pack-a-Punched version always has.
@@ -272,6 +277,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 | **Synarxis** — *Inspiration* | This project wouldn't exist without their kindness & support. |
 | **sehteria** — *T6-ZM-Expanded* | The mod this one grew out of — extra weapons & perks on all maps. |
 | **SadSlothXL** — [t6-ports](https://github.com/SadSlothXL/t6-ports) | The Death Machine power-up — the drop, the weapon swap and its sounds — and the Blast-O-Matic port: its models, animations, textures, sounds and camo table. |
+| **Mario Woopsie** — MOTD Old School Weapons (Nexus Mods) | The MM1 and Browning HP Dual Wield ports: the zombies weapon definitions, the Browning's left-hand models and both Pack-a-Punch names. |
 | **Logo2K** — [Zombies Declassified](https://github.com/Logo-2K/zombies-declassified) | The native T6 Wave Gun package — Treyarch's DLC5 models, animations, effects, weapon defs, sounds and script. |
 | **Jbleezy** — [BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined) | The extra Survival locations, the Bouncing Betty carry animations, the two lines that let Pack-a-Punch take the Sliquifier, and confirming which two checks stand between a solo player and Mob of the Dead's Final Flight. |
 | **5and5** — [BO2-Remix](https://github.com/5and5/BO2-Remix) | The Die Rise Semtex wall buy. |
