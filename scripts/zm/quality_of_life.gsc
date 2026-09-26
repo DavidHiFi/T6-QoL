@@ -18330,20 +18330,23 @@ getperkshader( perk )
 }
 
 // Display name of each perk.
-// (Upstream keeps a Spanish translation in brackets on Tombstone / Who's Who /
-// Vulture Aid - left as shipped; trim the parentheses if you want pure English.)
+// 2026-09-26 user audit: titles must read like the perk's real name, so this
+// table now matches wunderfizz.gsc::getPerkName() exactly - "Double Tap" not
+// "Double Tap 2.0", "Juggernog" not "Jugger-Nog", "Vulture Aid" not
+// "Vulture Aid Elixir". Change both tables together or the menu and the
+// pop-up will disagree.
 getPerkName( perk )
 {
     switch ( perk )
     {
         case "specialty_armorvest":
-            return "Jugger-Nog";
+            return "Juggernog";
         case "specialty_fastreload":
             return "Speed Cola";
         case "specialty_quickrevive":
             return "Quick Revive";
         case "specialty_rof":
-            return "Double Tap 2.0";
+            return "Double Tap";
         case "specialty_longersprint":
             return "Stamin-Up";
         case "specialty_additionalprimaryweapon":
@@ -18357,7 +18360,7 @@ getPerkName( perk )
         case "specialty_finalstand":
             return "Who's Who";
         case "specialty_nomotionsensor":
-            return "Vulture Aid Elixir";
+            return "Vulture Aid";
         case "specialty_grenadepulldeath":
             return "Electric Cherry";
         default:
@@ -18375,20 +18378,34 @@ getPerkDesc( perk )
         //  for it and then asked for the original text back on the same day, so
         //  they are restored verbatim. Do not "tidy" them again without being
         //  asked - the pop-up is meant to read exactly as it always has.
+        //
+        //  2026-09-26 the user asked for exactly that: keep the lines that were
+        //  already plain and correct, fix the vague or wrong ones. Six changed:
+        //    Jugg      250 was BO1. BO2 is 160 (_zm_perks.gsc:67).
+        //    Double Tap  describes 2.0 (+33% rate, a second bullet). With the
+        //              double_tap_1 option on, the second bullet is gone.
+        //    Stamin-Up "You Run Faster" was half of it; sprint lasts longer too.
+        //    Deadshot  names the three things it does, head lock last.
+        //    Vulture   the drops come from zombies; icons alone undersold it.
+        //    Cherry    fires on reload, not "recharging".
+        //  Numbers from the engine's boot dvar dump, not guessed:
+        //  perk_speedMultiplier 1.07, perk_sprintMultiplier 2,
+        //  perk_weapRateMultiplier 0.75, perk_weapSpreadMultiplier 0.65.
+        //  Still Title Case, still one line each.
         case "specialty_armorvest":
-            return "Increase Your Health from 100 to 250";
+            return "Increase Your Health from 100 to 160";
         case "specialty_fastreload":
             return "Reload Your Weapons Faster";
         case "specialty_quickrevive":
             return "In Solo Mode, You Revive Yourself. In Co-op Mode, You Revive Your Allies Faster";
         case "specialty_rof":
-            return "Doubles the fire rate and increases damage";
+            return "Fires 33% Faster and Shoots Two Bullets per Shot";
         case "specialty_longersprint":
-            return "You Run Faster";
+            return "Move Faster and Sprint for Longer";
         case "specialty_additionalprimaryweapon":
             return "Allows You to Carry 3 Weapons Instead of 2";
         case "specialty_deadshot":
-            return "Improves Automatic Head Aiming and Reduces Recoil";
+            return "Tighter Hip Fire, Less Recoil, and Aim Assist Locks Onto the Head";
         case "specialty_flakjacket":
             return "Immune to Explosive Damage. Creates Explosions When You Throw Yourself to the Ground";
         case "specialty_scavenger":
@@ -18400,9 +18417,9 @@ getPerkDesc( perk )
             //  now does too.
             return "Create a Clone to Bring Yourself Back to Life";
         case "specialty_nomotionsensor":
-            return "Displays Ammo and Money Icons. Creates Green Clouds That Hide You From the Zombies";
+            return "Zombies Drop Ammo and Money, and Green Clouds Hide You From Them";
         case "specialty_grenadepulldeath":
-            return "An Electric Discharge When Recharging That Damages Nearby Zombies";
+            return "An Electric Shock When You Reload That Damages Nearby Zombies";
         default:
             return "";
     }
