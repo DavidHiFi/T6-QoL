@@ -307,4 +307,15 @@ LANG_ENGLISH        "Blast-O-Matic"
 REFERENCE           WEAPON_T9_GALLO_BLASTOMATIC_ZM_PAP
 LANG_ENGLISH        "H-NGM-N"
 
+// The MM1 grenade launcher and the Browning HP dual wield, from Mario
+// Woopsie's "MOTD Old School Weapons" (Nexus Mods). WEAPON_MGL ("MM1 Grenade
+// Launcher") and WEAPON_BROWNINGHP_DW ("Browning HP Dual Wield") already
+// resolve on every map from en_code_post_gfx_zm.ff, so only the two
+// Pack-a-Punch names are ours. Both are MOTD's.
+REFERENCE           WEAPON_MGL_UPGRADED
+LANG_ENGLISH        "Parasitic MIST"
+
+REFERENCE           WEAPON_BROWNINGHP_DW_UPGRADED
+LANG_ENGLISH        "Grand Puissances"
+
 ENDMARKER
