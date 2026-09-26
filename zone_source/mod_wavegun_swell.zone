@@ -162,49 +162,61 @@ image,c_zom_dlc0_zombie_head1_n
 image,c_zom_dlc0_zombie_head2_n
 image,c_zom_dlc0_zombie_head3_n
 image,c_zom_dlc0_zombie_head4_n
+// ============================================================================
+//  🛑 v2.17.46 - THE 38 STOCK MATERIAL OVERRIDES BELOW ARE OFF, ON PURPOSE.
+//  They put every stock zombie body (and the CDC player body, which shares
+//  the hazmat materials) on the swell techsets, so the swell shader ran on
+//  every character on every frame. With the torso ball that was already the
+//  prime suspect for the mod-wide "bodies invisible, eyes floating" flicker;
+//  with Moon's uniform push restored, any stray scriptVector3 on a character
+//  would balloon it. They are not needed any more: the Wave Gun swaps the
+//  corpse to its zqwg_ copy, whose own materials carry the swell techsets, so
+//  stock zombies and players now render exactly as retail. This is also what
+//  the Der Riese build does - it never touches a stock material.
+// ============================================================================
 // 53 zombie body/head materials with MaximumSwell
-material,mc/mtl_c_zom_brutus_body
-material,mc/mtl_c_zom_brutus_gloves
-material,mc/mtl_c_zom_civ_shorts_body
-material,mc/mtl_c_zom_civ_shorts_body2
-material,mc/mtl_c_zom_civ_shorts_body3
-material,mc/mtl_c_zom_civ_shorts_body4
-material,mc/mtl_c_zom_civ_shorts_body5
-material,mc/mtl_c_zom_civ_shorts_body6
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_1
-material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_2
-material,mc/mtl_c_zom_dlc0_zombie_solciv_body_1
-material,mc/mtl_c_zom_dlc0_zombie_soldier_body_1
-material,mc/mtl_c_zom_foot_spawn
-material,mc/mtl_c_zom_guard_body
-material,mc/mtl_c_zom_inmate_barechest
-material,mc/mtl_c_zom_inmate_details
-material,mc/mtl_c_zom_inmate_legs
-material,mc/mtl_c_zom_inmate_shirt
-material,mc/mtl_c_zom_leaper_body
-material,mc/mtl_c_zom_scientist_body
-material,mc/mtl_c_zom_soldier_body1
-material,mc/mtl_c_zom_vtn_nva1_body
-material,mc/mtl_c_zom_zombie1_body01
-material,mc/mtl_c_zom_zombie1_body02
-material,mc/mtl_c_zom_zombie2_body01
-material,mc/mtl_c_zom_zombie2_body02
-material,mc/mtl_c_zom_zombie2_body03
-material,mc/mtl_c_zom_zombie3_body01
-material,mc/mtl_c_zom_zombie3_body02
-material,mc/mtl_c_zom_zombie3_body03
-material,mc/mtl_c_zom_zombie3_body04
-material,mc/mtl_c_zom_zombie3_body05
+//material,mc/mtl_c_zom_brutus_body
+//material,mc/mtl_c_zom_brutus_gloves
+//material,mc/mtl_c_zom_civ_shorts_body
+//material,mc/mtl_c_zom_civ_shorts_body2
+//material,mc/mtl_c_zom_civ_shorts_body3
+//material,mc/mtl_c_zom_civ_shorts_body4
+//material,mc/mtl_c_zom_civ_shorts_body5
+//material,mc/mtl_c_zom_civ_shorts_body6
+//material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_1
+//material,mc/mtl_c_zom_dlc0_zombie_hazmat_body_2
+//material,mc/mtl_c_zom_dlc0_zombie_solciv_body_1
+//material,mc/mtl_c_zom_dlc0_zombie_soldier_body_1
+//material,mc/mtl_c_zom_foot_spawn
+//material,mc/mtl_c_zom_guard_body
+//material,mc/mtl_c_zom_inmate_barechest
+//material,mc/mtl_c_zom_inmate_details
+//material,mc/mtl_c_zom_inmate_legs
+//material,mc/mtl_c_zom_inmate_shirt
+//material,mc/mtl_c_zom_leaper_body
+//material,mc/mtl_c_zom_scientist_body
+//material,mc/mtl_c_zom_soldier_body1
+//material,mc/mtl_c_zom_vtn_nva1_body
+//material,mc/mtl_c_zom_zombie1_body01
+//material,mc/mtl_c_zom_zombie1_body02
+//material,mc/mtl_c_zom_zombie2_body01
+//material,mc/mtl_c_zom_zombie2_body02
+//material,mc/mtl_c_zom_zombie2_body03
+//material,mc/mtl_c_zom_zombie3_body01
+//material,mc/mtl_c_zom_zombie3_body02
+//material,mc/mtl_c_zom_zombie3_body03
+//material,mc/mtl_c_zom_zombie3_body04
+//material,mc/mtl_c_zom_zombie3_body05
 //  v2.15.49: TranZit SURVIVAL's own families (Town/Farm/Bus Depot spawn
 //  zombie5/zombie8 bodies and the female heads d/f), dumped from
 //  so_zsurvival_zm_transit.ff and re-authored the same way. Without these a
 //  survival zombie keeps the map's retail material and never swells.
-material,mc/mtl_c_zom_zombie5_body01
-material,mc/mtl_c_zom_zombie5_body02
-material,mc/mtl_c_zom_zombie5_body03
-material,mc/mtl_c_zom_zombie8_body01
-material,mc/mtl_c_zom_zombie8_body02
-material,mc/mtl_c_zom_zombie8_body03
+//material,mc/mtl_c_zom_zombie5_body01
+//material,mc/mtl_c_zom_zombie5_body02
+//material,mc/mtl_c_zom_zombie5_body03
+//material,mc/mtl_c_zom_zombie8_body01
+//material,mc/mtl_c_zom_zombie8_body02
+//material,mc/mtl_c_zom_zombie8_body03
 
 //  The separate unlit and glowing-eye layers use their own vertex shaders.
 //  Pointing these materials at the swell eye techset keeps the whole head
