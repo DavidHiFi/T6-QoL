@@ -31,6 +31,31 @@ main()
 	// v2.10.7 - the three Hell's Retriever dog heads are OFF on Cell Block
 	// survival. See zmqol_grief_soul_catcher_state_manager() below.
 	replaceFunc( maps\mp\zm_alcatraz_weap_quest::grief_soul_catcher_state_manager, ::zmqol_grief_soul_catcher_state_manager );
+
+	// 2026-09-27 - Brutus never goes for barriers. See zmqol_brutus_blocker_never_valid().
+	replaceFunc( maps\mp\zombies\_zm_ai_brutus::is_blocker_valid, ::zmqol_brutus_blocker_never_valid );
+}
+
+// ============================================================================
+//  zmqol_brutus_blocker_never_valid  -  replaces
+//  maps\mp\zombies\_zm_ai_brutus::is_blocker_valid                (2026-09-27)
+//
+//  User, 2026-09-27: *"brutus is breaking barriers, which makes no sense he's
+//  not supposed to attack barriers ... lock them down"*.
+//
+//  Brutus picks a target from level.interaction_types in priority order: box,
+//  perk machine, craftable table, trap, plane ramp, then "blocker" - any window
+//  zbarrier with a board still closed (brutus_blocker_pieces_req = 1). Its
+//  interact_func, blocker_smash(), opens every piece of that window at once.
+//  With the survival barriers built again, that is what the user saw.
+//
+//  is_blocker_valid() is the "blocker" row's validity_func and nothing else
+//  calls it, so answering false takes windows out of his target list on every
+//  Mob mode and leaves the other five interactions exactly as stock.
+// ============================================================================
+zmqol_brutus_blocker_never_valid()
+{
+	return false;
 }
 
 // ============================================================================
