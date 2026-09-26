@@ -449,6 +449,71 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
     level thread zmqol_subs_broadcast( undefined, str_name, str_text, n_secs, v_pos, n_range_sq );
 }
 
+// ============================================================================
+//  zmqol_subs_music  -  THE EASTER EGG SONGS.                       (v2.17.42)
+//
+//  User, 2026-09-26: *"make sure that subtitles work for easter egg songs and
+//  stuff like that and all the maps cuz like i was playing town survival and i
+//  interacted with all three of the teddy bears which activated the easter egg
+//  song carry on and there was no subtitles for the the song"*.
+//
+//  A song is a mus_* alias, not a vox_* one, so none of the three roads above
+//  ever saw it. Each map's own file calls this beside the play builtin:
+//      scripts/zm/zm_transit/qol_subs_music_transit.gsc   the bears (stock + mod)
+//      scripts/zm/<map>/qol_subs_music_<map>.gsc          stock sndmuseggplay()
+//      qol_subs_npc_prison.gsc nixie_935_audio            Mob's second song
+//
+//  🛑 A TITLE CARD, NOT LYRICS. The songs are licensed and published tracks
+//  (Johnny Cash, Avenged Sevenfold, Kevin Sherwood's), so the mod does not
+//  carry their lyrics. Each map's table has one row per song alias - title and
+//  artist, split into rows by "~" like any long line. It shows for 8 s when
+//  the song starts and again every 60 s while it plays, so someone who looks
+//  up mid-song still learns what it is. A newer song, or the game ending,
+//  stops the loop.
+//
+//  Level-scope; songs are 2D (DistMaxDry 5000, pan 2d in every bank), so every
+//  player gets it, grey, with no name in front.
+// ============================================================================
+zmqol_subs_music( str_alias )
+{
+    if ( !isdefined( level.zmqol_subs_table ) )
+        return;
+
+    level notify( "zmqol_subs_music" );
+    level endon( "zmqol_subs_music" );
+    level endon( "end_game" );
+
+    str_text = zmqol_subs_lookup( str_alias );
+
+    if ( str_text == "" )
+    {
+        println( "[zm_qol] subtitles: no text for song " + str_alias );
+        return;
+    }
+
+    //  A streamed music alias should report its length like a streamed vox one
+    //  does; if it does not, the card still shows, just once.
+    n_ms = soundgetplaybacktime( str_alias );
+
+    if ( !isdefined( n_ms ) || n_ms <= 0 )
+        n_ms = 0;
+
+    println( "[zm_qol] subtitles: song " + str_alias + " -> title card, song " + ( n_ms * 0.001 ) + "s" );
+
+    n_end = gettime() + n_ms;
+
+    for ( ;; )
+    {
+        if ( zmqol_subs_enabled() )
+            level thread zmqol_subs_broadcast( undefined, "", str_text, 8, undefined, 0 );
+
+        if ( n_end - gettime() < 90000 )
+            return;
+
+        wait 60;
+    }
+}
+
 //  Who a non-player alias is, from its prefix. Measured against the alias
 //  tables and the scripts that play them (2026-09-08):
 //    vox_zmba_*       SPLIT BY CATEGORY since v2.15.4, because this prefix
@@ -684,6 +749,16 @@ zmqol_subs_from_position( str_alias, str_name, v_pos, n_range )
 //  single take carries the same text in both. cg_allow_mature is what the
 //  engine's "mature" sound context reads (it is in the boot dvar dump), so it
 //  is what decides here too.
+//
+//  🛑 v2.17.42 - A VARIANT THE TABLE DOES NOT NAME FALLS BACK TO ITS BASE ROW.
+//  User, 2026-09-26, Docks survival: *"i was getting power-ups like instant
+//  kill ... wasn't showing up the subtitles"*. The hook ran every time and the
+//  log said `no text for vox_zmba_powerup_instakill_0`. Retail Mob names its
+//  announcer aliases with NO variant (vox_zmba_powerup_instakill), so that is
+//  the key its table carries. Since 9bde892 (2026-09-21) mod.ff declares the
+//  _0 forms of six power-ups plus dogstart and magicbox on EVERY map, so
+//  getleaderdialogvariant() now finds a variant on Mob too and asks for _0. The
+//  text is the same line, so a miss on "..._N" retries "..." once.
 zmqol_subs_lookup( str_alias )
 {
     n_col = 1;
@@ -693,10 +768,35 @@ zmqol_subs_lookup( str_alias )
 
     str_text = tablelookup( level.zmqol_subs_table, 0, str_alias, n_col );
 
+    if ( isdefined( str_text ) && str_text != "" )
+        return str_text;
+
+    str_base = zmqol_subs_base_alias( str_alias );
+
+    if ( str_base == str_alias )
+        return "";
+
+    str_text = tablelookup( level.zmqol_subs_table, 0, str_base, n_col );
+
     if ( !isdefined( str_text ) )
         return "";
 
     return str_text;
+}
+
+//  "vox_zmba_powerup_instakill_0" -> "vox_zmba_powerup_instakill"; an alias
+//  with no trailing "_<digits>" comes back unchanged.
+zmqol_subs_base_alias( str_alias )
+{
+    n_at = str_alias.size - 1;
+
+    while ( n_at > 0 && issubstr( "0123456789", getsubstr( str_alias, n_at, n_at + 1 ) ) )
+        n_at--;
+
+    if ( n_at == str_alias.size - 1 || getsubstr( str_alias, n_at, n_at + 1 ) != "_" )
+        return str_alias;
+
+    return getsubstr( str_alias, 0, n_at );
 }
 
 //  Column 3 (v2.14.31) is the alias's own DistMaxDry from its sound-alias row,
@@ -705,6 +805,10 @@ zmqol_subs_lookup( str_alias )
 zmqol_subs_range_sq( str_alias )
 {
     str_range = tablelookup( level.zmqol_subs_table, 0, str_alias, 3 );
+
+    //  same variant fallback as zmqol_subs_lookup()
+    if ( !isdefined( str_range ) || str_range == "" )
+        str_range = tablelookup( level.zmqol_subs_table, 0, zmqol_subs_base_alias( str_alias ), 3 );
 
     if ( !isdefined( str_range ) || str_range == "" )
         return level.zmqol_subs_range_sq;

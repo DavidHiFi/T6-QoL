@@ -16,8 +16,18 @@
 //                                                     via playsoundtoplayer()
 //      zm_prison_sq_final::final_battle_vo            the showdown exchange -
 //        + final_battle_reveal                        "end_scenario_0/1"
+//      zm_alcatraz_sq_vo::escape_flight_vo            "plane_flight_0" and      (v2.17.42)
+//                                                     "plane_crash_0", every
+//                                                     escape, via playsound()
 //
 //  All rows present in zm/zmqol_subs_zm_prison.csv (checked one by one).
+//
+//  v2.17.42 - escape_flight_vo was missed by the 2026-09-08 grep. User,
+//  2026-09-26, Docks survival as Billy: *"my character ... was speaking and it
+//  didn't show"*. It runs on every plane trip, survival included, and its two
+//  middle lines go straight through playsound() on the player. Its other lines
+//  (build_plane, plane_takeoff) already go through do_player_general_vox, the
+//  dialogue system, and are left exactly as they were.
 //
 //  🛑 HOW EACH IS REACHED, per STOCK_REFERENCE §7a:
 //    - the electric chair has a custom-function pointer stock declares and
@@ -38,6 +48,7 @@ main()
 {
     replaceFunc( maps\mp\zm_alcatraz_sq_vo::player_scream_thread, ::zmqol_player_scream_thread );
     replaceFunc( maps\mp\zm_prison_sq_final::final_battle_vo, ::zmqol_final_battle_vo );
+    replaceFunc( maps\mp\zm_alcatraz_sq_vo::escape_flight_vo, ::zmqol_escape_flight_vo );
 }
 
 init()
@@ -152,6 +163,91 @@ zmqol_player_scream_thread()
     self stopsounds();
     self.dontspeak = 0;
     player setclientfieldtoplayer( "isspeaking", 0 );
+}
+
+// ----------------------------------------------------------------------------
+//  zm_alcatraz_sq_vo.gsc  -  the plane trip. Stock verbatim + 2 caption lines;
+//  every caller (zm_alcatraz_craftables x2, zm_alcatraz_sq) `level thread`s it
+//  fully qualified. The scream at the end calls this file's own copy, as the
+//  stock unqualified call would reach it through the replaceFunc anyway.
+// ----------------------------------------------------------------------------
+zmqol_escape_flight_vo()
+{
+    println( "[zm_qol] subtitles: hook ran - escape_flight_vo" );
+
+    e_roof_zone = getent( "zone_roof", "targetname" );
+    players = getplayers();
+    player = players[randomintrange( 0, players.size )];
+
+    if ( isdefined( player ) && player istouching( e_roof_zone ) )
+        player thread do_player_general_vox( "quest", "build_plane", undefined, 100 );
+
+    flag_wait( "plane_boarded" );
+
+    if ( level.final_flight_activated )
+        return;
+
+    while ( level.characters_in_nml.size == 0 )
+        wait 0.1;
+
+    wait 1;
+
+    if ( level.characters_in_nml.size > 0 )
+    {
+        character_name = level.characters_in_nml[randomintrange( 0, level.characters_in_nml.size )];
+        players = getplayers();
+
+        foreach ( player in players )
+        {
+            if ( isdefined( player ) && player.character_name == character_name )
+                player thread do_player_general_vox( "quest", "plane_takeoff" );
+        }
+    }
+
+    flag_wait( "plane_departed" );
+    wait 2;
+
+    if ( level.characters_in_nml.size > 0 )
+    {
+        character_name = level.characters_in_nml[randomintrange( 0, level.characters_in_nml.size )];
+        players = getplayers();
+
+        foreach ( player in players )
+        {
+            if ( isdefined( player ) && player.character_name == character_name )
+            {
+                player playsound( "vox_plr_" + player.characterindex + "_plane_flight_0" );
+                player scripts\zm\zmqol_subtitles::zmqol_subs_raw_line( "vox_plr_" + player.characterindex + "_plane_flight_0", undefined );
+            }
+        }
+    }
+
+    flag_wait( "plane_approach_bridge" );
+    wait 3.5;
+
+    if ( level.characters_in_nml.size > 0 )
+    {
+        character_name = level.characters_in_nml[randomintrange( 0, level.characters_in_nml.size )];
+        players = getplayers();
+
+        foreach ( player in players )
+        {
+            if ( isdefined( player ) && player.character_name == character_name )
+            {
+                player playsound( "vox_plr_" + player.characterindex + "_plane_crash_0" );
+                player scripts\zm\zmqol_subtitles::zmqol_subs_raw_line( "vox_plr_" + player.characterindex + "_plane_crash_0", undefined );
+            }
+        }
+    }
+
+    flag_wait( "plane_zapped" );
+    players = getplayers();
+
+    foreach ( player in players )
+    {
+        if ( isdefined( player ) && isinarray( level.characters_in_nml, player.character_name ) )
+            player thread zmqol_player_scream_thread();
+    }
 }
 
 // ----------------------------------------------------------------------------
