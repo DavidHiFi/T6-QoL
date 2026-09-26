@@ -14,11 +14,9 @@
 //  (AGENTS.md item 1b). A raw script that installs itself from its own init()
 //  costs that file nothing.
 //
-//  🛑 ORIGINS IS SKIPPED, AND THAT IS A BUDGET, NOT A PREFERENCE. zm_tomb has
-//  0-1 spare weapon precache slots (quality_of_life.gsc's v2.17.37 banner) and
-//  these two pairs cost at least 4. Over the ceiling the map dies at load with
-//  "unknown weapon" naming some innocent gun. The client twin in zm_expanded.csc
-//  skips Origins on the same test; change one, change both.
+//  The engine's registered-weapon ceiling is 253. The measured per-map counts
+//  and allocation are in modding-jobs/motd-port-001/BUDGET.md. Keep the client
+//  twin in zm_expanded.csc on exactly the same map and game-mode conditions.
 //
 //  📝 THE LEFT-HAND HALVES. browninghplh_zm / _upgraded_zm are never box
 //  results: they are the dual wield's off-hand gun, inventoryType dwlefthand,
@@ -52,9 +50,14 @@
 
 init()
 {
-    if ( level.script == "zm_tomb" )
+    map = getdvar( "mapname" );
+    mode = getdvar( "ui_zm_gamemodegroup" );
+    mm1 = oldschool_mm1_enabled( map, mode );
+    dw = oldschool_dw_enabled( map, mode );
+
+    if ( !mm1 && !dw )
     {
-        println( "[zm_qol] oldschool: held back on zm_tomb - no precache budget" );
+        println( "[zm_qol] oldschool: held back on " + map + " / " + mode + " - weapon budget" );
         return;
     }
 
@@ -67,20 +70,44 @@ init()
         vox_dw = "wpck_dual";
     }
 
-    precacheitem( "mm1_zm" );
-    precacheitem( "mm1_upgraded_zm" );
-    precacheitem( "browninghpdw_zm" );
-    precacheitem( "browninghpdw_upgraded_zm" );
-    precacheitem( "browninghplh_zm" );
-    precacheitem( "browninghplh_upgraded_zm" );
+    if ( mm1 )
+    {
+        precacheitem( "mm1_zm" );
+        precacheitem( "mm1_upgraded_zm" );
+        include_weapon( "mm1_zm" );
+        include_weapon( "mm1_upgraded_zm", 0 );
+        add_zombie_weapon( "mm1_zm", "mm1_upgraded_zm", &"WEAPON_MGL", 50, vox_mm1, "", undefined, 1 );
+        println( "[zm_qol] oldschool: registered mm1 on " + map );
+    }
 
-    include_weapon( "mm1_zm" );                         //  in_box defaults to 1
-    include_weapon( "mm1_upgraded_zm", 0 );
-    include_weapon( "browninghpdw_zm" );
-    include_weapon( "browninghpdw_upgraded_zm", 0 );
+    if ( dw )
+    {
+        precacheitem( "browninghpdw_zm" );
+        precacheitem( "browninghpdw_upgraded_zm" );
+        precacheitem( "browninghplh_zm" );
+        precacheitem( "browninghplh_upgraded_zm" );
+        include_weapon( "browninghpdw_zm" );
+        include_weapon( "browninghpdw_upgraded_zm", 0 );
+        add_zombie_weapon( "browninghpdw_zm", "browninghpdw_upgraded_zm", &"WEAPON_BROWNINGHP_DW", 50, vox_dw, "", undefined, 1 );
+        println( "[zm_qol] oldschool: registered browninghpdw on " + map );
+    }
+}
 
-    add_zombie_weapon( "mm1_zm", "mm1_upgraded_zm", &"WEAPON_MGL", 50, vox_mm1, "", undefined, 1 );
-    add_zombie_weapon( "browninghpdw_zm", "browninghpdw_upgraded_zm", &"WEAPON_BROWNINGHP_DW", 50, vox_dw, "", undefined, 1 );
+oldschool_mm1_enabled( map, mode )
+{
+    if ( mode != "zclassic" && mode != "zsurvival" )
+        return 0;
 
-    println( "[zm_qol] oldschool: registered mm1 + browninghpdw on " + level.script );
+    if ( map == "zm_transit" || map == "zm_prison" )
+        return mode == "zsurvival";
+
+    return map == "zm_nuked" || map == "zm_highrise" || map == "zm_buried" || map == "zm_tomb";
+}
+
+oldschool_dw_enabled( map, mode )
+{
+    if ( mode != "zclassic" && mode != "zsurvival" )
+        return 0;
+
+    return map == "zm_nuked" || map == "zm_buried";
 }
