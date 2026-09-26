@@ -194,50 +194,23 @@ float3 DecodeNormal(float3 v)
     return (v >= 0.5) ? (v * 2.0 - 2.0) : (v * 2.0);
 }
 
-// Wave Gun swell (v2.15.51). Runs on the WORLD position the shader already
-// has. Zombies are skinned on the CPU, so IN.pos arrives in eye-relative
-// world space and worldMatrix is identity (the fog code measures
-// length(wp) as the distance from the eye - that is the proof). So the
-// centre must be eye-relative too: scriptVector3.yzw is the J_SpineLower
-// tag minus the local player's eye, sent by the client ramp every tick;
-// scriptVector3.x is the amount (0 -> 4 over 2.5 s, BO1's values). BO1
-// pushed every vertex out along its normal by the same amount, so hands,
-// head and legs ballooned as much as the belly. This is a torso ball: an
-// ellipsoid 30 units wide and 22 tall around that point, growing over the
-// ramp, whose push along the normal falls smoothly to ZERO at its edge.
-// Hands, feet, legs and the attached head/eyes are outside it and do not
-// move. Zero amount = zero offset, so an actor that never swells renders
-// exactly as retail.
+// Wave Gun swell (v2.17.46) - BO1 Moon's bloat, one line, nothing else.
+// pimp_shader_sw4_3d_char_cloth_bloat pushed each vertex out along its world
+// normal by scriptVector3.x; the client ramps it 0 -> 4 over 2.5 s. This is the
+// same instruction stream as the working Der Riese build 11 (disassembled,
+// modding-jobs\wavegun-build11-001\disasm) and as our own v2.15.49.
 //
-// 🛑 v2.16.2 - THE CENTRE IS EYE-RELATIVE. DO NOT "FIX" THIS TO WORLD SPACE.
-// v2.16.1 tried exactly that and it cost the user a boot. The reasoning was
-// sound - the wobble comes from comparing `wp`, which is rebuilt EVERY FRAME,
-// against a centre the client ramp only resends every 50 ms, so player
-// movement slid the ball across the body between updates. The fix attempted
-// was to reconstruct absolute world position with
-//     wp + inverseViewMatrix[3].xyz
-// so the eye would cancel. MEASURED IN GAME 2026-09-14: zombies stopped
-// inflating entirely. That row is not the camera position on this engine -
-// T6 stores these matrices transposed relative to this file's row-vector
-// mul(v, M) usage, so the translation is not in row 3 - and the centre landed
-// far enough away that every weight saturated to zero. The failure is silent
-// and total, exactly as predicted, which is the only reason it was cheap to
-// diagnose.
+// v2.15.51-v2.17.45 limited the push to a ball around the stomach because the
+// uniform push tore the mesh at every hard edge. The tear was in the MESH, not
+// the formula: a stock zombie splits the normal at each seam. The Wave Gun now
+// swaps the corpse to a copy whose normals are welded (zqwg_*, zapgun.gsc
+// zmqol_mgun_swell_swap), so Moon's push inflates it as one skin - the
+// Der Riese build's route. Zero amount = zero offset, so every zombie that is
+// not being microwaved renders exactly as retail.
 //
-// 🌟 So the space stays eye-relative, the way v2.15.51 had it working, and
-// the staleness is attacked where it is actually cheap and safe: the client
-// ramp now resends the centre every frame instead of every 50 ms (zapgun.csc),
-// which cuts the lag to a single frame of player movement. If the residual
-// wobble ever needs to go to zero, the right move is to send the eye position
-// in its own mapped shader constant from script - NOT to guess at a matrix
-// row again.
+// The v2.16.2 note that lived here (the centre is eye-relative, never world
+// space) is moot: there is no centre any more.
 float3 SwellOffset(float3 wp, float3 n)
 {
-    float amt = scriptVector3.x;
-    float f = saturate(amt * 0.25);
-    float3 d = wp - scriptVector3.yzw;
-    float dm = length(d * float3(1.0 / 30.0, 1.0 / 30.0, 1.0 / 22.0));
-    float t = saturate(dm / lerp(0.7, 1.0, f));
-    float w = 1.0 - t * t * (3.0 - 2.0 * t);
-    return n * (amt * 2.5 * w);
+    return n * scriptVector3.x;
 }
