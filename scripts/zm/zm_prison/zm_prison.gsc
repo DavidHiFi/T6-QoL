@@ -32,6 +32,11 @@ main()
 	// survival. See zmqol_grief_soul_catcher_state_manager() below.
 	replaceFunc( maps\mp\zm_alcatraz_weap_quest::grief_soul_catcher_state_manager, ::zmqol_grief_soul_catcher_state_manager );
 
+	// 2026-09-26 - survival starts with every window boarded, and Carpenter
+	// exists to rebuild them. See the banners on both functions below.
+	replaceFunc( maps\mp\zm_alcatraz_utility::drop_all_barriers, ::zmqol_drop_all_barriers );
+	zmqol_include_carpenter();
+
 	// 2026-09-27 - Brutus never goes for barriers. See zmqol_brutus_blocker_never_valid().
 	replaceFunc( maps\mp\zombies\_zm_ai_brutus::is_blocker_valid, ::zmqol_brutus_blocker_never_valid );
 }
@@ -56,6 +61,107 @@ main()
 zmqol_brutus_blocker_never_valid()
 {
 	return false;
+}
+
+// ============================================================================
+//  zmqol_drop_all_barriers  -  replaces maps\mp\zm_alcatraz_utility::
+//  drop_all_barriers                                              (2026-09-26)
+//
+//  User, 2026-09-26, on Docks: *"the barriers will not built at the start of
+//  the game the barriers should all be built at the start of the game"*.
+//
+//  Stock zm_prison::main() threads this in EVERY mode (zm_prison.gsc:219). It
+//  opens and hides every board in every zone except zone_start and
+//  zone_library - the classic intro, where the player wakes in the cell block
+//  and the rest of the prison is meant to look wrecked. A survival location is
+//  not that intro, and on Docks it strips every window the player can see.
+//  BO2-Reimagined replaces it with an empty function for the same reason.
+//
+//  Classic runs stock's body verbatim. Survival and grief do nothing, and
+//  scripts\zm\zmqol_barriers.gsc closes anything still open at round start.
+//  stock calls this threaded, the case STOCK_REFERENCE 7a measured as
+//  hookable; the println is the proof it took.
+// ============================================================================
+zmqol_drop_all_barriers()
+{
+	if ( !is_classic() )
+	{
+		println( "[zm_qol] BARRIERS: Mob drop_all_barriers() skipped on " + getdvar( "ui_zm_mapstartlocation" ) + " - survival starts with every window boarded" );
+		return;
+	}
+
+	zkeys = getarraykeys( level.zones );
+
+	for ( z = 0; z < level.zones.size; z++ )
+	{
+		if ( zkeys[z] != "zone_start" && zkeys[z] != "zone_library" )
+		{
+			zbarriers = maps\mp\zm_alcatraz_utility::get_all_zone_zbarriers( zkeys[z] );
+
+			if ( !isdefined( zbarriers ) )
+				continue;
+
+			foreach ( zbarrier in zbarriers )
+			{
+				zbarrier_pieces = zbarrier getnumzbarrierpieces();
+
+				for ( i = 0; i < zbarrier_pieces; i++ )
+				{
+					zbarrier hidezbarrierpiece( i );
+					zbarrier setzbarrierpiecestate( i, "open" );
+				}
+
+				wait 0.05;
+			}
+		}
+	}
+}
+
+// ============================================================================
+//  zmqol_include_carpenter  -  CARPENTER ON MOB SURVIVAL          (2026-09-26)
+//
+//  User, 2026-09-26, with a Docks screenshot of ".carp" answering "no power-up
+//  carpenter on this map": *"carpenter was disabled which makes no sense since
+//  there's barriers on the map"*.
+//
+//  Stock zm_prison::include_powerups() registers nuke, insta_kill,
+//  double_points, full_ammo and fire_sale - no Carpenter in any mode. Classic
+//  Mob is left exactly as stock ships it; this adds Carpenter to survival
+//  (Docks, Cell Block), which has window barriers and now rebuilds them.
+//
+//  🛑 SAME TIMING AND SHAPE AS zm_tomb.gsc::zmqol_include_carpenter(), which
+//  measured it: include_powerup() alone is too late (the table is already
+//  built), so this makes stock's own add_zombie_powerup() call from main(),
+//  still inside the precache window. The model, zombie_carpenter, is in
+//  zm_prison.ff. The drop rule is set by scripts\zm\zmqol_barriers.gsc once
+//  round logic starts; the one here is stock's, for safety.
+//
+//  📝 NO CLIENTFIELD IS INVOLVED. Carpenter's add_zombie_powerup() passes no
+//  client_field_name on either side (_zm_powerups.gsc:97, .csc:15), so the
+//  server and client tables cannot disagree; and the client's own include is
+//  only for its level.zombie_powerups list, which the client reads for field
+//  names only.
+// ============================================================================
+zmqol_include_carpenter()
+{
+	if ( is_classic() )
+		return;
+
+	if ( isdefined( level.zombie_powerups ) && isdefined( level.zombie_powerups["carpenter"] ) )
+		return;
+
+	maps\mp\zombies\_zm_utility::include_powerup( "carpenter" );
+	maps\mp\zombies\_zm_powerups::add_zombie_powerup( "carpenter", "zombie_carpenter", &"ZOMBIE_POWERUP_MAX_AMMO", ::zmqol_should_drop_carpenter, 0, 0, 0 );
+	println( "[zm_qol] CARPENTER: registered by hand from zm_prison main() for " + getdvar( "ui_zm_mapstartlocation" ) );
+}
+
+//  maps\mp\zombies\_zm_powerups::func_should_drop_carpenter(), verbatim.
+zmqol_should_drop_carpenter()
+{
+	if ( maps\mp\zombies\_zm_powerups::get_num_window_destroyed() < 5 )
+		return false;
+
+	return true;
 }
 
 // ============================================================================

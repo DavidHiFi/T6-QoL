@@ -478,7 +478,9 @@ init()
     level thread zmqol_no_power_tomb_extras();
     level thread zmqol_disable_staff_relay_switches();
     level thread zmqol_remove_survival_ee_props();
-    level thread zmqol_disable_survival_barriers();
+    //  2026-09-26 - zmqol_disable_survival_barriers() is no longer started. The
+    //  survival arenas keep their barriers, fully boarded, rebuildable, and a
+    //  zombie has to tear them to get in. See scripts\zm\zmqol_barriers.gsc.
     zmqol_include_carpenter();
     level thread zmqol_wunderfizz_all_perks();
     added_weapons();
@@ -1470,16 +1472,15 @@ zmqol_remove_survival_ee_props()
 //  User, 2026-09-16: *"bring back carpenter, of course, because carpenter is
 //  meant to be on Origins."*
 //
-//  🛑 CLASSIC ORIGINS ONLY, and that is now settled rather than guessed.
-//  User, 2026-09-16: *"disable carpenter on all these survival maps ... make
-//  sure that the actual Origins map has the power-up because that works fine."*
-//  The survival arenas have no barriers any more - see
-//  zmqol_disable_survival_barriers() in this file - so Carpenter would have
-//  nothing to repair there and the drop would be a dud pickup.
+//  ⭐ EVERY MODE, SURVIVAL INCLUDED (2026-09-26). The 2026-09-16 call was
+//  "disable carpenter on all these survival maps" because the arenas' barriers
+//  were being removed. They are back - built at start, rebuildable, and torn
+//  by zombies - so the user reversed it: *"make sure that if you're able to
+//  build barriers that work properly that you're able to get carpenter
+//  power-ups"*. The survival drop rule lives in scripts\zm\zmqol_barriers.gsc.
 //
-//  📝 BO2-Reimagined, the port source for these arenas, never registers
-//  Carpenter on zm_tomb in any mode. Survival now matches it; classic keeps
-//  zm_qol's addition.
+//  📝 The pickup model, zombie_carpenter, is not in any Origins fastfile; it
+//  ships in mod.ff (zone_source\mod_locations.zone).
 //
 //  include_powerup() only writes level.zombie_include_powerups[name]; the drop
 //  table is built later by _zm_powerups::init() from that array. main() runs
@@ -1541,18 +1542,9 @@ zmqol_include_carpenter()
 //  goes through specific_powerup_drop() and does not consult it at all.
 zmqol_should_drop_carpenter()
 {
-    //  ⭐ NO CARPENTER ON THE ORIGINS SURVIVAL ARENAS. User, 2026-09-16:
-    //  *"disable carpenter on all these survival maps ... make sure that the
-    //  actual Origins map has the power-up because that works fine."* Those
-    //  arenas have no barriers left (zmqol_disable_survival_barriers), so a
-    //  Carpenter there would be a pickup that repairs nothing.
-    //
-    //  🛑 THE BLOCK BELONGS HERE, NOT ON THE REGISTRATION - see the banner on
-    //  zmqol_include_carpenter(). This function runs long after precache and
-    //  writes nothing, so classic and survival still register the same tables.
-    if ( !is_classic() )
-        return false;
-
+    //  Stock's rule. On the survival arenas scripts\zm\zmqol_barriers.gsc swaps
+    //  this pointer for a one-window rule once round logic starts, because an
+    //  arena reaches only two or three of the map's twelve windows.
     if ( maps\mp\zombies\_zm_powerups::get_num_window_destroyed() < 5 )
         return false;
 
@@ -1648,91 +1640,16 @@ zmqol_carpenter_readback()
 //  would quietly take the ballistic knife off Who's Who here.
 // ============================================================================
 // ============================================================================
-//  ⭐ ORIGINS SURVIVAL: NO BARRIERS AT ALL, AND NOTHING TO REBUILD.
+//  🛑 zmqol_disable_survival_barriers() WAS DELETED 2026-09-26.
 //
-//  User, 2026-09-16, after a day of this: *"just get rid of these barriers ...
-//  so there's no way for them to be a problem ... make sure I can't build them,
-//  no tooltip shows up ... not touching or interfering with the actual Origins
-//  as a whole map."*
-//
-//  🛑 CLASSIC ORIGINS IS UNTOUCHED. is_classic() returns immediately, so the
-//  twelve stock zbarriers stand and behave exactly as they always have on the
-//  full map, Carpenter included.
-//
-//  📝 WHY A SURVIVAL ARENA CANNOT JUST KEEP THEM. Measured on Church,
-//  2026-09-16, probe raw\scripts\zm\zzz_zmqol_aiprobe.gsc: across two matches
-//  it logged 44 zombies inside 250 units of the player and NOT ONE
-//  zm_barricade_enter climb. Zombies that take the entrance path reach the
-//  window and never get through it; the ones that reach the player are
-//  find_flesh risers, which stock sends past the barrier system entirely
-//  (_zm_spawner::should_skip_teardown, :330). Half-working barriers are worse
-//  than none: a zombie wedged at a window taunts on the spot, which is the
-//  "stops and attacks the air" the user reported.
-//
-//  📝 BO2-Reimagined, which is where these arenas were ported from, was checked
-//  before writing this. It does NOT disable the zbarriers - it does not touch
-//  them at all, and its loc_common::barrier() spawns arena-boundary collision
-//  walls and props, nothing else. It also never registers Carpenter. So there
-//  was no Reimagined behaviour to copy here; this is the user's own call.
-//
-//  Two things per barrier, and the second is the one that removes the prompt:
-//    1. every piece hidden and set "open" - no boards, and
-//       _zm_utility::all_chunks_destroyed() reads piece state only, so stock's
-//       tear_into_building() returns straight away instead of parking a zombie
-//       at a window it can never get through.
-//    2. level.no_board_repair set to 1 - stock's OWN switch for this, read off
-//       _zm_blockers::blocker_trigger_think(), which returns on its first two
-//       lines when that flag is set. Nothing creates the unitrigger stub, so
-//       there is no "Hold F to Rebuild Barrier" prompt and no rebuild points.
-//
-//  📝 The first attempt unregistered s_goal.unitrigger_stub instead and logged
-//  "0 rebuild prompt(s) unregistered" on Church, because the stub does not
-//  exist yet: blocker_trigger_think() builds it lazily the first time a barrier
-//  is used. The flag is set before the round flag for that reason.
+//  It opened and hid every board on the survival arenas and set
+//  level.no_board_repair (the user's 2026-09-16 call, after a day of zombies
+//  vaulting boarded windows). The user reversed it: every barrier built at
+//  start, rebuildable, torn by zombies before they get in, Carpenter on. The
+//  vaulting had a cause - stock never cuts a boarded window's path link - and
+//  scripts\zm\zmqol_barriers.gsc fixes that on every survival map. Git
+//  history (1d982cb) keeps the old function and its Church measurements.
 // ============================================================================
-zmqol_disable_survival_barriers()
-{
-    if ( is_classic() )
-        return;
-
-    //  before anything waits - blocker_trigger_think() reads this the first
-    //  time a barrier is touched, and it must already be set by then
-    level.no_board_repair = 1;
-
-    flag_wait( "start_zombie_round_logic" );
-    wait_network_frame();
-
-    a_goals = getstructarray( "exterior_goal", "targetname" );
-
-    n_opened = 0;
-
-    foreach ( s_goal in a_goals )
-    {
-        if ( !isdefined( s_goal.target ) )
-            continue;
-
-        a_targets = getentarray( s_goal.target, "targetname" );
-
-        foreach ( e_barrier in a_targets )
-        {
-            if ( !isdefined( e_barrier ) || !e_barrier iszbarrier() )
-                continue;
-
-            n_pieces = e_barrier getnumzbarrierpieces();
-
-            for ( i = 0; i < n_pieces; i++ )
-            {
-                e_barrier hidezbarrierpiece( i );
-                e_barrier setzbarrierpiecestate( i, "open" );
-            }
-
-            n_opened++;
-            wait 0.05;
-        }
-    }
-
-    println( "[zm_qol] SURVIVAL BARRIERS: " + n_opened + " zbarrier(s) opened and hidden on " + getdvar( "ui_zm_mapstartlocation" ) + ", level.no_board_repair=1 so there is no rebuild prompt - classic Origins is untouched" );
-}
 
 added_weapons()
 {

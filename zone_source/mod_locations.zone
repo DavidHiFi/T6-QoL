@@ -645,6 +645,36 @@ material,specialty_firesale_zombies
 xmodel,zombie_z_money_icon
 
 // ============================================================================
+//  CARPENTER  -  the pickup model, for Origins
+//
+//  User, 2026-09-26: *"make sure that carpenter works on each map"*, with the
+//  survival barriers built and rebuildable again.
+//
+//  Measured with the Rattpak tools' `t6mt owner` over all 297 fastfiles:
+//
+//      zombie_carpenter   so_zclassic_zm_transit, so_zencounter_zm_transit,
+//                         so_zsurvival_zm_transit, zm_buried, zm_highrise,
+//                         zm_prison, zm_transit_dr
+//
+//  i.e. every Carpenter map loads it, and ORIGINS DOES NOT. zm_tomb.gsc
+//  registers Carpenter on Origins (all modes), and add_zombie_powerup()
+//  precaches the model for every included powerup (_zm_powerups.gsc:420), so
+//  on Origins that precache names an asset no loaded zone has - the drop would
+//  be the engine's placeholder. Same trap Fire Sale and Blood Money hit above,
+//  same fix. Nuketown has no window barriers at all, so it never registers
+//  Carpenter and is not affected either way.
+//
+//  🛑 THE OWNERSHIP TRAP WAS CHECKED. mod.ff loads before every map, so it now
+//  OWNS this model on the five maps that already carry it. All five copies were
+//  dumped (`Unlinker --include-assets xmodel`) and are BYTE-IDENTICAL:
+//      xmodel json   d0a982c69d04...    lod0 glb   34cc0f8d1531...
+//  (modding-jobs\survival-barriers-001\carp\). Its one material,
+//  mc/mtl_x2icon_gold, is in common_zm.ff, which every Zombies map loads.
+//  zm_prison.ff is already in build_ff.bat's --load list, so no new donor.
+// ============================================================================
+xmodel,zombie_carpenter
+
+// ============================================================================
 //  ZOMBIE BLOOD  -  on the five maps that never had it            (v1.65.0)
 //
 //  User, 2026-08-11: "build zombie blood and the three announcer lines."
