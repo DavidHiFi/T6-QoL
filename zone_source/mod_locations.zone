@@ -1992,6 +1992,26 @@ xmodel,c_zom_zombie_buried_sgirl_hair2_2
 xmodel,c_zom_zombie_buried_sgirl_head1
 xmodel,c_zom_zombie_buried_sgirl_head2
 
+// The four limbs a Buried zombie THROWS when it loses an arm or a leg.
+//
+// 🛑 THEY ARE NOT THE _g_ BODIES ABOVE. Those are what the zombie turns into;
+// these are the separate pieces the client launches as physics objects. Every
+// Buried character script names them as gibspawn1..4 and precaches them, and
+// stock _zm.csc::do_gib hands them to createdynentandlaunch(). All four live
+// only in so_zclassic_/so_zencounter_zm_buried.ff, which a zstandard run never
+// loads. The engine does not refuse an unloaded model there: it launches it
+// and reads its null physics preset, and the game closes with an access
+// violation. The crash text names whatever server thread was running at that
+// moment (2026-09-27, Borough: _zm_playerhealth::playerhealthregen), never the
+// gib. modding-jobs\crash-0447-001 has the dump reading.
+//
+// Their physics preset "gib" is already in mod.ff. tools\check-gib-models.py
+// fails the build if a shipped character names a gib model no zone carries.
+xmodel,c_zom_buried_g_rarmspawn
+xmodel,c_zom_buried_g_larmspawn
+xmodel,c_zom_buried_g_rlegspawn
+xmodel,c_zom_buried_g_llegspawn
+
 // ============================================================================
 //  BURIED ZOMBIE XANIMS - NEW vs the pre-strip build; the suspected frozen-
 //  zombie fix.

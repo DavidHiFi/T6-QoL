@@ -223,6 +223,15 @@ echo [0e/9] Pre-flight: client fx loaded server-side...
 python "%PROJ_DIR0%tools\check-client-fx-precache.py"
 if errorlevel 1 goto clientfxfail
 
+REM  A zombie that loses a limb throws its gibspawn model as a physics object.
+REM  If no loaded zone has that model the game closes, with nothing in the log
+REM  naming it: Borough survival did, mid-match, over four Buried limbs that
+REM  only the classic fastfile carries (user, 2026-09-27). See
+REM  tools\check-gib-models.py.
+echo [0e/9] Pre-flight: zombie gib models are declared...
+python "%PROJ_DIR0%tools\check-gib-models.py"
+if errorlevel 1 goto gibfail
+
 REM ============================================================================
 REM  [0f/9] Pre-flight: the menu art is mod-gated                v2.17.45
 REM ----------------------------------------------------------------------------
@@ -618,6 +627,14 @@ color C
 echo.
 echo   BUILD STOPPED: a client script loads a raw .efx that no server script
 echo   loads, so it would never load in game - see the [client-fx] lines above.
+if not defined OFFLINE pause
+exit /b 1
+
+:gibfail
+color C
+echo.
+echo   BUILD STOPPED: a shipped zombie can throw a gib model no zone declares,
+echo   which closes the game - see the [gib-models] lines above.
 if not defined OFFLINE pause
 exit /b 1
 
