@@ -19407,6 +19407,10 @@ get_zone_name()
     {
         if ( zone == "zone_library" )
             name = "Library";
+        //  v2.17.47 - the classic spawn. It was missing, so the zone row under
+        //  the name sat blank from spawn until you walked into a named room.
+        else if ( zone == "zone_start" )
+            name = "Cellblock";
         else if ( zone == "zone_cellblock_west" )
             name = "Cellblock";
         else if ( zone == "zone_cellblock_west_gondola" )
