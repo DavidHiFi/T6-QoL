@@ -283,14 +283,22 @@ zmqol_mp_weapons_init()
 	//  ============================================================
 	//  THE MM1 GRENADE LAUNCHER AND THE BROWNING HP DUAL WIELD, from Mario
 	//  Woopsie's MOTD Old School Weapons. Server twin is scripts\zm\oldschool.gsc;
-	//  mod_oldschool.zone has the assets. Off Origins on the same test as the
-	//  server, which has no precache slots for them. The dual wield's left-hand
-	//  half is never included, on either side - stock's fivesevenlh_zm is not.
+	//  mod_oldschool.zone has the assets. The measured weapon budget selects
+	//  maps separately for each gun. The server uses the same conditions in
+	//  oldschool.gsc. The dual wield's left-hand half is never included.
 	//  ============================================================
-	if ( !b_tomb )
+	oldschool_map = getdvar( "mapname" );
+	oldschool_mode = getdvar( "ui_zm_gamemodegroup" );
+	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
+	     ( ( oldschool_map == "zm_transit" || oldschool_map == "zm_prison" ) && oldschool_mode == "zsurvival" ||
+	       oldschool_map == "zm_nuked" || oldschool_map == "zm_highrise" || oldschool_map == "zm_buried" || oldschool_map == "zm_tomb" ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_upgraded_zm", 0 );
+	}
+	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
+	     ( oldschool_map == "zm_nuked" || oldschool_map == "zm_buried" ) )
+	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
 	}

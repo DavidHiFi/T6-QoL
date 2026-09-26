@@ -171,7 +171,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
   * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
-  * Both appear on every map except Origins, which lacks enough weapon precache slots.
+  * Both appear on Nuketown and Buried, including Buried Maze. The MM1 also appears on Die Rise, Origins, TranZit survival locations and Mob's Docks. TranZit classic and Mob classic have no safe room in the weapon table for either gun.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
