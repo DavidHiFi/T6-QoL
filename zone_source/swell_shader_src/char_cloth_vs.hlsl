@@ -35,9 +35,8 @@ VS_OUT main(VS_IN IN)
     float3 t = normalize(mul(DecodeNormal(IN.tan), (float3x3)worldMatrix));
 
 #ifdef SWELL
-    // BO1 Moon pimp_shader_sw4_3d_char_cloth_bloat pushed each vertex out along
-    // its world normal by scriptVector3.x. SwellOffset (t6_consts.hlsli) is
-    // that push limited to a ball around the stomach (v2.15.51).
+    // BO1 Moon pimp_shader_sw4_3d_char_cloth_bloat: push each vertex out along
+    // its world normal by scriptVector3.x (SwellOffset, t6_consts.hlsli).
     wp.xyz += SwellOffset(wp.xyz, n);
 #endif
 

@@ -12,7 +12,7 @@ float4 main(VS_IN IN) : SV_Position
 {
     float4 wp = mul(float4(IN.pos, 1.0), worldMatrix);
 #ifdef SWELL
-    // torso-ball swell in eye-relative world space, see SwellOffset (v2.15.51)
+    // BO1 Moon's bloat, see SwellOffset (t6_consts.hlsli)
     float3 n = normalize(mul(DecodeNormal(IN.nrm), (float3x3)worldMatrix));
     wp.xyz += SwellOffset(wp.xyz, n);
 #endif
