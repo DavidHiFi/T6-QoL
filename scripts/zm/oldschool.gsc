@@ -14,9 +14,8 @@
 //  (AGENTS.md item 1b). A raw script that installs itself from its own init()
 //  costs that file nothing.
 //
-//  The engine's registered-weapon ceiling is 253. The measured per-map counts
-//  and allocation are in modding-jobs/motd-port-001/BUDGET.md. Keep the client
-//  twin in zm_expanded.csc on exactly the same map and game-mode conditions.
+//  The engine's registered-weapon ceiling is 253. Keep the client twin in
+//  zm_expanded.csc on exactly the same map and game-mode conditions.
 //
 //  📝 THE LEFT-HAND HALVES. browninghplh_zm / _upgraded_zm are never box
 //  results: they are the dual wield's off-hand gun, inventoryType dwlefthand,
