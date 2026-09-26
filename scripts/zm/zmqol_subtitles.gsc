@@ -463,13 +463,9 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
 //      scripts/zm/<map>/qol_subs_music_<map>.gsc          stock sndmuseggplay()
 //      qol_subs_npc_prison.gsc nixie_935_audio            Mob's second song
 //
-//  🛑 A TITLE CARD, NOT LYRICS. The songs are licensed and published tracks
-//  (Johnny Cash, Avenged Sevenfold, Kevin Sherwood's), so the mod does not
-//  carry their lyrics. Each map's table has one row per song alias - title and
-//  artist, split into rows by "~" like any long line. It shows for 8 s when
-//  the song starts and again every 60 s while it plays, so someone who looks
-//  up mid-song still learns what it is. A newer song, or the game ending,
-//  stops the loop.
+//  Sung tracks show a short title card followed by timed lyrics from the
+//  map's qol_subs_lyrics_<map>.gsc. Instrumental tracks keep their title card
+//  every 60 s. A newer song or the game ending stops either loop.
 //
 //  Level-scope; songs are 2D (DistMaxDry 5000, pan 2d in every bank), so every
 //  player gets it, grey, with no name in front.
@@ -501,6 +497,61 @@ zmqol_subs_music( str_alias )
     println( "[zm_qol] subtitles: song " + str_alias + " -> title card, song " + ( n_ms * 0.001 ) + "s" );
 
     n_end = gettime() + n_ms;
+
+    if ( isdefined( level.zmqol_subs_lyrics_func ) )
+    {
+        a_lyrics = [[ level.zmqol_subs_lyrics_func ]]( str_alias );
+
+        if ( isdefined( a_lyrics ) && a_lyrics.size > 0 )
+        {
+            println( "[zm_qol] subtitles: song " + str_alias + " -> " + a_lyrics.size + " timed lyric lines" );
+
+            if ( zmqol_subs_enabled() )
+                level thread zmqol_subs_broadcast( undefined, "", str_text, 3, undefined, 0 );
+
+            //  🛑 v2.17.43 - THE LYRIC CLOCK IS THE SONG'S START, NOT ITS LENGTH.
+            //  soundgetplaybacktime() answered 78 s for Carrion on Town, a song
+            //  that runs 256 s (measured from the retail bank), and the first cut
+            //  of this loop stopped at that figure - the first verse, then
+            //  nothing. The lines are timed from the song's first sample, so
+            //  they run to the end of the table; a newer song or the game ending
+            //  still stops them through the endons above.
+            n_song_start = gettime();
+
+            for ( i = 0; i < a_lyrics.size; i++ )
+            {
+                a_fields = strtok( a_lyrics[i], "|" );
+
+                if ( !isdefined( a_fields ) || a_fields.size < 3 )
+                    continue;
+
+                n_start = int( a_fields[0] ) * 100;
+                n_stop = int( a_fields[1] ) * 100;
+
+                n_wait = n_song_start + n_start - gettime();
+
+                if ( n_wait > 0 )
+                    wait n_wait * 0.001;
+
+                n_show = ( n_stop - n_start ) * 0.001;
+
+                if ( n_show < 0.5 )
+                    continue;
+
+                if ( zmqol_subs_enabled() )
+                {
+                    str_line = a_fields[2];
+
+                    if ( !getdvarintdefault( "cg_allow_mature", 1 ) && a_fields.size > 3 )
+                        str_line = a_fields[3];
+
+                    level thread zmqol_subs_broadcast( undefined, "", "[Music] " + str_line, n_show, undefined, 0, "music" );
+                }
+            }
+
+            return;
+        }
+    }
 
     for ( ;; )
     {
@@ -867,10 +918,13 @@ zmqol_subs_speaker_name( n_index )
 //  gets it grey, only within n_range_sq of v_pos - and everyone when v_pos is
 //  undefined (a 2D line). The name goes in front on every screen when names
 //  are on.
-zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq )
+zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq, str_kind )
 {
     a_players = get_players();
     str_prefix = zmqol_subs_prefix( str_name );
+
+    if ( !isdefined( str_kind ) )
+        str_kind = "other";
 
     for ( i = 0; i < a_players.size; i++ )
     {
@@ -888,7 +942,7 @@ zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq )
         if ( isdefined( v_pos ) && distancesquared( e_player.origin, v_pos ) > n_range_sq )
             continue;
 
-        e_player thread zmqol_subs_show( str_text, str_prefix, n_secs, "other" );
+        e_player thread zmqol_subs_show( str_text, str_prefix, n_secs, str_kind );
     }
 }
 
@@ -1242,7 +1296,9 @@ zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
     {
         n_show = n_secs * a_rows[i].size / n_total;
 
-        if ( n_show < 1.2 )
+        if ( str_kind == "music" && n_show < 0.5 )
+            n_show = 0.5;
+        else if ( str_kind != "music" && n_show < 1.2 )
             n_show = 1.2;
 
         wait n_show;
