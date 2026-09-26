@@ -11,11 +11,12 @@
 //  that carpenter works on each map"*, and on Origins survival *"zombies would
 //  just climb straight through the barriers without breaking them first"*.
 //
-//  Two rules, every survival location on every map with window barriers:
+//  Three rules, every survival location on every map with window barriers:
 //
-//    1. Every window starts with all its boards up. Stock's teardown and
-//       barricade entry then run without mod path-node changes.
-//    2. Carpenter can drop once a window is broken.
+//    1. Every window starts with all its boards up.
+//    2. An inside path node is disabled while boards remain. Zombies can
+//       reach the outside attack spots and must tear boards before entering.
+//    3. Carpenter can drop once a window is broken.
 //
 //  Classic modes are untouched: init() returns unless ui_zm_gamemodegroup is
 //  zsurvival. Record: modding-jobs\survival-barriers-001\FINDINGS.md.
@@ -29,6 +30,7 @@ init()
         return;
 
     level thread zmqol_barriers_build_all();
+    level thread zmqol_barriers_gate_inside_nodes();
     level thread zmqol_barriers_carpenter_rule();
 }
 
@@ -138,7 +140,78 @@ zmqol_barriers_build_all()
 }
 
 // ============================================================================
-//  RULE 2 - CARPENTER DROPS IN SURVIVAL.
+//  RULE 2 - KEEP THE INSIDE PATH NODE CLOSED WHILE BOARDS STAND.
+//
+//  T6's blocker_disconnect_paths() does nothing, and unlinknodes() did not
+//  disconnect the window pair in the live Church test. Disabling both nodes
+//  blocked the outside approach to the window. The inside node alone worked:
+//  findpath(outside, inside) changed from 1 to 0 while the outside goal and
+//  all three attack spots stayed reachable. The temporary endgate probe then
+//  observed normal board tears and zero-board vault entries on Church and
+//  Docks. See survival-barriers-001/live-*-endgate-final.log.
+//
+//  Stock zombie_goto_entrance() calls tear_into_building() before its scripted
+//  vault. The vault does not use the path node. Re-enable the inside node as
+//  soon as the last board opens, and close it again when Carpenter or a player
+//  rebuilds the window.
+// ============================================================================
+zmqol_barriers_gate_inside_nodes()
+{
+    level endon( "end_game" );
+    flag_wait( "start_zombie_round_logic" );
+    wait 2;
+
+    a_win = [];
+    a_all = zmqol_barriers_windows();
+
+    for ( i = 0; i < a_all.size; i++ )
+    {
+        if ( !isdefined( a_all[i].neg_end ) )
+            continue;
+
+        a_all[i].zmqol_inside_node_disabled = 0;
+        a_win[a_win.size] = a_all[i];
+    }
+
+    println( "[zm_qol] BARRIERS: gating inside nodes on " + a_win.size + " windows in " + getdvar( "ui_zm_mapstartlocation" ) );
+
+    for ( ;; )
+    {
+        for ( i = 0; i < a_win.size; i++ )
+        {
+            s_goal = a_win[i];
+
+            if ( !isdefined( s_goal.zbarrier ) )
+            {
+                if ( s_goal.zmqol_inside_node_disabled )
+                {
+                    setenablenode( s_goal.neg_end, 1 );
+                    s_goal.zmqol_inside_node_disabled = 0;
+                }
+
+                continue;
+            }
+
+            n_up = zmqol_barriers_boards_up( s_goal.zbarrier );
+
+            if ( n_up > 0 && !s_goal.zmqol_inside_node_disabled )
+            {
+                setenablenode( s_goal.neg_end, 0 );
+                s_goal.zmqol_inside_node_disabled = 1;
+            }
+            else if ( n_up == 0 && s_goal.zmqol_inside_node_disabled )
+            {
+                setenablenode( s_goal.neg_end, 1 );
+                s_goal.zmqol_inside_node_disabled = 0;
+            }
+        }
+
+        wait 0.1;
+    }
+}
+
+// ============================================================================
+//  RULE 3 - CARPENTER DROPS IN SURVIVAL.
 //
 //  Stock's rule, _zm_powerups::func_should_drop_carpenter(), is "at least five
 //  windows fully torn" across the WHOLE map. A survival arena reaches only the
