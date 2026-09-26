@@ -189,13 +189,20 @@ init()
     //  qol_opt_hud_watcher() repaints from one dvar on change, so a colour set
     //  at creation was guaranteed to be flattened back to white on the very
     //  first pass - the same single-owner rule as the health bar above.
-    //  hud_color still owns zombietext and the zone name.
+    //  hud_color still owns zombietext. The zone name has its own dvar below.
     //
-    //  🛑 The watcher's str_prev_color_timer / _round seeds MUST match these two
-    //  strings exactly, or the first pass sees a change and repaints on spawn.
+    //  🛑 The watcher's str_prev_color_timer / _round / _zone seeds MUST match
+    //  these strings exactly, or the first pass sees a change and repaints on
+    //  spawn.
     qol_opt_dvar( "hud_color_timer",       "1 1 1" );   //  white, user 2026-08-31 (was navy blue)
-    qol_opt_dvar( "hud_color_round_timer", "1 1 1" );   //  white, directive 2026-09-02 - the 08-31 white
-                                                        //  pass changed the creation colour but left this navy
+    //  v2.17.47 - grey, user 2026-09-27: *"make the round timer below ... gray
+    //  and a little bit darker than white, not like black"*, so it reads apart
+    //  from the white game timer above it. Was white since 2026-09-02.
+    qol_opt_dvar( "hud_color_round_timer", "0.7 0.7 0.7" );
+    //  v2.17.47 - the zone name under the player name, same grey and the same
+    //  request: it was white like the name, so the two ran together. Its own
+    //  dvar so hud_color can no longer flatten it back to white.
+    qol_opt_dvar( "hud_color_zone",        "0.7 0.7 0.7" );
 
     //  Read by quality_of_life::get_pack_a_punch_weapon_options(). Default 1
     //  keeps the animated camo exactly where this mod already had it.
@@ -2580,7 +2587,8 @@ qol_opt_hud_watcher()
     //  above or the first pass repaints on spawn. (The 08-31 white pass missed
     //  this pair - the game timer repainted once per spawn until 2026-09-02.)
     str_prev_color_timer = "1 1 1";
-    str_prev_color_round = "1 1 1";
+    str_prev_color_round = "0.7 0.7 0.7";   //  v2.17.47 - grey, see the dvar
+    str_prev_color_zone = "0.7 0.7 0.7";    //  v2.17.47 - grey, see the dvar
 
     //  -1 so the first pass always writes the LUI flag once, whatever hud_master
     //  says. Seeding it to 1 would leave the flag unset on a player who joined
@@ -2749,9 +2757,21 @@ qol_opt_hud_watcher()
                 //  v1.90.6 - qol_hud_timer and qol_hud_roundtimer are NO LONGER
                 //  tinted from hud_color; they have their own dvars below so the
                 //  user's yellow / light blue survive a hud_color change.
+                //  v2.17.47 - the zone name is no longer tinted from here; it
+                //  has its own grey dvar below.
                 self qol_opt_tint( self.zombietext, v_color );
-                self qol_opt_tint( self.qol_hud_zone, v_color );
             }
+        }
+
+        str_color_zone = getdvar( "hud_color_zone" );
+
+        if ( str_color_zone != str_prev_color_zone )
+        {
+            str_prev_color_zone = str_color_zone;
+            v_color = qol_opt_parse_color( str_color_zone );
+
+            if ( isdefined( v_color ) )
+                self qol_opt_tint( self.qol_hud_zone, v_color );
         }
 
         //  The two stacked top-right timers, each with its own colour dvar.
@@ -2938,7 +2958,9 @@ qol_opt_zone_hud( b_on )
         //  v2.14.25 - 1.2 -> 1.1 together with the name row
         //  (quality_of_life.gsc::qol_health_hud_create): user 2026-09-08,
         //  *"the area and username text ... a tiny bit smaller"*.
-        self.qol_hud_zone = self createfontstring( "small", 1.1 );
+        //  v2.17.47 - 1.1 -> 1.0, one step under the name row now: user
+        //  2026-09-27, *"make the zone name ... ever so slightly ... smaller"*.
+        self.qol_hud_zone = self createfontstring( "small", 1.0 );
         //  v2.17.41 - the non-archived group; see the HUD SLOT BUDGET banner
         //  above qol_opt_player_init().
         self.qol_hud_zone.archived = 0;
@@ -2958,6 +2980,10 @@ qol_opt_zone_hud( b_on )
         //  Never faded, never hidden. That is the whole row.
         self.qol_hud_zone.alpha = 1;
         self.qol_hud_zone.hidewheninmenu = 1;
+        //  v2.17.47 - grey at creation, matching hud_color_zone's default, for
+        //  the same reason as the round timer: the watcher no-ops on its first
+        //  pass, so the element has to be born in the right colour.
+        self.qol_hud_zone.color = ( 0.7, 0.7, 0.7 );
     }
 
     str_zone = self.currentzone;
@@ -3120,7 +3146,9 @@ qol_opt_round_timer_hud( b_on )
         //  v1.95.3 - dull navy blue, same value as the game timer above, user
         //  2026-08-14. Set at creation for the same reason: the watcher no-ops on
         //  its first pass. Console override: hud_color_round_timer "r g b".
-        self.qol_hud_roundtimer.color = ( 1, 1, 1 );   //  white, user 2026-08-31 - twin of the game timer's write in quality_of_life.gsc
+        //  v2.17.47 - grey, user 2026-09-27, so it reads apart from the white
+        //  game timer above it. Must match hud_color_round_timer's default.
+        self.qol_hud_roundtimer.color = ( 0.7, 0.7, 0.7 );
         //  No glow: see the v2.14.21 note above and in quality_of_life.gsc::
         //  timer(). 🛑 Change one construction without the other and the pair
         //  splits again.
