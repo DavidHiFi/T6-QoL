@@ -25,6 +25,16 @@ gameplay checks. These are local development references, not release payloads.
   and the symbol the engine names is never the one you touched. Put new
   behaviour in its own raw script under `scripts/zm/` that installs itself from
   its own `init()`. Full rule and measurements: workspace `AGENTS.md` item 1b.
+- The perk pop-up TEXT IS PINNED (user, 2026-09-26: "make sure it sticks").
+  The 12 titles in `getPerkName()` and 12 lines in `getPerkDesc()` were
+  approved on screen and are locked word-for-word in
+  `tools/check-perk-popup.ps1`, which `build.bat` runs before every build.
+  Never reword them, and never bring back "Double Tap 2.0", "Jugger-Nog",
+  "Vulture Aid Elixir" or Jugg's "100 to 250". Only change one when the user
+  asks, and then change the gate table in the same commit. No `%` in any
+  string: `settext` drew "33%" as "33.". A branch cut before 2026-09-26 still
+  carries the old text; merge `main` into it before building, or its build
+  stops at this gate.
 - `build.bat offline` packs and verifies locally. `build.bat` without arguments
   also installs and reconciles global Plutonium overrides. Do not run deployment
   during an offline audit.
