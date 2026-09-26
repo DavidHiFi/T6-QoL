@@ -18382,8 +18382,10 @@ getPerkDesc( perk )
         //  2026-09-26 the user asked for exactly that: keep the lines that were
         //  already plain and correct, fix the vague or wrong ones. Six changed:
         //    Jugg      250 was BO1. BO2 is 160 (_zm_perks.gsc:67).
-        //    Double Tap  describes 2.0 (+33% rate, a second bullet). With the
-        //              double_tap_1 option on, the second bullet is gone.
+        //    Double Tap  describes 2.0 (a third faster, a second bullet). With
+        //              the double_tap_1 option on, the second bullet is gone.
+        //              No "%" in these strings: settext drew "33%" as "33."
+        //              in game (2026-09-26 screenshot), so write it in words.
         //    Stamin-Up "You Run Faster" was half of it; sprint lasts longer too.
         //    Deadshot  names the three things it does, head lock last.
         //    Vulture   the drops come from zombies; icons alone undersold it.
@@ -18399,7 +18401,7 @@ getPerkDesc( perk )
         case "specialty_quickrevive":
             return "In Solo Mode, You Revive Yourself. In Co-op Mode, You Revive Your Allies Faster";
         case "specialty_rof":
-            return "Fires 33% Faster and Shoots Two Bullets per Shot";
+            return "Fires a Third Faster and Shoots Two Bullets per Shot";
         case "specialty_longersprint":
             return "Move Faster and Sprint for Longer";
         case "specialty_additionalprimaryweapon":
