@@ -77,7 +77,13 @@ mod.iwd
 #
 # 🛑 CONSEQUENCE, so nobody is surprised: a FRESH CLONE cannot rebuild the full
 # mod.iwd. It will build fine and play fine, just with stock-resolution textures
-# until the pack folder above is copied back into images\.
+# until the pack is copied back into images\.
+#
+# Do that with  tools\merge-texture-pack.ps1  rather than by hand. It copies from
+# Optionals\images - the pack as it actually SHIPS - and applies the same four
+# exclusions the installer does (controller icons, view arms, the 41 hash-named
+# overrides, hud_dpad_blood), then lets any git-tracked image win over a pack file
+# of the same name. Copying the folder by hand puts all four back.
 images/*.iwi
 
 # 🛑 v2.1.3 - EXCEPTIONS, because these two are the MOD'S OWN and it is broken

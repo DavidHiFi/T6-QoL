@@ -10,26 +10,39 @@
 // ============================================================================
 >game,T6
 
-//  m1911_zm IS DELIBERATELY NOT HERE (it was, until the starting-pistol
-//  fix). User report: on Origins the M1911 fires the Mauser's shot. Retail's
-//  m1911_zm asks for wpn_1911_fire_plr, and that alias is MAP-DEPENDENT:
-//  zmb_tomb points it at wpn_mauser_fire, every other map bank at
-//  wpn_fnp45_fire_plr. Treyarch could share the name because retail never
-//  lets the M1911 onto Origins; this mod's starting-pistol row does. Same
-//  shape as the v2.8.9 Mauser fix, same direction: let
-//  zone_source\base\mod.ff supply m1911_zm, whose fire aliases are the
-//  UNSHARED wpn_m1911_fire_{plr,npc}, and declare that family in mod.all
-//  (fnp45 shot for plr, fiveseven shot for npc - Treyarch's own mapping off
-//  Origins). Measured: the donor's m1911_zm differs from the retail copy this
-//  donor used to supply in exactly 2 fields (the two fire aliases), so
-//  nothing else about the gun changes. The two upgraded halves STAY here on
-//  retail's wpn_1911_*_pap names - Mustang & Sally are untouched everywhere.
-//  Side effect, stated plainly: the M1911 now reads mod.all's shot on every
-//  map. That shot IS the pack's remaster - its bytes were extracted out of the
-//  pack's own cmn_root bank into sound\wpn\pistol\m1911\ - so the pack's M1911
-//  plays through the M1911 on all six maps including Origins. Reversible in
-//  one line (put weapon,m1911_zm back below and drop the 11 rows) - but that
-//  restores the Mauser shot on Origins.
+//  m1911_zm IS BACK HERE (v2.15.40 took it out; user call 2026-09-23 puts it
+//  back). It asks retail's wpn_1911_fire_plr, and the 11-row wpn_m1911_* chain
+//  has been dropped from soundbank\mod.all.aliases.additions.csv. This is the
+//  "reversible in one line" the note below used to describe, taken.
+//
+//  WHY. v2.15.40 gave the M1911 the UNSHARED alias wpn_m1911_fire_plr and put
+//  the shot inside mod.all. Those bytes were the user's sound pack's M1911
+//  remaster, so EVERY player heard the pack whether or not they installed it.
+//  Measured 2026-09-23: mod.all.sabl id db0e8cef is byte-identical (73,728 B,
+//  sha1 01c9d14e27...) to what the pack writes over retail's fnp45 shot in
+//  cmn_root; retail's own is 176,704 B. A private alias can never be reached
+//  by the pack, because the pack only ever replaces payloads behind RETAIL
+//  names in the stock banks.
+//
+//  So the alias has to be retail's. wpn_1911_fire_plr resolves out of
+//  cmn_root.all.sabl, and Plutonium loads that from storage\t6\zone when the
+//  pack is installed and from the game's own sound\ folder when it is not
+//  (proven in console_zm.log, which prints the full path of every bank).
+//  Stock by default, pack overrides on install - which is the requirement.
+//
+//  🛑 THE COST, STATED PLAINLY: wpn_1911_fire_plr is MAP-DEPENDENT. zmb_tomb
+//  points it at wpn_mauser_fire, every other map bank at wpn_fnp45_fire_plr.
+//  Treyarch could share the name because retail never lets the M1911 onto
+//  Origins; this mod's starting-pistol row does. So on Origins - classic and
+//  survival, Crazy Place included - the M1911 fires the Mauser's shot. There
+//  is no third way: wpn_fnp45_fire_plr is MP-only and is declared by NO
+//  zombies map bank, so it cannot be borrowed to dodge tomb's mapping.
+//  To go back to a correct-everywhere M1911 that the pack cannot touch,
+//  delete the weapon,m1911_zm line below and restore the 11 rows.
+//
+//  The two upgraded halves stay on retail's wpn_1911_*_pap names either way -
+//  Mustang & Sally are untouched everywhere.
+weapon,m1911_zm
 weapon,m1911_upgraded_zm
 weapon,m1911lh_upgraded_zm
 

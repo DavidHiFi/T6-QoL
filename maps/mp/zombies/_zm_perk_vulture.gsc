@@ -51,6 +51,17 @@ vulture_precache()
     level._effect["vulture_perk_mystery_box_glow"] = loadfx( "maps/zombie/fx_zm_vulture_glow_mystery_box" );
     level._effect["vulture_perk_powerup_drop"] = loadfx( "maps/zombie/fx_zm_vulture_glow_powerup" );
     level._effect["vulture_perk_zombie_eye_glow"] = loadfx( "misc/fx_zombie_eye_vulture" );
+
+    //  The mod's own marker icons (zm_expanded.csc draws them). Plutonium only
+    //  reads a raw .efx out of mod.iwd when a SERVER script loadfx's it, so the
+    //  client-only loadfx never resolved, and every one of these markers fell
+    //  back to vulture_perk_wallbuy_dynamic, the crossed rifles at 47% white.
+    //  That was the blown-out Wunderfizz icon. Dimming the texture could not
+    //  reach it. Gate: tools\check-client-fx-precache.py.
+    level._effect["vulture_perk_machine_glow_deadshot"] = loadfx( "maps/zombie/fx_zm_vulture_glow_deadshot" );
+    level._effect["vulture_perk_machine_glow_flopper"] = loadfx( "maps/zombie/fx_zm_vulture_glow_flopper" );
+    level._effect["vulture_perk_machine_glow_generic"] = loadfx( "maps/zombie/fx_zm_vulture_glow_generic" );
+    level._effect["vulture_perk_machine_glow_wunderfizz"] = loadfx( "maps/zombie/fx_zm_vulture_glow_wunderfizz" );
     onplayerconnect_callback( ::vulture_player_connect_callback );
 }
 

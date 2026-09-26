@@ -74,6 +74,17 @@ if not exist "%~dp0tools\check-lobby-options.ps1" (
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lobby-options.ps1"
 if errorlevel 1 goto lobbyoptionsfail
 
+REM --- client HUD slot budget (v2.17.41) --------------------------------------
+REM  The engine draws at most 31 archived + 31 non-archived hudelems per client
+REM  and silently drops the rest. Every creation site must be in
+REM  tools\hud-budget.json and both groups must leave stock its reserve, or the
+REM  buildable bar and the subtitles start disappearing again.
+if not exist "%~dp0tools\check-hud-budget.ps1" (
+    color C & echo. & echo   tools\check-hud-budget.ps1 is missing - cannot verify the HUD slot budget. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-hud-budget.ps1"
+if errorlevel 1 goto hudbudgetfail
+
 REM --- resolve the project root (parent of this folder) for the send-ready copy ---
 for %%I in ("%~dp0..") do set "ROOT=%%~fI"
 set "BUILD_DIR=%ROOT%\build\%MOD_NAME%"
@@ -166,6 +177,66 @@ echo [0d/9] Pre-flight: pre-nerf recoil values...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-recoil-prenerf.ps1"
 if errorlevel 1 goto recoilfail
 
+REM ============================================================================
+REM  [0e/9] Pre-flight: the wonder-weapon animation chain        v2.17.44
+REM ----------------------------------------------------------------------------
+REM  The Wave Gun's float and the Winter's Howl's ice block are not code in
+REM  those weapons' scripts - they are an ASSET CHAIN, and it has now broken
+REM  three separate times without a single error message.
+REM
+REM  Both guns ask for a death anim state and fall back to an ordinary death,
+REM  silently, when it is missing:
+REM      zapgun.gsc              hasanimstatefromasd( "zm_death_sizzle" )
+REM      _zm_weap_freezegun.gsc  HasAnimStateFromASD( "zm_death_freeze_t5" )
+REM  So the guns still fire, still kill, still pop. They just stop being the
+REM  guns, and nothing in any log says so. Days went into "fixing" zapgun.gsc
+REM  while the real switch sat commented out in mod_wonderweapons.zone.
+REM
+REM  That is exactly the shape a gate is for: silent, invisible offline, only
+REM  observable by a human firing the weapon. See tools\check-wonderweapon-anims.ps1
+REM  for the five links and why each one is checked.
+REM ============================================================================
+echo [0e/9] Pre-flight: wonder-weapon animation chain...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1"
+if errorlevel 1 goto wwanimfail
+
+REM  Cross-map ports need both weapon forms, attachments and all PaP camo slots.
+REM  A missing attachment or short camo table can still produce a clean build.
+echo [0e/9] Pre-flight: registered weapon ports...
+python "%PROJ_DIR0%tools\check-weapon-port.py"
+if errorlevel 1 goto weaponportfail
+
+REM  The Bouncing Betty matches the claymore: its damage, the slot-4 icon that
+REM  stays at x0 when both are thrown, and a box re-pull that refills to 2. The
+REM  user asked (2026-09-25) never to see those three bugs again, and none of
+REM  them shows in a build or a map load. See tools\check-betty-parity.py.
+echo [0e/9] Pre-flight: Bouncing Betty claymore parity...
+python "%PROJ_DIR0%tools\check-betty-parity.py"
+if errorlevel 1 goto bettyfail
+
+REM  Plutonium loads a raw fx\*.efx only when a SERVER script loadfx's it. A
+REM  .csc-only loadfx never loads, and the client falls back without an error.
+REM  That drew the Wunderfizz Vulture marker as the white crossed rifles for
+REM  weeks while three fixes dimmed textures that were never drawn (user,
+REM  2026-09-25). See tools\check-client-fx-precache.py.
+echo [0e/9] Pre-flight: client fx loaded server-side...
+python "%PROJ_DIR0%tools\check-client-fx-precache.py"
+if errorlevel 1 goto clientfxfail
+
+REM ============================================================================
+REM  [0f/9] Pre-flight: the menu art is mod-gated                v2.17.45
+REM ----------------------------------------------------------------------------
+REM  storage\t6\images is a junction into the deployed mod's images\ folder, so
+REM  everything in there is GLOBAL - stock game, other mods, nothing loaded. The
+REM  HD texture pack needs that; the main-menu art must never have it. The user
+REM  has rejected the loose route for this art twice, on 2026-09-14 and again on
+REM  2026-09-23 with a screenshot of the QoL title screen on an unmodded boot.
+REM  images_menu\ is the mod-gated home; pack_iwd.ps1 packs it into mod.iwd.
+REM ============================================================================
+echo [0f/9] Pre-flight: menu art is mod-gated...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1"
+if errorlevel 1 goto menuartfail
+
 REM  v2.11.8 (user, 2026-09-04): the nine camo_zmb_dlc2* textures are NEVER copied into
 REM  images\ (= mod.iwd). They are the ZM Dark Matter animated Pack-a-Punch camo, and
 REM  they are delivered ONLY as loose by-name files in %LOCALAPPDATA%\Plutonium\storage\r
@@ -190,6 +261,18 @@ echo.
 echo [2/9] Repacking mod.iwd from raw folders...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0pack_iwd.ps1"
 if errorlevel 1 goto packfail
+
+REM  The other half of the chain: the 28 aitype overrides have to be IN the
+REM  built mod.iwd, not merely in the repo. This project has shipped "fixed"
+REM  files that never reached the build before - the texture sync compared file
+REM  length and silently shipped nothing for weeks. Prove it after the pack.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1" -PostPack
+if errorlevel 1 goto wwanimfail
+
+REM  Same reasoning for the menu art: prove the 20 textures are actually inside
+REM  the archive, under images/, and not merely sitting in images_menu\.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1" -PostPack
+if errorlevel 1 goto menuartfail
 
 echo.
 echo [3/9] Verifying all 5 source files are present...
@@ -230,6 +313,82 @@ if errorlevel 1 (
 ) else (
     "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$p=$env:PROJ_DIR0.TrimEnd('\'); $b=''; $c=''; try { $b=(& git -C $p rev-parse --abbrev-ref HEAD 2>$null); $c=(& git -C $p rev-parse --short HEAD 2>$null) } catch { }; @($p, ('branch ' + $b + '  commit ' + $c), (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) | Set-Content -LiteralPath (Join-Path $env:PLUTO_DIR 'deployed-by.txt') -Encoding ASCII"
 )
+
+REM ----------------------------------------------------------------------------
+REM  THE TEXTURE PACK, AND WHY THE DEPLOY HAS TO DO THIS EVERY TIME
+REM ----------------------------------------------------------------------------
+REM  🛑 v2.17.35 - THIS WAS REMOVED ONCE AND IT COST THE USER THEIR FONTS, THEIR
+REM  PERK ICONS AND AN ENTIRE EVENING. DO NOT REMOVE IT AGAIN WITHOUT READING
+REM  THIS AND TESTING THE ALTERNATIVE IN GAME FIRST.
+REM
+REM  The pack REPLACES stock texture names (the three font sheets, every
+REM  specialty_* perk icon, the hash-named diner wall). A replacement only wins
+REM  if it outranks the game's .ipak archives, and the single path that does is
+REM  storage\t6\images, because Plutonium patches its image loader to check
+REM  there before the archives.
+REM
+REM  📝 mod.iwd WAS TRIED AND IT DOES NOT WORK - measured, not assumed. All 1252
+REM  .iwi were packed at images/ inside mod.iwd on 2026-09-22. mod.iwd went 40 MB
+REM  -> 1.48 GB and the game still drew stock fonts. Textures stream from a real
+REM  file handle and a zip entry cannot provide one. mod.ff does not work either:
+REM  the linker accepted 993 images and wrote 13,184 bytes - 13 bytes each,
+REM  headers with no pixel data. Both routes are closed.
+REM
+REM  🌟 SO THE BYTES LIVE IN THE MOD AND ONLY THE DOORWAY IS OUTSIDE IT. The pack
+REM  is images\ in this tree, mirrored into the DEPLOYED mod at
+REM  <storage>\mods\zm_qol\images, and storage\t6\images is an NTFS junction onto
+REM  that folder - a link, not a copy, so it costs zero extra bytes. Installing
+REM  the mod installs the textures; there is no separate download and nothing for
+REM  anyone to manage by hand.
+REM
+REM  The deploy owns this, not the installer. When the installer owned it the
+REM  junction existed only at install time, so once something replaced the folder
+REM  it never came back - which is exactly how it vanished on 2026-09-22. A plain
+REM  build.bat now repairs it.
+REM
+REM  A junction, not a symlink: junctions need no elevation. If the path is a
+REM  real folder its contents are carried into the mod first, so a controller
+REM  pack or a hand-added texture is never lost.
+REM  🛑 THIS SYNC COMPARES CONTENT, NOT SIZE. It used to copy only when the
+REM  destination was missing or a different LENGTH, and that silently pinned
+REM  every same-size texture edit forever. Found 2026-09-23: the three power-up
+REM  HUD badges greyed in b3a752e (Insta-Kill, Double Points, Fire Sale) are
+REM  131,136 bytes before and after - the re-encode deliberately keeps the
+REM  original 64-byte IWI header and picmip table so only the base mip's pixels
+REM  change - so the deploy skipped all three on every run. The user fixed them
+REM  by hand in storage\t6\images, then reinstalled the HD Texture Pack through
+REM  the mod manager and watched them go copper again.
+REM  Length is still the fast path; the SHA1 only runs when lengths match.
+REM  The hash is .NET's SHA1 and NOT Get-FileHash: the shell this script calls
+REM  raises CommandNotFoundException for that cmdlet, which left $stale true and
+REM  silently re-copied all 1,252 textures on every deploy instead of erroring.
+REM  v2.17.45 - EVICT THE MENU ART FROM THE JUNCTION BEFORE SYNCING.
+REM  storage\t6\images is a junction into the deployed mod's images\ folder, and
+REM  that junction is GLOBAL - it applies to the stock game and to every other
+REM  mod, with nothing loaded. The menu art must not be reachable that way; it
+REM  ships inside mod.iwd instead, which is only mounted while this mod is
+REM  loaded. See images_menu\ in pack_iwd.ps1.
+REM
+REM  This exists because the sync below only ever COPIES. It has no delete pass,
+REM  so moving a file out of images\ in the repo leaves the deployed copy sitting
+REM  in the junction forever, still overriding the stock game. That is exactly
+REM  how the art came back on 2026-09-23 after being mod-gated on 2026-09-14.
+REM  The list is read from images_menu\ itself so it cannot drift from the pack.
+echo    evicting menu art from the global images junction...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$menu=Join-Path $env:PROJ_DIR 'images_menu'; if(-not (Test-Path -LiteralPath $menu)){ Write-Host '    [skip] no images_menu folder'; exit 0 }; $modImg=Join-Path $env:PLUTO_DIR 'images'; $n=0; Get-ChildItem -LiteralPath $menu -Filter *.iwi -File | ForEach-Object { foreach($d in @((Join-Path $modImg $_.Name), (Join-Path (Join-Path $env:PROJ_DIR 'images') $_.Name))){ if(Test-Path -LiteralPath $d){ Remove-Item -LiteralPath $d -Force; $n++ } } }; Write-Host ('    [ok] ' + $n + ' menu texture(s) evicted; they ship inside mod.iwd')"
+if errorlevel 1 goto copyfail
+
+echo    syncing the texture pack and its images junction...
+"%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$src=Join-Path $env:PROJ_DIR 'images'; if(-not (Test-Path -LiteralPath $src)){ Write-Host '    [skip] no images\ folder in this tree'; exit 0 }; $modImg=Join-Path $env:PLUTO_DIR 'images'; if(-not (Test-Path -LiteralPath $modImg)){ New-Item -ItemType Directory -Force -Path $modImg | Out-Null }; $sha=[Security.Cryptography.SHA1]::Create(); $H={ param($p) $fs=[IO.File]::OpenRead($p); try { [BitConverter]::ToString($sha.ComputeHash($fs)) } finally { $fs.Close() } }; $n=0; Get-ChildItem -LiteralPath $src -File | ForEach-Object { $d=Join-Path $modImg $_.Name; $stale=$true; if(Test-Path -LiteralPath $d){ if((Get-Item -LiteralPath $d).Length -eq $_.Length){ $stale=(&$H $d) -ne (&$H $_.FullName) } } ; if($stale){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $n++ } }; $img=Join-Path (Split-Path $env:PLUTO_DIR -Parent | Split-Path -Parent) 'images'; $link=$null; if(Test-Path -LiteralPath $img){ $link=Get-Item -LiteralPath $img -Force }; $isJ=$link -and ($link.Attributes -band [IO.FileAttributes]::ReparsePoint); if(-not $isJ){ $carried=0; if($link){ Get-ChildItem -LiteralPath $img -File | ForEach-Object { $d=Join-Path $modImg $_.Name; if(-not (Test-Path -LiteralPath $d)){ Copy-Item -LiteralPath $_.FullName -Destination $d -Force; $carried++ } }; Remove-Item -LiteralPath $img -Recurse -Force }; try { New-Item -ItemType Junction -Path $img -Target $modImg -ErrorAction Stop | Out-Null; Write-Host ('    [ok] images junction created (carried ' + $carried + ')') } catch { Write-Host '    [warn] could not create the images junction - loose textures will not load' } } ; Write-Host ('    [ok] ' + $n + ' texture(s) refreshed, ' + (Get-ChildItem -LiteralPath $modImg -File).Count + ' in the mod')"
+
+REM  Final word on the menu art, now that the eviction has run and PLUTO_DIR
+REM  points at the deployed mod: prove the junction itself is clean. This is the
+REM  check that would have caught 2026-09-23 - the repo was fine, the deployed
+REM  folder was not. -CheckDeployed is separate from -PostPack precisely because
+REM  the call after the repack runs BEFORE the eviction.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1" -PostPack -CheckDeployed
+if errorlevel 1 goto menuartfail
+
 echo.
 echo.
 echo [6/9] Refreshing the installer's own bundled copy:
@@ -418,6 +577,50 @@ echo   Put the value back, or update the table in tools\check-recoil-prenerf.ps1
 if not defined OFFLINE pause
 exit /b 1
 
+:menuartfail
+echo.
+echo   BUILD STOPPED: the main-menu art is not mod-gated.
+echo   A menu texture in images\ is mirrored into storage\t6\images, which is a
+echo   GLOBAL junction - the art would show on the stock game and under every
+echo   other mod, with nothing loaded. It belongs in images_menu\, which is
+echo   packed into mod.iwd and mounted only while this mod is loaded.
+if not defined OFFLINE pause
+exit /b 1
+
+:wwanimfail
+echo.
+echo   BUILD STOPPED: the wonder-weapon animation chain is broken.
+echo   The Wave Gun would stop floating zombies and the Winter's Howl would stop
+echo   freezing them into ice - both guns still fire and still kill, so NOTHING
+echo   in any log would report it. The user finds it by shooting something.
+echo   Fix the chain the check named. Do NOT go looking in zapgun.gsc or
+echo   _zm_weap_freezegun.gsc - their scripts are almost never the cause.
+if not defined OFFLINE pause
+exit /b 1
+
+:weaponportfail
+echo.
+echo   BUILD STOPPED: a registered weapon port is missing a model, animation,
+echo   sound alias, or a stock/animated Pack-a-Punch camo mapping.
+if not defined OFFLINE pause
+exit /b 1
+
+:bettyfail
+color C
+echo.
+echo   BUILD STOPPED: the Bouncing Betty lost claymore parity - see the [betty]
+echo   lines above. Each one names the bug it would bring back.
+if not defined OFFLINE pause
+exit /b 1
+
+:clientfxfail
+color C
+echo.
+echo   BUILD STOPPED: a client script loads a raw .efx that no server script
+echo   loads, so it would never load in game - see the [client-fx] lines above.
+if not defined OFFLINE pause
+exit /b 1
+
 :reffail
 echo.
 echo   BUILD STOPPED: a cross-script call names a function this mod does not define.
@@ -431,6 +634,14 @@ exit /b 1
 color C
 echo.
 echo   BUILD STOPPED: the perk pop-up description regression gate failed.
+if not defined OFFLINE pause
+exit /b 1
+
+:hudbudgetfail
+color C
+echo.
+echo   BUILD STOPPED: the client HUD slot budget failed - see the HUD BUDGET lines
+echo   above and the banner above qol_opt_player_init() in qol_options.gsc.
 if not defined OFFLINE pause
 exit /b 1
 

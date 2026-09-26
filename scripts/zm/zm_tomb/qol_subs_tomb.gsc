@@ -13,6 +13,12 @@
 //  with no hook. Measured by grepping the map's scripts for every sound
 //  builtin fed a vox_plr alias (checkpoint 262):
 //
+//      zm_tomb_vo::start_narrative_vo        the round-one narrative: the spawn
+//                                            lines ("game_start", "game_start_
+//                                            meet_N", "generator_find") and the
+//                                            round 1 / round 2 end conversations
+//                                            ("end_round_1_N", "end_round_2_N",
+//                                            "during_round_N", "story_exposition_4")
 //      zm_tomb_vo::samantha_intro_1/2/3      rounds 5, 6, 7 - "hear_samantha_1",
 //                                            "heroes_confer", "hear_samantha_3",
 //                                            every character, via
@@ -61,6 +67,7 @@
 
 main()
 {
+    replaceFunc( maps\mp\zm_tomb_vo::start_narrative_vo, ::zmqol_start_narrative_vo );
     replaceFunc( maps\mp\zm_tomb_vo::start_samantha_intro_vo, ::zmqol_start_samantha_intro_vo );
     replaceFunc( maps\mp\zm_tomb_vo::richtofenrespondvoplay, ::zmqol_richtofenrespondvoplay );
     replaceFunc( maps\mp\zm_tomb_vo::tomb_drone_built_vo, ::zmqol_tomb_drone_built_vo );
@@ -83,7 +90,192 @@ zmqol_subs_tomb_repoint()
     if ( isdefined( level.zombie_custom_craftable_built_vo ) )
         level.zombie_custom_craftable_built_vo = ::zmqol_tomb_drone_built_vo;
 
-    println( "[zm_qol] subtitles: Origins raw-road hooks installed (samantha intro, richtofen exchanges, drone, robot crush, robot eject)" );
+    println( "[zm_qol] subtitles: Origins raw-road hooks installed (round-one narrative, samantha intro, richtofen exchanges, drone, robot crush, robot eject)" );
+}
+
+// ----------------------------------------------------------------------------
+//  zm_tomb_vo.gsc  -  THE ROUND-ONE NARRATIVE.                      (v2.17.38)
+//
+//  User, 2026-09-24, playing Origins: the Maxis radio subtitle rendered, but
+//  the character's own opening lines - "I... I am alive!" - had none, and the
+//  lines after the opening were fine. That is this tree and nothing else.
+//  zm_tomb_vo::init_level_specific_audio (line 42 of the stock file) does
+//  `level thread start_narrative_vo()`, and start_narrative_vo plays, in order:
+//
+//      game_start_solo_vo / game_start_vo     the spawn lines
+//      round_one_end_solo_vo / round_one_end_vo
+//      round_two_end_narrative_vo -> round_two_end_solo_vo
+//
+//  Every one of them goes straight out through playsoundwithnotify() on the
+//  player. None of them was hooked - start_narrative_vo was simply not in this
+//  file's main(). All 30 aliases in the tree already have rows in
+//  zm/zmqol_subs_zm_tomb.csv (checked one by one, 2026-09-24); the text was
+//  there all along, nothing was ever asked to draw it.
+//
+//  🛑 WHY start_narrative_vo IS THE HOOK POINT. §7a: a threaded call is proven
+//  to reach a replaceFunc'd copy; a synchronous unqualified same-file call is
+//  the case still in doubt. start_narrative_vo is level-threaded once from
+//  zm_tomb_vo::init, so it is safe; everything below it is called
+//  synchronously, so those are private copies here rather than hook points.
+//
+//  📝 ONE DEPARTURE FROM VERBATIM. The three *_solo_vo functions are identical
+//  to each other except for which convo array they build, and the two group
+//  ones likewise (diffed line by line against the stock file, 2026-09-24). So
+//  they are two generic copies taking the array as an argument, and the stock
+//  builders are called qualified - they are pure data and unmodified, so there
+//  is no reason to copy them. Four new symbols instead of thirteen.
+// ----------------------------------------------------------------------------
+zmqol_start_narrative_vo()
+{
+    println( "[zm_qol] subtitles: hook ran - start_narrative_vo" );
+
+    flag_wait( "start_zombie_round_logic" );
+    maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
+    wait 10;
+
+    if ( maps\mp\zm_tomb_vo::is_game_solo() )
+        zmqol_solo_convo_vo( maps\mp\zm_tomb_vo::build_game_start_solo_convo() );
+    else
+        zmqol_group_convo_vo( maps\mp\zm_tomb_vo::build_game_start_convo() );
+
+    level waittill( "end_of_round" );
+    level thread zmqol_round_two_end_narrative_vo();
+
+    if ( maps\mp\zm_tomb_vo::is_game_solo() )
+        zmqol_solo_convo_vo( maps\mp\zm_tomb_vo::build_round_one_end_solo_convo() );
+    else
+        zmqol_group_convo_vo( maps\mp\zm_tomb_vo::build_round_one_end_convo() );
+
+    flag_set( "round_one_narrative_vo_complete" );
+}
+
+zmqol_round_two_end_narrative_vo()
+{
+    level waittill( "end_of_round" );
+    flag_wait( "round_one_narrative_vo_complete" );
+
+    if ( flag( "generator_find_vo_playing" ) )
+    {
+        flag_waitopen( "generator_find_vo_playing" );
+        wait 3;
+    }
+
+    if ( maps\mp\zm_tomb_vo::is_game_solo() )
+        zmqol_solo_convo_vo( maps\mp\zm_tomb_vo::build_round_two_end_solo_convo() );
+}
+
+//  game_start_solo_vo / round_one_end_solo_vo / round_two_end_solo_vo. One
+//  speaker, players[0], and their entry in the array is either one alias or an
+//  array of them.
+zmqol_solo_convo_vo( a_convo )
+{
+    if ( flag( "story_vo_playing" ) )
+        return;
+
+    players = getplayers();
+    e_speaker = players[0];
+
+    if ( !isdefined( e_speaker ) )
+        return;
+
+    flag_set( "story_vo_playing" );
+    maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
+    lines = a_convo[e_speaker.character_name];
+
+    if ( isarray( lines ) )
+    {
+        for ( i = 0; i < lines.size; i++ )
+        {
+            e_speaker playsoundwithnotify( lines[i], "sound_done" + lines[i] );
+            e_speaker scripts\zm\zmqol_subtitles::zmqol_subs_raw_line( lines[i] );
+            e_speaker waittill( "sound_done" + lines[i] );
+            wait 1.0;
+        }
+    }
+    else if ( isdefined( lines ) )
+    {
+        e_speaker playsoundwithnotify( lines, "sound_done" + lines );
+        e_speaker scripts\zm\zmqol_subtitles::zmqol_subs_raw_line( lines );
+        e_speaker waittill( "sound_done" + lines );
+    }
+
+    maps\mp\zm_tomb_vo::set_players_dontspeak( 0 );
+    flag_clear( "story_vo_playing" );
+}
+
+//  game_start_vo / round_one_end_vo. Richtofen takes line 2 alone; every other
+//  line goes to whoever stands nearest him. Stock captures all four characters
+//  into locals and reads only Richtofen's, so only his is kept here.
+zmqol_group_convo_vo( a_convo )
+{
+    players = getplayers();
+
+    if ( players.size <= 1 )
+        return;
+
+    if ( flag( "story_vo_playing" ) )
+        return;
+
+    flag_set( "story_vo_playing" );
+    e_richtofen = undefined;
+
+    foreach ( player in players )
+    {
+        if ( isdefined( player ) && player.character_name == "Richtofen" )
+            e_richtofen = player;
+    }
+
+    maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
+
+    for ( i = 0; i < a_convo.size; i++ )
+    {
+        players = getplayers();
+
+        if ( players.size <= 1 )
+        {
+            maps\mp\zm_tomb_vo::set_players_dontspeak( 0 );
+            flag_clear( "story_vo_playing" );
+            return;
+        }
+
+        if ( !isdefined( e_richtofen ) )
+            continue;
+
+        line_number = i + 1;
+
+        if ( line_number == 2 )
+        {
+            a_richtofen_lines = a_convo["line_" + line_number];
+
+            for ( j = 0; j < a_richtofen_lines.size; j++ )
+            {
+                e_richtofen playsoundwithnotify( a_richtofen_lines[j], "sound_done" + a_richtofen_lines[j] );
+                e_richtofen scripts\zm\zmqol_subtitles::zmqol_subs_raw_line( a_richtofen_lines[j] );
+                e_richtofen waittill( "sound_done" + a_richtofen_lines[j] );
+            }
+
+            continue;
+        }
+
+        arrayremovevalue( players, e_richtofen );
+        players = get_array_of_closest( e_richtofen.origin, players );
+        e_speaker = players[0];
+
+        if ( !isdefined( e_speaker ) )
+            continue;
+
+        str_vox_line = a_convo["line_" + line_number][e_speaker.character_name];
+
+        if ( !isdefined( str_vox_line ) )
+            continue;
+
+        e_speaker playsoundwithnotify( str_vox_line, "sound_done" + str_vox_line );
+        e_speaker scripts\zm\zmqol_subtitles::zmqol_subs_raw_line( str_vox_line );
+        e_speaker waittill( "sound_done" + str_vox_line );
+    }
+
+    maps\mp\zm_tomb_vo::set_players_dontspeak( 0 );
+    flag_clear( "story_vo_playing" );
 }
 
 // ----------------------------------------------------------------------------

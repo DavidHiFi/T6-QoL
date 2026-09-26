@@ -57,3 +57,34 @@ gameplay checks. These are local development references, not release payloads.
 - Keep developer-specific paths out of shipped source comments and UI text.
 - Record build, installation, startup, gameplay and performance separately.
   Successful offline checks do not close gameplay items in the queue.
+- To port a weapon, start with the `port-weapon` skill
+  (`H:\Claude\tools\skills\port-weapon\SKILL.md`). It picks the route from what
+  source exists: someone's T6 port, a retail zone, another mod, or an extraction
+  from any Call of Duty on this PC. `tools/port-weapon/port_weapon.py plan` /
+  `apply` does the mechanical half from a T6 raw source tree, and
+  `tools/port-weapon/live/` holds the probe, headless capture, deploy and
+  installed-build check. The Blast-O-Matic (SadSlothXL, 2026-09-25) went through
+  this route and the player accepted it on the first build.
+- Every weapon port, map-to-map or game-to-game, is registered in
+  `tools/weapon-port-contracts.json` BEFORE its first link. `build_ff.bat`
+  runs `tools/check-weapon-port.py` before linking (sources) and after
+  (readback of the new `mod.ff` plus image pixels in the client's banks);
+  `build.bat` runs the readback again. A port is not done until all of these
+  hold, and each item below is a defect a player has already seen:
+  - Both forms (normal and `_upgraded`) read with every field, including the
+    upgraded form's `attachViewModel*` / `attachWorldModel*`. The Blundergat's
+    missing armor attachment drew a screen-filling black block on reload.
+  - Every model, effect, tracer and icon a def names is in `mod.ff` or on all
+    six stock maps. A missing fx logs one `Could not load fx` line and the gun
+    fires with no flash. The Linker copies fx out of a `--load`ed zone; only
+    the Unlinker cannot dump them.
+  - Its own camo table, named `camo_qol_<gun>`, that no stock zone owns (a
+    map's own copy of a shared name wins on that map). Slot 3 (stock PaP,
+    animated camos OFF), slot 8 (animated) and slot 12 (Origins OFF) each
+    override the gun's own base material. A slot with no entry for the gun
+    draws it black.
+  - Every sound alias its def and notetracks fire is in
+    `soundbank/mod.all.aliases.additions.csv`, with its payload in `sound/`.
+  - Then a live test on a map that is not the donor's: pack it with ANIMATED
+    CAMOS on and again with it off, fire, reload, sprint, and look at the gun.
+    No offline check sees a notetrack or a wrong-looking camo.

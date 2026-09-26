@@ -376,7 +376,22 @@ Write-Host '  Closing this window (or Ctrl+C) does not uninstall anything.' -For
 Write-Host '  ------------------------------------------------------------------' -ForegroundColor Cyan
 Write-Host ''
 
-if (-not (Test-Path -LiteralPath $VaultDir)) {
+#  v2.16.18 - TESTING THAT THE VAULT EXISTS WAS NOT ENOUGH.
+#
+#  User, 2026-09-21: ReShade launched with no shaders, default UI and default
+#  hotkeys, and this watchdog's own log shows it calling that healthy -
+#  "Watching - bin is intact, nothing to restore" on a loop for the whole
+#  session. The vault on that PC held only dxgi.dll and the six .ini; it had no
+#  reshade-shaders folder at all, so there was genuinely nothing to put back and
+#  the existence check above could not tell the difference.
+#
+#  reshade-verify.ps1 counts the shaders on both sides and refills the vault
+#  from the shipped payload before this loop trusts it.
+$verifyPS1 = Join-Path $PSScriptRoot 'reshade-verify.ps1'
+if (Test-Path -LiteralPath $verifyPS1) {
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $verifyPS1
+}
+elseif (-not (Test-Path -LiteralPath $VaultDir)) {
     Write-Host "  No ReShade vault found yet at:" -ForegroundColor Red
     Write-Host "    $VaultDir" -ForegroundColor Red
     Write-Host "  Run Windows Install.bat -> ReShade first, then start this again." -ForegroundColor Red

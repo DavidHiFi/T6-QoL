@@ -1,0 +1,114 @@
+// ============================================================================
+//  mod_blundergat.zone  -  MOB OF THE DEAD'S BLUNDERGAT, ON EVERY MAP  (v2.17.32)
+//
+//  User, 2026-09-21: *"make sure that the blundergat is in the mystery box on
+//  every mob of the dead survival map and any map that it can be added to"*,
+//  then 2026-09-22: *"just the same way you've put weapons from other maps to
+//  other maps just do the same thing."*  This is that same mechanism, thirteenth
+//  gun in, and it follows mod_dragunov.zone line for line.
+//
+//  SOURCE: every asset below exists in zm_prison.ff, verified with
+//  Unlinker --list before this file was written. build_ff.bat already --load's
+//  zm_prison.ff (slot 5), so the Linker can resolve all of them with no new
+//  --load and no raw art of our own.
+//
+//  The original port missed two assets named by the upgraded definition:
+//  t6_wpn_zmb_blundergat_armor_view and _world. The reload animation exposes
+//  the armor view attachment, so a missing model can fill the screen with
+//  invalid geometry. Both forms now have every nonempty model reference here.
+//
+//  The Remington's camo_870mcs is also not a valid cross-map camo table for
+//  this gun. Some maps own a shorter copy, and its slots 3 and 12 do not map
+//  the Blundergat material. Both raw definitions use camo_qol_blundergat,
+//  which the mod alone owns and fills for stock and animated PaP indices.
+//
+//  Other references read straight out of the def:
+//      hudIcon/killIcon/   menu_mp_weapons_870mcs <- an MP asset; common_mp.ff
+//      ammoCounterIcon                               and patch_mp.ff load on
+//                                                    every zombies map
+//      displayName         ZMWEAPON_BLUNDERGAT    <- en_patch_zm.ff, which every
+//      (and _UPGRADED)                               map loads. Confirmed by
+//                                                    dumping that zone's .str,
+//                                                    not by hoping.
+//  The materials and images come along as xmodel sub-assets.
+//
+//  🛑 THE WEAPON DEFS ARE NOT DECLARED HERE, same rule as every other ported
+//  gun: the Linker never reads a raw weapon file, and a declared one would be
+//  pulled from zm_prison.ff instead. They ship raw in weapons\zm\ -
+//  blundergat_zm 19,985 B and blundergat_upgraded_zm 20,106 B, both under the
+//  20,480 runtime-loader ceiling after the two standard trims (the 60
+//  grenade-bounce coefficients and the 24 all-zero attachWorldModelOffset
+//  fields; both were needed, trim 1 alone left them at 20,697 and 20,818).
+//
+//  📝 ON MOB THE RAW DEFS SHADOW THE MAP'S OWN, and that is intended and
+//  harmless: they are that same def minus fields that are all zero on this
+//  weapon. The trimmer is byte-exact - run over stock slowgun_upgraded_zm it
+//  reproduces this mod's own shipped copy of that file apart from the one camo
+//  key v2.11.0 deliberately changed.
+//
+//  The four muzzle flashes ARE declared below (2026-09-25). The first port left
+//  them out on the theory that a def's fx string "resolves leniently", and it
+//  does - to nothing. Every non-Mob boot logged
+//      Could not load fx "weapon/blundersplat/fx_blundersplat_muzzleflash"
+//  and the gun fired with no flash. The Unlinker cannot DUMP an FxEffectDef,
+//  but the Linker copies one out of a --load'ed zone like any other asset;
+//  mod_betty.zone and mod_bo1guns.zone already ship map-only fx this way.
+//  zm_prison.ff is --load'ed, so these resolve with no raw .efx.
+// ============================================================================
+
+// View and world models. Both forms use the main pair; the upgraded form also
+// uses the armor pair as attachment 6. The _acid models belong to Acid Gat.
+xmodel,t6_wpn_zmb_blundergat_view
+xmodel,t6_wpn_zmb_blundergat_world
+xmodel,t6_wpn_zmb_blundergat_armor_view
+xmodel,t6_wpn_zmb_blundergat_armor_world
+camo,camo_qol_blundergat
+
+// Muzzle flashes named by viewFlashEffect / worldFlashEffect; zm_prison.ff only.
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash_3p
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash_ug
+fx,weapon/blundersplat/fx_blundersplat_muzzleflash_ug_3p
+
+// all 41 view-model animations, taken from the zone's own order
+xanim,viewmodel_blundergat_idle
+xanim,viewmodel_blundergat_idle_empty
+xanim,viewmodel_blundergat_fire
+xanim,viewmodel_blundergat_lastshot
+xanim,viewmodel_blundergat_reload
+xanim,viewmodel_blundergat_reload_empty
+xanim,viewmodel_blundergat_pullout
+xanim,viewmodel_blundergat_first_raise
+xanim,viewmodel_blundergat_putaway
+xanim,viewmodel_blundergat_pullout_quick
+xanim,viewmodel_blundergat_putaway_quick
+xanim,viewmodel_blundergat_pullout_empty
+xanim,viewmodel_blundergat_putaway_empty
+xanim,viewmodel_blundergat_sprint_in
+xanim,viewmodel_blundergat_sprint_loop
+xanim,viewmodel_blundergat_sprint_out
+xanim,viewmodel_blundergat_sprint_in_empty
+xanim,viewmodel_blundergat_sprint_loop_empty
+xanim,viewmodel_blundergat_sprint_out_empty
+xanim,viewmodel_blundergat_crawl_in
+xanim,viewmodel_blundergat_crawl_forward
+xanim,viewmodel_blundergat_crawl_back
+xanim,viewmodel_blundergat_crawl_right
+xanim,viewmodel_blundergat_crawl_left
+xanim,viewmodel_blundergat_crawl_out
+xanim,viewmodel_blundergat_crawl_in_empty
+xanim,viewmodel_blundergat_crawl_forward_empty
+xanim,viewmodel_blundergat_crawl_back_empty
+xanim,viewmodel_blundergat_crawl_right_empty
+xanim,viewmodel_blundergat_crawl_left_empty
+xanim,viewmodel_blundergat_crawl_out_empty
+xanim,viewmodel_blundergat_ads_fire
+xanim,viewmodel_blundergat_ads_lastshot
+xanim,viewmodel_blundergat_d2p_in
+xanim,viewmodel_blundergat_d2p_loop
+xanim,viewmodel_blundergat_d2p_out
+xanim,viewmodel_blundergat_d2p_in_empty
+xanim,viewmodel_blundergat_d2p_loop_empty
+xanim,viewmodel_blundergat_d2p_out_empty
+xanim,viewmodel_blundergat_ads_up
+xanim,viewmodel_blundergat_ads_down

@@ -1,0 +1,32 @@
+{
+  "ports": [
+    {
+      "name": "Blundergat",
+      "zone": "zone_source/mod_blundergat.zone",
+      "weapons": ["blundergat_zm", "blundergat_upgraded_zm"],
+      "camo": "camo_qol_blundergat",
+      "camoBaseMaterials": ["mc/mtl_t6_wpn_zmb_blundergat"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["wpn_blundergat_", "fly_blundergat_"],
+      "donorZone": "zm_prison",
+      "imageMatch": ["mtl_t6_wpn_zmb_blundergat"]
+    },
+    {
+      "name": "Blast-O-Matic",
+      "zone": "zone_source/mod_blastomatic.zone",
+      "weapons": ["blastomatic_zm", "blastomatic_upgraded_zm"],
+      "camo": "camo_qol_t9_gallo",
+      "camoBaseMaterials": [
+        "mtl_t9_gallo_blastomatic_barrel", "mtl_t9_gallo_blastomatic_barrel_cover",
+        "mtl_t9_gallo_blastomatic_body", "mtl_t9_gallo_blastomatic_forend",
+        "mtl_t9_gallo_blastomatic_lazer", "mtl_t9_gallo_blastomatic_misc",
+        "mtl_t9_gallo_blastomatic_muzzle", "mtl_t9_gallo_blastomatic_pgrip",
+        "mtl_t9_gallo_blastomatic_pump", "mtl_t9_gallo_blastomatic_stock",
+        "mtl_t9_gallo_blastomatic_triggergroup"
+      ],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["t9_gallo_"],
+      "rawMaterials": "mtl_t9_gallo_blastomatic_"
+    }
+  ]
+}

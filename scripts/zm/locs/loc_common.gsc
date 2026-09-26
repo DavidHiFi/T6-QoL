@@ -37,6 +37,95 @@ init()
 	level notify("additionalprimaryweapon_on");
 	wait_network_frame();
 	level notify("Pack_A_Punch_on");
+	wait_network_frame();
+
+	//  ⭐ v2.17.31 - Deadshot and Electric Cherry were missing from this list.
+	//  Every machine on a ported location is bought through stock's
+	//  vending_trigger_think(), which shows &"ZOMBIE_NEED_POWER" and then blocks
+	//  on `level waittill( perk + "_power_on" )` (_zm_perks.gsc:1735-1738). The
+	//  per-perk threads that fire those notifies each wait on one of the
+	//  "<perk>_on" names above - so a perk whose name is absent here can never be
+	//  bought on a survival arena, no matter that turn_power_on_and_open_doors()
+	//  already set the power_on flag. Trenches registers Deadshot and Docks
+	//  registers Electric Cherry, so both were unbuyable.
+	level notify("deadshot_on");
+	wait_network_frame();
+	level notify("electric_cherry_on");
+	zmqol_power_electric_cherry_machines();
+}
+
+// ============================================================================
+//  zmqol_power_electric_cherry_machines
+//
+//  🛑 THE NOTIFY ABOVE IS NOT ENOUGH FOR ELECTRIC CHERRY, and this is why.
+//
+//  Stock's listener for "electric_cherry_on" is
+//  _zm_perk_electric_cherry::electric_cherry_perk_machine_think(), and this mod
+//  deliberately unhooks it: quality_of_life.gsc::zmqol_enable_electric_cherry()
+//  clears level._custom_perks["specialty_grenadepulldeath"].perk_machine_thread
+//  because that thread's first statement is init_electric_cherry(), whose
+//  registerclientfield( "electric_cherry_reload_fx" ) is fatal on a second call.
+//  The banner on that function says "nothing is lost - the thread's whole body
+//  operates on getentarray( "vendingelectric_cherry" ), which is empty on these
+//  maps". That stopped being true when zm_prison_loc_docks.gsc:12 started
+//  registering a real Electric Cherry machine: Docks survival is zm_prison
+//  non-classic, so the perk is enabled, the machine and its trigger spawn, and
+//  the one thread that would have powered them is gone. The machine stands there
+//  asking for power that this map has no switch for - Mob's power lives behind
+//  Afterlife, which survival does not have. Reported in game, 2026-09-21.
+//
+//  So this is the power-on half of stock's think loop, verbatim, minus the
+//  init_electric_cherry() call that made it unsafe to re-enable. It is a no-op
+//  on every location with no Cherry machine, and the per-machine flag keeps it
+//  a no-op if the stock thread is ever restored and gets there first.
+// ============================================================================
+zmqol_power_electric_cherry_machines()
+{
+	machine = getentarray("vendingelectric_cherry", "targetname");
+
+	if (machine.size == 0)
+	{
+		return;
+	}
+
+	for (i = 0; i < machine.size; i++)
+	{
+		if (is_true(machine[i].zmqol_cherry_powered))
+		{
+			continue;
+		}
+
+		machine[i].zmqol_cherry_powered = 1;
+		machine[i] setmodel("p6_zm_vending_electric_cherry_on");
+		machine[i] vibrate(vectorscale((0, -1, 0), 100), 0.3, 0.4, 3);
+		machine[i] playsound("zmb_perks_power_on");
+
+		//  perk_fx() plays level._effect[ "electriccherry" ], loaded by the
+		//  perk's own precache func. Guarded because a location could in
+		//  principle carry the machine model without the perk enabled.
+		if (isDefined(level._effect) && isDefined(level._effect["electriccherry"]))
+		{
+			machine[i] thread maps\mp\zombies\_zm_perks::perk_fx("electriccherry");
+		}
+
+		machine[i] thread maps\mp\zombies\_zm_perks::play_loop_on_machine();
+	}
+
+	//  This is the notify vending_trigger_think() is actually blocked on, and
+	//  the power_on field is what stops zmqol_vending_trigger_post_think() from
+	//  calling perk_pause() the moment somebody drinks it. Written directly
+	//  rather than through array_thread( ..., _zm_perks::set_power_on, 1 ):
+	//  set_power_on() IS `self.power_on = state` and nothing else, and a bare
+	//  cross-file function pointer is the one call shape this project has no
+	//  other example of in these scripts.
+	level notify("specialty_grenadepulldeath_power_on");
+
+	triggers = getentarray("vending_electriccherry", "target");
+
+	for (i = 0; i < triggers.size; i++)
+	{
+		triggers[i].power_on = 1;
+	}
 }
 
 enemy_location_override(zombie, enemy)

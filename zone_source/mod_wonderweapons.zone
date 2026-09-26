@@ -161,15 +161,50 @@ script,scripts/zm/thundergun.csc
 //
 //  RESTORE: uncomment. Backup of this file before the change is
 //  modding-jobs\church-pap-001\mod_wonderweapons.zone.bak-aitypes-on.
+
+// ----------------------------------------------------------------------------
+//  v2.17.43 - THE .atr / .asd LINES ARE BACK ON. THE aitypes SHIP RAW.
+//
+//  User, 2026-09-23: the Wave Gun no longer floats and the Winter's Howl no
+//  longer freezes zombies into ice - *"they just fall over and die"*, on both.
+//  ONE change broke both: v2.17.26 commented out the eight .atr/.asd lines
+//  below as an "AI regression test", and those files ARE the animation route.
+//  zapgun.gsc logged it plainly - 15 kills, 15 x "fallback:no-sizzle-asd" - and
+//  _zm_weap_freezegun.gsc has the same shape, bailing to
+//  freezegun_run_skipped_death_events() when zm_death_freeze_t5 is missing.
+//
+//  🛑 THE .asd CANNOT SHIP ALONE. Without the modified aitypes every map dies at
+//      BG_AnimStateDef_Parse: state 'zm_death_sizzle' has subState with anim
+//      'ai_zombie_microwave_death_a' that was not found in its animtree.
+//  The anim list an .asd is checked against is baked into the AITYPE, and the
+//  stock aitypes carry no Moon microwave or freeze anims.
+//
+//  🌟 SO THE aitypes COME BACK IN THE 09-10 SHAPE: raw files under aitype\,
+//  packed into mod.iwd by pack_iwd.ps1, NOT as compiled script,aitype zone
+//  assets. 73db353 (09-10) was measured live on Town in exactly that shape -
+//  zm_death_sizzle=1, 7 sizzle deaths, 0 fallbacks, map loading clean. The
+//  script,aitype lines further down stay commented; they arrived on 09-15 with
+//  the freeze half, and the attack regression was reported on 09-16, after that
+//  change and not after 09-10.
+//
+//  📝 The overrides are additive: +19 lines, -0, all of them
+//  `dummy_anim_ref = %ai_zombie_{microwave,freeze}_death_*;` at the top of
+//  reference_anims_from_animtree(). Stock 429 anim refs, mod 448, stock->mod
+//  set difference empty. The "they rewrite the AI" reading does not survive
+//  reading the files.
+//
+//  🛑 IF ZOMBIES STOP ATTACKING, THIS BLOCK IS THE FIRST THING TO PUT BACK TO
+//  COMMENTS - but measure it, do not assume it. See the aitype memory note.
+// ----------------------------------------------------------------------------
 // ============================================================================
-// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_transit_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_transit_basic.asd
-// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_nuked_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_nuked_basic.asd
-// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_highrise_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_highrise_basic.asd
-// [v2.17.26 DISABLED - AI regression test] rawfile,animtrees/zm_prison_basic.atr
-// [v2.17.26 DISABLED - AI regression test] rawfile,animstatedefs/zm_prison_basic.asd
+rawfile,animtrees/zm_transit_basic.atr
+rawfile,animstatedefs/zm_transit_basic.asd
+rawfile,animtrees/zm_nuked_basic.atr
+rawfile,animstatedefs/zm_nuked_basic.asd
+rawfile,animtrees/zm_highrise_basic.atr
+rawfile,animstatedefs/zm_highrise_basic.asd
+rawfile,animtrees/zm_prison_basic.atr
+rawfile,animstatedefs/zm_prison_basic.asd
 // still NOT shipped (guns gated off there): zm_tomb_basic, zm_buried_basic
 // ============================================================================
 //  🌟 THE AITYPE OVERRIDES THE .asd ABOVE HAS ALWAYS NEEDED.

@@ -449,6 +449,71 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
     level thread zmqol_subs_broadcast( undefined, str_name, str_text, n_secs, v_pos, n_range_sq );
 }
 
+// ============================================================================
+//  zmqol_subs_music  -  THE EASTER EGG SONGS.                       (v2.17.42)
+//
+//  User, 2026-09-26: *"make sure that subtitles work for easter egg songs and
+//  stuff like that and all the maps cuz like i was playing town survival and i
+//  interacted with all three of the teddy bears which activated the easter egg
+//  song carry on and there was no subtitles for the the song"*.
+//
+//  A song is a mus_* alias, not a vox_* one, so none of the three roads above
+//  ever saw it. Each map's own file calls this beside the play builtin:
+//      scripts/zm/zm_transit/qol_subs_music_transit.gsc   the bears (stock + mod)
+//      scripts/zm/<map>/qol_subs_music_<map>.gsc          stock sndmuseggplay()
+//      qol_subs_npc_prison.gsc nixie_935_audio            Mob's second song
+//
+//  🛑 A TITLE CARD, NOT LYRICS. The songs are licensed and published tracks
+//  (Johnny Cash, Avenged Sevenfold, Kevin Sherwood's), so the mod does not
+//  carry their lyrics. Each map's table has one row per song alias - title and
+//  artist, split into rows by "~" like any long line. It shows for 8 s when
+//  the song starts and again every 60 s while it plays, so someone who looks
+//  up mid-song still learns what it is. A newer song, or the game ending,
+//  stops the loop.
+//
+//  Level-scope; songs are 2D (DistMaxDry 5000, pan 2d in every bank), so every
+//  player gets it, grey, with no name in front.
+// ============================================================================
+zmqol_subs_music( str_alias )
+{
+    if ( !isdefined( level.zmqol_subs_table ) )
+        return;
+
+    level notify( "zmqol_subs_music" );
+    level endon( "zmqol_subs_music" );
+    level endon( "end_game" );
+
+    str_text = zmqol_subs_lookup( str_alias );
+
+    if ( str_text == "" )
+    {
+        println( "[zm_qol] subtitles: no text for song " + str_alias );
+        return;
+    }
+
+    //  A streamed music alias should report its length like a streamed vox one
+    //  does; if it does not, the card still shows, just once.
+    n_ms = soundgetplaybacktime( str_alias );
+
+    if ( !isdefined( n_ms ) || n_ms <= 0 )
+        n_ms = 0;
+
+    println( "[zm_qol] subtitles: song " + str_alias + " -> title card, song " + ( n_ms * 0.001 ) + "s" );
+
+    n_end = gettime() + n_ms;
+
+    for ( ;; )
+    {
+        if ( zmqol_subs_enabled() )
+            level thread zmqol_subs_broadcast( undefined, "", str_text, 8, undefined, 0 );
+
+        if ( n_end - gettime() < 90000 )
+            return;
+
+        wait 60;
+    }
+}
+
 //  Who a non-player alias is, from its prefix. Measured against the alias
 //  tables and the scripts that play them (2026-09-08):
 //    vox_zmba_*       SPLIT BY CATEGORY since v2.15.4, because this prefix
@@ -608,6 +673,28 @@ zmqol_subs_names_on()
 }
 
 //  "[Name] " when names are on and there is a name, else nothing.
+//
+//  v2.16.19 - THE NAME IS RED (user, 2026-09-21: *"make the name for the
+//  subtitles, the person who's speaking, make that red, like kind of dark-ish
+//  but not too dark"*).
+//
+//  One function builds every bracketed name - the player lines, the NPC lines
+//  and the played-by-position lines all come through here - so colouring it
+//  here colours the whole feature, including the continuation rows that get the
+//  prefix re-applied in zmqol_subs_show().
+//
+//  🛑 A COLOUR CODE, NOT A SECOND HUD ELEMENT. Splitting the name onto its own
+//  element would give an exact RGB, and would also ask the client hudelem pool
+//  for one more element per visible caption row - the same finite pool that
+//  loses the perk pop-up's description when it runs dry. Subtitles can hold
+//  several rows at once, so that is the worst place in the mod to spend slots
+//  for a colour. ^1 costs nothing.
+//
+//  The shade is a dvar because this is a look, and a look is the user's call:
+//      zmqol_subs_name_color "^1"   red (default)
+//      zmqol_subs_name_color "^3"   yellow, the mod's own accent colour
+//      zmqol_subs_name_color "^7"   white, i.e. back to how it read before
+//  Changing it takes effect on the next line spoken, with no rebuild.
 zmqol_subs_prefix( str_name )
 {
     if ( !isdefined( str_name ) || str_name == "" )
@@ -616,7 +703,14 @@ zmqol_subs_prefix( str_name )
     if ( !zmqol_subs_names_on() )
         return "";
 
-    return "[" + str_name + "] ";
+    str_colour = getdvar( "zmqol_subs_name_color" );
+
+    if ( !isdefined( str_colour ) || str_colour == "" )
+        str_colour = "^1";
+
+    //  ^7 hands the caption body back to white. The row element still carries
+    //  its own colour for the own/other distinction set in zmqol_subs_redraw().
+    return str_colour + "[" + str_name + "]^7 ";
 }
 
 //  A line played by POSITION instead of by a speaker: Nuketown's Marlton in
@@ -655,6 +749,16 @@ zmqol_subs_from_position( str_alias, str_name, v_pos, n_range )
 //  single take carries the same text in both. cg_allow_mature is what the
 //  engine's "mature" sound context reads (it is in the boot dvar dump), so it
 //  is what decides here too.
+//
+//  🛑 v2.17.42 - A VARIANT THE TABLE DOES NOT NAME FALLS BACK TO ITS BASE ROW.
+//  User, 2026-09-26, Docks survival: *"i was getting power-ups like instant
+//  kill ... wasn't showing up the subtitles"*. The hook ran every time and the
+//  log said `no text for vox_zmba_powerup_instakill_0`. Retail Mob names its
+//  announcer aliases with NO variant (vox_zmba_powerup_instakill), so that is
+//  the key its table carries. Since 9bde892 (2026-09-21) mod.ff declares the
+//  _0 forms of six power-ups plus dogstart and magicbox on EVERY map, so
+//  getleaderdialogvariant() now finds a variant on Mob too and asks for _0. The
+//  text is the same line, so a miss on "..._N" retries "..." once.
 zmqol_subs_lookup( str_alias )
 {
     n_col = 1;
@@ -664,10 +768,35 @@ zmqol_subs_lookup( str_alias )
 
     str_text = tablelookup( level.zmqol_subs_table, 0, str_alias, n_col );
 
+    if ( isdefined( str_text ) && str_text != "" )
+        return str_text;
+
+    str_base = zmqol_subs_base_alias( str_alias );
+
+    if ( str_base == str_alias )
+        return "";
+
+    str_text = tablelookup( level.zmqol_subs_table, 0, str_base, n_col );
+
     if ( !isdefined( str_text ) )
         return "";
 
     return str_text;
+}
+
+//  "vox_zmba_powerup_instakill_0" -> "vox_zmba_powerup_instakill"; an alias
+//  with no trailing "_<digits>" comes back unchanged.
+zmqol_subs_base_alias( str_alias )
+{
+    n_at = str_alias.size - 1;
+
+    while ( n_at > 0 && issubstr( "0123456789", getsubstr( str_alias, n_at, n_at + 1 ) ) )
+        n_at--;
+
+    if ( n_at == str_alias.size - 1 || getsubstr( str_alias, n_at, n_at + 1 ) != "_" )
+        return str_alias;
+
+    return getsubstr( str_alias, 0, n_at );
 }
 
 //  Column 3 (v2.14.31) is the alias's own DistMaxDry from its sound-alias row,
@@ -676,6 +805,10 @@ zmqol_subs_lookup( str_alias )
 zmqol_subs_range_sq( str_alias )
 {
     str_range = tablelookup( level.zmqol_subs_table, 0, str_alias, 3 );
+
+    //  same variant fallback as zmqol_subs_lookup()
+    if ( !isdefined( str_range ) || str_range == "" )
+        str_range = tablelookup( level.zmqol_subs_table, 0, zmqol_subs_base_alias( str_alias ), 3 );
 
     if ( !isdefined( str_range ) || str_range == "" )
         return level.zmqol_subs_range_sq;
@@ -817,6 +950,17 @@ zmqol_subs_ensure_hud()
     for ( i = 0; i < n_rows; i++ )
     {
         e_line = self createfontstring( "small", n_scale );
+        //  🛑 v2.17.41 - NON-ARCHIVED, AND THIS IS THE SUBTITLE FIX.
+        //  A client is sent at most 31 archived and 31 non-archived hudelems
+        //  per snapshot, walked in pool-slot order, and the rest are silently
+        //  never drawn (HudElem_UpdateClient, 2013 PC server PDB; the same 0x1F
+        //  caps are in the live r5346 image). These rows are built on demand
+        //  and handed back when idle (v2.16.20), so they took whatever slot was
+        //  free that moment - and the archived group measured 30/31 at a fresh
+        //  TranZit spawn. A caption landing in a slot above the 31st logged
+        //  "-> shown" and never appeared. That is the power-up caption the
+        //  user saw work one time and not the next.
+        e_line.archived = 0;
         //  Row 0 is the bottom row at -17 (v2.14.21: ink ends ~4 units above
         //  the safe line); each row above it is 13 units higher. Row 1 is the
         //  old OTHER row at -30, under the velocity meter (-45).
@@ -917,6 +1061,36 @@ zmqol_subs_redraw()
 {
     if ( !isdefined( self.zmqol_subs_hud ) || !isdefined( self.zmqol_subs_st_id ) )
         return;
+
+    //  🛑 v2.16.20 - HAND THE ROWS BACK WHEN NOTHING IS BEING SAID.
+    //
+    //  createfontstring() is newclienthudelem() underneath (stock
+    //  maps\mp\gametypes\_hud_util.gsc:308), so these rows come out of the same
+    //  finite client pool as everything else the mod draws - and they used to
+    //  sit there allocated at alpha 0 for the whole match even though a caption
+    //  is on screen for a few seconds at a time.
+    //
+    //  That was costing the perk pop-up its third element. User, 2026-09-21:
+    //  with the icon allocated first the description never appeared; with the
+    //  text allocated first the description appeared and the ICON did not. Two
+    //  of three, either way, which is a pool with exactly two slots free - and
+    //  reordering can never fix that, it only chooses which one loses.
+    //
+    //  Releasing an idle stack gives those slots back for the ~99% of a match
+    //  when nobody is talking. zmqol_subs_ensure_hud() rebuilds on the next
+    //  caption; it takes the create path rather than the rebuild path, so no
+    //  "zmqol_subs_reset" is fired and no live caption thread is cut short.
+    if ( self.zmqol_subs_st_id.size == 0 )
+    {
+        for ( i = 0; i < self.zmqol_subs_hud.size; i++ )
+        {
+            if ( isdefined( self.zmqol_subs_hud[i] ) )
+                self.zmqol_subs_hud[i] destroy();
+        }
+
+        self.zmqol_subs_hud = undefined;
+        return;
+    }
 
     n_now = gettime();
 

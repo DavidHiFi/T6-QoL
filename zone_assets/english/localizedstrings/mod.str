@@ -299,4 +299,12 @@ LANG_ENGLISH        "The Pig"
 REFERENCE           WEAPON_BROWNINGHP_UPGRADED
 LANG_ENGLISH        "Bap"
 
+// The Blast-O-Matic, SadSlothXL's port of the Black Ops Cold War
+// Gallo SA12 mastercraft (github.com/SadSlothXL/t6-ports). Names are Sloth's.
+REFERENCE           WEAPON_T9_GALLO_BLASTOMATIC_ZM
+LANG_ENGLISH        "Blast-O-Matic"
+
+REFERENCE           WEAPON_T9_GALLO_BLASTOMATIC_ZM_PAP
+LANG_ENGLISH        "H-NGM-N"
+
 ENDMARKER

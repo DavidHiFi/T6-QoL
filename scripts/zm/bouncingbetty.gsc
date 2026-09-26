@@ -98,10 +98,7 @@
 //      mine you hold - one mine at a time, which is what is wanted. The
 //      registry also hands the Betty three stock mine rules, claymore parity
 //      all three: a mine hit adds level.round_number * randomintrange(100,200)
-//      to the zombie (_zm_spawner.gsc:1934 - the hand-rolled loop at the end
-//      of zmqol_betty_jump_and_explode() applies the same number, so standard
-//      zombies get it from both and the loop stays only to cover the AI that
-//      never runs enemy_death_detection, exactly as v2.11.20 shipped); a mine
+//      to the zombie (_zm_spawner.gsc:1934); a mine
 //      cannot hurt a PLAYER at all (_zm.gsc:4152 returns 0 - which is why the
 //      v2.12.8 overrideplayerdamage chain is gone again); and holding one in
 //      hand blocks a box or perk purchase the way a held claymore does.
@@ -196,7 +193,8 @@
 //    - the jump-and-explode is MP's own spawnminemover()/
 //      bouncingbettyjumpandexplode()/mineexplode(), killcam plumbing dropped
 //      (no killcam in zombies), numbers verbatim: jump 65 units over 0.65s,
-//      rotatevelocity (0,750,32), damage 256/210/70;
+//      rotatevelocity (0,750,32); the blast reaches MP's 256 and deals
+//      claymore_zm's 200/50 (MP's damage was 210/70) since 2026-09-25;
 //    - the green owner light is what MP's client half draws
 //      (_bouncingbetty.csc:38, fx on tag_origin) - played server-side here,
 //      the same way this mod plays every other broadcast fx.
@@ -284,12 +282,15 @@ init()
     level._effect["betty_launch"] = loadfx( "weapon/bouncing_betty/fx_betty_launch_dust" );
     level._effect["betty_light"] = loadfx( "weapon/bouncing_betty/fx_betty_light_green" );
 
-    //  MP's own tuning block, maps\mp\_bouncingbetty.gsc:16-27, verbatim.
+    //  Keep MP's trigger, jump timing and blast reach (256, which MP tuned for
+    //  the 0.8 s jump). Damage is claymore_zm's 200/50. 2026-09-25: reach was
+    //  cut to the claymore's 200 and the Betty stopped hitting anything - see
+    //  zmqol_betty_blast_fill_in().
     level.zmqol_betty_radius = 192;
     level.zmqol_betty_mindist = 20;
     level.zmqol_betty_damage_radius = 256;
-    level.zmqol_betty_damage_max = 210;
-    level.zmqol_betty_damage_min = 70;
+    level.zmqol_betty_damage_max = 200;
+    level.zmqol_betty_damage_min = 50;
     level.zmqol_betty_jump_height = 65;
     level.zmqol_betty_jump_time = 0.65;
     level.zmqol_betty_rotate_velocity = ( 0, 750, 32 );
@@ -606,6 +607,8 @@ zmqol_betty_watch()
         if ( weapname != "bouncingbetty_zm" )
             continue;
 
+        self thread zmqol_betty_keep_empty_slot();
+
         betty.owner = self;
         betty.team = self.team;
 
@@ -648,6 +651,61 @@ zmqol_betty_watch()
     }
 }
 
+//  🌟 2026-09-25 - THE EMPTY BETTY KEEPS ITS ICON AT x0, CLAYMORE PARITY.
+//  User: "when you put down both of them the icon doesn't disappear. it just
+//  shows that the amount is zero make it behave the same way with the
+//  bouncing betty's".
+//
+//  The engine takes the weapon, not a script. BG_TakeClipOnlyWeaponIfEmpty
+//  (bg_weapons, read out of the 2013 dedicated server with its PDB) runs from
+//  PM_Weapon_FinishWeaponChange and takes any clipOnly weapon with 0 in the
+//  clip and 0 in reserve UNLESS its def sets `plantable` or `hasDetonator`
+//  (WeaponDef +0x738/+0x739, mapped through the engine's own field table).
+//  claymore_zm is
+//  plantable 1, so it stays held at 0 and slot 4 draws "x 0". The Betty must
+//  stay plantable 0 (MP donor parity - see the v2.10.11 banner), so the
+//  engine takes it the moment the switch back to the gun finishes.
+//  offhandSlot has no part in it: "Specific use" (the engine's name for the
+//  claymore's slot 4) loads, and the Betty was still taken, measured live.
+//
+//  Measured on Nuketown, second plant: clip 0 at the throw, weapon taken
+//  0.9s later. v2.17.x's fixed `wait 0.2` re-gave it BEFORE the take, so the
+//  engine took it again and the icon still vanished. So this polls: wait for
+//  the take, then give the owned mine back at 0 and rebind slot 4. A refill
+//  (clip > 0), a claymore swap, or going down ends the watch.
+zmqol_betty_keep_empty_slot()
+{
+    self endon( "disconnect" );
+    self notify( "zmqol_betty_keep_empty_slot" );
+    self endon( "zmqol_betty_keep_empty_slot" );
+
+    for ( i = 0; i < 100; i++ )
+    {
+        wait 0.05;
+
+        if ( !self is_player_placeable_mine( "bouncingbetty_zm" ) )
+            return;
+
+        if ( self hasweapon( "bouncingbetty_zm" ) )
+        {
+            if ( self getweaponammoclip( "bouncingbetty_zm" ) > 0 )
+                return;
+
+            continue;
+        }
+
+        if ( self maps\mp\zombies\_zm_laststand::player_is_in_laststand() || self.sessionstate != "playing" )
+            return;
+
+        self giveweapon( "bouncingbetty_zm" );
+        self setweaponammoclip( "bouncingbetty_zm", 0 );
+        self setweaponammostock( "bouncingbetty_zm", 0 );
+        self setactionslot( 4, "weapon", "bouncingbetty_zm" );
+        println( "[zm_qol] betty: empty slot retained at x0" );
+        return;
+    }
+}
+
 zmqol_betty_wait_and_detonate()
 {
     wait 0.1;
@@ -664,7 +722,7 @@ zmqol_betty_light()
 }
 
 //  claymore_detonation() with the betty's ending. Differences, each measured:
-//  no damageconetrace/cone test (MP betty ignoredirection=1), radius 192
+//  no damageconetrace/cone test (MP betty ignoredirection=1), trigger radius 192
 //  (level.bettyradius), and instead of self detonate() the MP jump-and-explode
 //  sequence runs on a stand-in model, because a planted grenade entity cannot
 //  be moveto'd - which is exactly why MP spawns its minemover.
@@ -835,24 +893,58 @@ zmqol_betty_jump_and_explode()
     println( "[zm_qol] betty: EXPLODED at " + minemover.origin );
 
     minemover hide();
-    playfx( level._effect["betty_explosion"], minemover.origin );
+    v_blast = minemover.origin;
+    playfx( level._effect["betty_explosion"], v_blast );
+
+    //  2026-09-25 - snapshot who is inside the blast BEFORE it goes off, so
+    //  zmqol_betty_blast_fill_in() can tell who the engine's blast missed.
+    a_near = zmqol_betty_zombies_in_blast( v_blast );
+    a_health = [];
+
+    for ( i = 0; i < a_near.size; i++ )
+        a_health[i] = a_near[i].health;
 
     if ( isdefined( owner ) )
-        minemover radiusdamage( minemover.origin, level.zmqol_betty_damage_radius, level.zmqol_betty_damage_max, level.zmqol_betty_damage_min, owner, "MOD_EXPLOSIVE", "bouncingbetty_zm" );
+        minemover radiusdamage( v_blast, level.zmqol_betty_damage_radius, level.zmqol_betty_damage_max, level.zmqol_betty_damage_min, owner, "MOD_EXPLOSIVE", "bouncingbetty_zm" );
     else
-        minemover radiusdamage( minemover.origin, level.zmqol_betty_damage_radius, level.zmqol_betty_damage_max, level.zmqol_betty_damage_min, undefined, "MOD_EXPLOSIVE", "bouncingbetty_zm" );
+        minemover radiusdamage( v_blast, level.zmqol_betty_damage_radius, level.zmqol_betty_damage_max, level.zmqol_betty_damage_min, undefined, "MOD_EXPLOSIVE", "bouncingbetty_zm" );
 
-    //  🛑 v2.9.16 - AND THE CLAYMORE'S OWN KILL RULE, because the MP numbers
-    //  alone are why the mine "worked" and killed nothing. A zombie has
-    //  round-scaled health; a claymore still one-shots deep into the rounds
-    //  because _zm_spawner's damage handler gives any placeable-mine hit a
-    //  bonus of level.round_number * randomintrange( 100, 200 )
-    //  (_zm_spawner.gsc:1935-1942). The Betty is deliberately NOT registered
-    //  as a placeable mine (that registry is what would make it evict
-    //  claymores from the equipment slot), so its hits fell into the plain
-    //  explosive branch - round * randomintrange( 0, 100 ), which can roll
-    //  ZERO. So the mine's own damage rule is applied here explicitly, with
-    //  stock's claymore numbers, to every live reachable zombie in the blast:
+    //  The registered mine already receives the claymore's round-scaled
+    //  bonus in _zm_spawner. Applying it again here doubled Betty damage.
+    //  So the fill-in below hits only zombies the blast did not touch, once.
+    wait 0.05;
+    zmqol_betty_blast_fill_in( v_blast, owner, a_near, a_health );
+
+    wait 0.15;
+
+    if ( isdefined( minemover ) )
+        minemover delete();
+}
+
+//  🌟 2026-09-25 - THE BLAST REACHES THE ZOMBIES AGAIN, AT CLAYMORE DAMAGE.
+//  User: "i keep placing bouncing beddies all over the place and it's just not
+//  affecting the zombies at all like it doesn't even hit marker them".
+//
+//  16a7337 (same morning) fixed the double damage by deleting the loop that
+//  hit every zombie in the blast, and shrank the blast from MP's 256 to the
+//  claymore's 200. That left the engine's one radiusdamage as the only damage,
+//  and it goes off 65 units up, 0.8 s after the trip - so the zombie that
+//  tripped it has usually walked out of it. Measured: the betty-parity-001
+//  verify boot's real plants hit at 51 (the 200 edge) and then hit nothing,
+//  and the user's TranZit log shows every Betty tripping and exploding with
+//  no marker. A claymore does not have this problem: it fires on the ground,
+//  0.4 s after the trip, pointed at the zombie.
+//
+//  So the reach is MP's own again (256, maps\mp\_bouncingbetty.gsc:21 - tuned
+//  for exactly this jump), and every zombie inside it that the engine's blast
+//  missed takes the mine's falloff damage here, ONCE, as bouncingbetty_zm.
+//  That damage runs through _zm_spawner's placeable-mine branch like any other
+//  mine hit, so it gets the stock round bonus one time and the marker with
+//  it. A zombie the blast did reach lost health in the 0.05 s and is skipped,
+//  so no zombie is ever hit twice - the 16a7337 double stays fixed.
+zmqol_betty_zombies_in_blast( v_blast )
+{
+    a_near = [];
     a_zombies = getaispeciesarray( level.zombie_team, "all" );
 
     for ( i = 0; i < a_zombies.size; i++ )
@@ -860,7 +952,7 @@ zmqol_betty_jump_and_explode()
         if ( !isdefined( a_zombies[i] ) || !isalive( a_zombies[i] ) )
             continue;
 
-        if ( distance( a_zombies[i].origin, minemover.origin ) > level.zmqol_betty_damage_radius )
+        if ( distance( a_zombies[i].origin, v_blast ) > level.zmqol_betty_damage_radius )
             continue;
 
         //  Scripted and boss zombies keep their protection - damaging one
@@ -868,16 +960,44 @@ zmqol_betty_jump_and_explode()
         if ( is_magic_bullet_shield_enabled( a_zombies[i] ) )
             continue;
 
-        if ( isdefined( owner ) && isalive( owner ) )
-            a_zombies[i] dodamage( level.round_number * randomintrange( 100, 200 ), a_zombies[i].origin, owner, a_zombies[i], "none", "MOD_EXPLOSIVE", 0, "bouncingbetty_zm" );
-        else
-            a_zombies[i] dodamage( level.round_number * randomintrange( 100, 200 ), a_zombies[i].origin, undefined, a_zombies[i], "none", "MOD_EXPLOSIVE", 0, "bouncingbetty_zm" );
+        a_near[a_near.size] = a_zombies[i];
     }
 
-    wait 0.2;
+    return a_near;
+}
 
-    if ( isdefined( minemover ) )
-        minemover delete();
+zmqol_betty_blast_fill_in( v_blast, owner, a_near, a_health )
+{
+    n_hit = 0;
+    n_filled = 0;
+    n_span = level.zmqol_betty_damage_max - level.zmqol_betty_damage_min;
+
+    for ( i = 0; i < a_near.size; i++ )
+    {
+        e_zombie = a_near[i];
+
+        if ( !isdefined( e_zombie ) || !isalive( e_zombie ) || e_zombie.health < a_health[i] )
+        {
+            n_hit++;
+            continue;
+        }
+
+        n_frac = distance( e_zombie.origin, v_blast ) / level.zmqol_betty_damage_radius;
+
+        if ( n_frac > 1 )
+            n_frac = 1;
+
+        n_damage = int( level.zmqol_betty_damage_max - n_span * n_frac );
+
+        if ( isdefined( owner ) && isalive( owner ) )
+            e_zombie dodamage( n_damage, e_zombie.origin, owner, e_zombie, "none", "MOD_EXPLOSIVE", 0, "bouncingbetty_zm" );
+        else
+            e_zombie dodamage( n_damage, e_zombie.origin, undefined, e_zombie, "none", "MOD_EXPLOSIVE", 0, "bouncingbetty_zm" );
+
+        n_filled++;
+    }
+
+    println( "[zm_qol] betty blast: " + a_near.size + " zombie(s) within " + level.zmqol_betty_damage_radius + " - blast hit " + n_hit + ", filled in " + n_filled );
 }
 
 //  v2.9.16 - detonate when shot, or when another blast reaches the mine. Any

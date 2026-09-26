@@ -191,12 +191,18 @@ zmqol_mp_weapons_init()
 	//  registration with no client twin is a box result the client cannot draw,
 	//  and a client include with no server twin is the v2.14.27 Betty crash.
 	//
+	//  🛑 v2.17.37 - THE L96A1 IS NOW ON ORIGINS TOO, TRADED 1:1 FOR THE
+	//  XPR-50; the other three stay held back here to match the server.
+	//  quality_of_life.gsc carries the evidence: the M60 and Browning HP drag
+	//  attachment permutations the precache table pays for, so a "pair" is not
+	//  a fixed price and a net-zero swap of all four still overflowed Origins.
 	//  📝 A root .csc cannot read level.script (it is server state), so the map
 	//  test is getdvar( "mapname" ) - the same one the EMP gate below uses.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
+
 	if ( getdvar( "mapname" ) != "zm_tomb" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
 	}
@@ -246,6 +252,33 @@ zmqol_mp_weapons_init()
 	//  bouncingbetty.gsc). This 0 never rested on the null, only on the
 	//  claymore_zm precedent above, so it does not change.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "bouncingbetty_zm", 0 );
+
+	//  ============================================================
+	//  v2.17.32 - THE BLUNDERGAT, now on every map. Server twin is
+	//  scripts\zm\boxfix.gsc::zmqol_blundergat_register(); its banner carries
+	//  the reasoning for the whole port and mod_blundergat.zone the asset list.
+	//
+	//  🌟 DISPLAY 1 HERE, unlike the Betty two lines up, and the difference is
+	//  the rule that banner spells out: equipment is kept out of the spin table,
+	//  a gun with a real world model belongs in it. blundergat_zm carries
+	//  t6_wpn_zmb_blundergat_world - a real mesh, now in mod.ff on every map -
+	//  so addzombieboxweapon() has something to draw and the box shows the
+	//  weapon floating above it the way it does on Mob.
+	//  ============================================================
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "blundergat_upgraded_zm", 0 );
+
+	//  ============================================================
+	//  THE BLAST-O-MATIC, SadSlothXL's Cold War Gallo SA12 mastercraft. Server
+	//  twin is scripts\zm\blastomatic.gsc; mod_blastomatic.zone has the assets.
+	//  Off Origins on the same test as the server, which has no precache slot
+	//  for it - a client include with no server precache is the as50_zm crash.
+	//  ============================================================
+	if ( !b_tomb )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "blastomatic_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "blastomatic_upgraded_zm", 0 );
+	}
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
@@ -439,12 +472,24 @@ zmqol_enable_fire_sale()
 zmqol_bonfire_sale_enabled()
 {
 	// 🛑 EXACT TWIN of quality_of_life.gsc::zmqol_bonfire_sale_enabled().
+	//
+	// v2.17.31 - the two exclusions are now CLASSIC AND GRIEF ONLY, because the
+	// clientfield measurement behind them was taken on the classic dumps alone.
+	// Stock toplayer totals: Mob classic 50, Mob survival 34; Buried classic 63,
+	// Buried survival 24. The survival halves clear the proven-safe 63 with this
+	// power-up's 2 bits and every one of this mod's own additions counted in.
+	// The full table and arithmetic are on the server twin - read that one.
+	//
+	// 🛑 THE TEST IS A RAW DVAR READ ON PURPOSE. is_survival() exists only in
+	// _zm_utility.gsc, not in the .csc, so calling it would compile here and
+	// answer differently on the two VMs - which for THIS function means one side
+	// registers toplayer/powerup_bon_fire and the other does not, and every
+	// player is dropped before the map starts. ui_zm_gamemodegroup is the dvar
+	// stock's own is_classic() reads on both sides, so both halves of this test
+	// are answering the same question from the same place.
 	map = getDvar( "mapname" );
 
-	if ( map == "zm_prison" )
-		return 0;
-
-	if ( map == "zm_buried" )
+	if ( ( map == "zm_prison" || map == "zm_buried" ) && getDvar( "ui_zm_gamemodegroup" ) != "zsurvival" )
 		return 0;
 
 	return 1;
@@ -2780,9 +2825,50 @@ init_client_flag_callback_funcs()
 	{
 		registerclientfield("toplayer", "deadshot_perk", 1, 1, "int", ::player_deadshot_perk_handler, 0, 1);
 	}
+	// ========================================================================
+	//  🛑 v2.17.33 - THE NAVCARD GATE NOW READS THE DVAR THE SERVER READS.
+	//  This line was stock's, verbatim, and stock is WRONG - the two halves of
+	//  this one condition consult two different dvars:
+	//
+	//     server  _zm.gsc:74   scr_zm_ui_gametype_group = getdvar( ui_zm_gamemodegroup )
+	//             _zm.gsc:131  if ( scr_zm_ui_gametype_group == "zclassic" ... )
+	//     client  _zm.csc:32   scr_zm_ui_gametype       = getdvar( ui_gametype )
+	//             _zm.csc:406  if ( scr_zm_ui_gametype  == "zclassic" ... )
+	//
+	//  They agree on a cold classic launch, when both dvars read "zclassic", and
+	//  that is why this has stood. They DISAGREE when ui_gametype has not caught
+	//  up with ui_zm_gamemodegroup - which is exactly what happens going from a
+	//  survival game straight into a classic one. Reported 2026-09-22, and the
+	//  user's own log has it twice over:
+	//
+	//     line 4402  ui_zm_gamemodegroup "zclassic"   <- server registers
+	//     line 2674  g_gametype          "zstandard"  <- client does not
+	//     line 5599  Clientfield navcard_held in set [allplayers]
+	//                is not registered on the client
+	//     line 5602  Server Disconnected - EXE_CLIENT_FIELD_MISMATCH
+	//
+	//  and then, on the retry a minute later, line 7685 g_gametype "zclassic"
+	//  and the same map loaded. An intermittent that looks like whatever shipped
+	//  most recently and is really a stale dvar.
+	//
+	//  🌟 IT FAILS BOTH WAYS, which is why this is the right end to fix. Classic
+	//  into survival is the mirror image: ui_gametype still "zclassic" makes the
+	//  CLIENT register a field the server has skipped. Reading one dvar on both
+	//  sides closes both directions at once.
+	//
+	//  is_classic() is the client's own getdvar( ui_zm_gamemodegroup ) test
+	//  (_zm_utility.csc:392) - the same dvar, the same string, the same answer
+	//  the server captured at _zm.gsc:74. Nothing else about the registration
+	//  moves: same set, same name, same 4 bits, same version, same callback.
+	//
+	//  📝 SAFE TO EDIT HERE because this whole function REPLACES stock's -
+	//  see the replaceFunc on clientscripts\mp\zombies\_zm::
+	//  init_client_flag_callback_funcs at the top of this file. Stock's copy
+	//  never runs, so there is no second registration to collide with.
+	// ========================================================================
 	if (!is_true(level._no_navcards))
 	{
-		if (level.scr_zm_ui_gametype == "zclassic" && !level.createfx_enabled)
+		if (is_classic() && !level.createfx_enabled)
 		{
 			registerclientfield("allplayers", "navcard_held", 1, 4, "int", undefined, 0, 1);
 			level thread set_clientfield_navcard_code_callback("navcard_held");

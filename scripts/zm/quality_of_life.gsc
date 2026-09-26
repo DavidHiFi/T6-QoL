@@ -2336,8 +2336,43 @@ get_pack_a_punch_weapon_options( weapon )
         zmqol_papcamo_probe( weapon, 0, 0, 0 );
         return self calcweaponoptions( 0, 0, 0, 0 );
     }
-    if ( isdefined( self.pack_a_punch_weapon_options[weapon] ) )
-        return self.pack_a_punch_weapon_options[weapon];
+    // ------------------------------------------------------------------------
+    //  🛑 v2.17.38 - THE CACHE MADE THE ANIMATED CAMOS ROW A DEAD SWITCH, AND
+    //  THE EARLY RETURN THAT USED TO SIT HERE HAS MOVED DOWN THE FUNCTION.
+    //
+    //  User, 2026-09-24, on Origins: packed the L96A1 with ANIMATED CAMOS on
+    //  and got the animated camo, turned the row OFF in Options, swapped the
+    //  gun away, re-gave it with .give and packed it again - and it came back
+    //  animated. Not an L96 problem; every gun behaved that way.
+    //
+    //  The cache is keyed on the WEAPON NAME ALONE and was never invalidated,
+    //  so the first pack of a weapon decided its camo for the rest of the match
+    //  and every later pack returned that stored answer without re-reading the
+    //  dvar. Re-giving the gun does not help - the cache lives on the PLAYER.
+    //  The note further down claiming the row "changes every gun PaP'd from
+    //  then on" was simply untrue for any weapon already packed once.
+    //
+    //  THE FIX: decide camo_index FIRST, then return the cached options only if
+    //  the cached camo still matches. Reticle and lens stay cached, so a gun
+    //  keeps its look across packs; only a real settings change re-rolls it.
+    //
+    //  🛑 WHY IT IS SHAPED LIKE THIS AND NOT AS A DVAR FINGERPRINT. The first
+    //  attempt read the seven anim_pap_camo* dvars up here to fingerprint them,
+    //  and that KILLED EVERY MAP: "Unresolved external getdvarintdefault with 2
+    //  parameters in scripts/zm/quality_of_life.gsc" -> 11 script errors ->
+    //  SV_Shutdown -> the fatal LUI_ERROR process_events crash. getdvarintdefault
+    //  is NOT an engine builtin, it is a script function, so every call site is
+    //  an IMPORT REFERENCE - and this file is at its ceiling with 216 of them
+    //  already. Seven more overflowed the table. Measured 2026-09-24, boot log
+    //  console_zm.log:1316.
+    //  So this version adds NO new cross-file call at all: it reuses the
+    //  getdvarintdefault the function was already making below, and needs only
+    //  isdefined, which IS a builtin. Keep it that way - see
+    //  [[qol-symbol-table-not-size]].
+    // ------------------------------------------------------------------------
+    if ( !isdefined( self.zmqol_camo_index ) )
+        self.zmqol_camo_index = [];
+
     smiley_face_reticle_index = 1;
     base = get_base_name( weapon );
     camo_index = 39;
@@ -2504,6 +2539,18 @@ get_pack_a_punch_weapon_options( weapon )
              && ( level.script == "zm_transit" || level.script == "zm_highrise" || level.script == "zm_nuked" ) )
             camo_index = 39;
     }
+    //  v2.17.38 - THE CACHE READ, moved down here from the top of the function
+    //  so it can see the camo this pack would actually use. Same weapon and the
+    //  same camo means the stored options are still right, so the gun keeps its
+    //  reticle and lens. A different camo means the player changed the ANIMATED
+    //  CAMOS row (or a per-map anim_pap_camo_* dvar) since this weapon was last
+    //  packed, so fall through and rebuild. isdefined is a builtin; nothing
+    //  here adds an import reference to this symbol-full file.
+    if ( isdefined( self.pack_a_punch_weapon_options[weapon] )
+         && isdefined( self.zmqol_camo_index[weapon] )
+         && self.zmqol_camo_index[weapon] == camo_index )
+        return self.pack_a_punch_weapon_options[weapon];
+
     lens_index = randomintrange( 0, 6 );
     reticle_index = randomintrange( 0, 16 );
     reticle_color_index = randomintrange( 0, 6 );
@@ -2527,6 +2574,10 @@ get_pack_a_punch_weapon_options( weapon )
     if ( reticle_index == letter_e_reticle_index )
         reticle_color_index = green_reticle_color_index;
     self.pack_a_punch_weapon_options[weapon] = self calcweaponoptions( camo_index, lens_index, reticle_index, reticle_color_index );
+    //  v2.17.38 - remember WHICH camo this entry was built for, so the read
+    //  above can tell a still-valid cache from one the player has invalidated
+    //  by changing the ANIMATED CAMOS row.
+    self.zmqol_camo_index[weapon] = camo_index;
     zmqol_papcamo_probe( weapon, 1, camo_index, self.pack_a_punch_weapon_options[weapon] );
     return self.pack_a_punch_weapon_options[weapon];
 }
@@ -2786,7 +2837,27 @@ qol_health_hud_create()
     if ( isdefined( self.qol_hud_health ) && self.qol_hud_health.size == 6 )
         return;
 
+    //  🛑 v2.17.41 - EVERY ELEMENT BELOW CARRIES .archived = 0. DO NOT DROP IT.
+    //  The engine sends a client at most 31 ARCHIVED and 31 NON-ARCHIVED
+    //  hudelems per snapshot (HudElem_UpdateClient, disassembled from the 2013
+    //  PC server PDB; the same 0x1F caps are in the live r5346 t6zm image), and
+    //  anything past the 31st in its group is silently never drawn. .archived
+    //  defaults to 1, so this whole mod had piled into ONE group: a fresh
+    //  TranZit spawn measured 30/31 archived and 8/31 non-archived. Stock's
+    //  on-demand HUD - the buildable bench bar, revive bars, the power-up text -
+    //  then lost whatever it allocated past the 31st. The permanent corner HUD
+    //  lives in the non-archived group now, the way stock's own _hud_message
+    //  elements do. Budget table: tools\hud-budget.json, enforced by
+    //  tools\check-hud-budget.ps1 on every build.
+    //
+    //  v2.17.41 - THE BORDER IS BLACK, NOT GREY. User, 2026-09-25: *"the color
+    //  of the shield health bar and the border are the same ... make the border
+    //  around the health bars ... black with like a slightly lowered opacity,
+    //  so it's very very slightly see-through"*. The grey plate matched the
+    //  shield bar sitting on top of it. The shield bar's own colour is
+    //  unchanged, as asked. first_spawn() restores the same 0.9.
     frame = newclienthudelem( self );
+    frame.archived = 0;
     frame.x = 0;
     frame.y = 0;
     frame setshader( "white", 104, 5 );
@@ -2796,12 +2867,13 @@ qol_health_hud_create()
     frame.vertalign = "bottom";
     frame.x = frame.x + -45;
     frame.y = frame.y + 7;
-    frame.color = ( 0.5, 0.5, 0.5 );
-    frame.alpha = 1;
+    frame.color = ( 0, 0, 0 );
+    frame.alpha = 0.9;
     frame.hidewheninmenu = 1;
     frame.sort = -2;
 
     track = newclienthudelem( self );
+    track.archived = 0;
     track.x = 0;
     track.y = 0;
     track setshader( "white", 102, 3 );
@@ -2817,6 +2889,7 @@ qol_health_hud_create()
     track.sort = -1;
 
     healthbar = newclienthudelem( self );
+    healthbar.archived = 0;
     healthbar.x = 0;
     healthbar.y = 0;
     healthbar setshader( "white", zmqol_hud_bar_width(), 3 );
@@ -2837,6 +2910,7 @@ qol_health_hud_create()
     //  goes 1.2 -> 1.1 with it; the two numbers to the right of the bar stay
     //  at 1.2 - they were not asked about. Rows stay at y 16 / 27.
     playername = self createfontstring( "small", 1.1 );
+    playername.archived = 0;
     //  v2.14.21 - y 18 -> 16, user 2026-09-08 with a screenshot: *"move the text
     //  for the name and current area up just a tiny little bit, it's just too
     //  close to the bottom of the screen ... make sure you don't move them up
@@ -2851,11 +2925,13 @@ qol_health_hud_create()
     playername.hidewheninmenu = 1;
 
     healthvalue = self createfontstring( "small", 1.2 );
+    healthvalue.archived = 0;
     healthvalue setpoint( "RIGHT", "BOTTOM_LEFT", 80, 7 );
     healthvalue.hidewheninmenu = 1;
     healthvalue.sort = 1;
 
     shieldvalue = self createfontstring( "small", 1.2 );
+    shieldvalue.archived = 0;
     shieldvalue setpoint( "LEFT", "BOTTOM_LEFT", 84, 7 );
     shieldvalue.label = &"| ";
     shieldvalue.alpha = 0;
@@ -3205,7 +3281,7 @@ first_spawn()
         }
         if ( frame.alpha == 0 || track.alpha == 0 || healthbar.alpha == 0 || playername.alpha == 0 || healthvalue.alpha == 0 )
         {
-            frame.alpha = 1;
+            frame.alpha = 0.9;     // v2.17.41 - the black border, see qol_health_hud_create()
             track.alpha = 0.5;
             healthbar.alpha = 1;
             playername.alpha = 1;
@@ -3383,6 +3459,7 @@ timer()
     //  between the two origins is already baked into the number. Switching the
     //  frame would throw the one calibration away.
     timer = newclienthudelem( self );
+    timer.archived = 0;             // v2.17.41 - see qol_health_hud_create()
     timer.alignx = "center";        // == round_hud()'s measured alignment
     timer.aligny = "top";
     timer.vertalign = "user_top";
@@ -3466,6 +3543,7 @@ zombiecounter()
     //  "small" is the name from the engine's own list. Changed with the user's
     //  explicit approval, 2026-08-22, because it alters how the text looks.
     self.zombietext = createfontstring( "small", 1.2 );
+    self.zombietext.archived = 0;   // v2.17.41 - see qol_health_hud_create()
 
     //  y -7 -> -12, v1.77.0. The shield bar (v1.75.0) now occupies -0.5..4.5,
     //  which used to be the empty clearance under this counter, so the text was
@@ -3598,7 +3676,10 @@ qol_shield_hud_create()
     if ( isdefined( self.qol_hud_shield ) && self.qol_hud_shield.size == 3 )
         return;
 
+    //  v2.17.41 - .archived = 0 and a black border, both for the reasons in
+    //  qol_health_hud_create(). The two borders are one pair and must match.
     frame = newclienthudelem( self );
+    frame.archived = 0;
     frame.x = 0;
     frame.y = 0;
     frame setshader( "white", 104, 5 );
@@ -3608,12 +3689,13 @@ qol_shield_hud_create()
     frame.vertalign = "bottom";
     frame.x = frame.x + -45;
     frame.y = frame.y + 2;
-    frame.color = ( 0.5, 0.5, 0.5 );
-    frame.alpha = 1;
+    frame.color = ( 0, 0, 0 );
+    frame.alpha = 0.9;
     frame.hidewheninmenu = 1;
     frame.sort = -2;
 
     track = newclienthudelem( self );
+    track.archived = 0;
     track.x = 0;
     track.y = 0;
     track setshader( "white", 102, 3 );
@@ -3629,6 +3711,7 @@ qol_shield_hud_create()
     track.sort = -1;
 
     shieldbar = newclienthudelem( self );
+    shieldbar.archived = 0;
     shieldbar.x = 0;
     shieldbar.y = 0;
     shieldbar setshader( "white", zmqol_hud_bar_width(), 3 );
@@ -3834,7 +3917,8 @@ cs_player_thread()
     // Prevent instant spam during early init
     self.cs_last_popup_time = getTime();
 
-    cs_hud_create();
+    //  v2.17.41 - no spawn-time cs_hud_create() any more: cs_popup() builds
+    //  the card when a round ends and hands the slots back when it fades.
 
     for (;;)
     {
@@ -3974,6 +4058,21 @@ cs_popup(round_num, round_time, round_kills, pb_time, pb_kills, new_pb_time, new
     self.cs_line4 fadeOverTime(0.28); self.cs_line4.alpha = 0;
 
     wait 0.28;
+
+    //  🛑 v2.17.41 - HAND THE FOUR SLOTS BACK AFTER EVERY CARD. They sat
+    //  allocated at alpha 0 for the whole match and counted against the 31
+    //  hudelems a client is sent per group - the buildable bar and the
+    //  subtitles lost to invisible elements. cs_hud_create() rebuilds them for
+    //  the next card; a card cut short by cs_popup_kill3 is always followed by
+    //  a new one, which reuses them before this runs.
+    if (isDefined(self.cs_title)) self.cs_title destroy();
+    if (isDefined(self.cs_line2)) self.cs_line2 destroy();
+    if (isDefined(self.cs_line3)) self.cs_line3 destroy();
+    if (isDefined(self.cs_line4)) self.cs_line4 destroy();
+    self.cs_title = undefined;
+    self.cs_line2 = undefined;
+    self.cs_line3 = undefined;
+    self.cs_line4 = undefined;
 }
 
 cs_hud_create()
@@ -9515,6 +9614,7 @@ zmqol_velocity_set( b_on, b_quiet )
             return;
 
         self.zmqol_vel_hud = self createfontstring( "default", 1.4 );
+        self.zmqol_vel_hud.archived = 0;   // v2.17.41 - see qol_health_hud_create()
         self.zmqol_vel_hud.alignx = "center";
         self.zmqol_vel_hud.aligny = "middle";
         self.zmqol_vel_hud.horzalign = "center";
@@ -11504,7 +11604,14 @@ zmqol_mp_weapons_init()
     //
     //  📝 WEAPON_AS50 is NOT shipped in mod.str: it already resolves from
     //  en_patch_zm.ff and en_code_post_gfx_zm.ff. Only the PaP name is ours.
-    zmqol_add_mp_weapon( "as50_zm",        "as50_upgraded_zm",        &"WEAPON_AS50",               1000, "sniper" );
+    //  v2.17.37 - the XPR-50 is OFF Origins. It is one of the four pairs the
+    //  user gave up to pay for the Black Ops 1 guns; zm_tomb.gsc's banner has
+    //  the arithmetic. It is gated here rather than in the map script because
+    //  this call is global, and on Origins zmqol_tomb_weapon() would swap it to
+    //  the private as50qol copy - zm_tomb.csc drops that twin to match.
+    //  No new symbol: isdefined is a builtin and level.script is a variable.
+    if ( !isdefined( level.script ) || level.script != "zm_tomb" )
+        zmqol_add_mp_weapon( "as50_zm",        "as50_upgraded_zm",        &"WEAPON_AS50",               1000, "sniper" );
 
     //  v2.9.18 - the campaign SPAS-12, user request 2026-08-31 ("SPAS-12 ...
     //  into the Mystery Box on all Zombie maps ... official BO1 Pack-a-Punch
@@ -11698,15 +11805,40 @@ zmqol_mp_weapons_init()
     //  both. .give needs no guard: every give path already tests
     //  isdefined( level.zombie_weapons[...] ) before offering a name.
     // ========================================================================
+    // ========================================================================
+    //  v2.17.37 - ORIGINS GETS THE L96A1 ONLY, TRADED 1:1 FOR THE XPR-50.
+    //  User's call 2026-09-24. The other three stay held back on zm_tomb.
+    //
+    //  🌟 A PAIR IS NOT A FIXED PRICE. Two boots settled this. v2.17.36 cut 3
+    //  pairs for the four guns (net +2) and died on box_init's FIRST precache;
+    //  the next build cut 4 pairs for four (net ZERO, by gun count) and still
+    //  died - three precaches further in, on rottweil72qol_upgraded_zm. Net
+    //  zero by pair count cannot overflow a table unless the incoming guns
+    //  cost MORE than the outgoing ones, and console_zm.log says why:
+    //
+    //      Couldn't find attachmentunique 'au_m60_none' ... _acog, _extclip,
+    //      _grip, _reflex, _silencer, _acog+grip, _grip+reflex   (8, M60)
+    //      Couldn't find attachmentunique 'au_browninghp_none' ... (3)
+    //
+    //  The M60 and the Browning HP drag attachment permutations the table pays
+    //  for; the L96A1 and the RPG-7 logged none. So "2 slots per gun" is only
+    //  true for a gun with no attachment spread - do not budget with it again.
+    //
+    //  The L96A1 is the cheap one and the one the user asked for by name, and
+    //  the XPR-50 it replaces is also a sniper, so the box keeps its shape.
+    //  Origins' real headroom stays 0-1 slots; this trade does not touch it.
+    //
+    //  🛑 zm_expanded.csc HOLDS BACK THE SAME THREE, on the same map test, and
+    //  zm_tomb.csc drops the as50qol twin. Change one list, change all of them.
+    // ========================================================================
+    zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
+
     if ( !isdefined( level.script ) || level.script != "zm_tomb" )
     {
         zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-        zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
         zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
         zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
     }
-    else
-        println( "[zm_qol] origins: the four Black Ops 1 box guns are held back - 8 precache slot(s) freed (v2.15.3)" );
 
 
     // Reachable only via a PaP attachment or as a projectile - never a box
@@ -11939,11 +12071,20 @@ zmqol_wallbuy_box_names()
 {
     a = [];
     a[a.size] = "m16_zm";
-    a[a.size] = "rottweil72_zm";
     a[a.size] = "m1911_zm";
-    //  v1.99.91 - the M14, user 2026-08-20. See the correction block above for
-    //  why it was held back and why that reason turned out not to apply.
-    a[a.size] = "m14_zm";
+    //  🛑 v2.17.31 - THE OLYMPIA AND THE M14 ARE OUT OF THIS LIST, and out of
+    //  the box. User, 2026-09-21: *"remove the olympia and m14 from the mystery
+    //  box ... all maps, no m14, no olympia."* They were added at the same
+    //  user's request (v1.99.58 / v1.99.91), so both halves of the decision are
+    //  theirs and the banner above is kept as the record of the first one.
+    //
+    //  This list only drives the re-assert below, which forces a gun back INTO
+    //  the box - so removing the two names is necessary and not sufficient.
+    //  zmqol_wallbuy_box_add() still runs for them (see the call site) and
+    //  still sets the flag at init; what actually holds them out is
+    //  scripts\zm\boxfix.gsc, a separate script because this file is on its
+    //  compiled-bytecode ceiling and the four lines would not fit. Read the
+    //  banner at the top of boxfix.gsc before changing either end.
     return a;
 }
 
@@ -14358,15 +14499,46 @@ zmqol_fire_sale_custom_gate()
 //  really had no machine, so the gate was never the risk - only the 2 wasted
 //  bits, and Nuketown has 45 spare.
 // ============================================================================
+//  🌟 v2.17.31 - MOB AND BURIED ARE ONLY FULL IN CLASSIC, AND SURVIVAL IS
+//  WHERE THE USER PLAYS. Reported 2026-09-21: twenty rounds of Docks survival
+//  with no Bonfire Sale. The exclusion above was written per MAP, and the
+//  measurement behind it was taken on the classic dumps only. Re-counted from
+//  T6-Data-Archive\ZM\Clientfields with
+//      awk '$1=="toplayer"{s+=$4} END{print s}'
+//  over every zm_prison and zm_buried dump, stock toplayer bits are:
+//
+//      63  zm_buried  zclassic processing     <- the map the ceiling came from
+//      50  zm_prison  zclassic  prison
+//      41  zm_prison  zgrief    cellblock
+//      40  zm_buried  zgrief    street
+//      38  zm_prison  zgrief    docks
+//      34  zm_prison  ZSTANDARD prison        <- survival
+//      24  zm_buried  ZSTANDARD processing    <- survival
+//
+//  So survival on Mob is 34, not 50, and on Buried it is 24, not 63 - sixteen
+//  and thirty-nine bits below the classic totals that closed the door. Against
+//  the ERROR_CATALOGUE's proven-safe 63, with this mod's own additions counted
+//  at their worst (perk_marathon 2, perk_tombstone 2, vulture 1+1+5,
+//  perk_electric_cherry 1, perk_chugabud 1, deadshot_perk 1, whoswho 1+1,
+//  overlay_slot 1 + overlay_lerp 5 = 22) the survival totals land at 56 and 46
+//  WITH this power-up's 2 bits included. Classic and grief are left excluded
+//  exactly as they were - grief on Cell Block would be 41 + 22 + 2 = 65, past
+//  the only total ever seen to boot.
+//
+//  🛑 THE TEST MUST BE ONE BOTH VMs CAN ANSWER IDENTICALLY, or this becomes the
+//  EXE_CLIENT_FIELD_MISMATCH the twin's banner warns about. is_survival() is
+//  server-only (_zm_utility.gsc:382; the .csc defines is_classic and
+//  is_encounter and not this one), so the dvar it reads is written out here
+//  literally instead. ui_zm_gamemodegroup is the same dvar stock's own
+//  is_classic() reads on BOTH sides (_zm_utility.gsc:23 / _zm_utility.csc:392),
+//  which is the pattern zmqol_enable_electric_cherry() already depends on.
+// ============================================================================
 zmqol_bonfire_sale_enabled()
 {
     map = getDvar( "mapname" );
 
-    //  toplayer clientfield set is full - see the block above.
-    if ( map == "zm_prison" )
-        return 0;
-
-    if ( map == "zm_buried" )
+    //  toplayer clientfield set is full on these two in CLASSIC and GRIEF only.
+    if ( ( map == "zm_prison" || map == "zm_buried" ) && getDvar( "ui_zm_gamemodegroup" ) != "zsurvival" )
         return 0;
 
     return 1;
@@ -17816,10 +17988,53 @@ vpa_onplayerspawned()
     for ( ;; )
     {
         self waittill( "spawned_player" );
-        self.perkhud = undefined;
-        self.perkname_hud = undefined;
-        self.perkdesc_hud = undefined;
-        self.perkspec_hud = undefined;
+
+        // ====================================================================
+        //  🛑 v2.17.40 - THE FOUR "= undefined" LINES THAT USED TO BE HERE ARE
+        //  GONE, AND MUST NOT COME BACK. THEY WERE A HUD-ELEMENT LEAK.
+        //
+        //  User, 2026-09-24, Origins / The Crazy Place: the pop-up drew the
+        //  perk NAME and nothing else - no icon, no description. Their words:
+        //  "sometimes it works, sometimes it doesn't ... make sure the HUD
+        //  elements don't have that issue and work properly".
+        //
+        //  THE LEAK. This runs on EVERY "spawned_player", and it dropped the
+        //  handles to the pop-up's three client hudelems WITHOUT DESTROYING
+        //  THEM. The elements stayed allocated with nothing left pointing at
+        //  them, so every respawn orphaned three slots out of a pool that is
+        //  only a few slots deep - permanently, for the rest of the match. The
+        //  next purchase then allocated three MORE. newclienthudelem() fails
+        //  quietly when the pool is empty, and the icon is requested last, so
+        //  the symptom walks backwards as the pool drains: first the icon goes,
+        //  then the description, and the name is the last thing standing. That
+        //  is exactly the sequence this mod has been reporting for weeks, and
+        //  it is why it looked intermittent - it is cumulative, not random.
+        //
+        //  🛑 WHY IT ONLY BECAME FATAL IN v2.17.39. It was inherited verbatim
+        //  from the upstream Vanguard Perk HUD, where perk_bought() DESTROYED
+        //  the three elements at the end of every pop-up - so by the next spawn
+        //  the handles were normally already undefined and clearing them cost
+        //  nothing. v2.17.39 correctly made the elements permanent and reused,
+        //  which turned this line from near-harmless into the thing that threw
+        //  three slots away per spawn. It also raced v2.17.39's spawn-time
+        //  reservation on the very same notify, which is why that fix appeared
+        //  to do nothing at all.
+        //
+        //  Nothing needs to replace these lines. The elements are owned for the
+        //  life of the player, perk_bought() rewrites every field on every
+        //  purchase, and its generation counter handles a respawn that lands
+        //  mid-animation. qol_opt_player_init() re-asserts the reservation on
+        //  every spawn, so a missing element is re-taken rather than leaked.
+        //
+        //  📝 perkspec_hud went with them: v1.53.0 removed the element and
+        //  nothing recreates it, and perk_bought() still destroys it on sight -
+        //  so nulling the handle here could only ever have orphaned it too.
+        //
+        //  Audited 2026-09-24: every other HUD handle in this mod (health,
+        //  shield, zone, compass, round timer, help, give list, velocity,
+        //  subtitles) calls destroy() before it nulls. This was the only leak.
+        // ====================================================================
+
         self thread listen_for_perks();
     }
 }
@@ -17877,44 +18092,78 @@ perk_bought( perk )
     if ( shader == "" )
         return;
 
-    // Destroy the previous HUD if the player quickly purchases another perk
-    if ( isdefined( self.perkhud ) )
-    {
-        self.perkhud destroy();
-        self.perkhud = undefined;
-    }
-    if ( isdefined( self.perkname_hud ) )
-    {
-        self.perkname_hud destroy();
-        self.perkname_hud = undefined;
-    }
-    if ( isdefined( self.perkdesc_hud ) )
-    {
-        self.perkdesc_hud destroy();
-        self.perkdesc_hud = undefined;
-    }
+    // ========================================================================
+    //  🛑 v2.17.39 - THE THREE ELEMENTS ARE NOW ALLOCATED ONCE AND REUSED.
+    //  THEY ARE NOT DESTROYED BETWEEN PURCHASES. DO NOT PUT THE DESTROYS BACK.
+    //
+    //  User, 2026-09-24, Origins Laboratory: bought Quick Revive after the first
+    //  generator and the pop-up drew the name and the description with NO ICON;
+    //  the icon appeared for a split second at the very end as the pop-up faded.
+    //  Second time it had happened. Screenshot confirms name + description
+    //  present, icon absent.
+    //
+    //  THE CAUSE, already written into the note below: newclienthudelem() draws
+    //  from a finite client pool and FAILS QUIETLY when it is empty, so whichever
+    //  of the three is requested LAST is the one that does not appear. The icon
+    //  is deliberately last so a short pool costs the picture rather than the
+    //  words. Allocating three fresh elements on every single purchase is what
+    //  kept putting the pop-up at the mercy of the pool - on Origins especially,
+    //  where the generator capture ring allocates on demand from the same pool.
+    //
+    //  Reusing them means the allocation happens ONCE per player, on the first
+    //  perk of the match, and every purchase after that costs the pool nothing.
+    //  This is what b32602e did and it worked; it was lost in the f4b95af revert
+    //  only because b32602e implemented it with a HELPER FUNCTION, which
+    //  overflowed this file's symbol table. This version defines no helper and
+    //  adds no cross-file call - isdefined and newclienthudelem are builtins.
+    //  See [[qol-symbol-table-not-size]] and [[getdvarintdefault-is-not-a-builtin]].
+    //
+    //  🌟 THE GENERATION COUNTER IS WHY REUSE IS SAFE. The destroys used to
+    //  double as the hand-off when a player bought a second perk mid-animation:
+    //  the old elements died under the first thread. Reused elements cannot be
+    //  destroyed, so the older thread would fade out the NEWER pop-up half way
+    //  through it. Each run now takes a ticket and simply stops if a later
+    //  purchase has taken a newer one.
+    // ========================================================================
+    if ( !isdefined( self.zmqol_perkpop_gen ) )
+        self.zmqol_perkpop_gen = 0;
+    self.zmqol_perkpop_gen = self.zmqol_perkpop_gen + 1;
+    n_perkpop_gen = self.zmqol_perkpop_gen;
+
+    //  The legacy fourth element is still destroyed on sight: v1.53.0 removed it
+    //  and nothing recreates it, so this only cleans up a pre-v1.53.0 save.
     if ( isdefined( self.perkspec_hud ) )
     {
         self.perkspec_hud destroy();
         self.perkspec_hud = undefined;
     }
 
-    // --- Perk icon ---
-    hud = newclienthudelem( self );
-    hud.alignx = "center";
-    hud.aligny = "middle";
-    hud.horzalign = "user_center";
-    hud.vertalign = "user_top";
-    hud.x = 0;
-    hud.y = 55;
-    hud.alpha = 0;
-    hud.color = ( 1, 1, 1 );
-    hud.hidewheninmenu = 1;
-    hud.foreground = 1;
-    hud setshader( shader, 64, 64 );
+    // ========================================================================
+    //  🛑 TEXT IS ALLOCATED BEFORE THE ICON. DO NOT PUT THE ICON BACK ON TOP.
+    //
+    //  User, 2026-09-21: *"i just got phd flopper on excavation site survival
+    //  and it's just showing the name of the perk and not showing the
+    //  description"* - reported against a build whose source, compiled script
+    //  and deployed mod.iwd all carried the right description for
+    //  specialty_flakjacket, so the STRING was never missing.
+    //
+    //  newclienthudelem() draws from a finite client pool and fails quietly
+    //  when it is empty - the same allocate-on-demand behaviour already
+    //  documented for Origins' generator capture ring a few lines below. This
+    //  pop-up asks for three elements in a row, so whichever is requested LAST
+    //  is the one that silently does not appear. With the icon first, that was
+    //  always the description.
+    //
+    //  Ordering name and description ahead of the icon means a short pool costs
+    //  the picture, not the words. It changes nothing when the pool is healthy.
+    // ========================================================================
 
     // --- Perk name (line 1, white, larger) ---
-    name_hud = newclienthudelem( self );
+    //  v2.17.39 - allocate only if we do not already own one. Every field below
+    //  is written on every purchase, so a reused element carries nothing over.
+    if ( !isdefined( self.perkname_hud ) )
+        self.perkname_hud = newclienthudelem( self );
+    name_hud = self.perkname_hud;
     name_hud.alignx = "center";
     name_hud.aligny = "middle";
     name_hud.horzalign = "user_center";
@@ -17934,7 +18183,9 @@ perk_bought( perk )
     //  description instead of centering it, which is the off-to-the-left title
     //  in the user's 2026-09-18 screenshot. Each line centers on its own
     //  element, so the name sits centered above the description at all times.
-    desc_hud = newclienthudelem( self );
+    if ( !isdefined( self.perkdesc_hud ) )
+        self.perkdesc_hud = newclienthudelem( self );
+    desc_hud = self.perkdesc_hud;
     desc_hud.alignx = "center";
     desc_hud.aligny = "middle";
     desc_hud.horzalign = "user_center";
@@ -17947,6 +18198,43 @@ perk_bought( perk )
     desc_hud.hidewheninmenu = 1;
     desc_hud.foreground = 1;
     desc_hud settext( getPerkDesc( perk ) );
+
+    // --- Perk icon (allocated LAST on purpose - see the note above) ---
+    //  v2.17.39 - last is now harmless: after the first perk of the match this
+    //  element already exists, so being last no longer means being the one the
+    //  pool drops. The ordering stays as documented for the very first purchase.
+    if ( !isdefined( self.perkhud ) )
+        self.perkhud = newclienthudelem( self );
+    hud = self.perkhud;
+    hud.alignx = "center";
+    hud.aligny = "middle";
+    hud.horzalign = "user_center";
+    hud.vertalign = "user_top";
+    hud.x = 0;
+    hud.y = 55;
+    hud.alpha = 0;
+    hud.color = ( 1, 1, 1 );
+    hud.hidewheninmenu = 1;
+    hud.foreground = 1;
+    hud setshader( shader, 64, 64 );
+
+    //  🛑 THE PERK POP-UP DIAGNOSTIC WAS HERE AND HAD TO COME BACK OUT.
+    //
+    //  2026-09-21: a ~15-line logprint() block added here to measure a missing
+    //  description took this file over its compiled-bytecode ceiling. The map
+    //  died with 12 script errors, all of them "Unresolved external:
+    //  getdvarintdefault with 2 parameters" -> SV_Shutdown, against a function
+    //  used 48 times in this file and working for months. That is the known
+    //  signature: the engine names whatever import landed on the wrong side of
+    //  the overflow, and the named symbol is never the cause.
+    //
+    //  The rule this broke is already written down: NEVER ADD CODE TO THIS
+    //  FILE. New behaviour, including diagnostics, goes in its own raw script
+    //  under scripts\zm\ that installs itself from its own init(). Comments are
+    //  free - they compile to nothing - which is why this note can stay.
+    //
+    //  The allocation order above is a MOVE, not an addition, so it costs no
+    //  bytecode and stays.
 
     // --- Special-ability line (line 3, gold) ---
     //  🛑 REMOVED in v1.53.0. It was kept "in case future text drops in", but it
@@ -17976,6 +18264,11 @@ perk_bought( perk )
 
     wait 3.5;
 
+    //  v2.17.39 - a later purchase now owns these elements; leave them alone.
+    //  Without this the older thread would fade out the newer pop-up mid-show.
+    if ( self.zmqol_perkpop_gen != n_perkpop_gen )
+        return;
+
     // ---- Fade OUT ----
     hud fadeovertime( 0.5 );
     hud.alpha = 0;
@@ -17988,13 +18281,18 @@ perk_bought( perk )
 
     wait 0.55;
 
-    hud destroy();
-    name_hud destroy();
-    desc_hud destroy();
+    //  🛑 NO destroy() HERE, AND THE self.* REFERENCES STAY DEFINED. That is the
+    //  whole fix - see the v2.17.39 banner at the top of this function. The
+    //  elements are now owned for the life of the player and reused by every
+    //  later purchase, which is what stops the pool dropping the icon. They are
+    //  left at alpha 0 and fully rewritten on the next perk, so an invisible
+    //  element costs a pool slot and nothing else.
+    if ( self.zmqol_perkpop_gen != n_perkpop_gen )
+        return;
 
-    self.perkhud = undefined;
-    self.perkname_hud = undefined;
-    self.perkdesc_hud = undefined;
+    hud.alpha = 0;
+    name_hud.alpha = 0;
+    desc_hud.alpha = 0;
 }
 
 // Shader (icon material) for each perk
