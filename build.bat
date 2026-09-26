@@ -214,6 +214,15 @@ echo [0e/9] Pre-flight: Bouncing Betty claymore parity...
 python "%PROJ_DIR0%tools\check-betty-parity.py"
 if errorlevel 1 goto bettyfail
 
+REM  Plutonium loads a raw fx\*.efx only when a SERVER script loadfx's it. A
+REM  .csc-only loadfx never loads, and the client falls back without an error.
+REM  That drew the Wunderfizz Vulture marker as the white crossed rifles for
+REM  weeks while three fixes dimmed textures that were never drawn (user,
+REM  2026-09-25). See tools\check-client-fx-precache.py.
+echo [0e/9] Pre-flight: client fx loaded server-side...
+python "%PROJ_DIR0%tools\check-client-fx-precache.py"
+if errorlevel 1 goto clientfxfail
+
 REM ============================================================================
 REM  [0f/9] Pre-flight: the menu art is mod-gated                v2.17.45
 REM ----------------------------------------------------------------------------
@@ -601,6 +610,14 @@ color C
 echo.
 echo   BUILD STOPPED: the Bouncing Betty lost claymore parity - see the [betty]
 echo   lines above. Each one names the bug it would bring back.
+if not defined OFFLINE pause
+exit /b 1
+
+:clientfxfail
+color C
+echo.
+echo   BUILD STOPPED: a client script loads a raw .efx that no server script
+echo   loads, so it would never load in game - see the [client-fx] lines above.
 if not defined OFFLINE pause
 exit /b 1
 
