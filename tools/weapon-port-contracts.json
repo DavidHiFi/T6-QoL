@@ -49,6 +49,16 @@
       "soundPrefixes": ["wpn_browninghp_"],
       "donorZone": "angola",
       "imageMatch": ["mtl_t6_wpn_pistol_browninghp"]
+    },
+    {
+      "name": "Bloodhound",
+      "zone": "zone_source/mod_bloodhound.zone",
+      "weapons": ["bloodhound_zm", "bloodhound_upgraded_zm", "bloodhoundlh_upgraded_zm"],
+      "camo": "camo_qol_bloodhound",
+      "camoBaseMaterials": ["mc/mtl_t7_bloodhound_body", "mc/mtl_t7_bloodhound_detail"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["t7_bloodhound_"],
+      "rawMaterials": "mc/mtl_t7_bloodhound_"
     }
   ]
 }

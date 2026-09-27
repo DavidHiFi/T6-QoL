@@ -303,6 +303,22 @@ zmqol_mp_weapons_init()
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
 	}
 
+	//  ============================================================
+	//  THE BLOODHOUND AND THE MEAT WAGON (BO3, ported by Halo / SickoHours).
+	//  Server twin is scripts\zm\bloodhound.gsc; mod_bloodhound.zone has the
+	//  assets. Same weapon-budget test as the server: Buried classic and
+	//  survival, and Docks (zm_prison survival). The Meat Wagon's left-hand
+	//  half is never included.
+	//  ============================================================
+	bloodhound_map = getdvar( "mapname" );
+	bloodhound_mode = getdvar( "ui_zm_gamemodegroup" );
+	if ( bloodhound_map == "zm_buried" && ( bloodhound_mode == "zclassic" || bloodhound_mode == "zsurvival" ) ||
+	     bloodhound_map == "zm_prison" && bloodhound_mode == "zsurvival" )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "bloodhound_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "bloodhound_upgraded_zm", 0 );
+	}
+
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
 	//  its pickup model.

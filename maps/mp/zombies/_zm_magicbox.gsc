@@ -1137,6 +1137,9 @@ weapon_is_dual_wield( name )
         //  the box, Pack-a-Punch and the random-weapon drop show both pistols.
         case "browninghpdw_upgraded_zm":
         case "browninghpdw_zm":
+        //  2026-09-27 - the Meat Wagon (scripts\zm\bloodhound.gsc): the Pack-a-Punch
+        //  and the random-weapon drop show both revolvers.
+        case "bloodhound_upgraded_zm":
             return true;
         default:
             return false;
@@ -1232,6 +1235,10 @@ get_left_hand_weapon_model_name( name )
             return getweaponmodel( "browninghplh_zm" );
         case "browninghpdw_upgraded_zm":
             return getweaponmodel( "browninghplh_upgraded_zm" );
+        //  The Meat Wagon's left revolver is its own model (bones renamed *1);
+        //  bloodhound.gsc precaches it.
+        case "bloodhound_upgraded_zm":
+            return getweaponmodel( "bloodhoundlh_upgraded_zm" );
         default:
             return getweaponmodel( name );
     }

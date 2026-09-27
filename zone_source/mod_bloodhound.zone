@@ -1,0 +1,103 @@
+// ============================================================================
+//  mod_bloodhound.zone  -  THE BLOODHOUND AND THE MEAT WAGON
+//
+//  User, 2026-09-27: port the Bloodhound revolver (Black Ops III, Shadows of
+//  Evil) into the mystery box, and make `.give bloodhound` work.
+//
+//  SOURCE: Halo / SickoHours' Beta 2 Der Riese port, handed off as
+//  bloodhound-b2-fastfiles.zip (mod.ff sha256 dbd36e05...). The zip carried the
+//  fastfile only, so every asset below was dumped out of it, renamed off its
+//  hashed hbh_* names, and rebuilt raw in zone_assets\:
+//    - models, materials and textures: the friend's, unchanged apart from names.
+//    - the 27 view anims: the friend's motion, retargeted onto the BO2
+//      viewhands' arm lengths. His clips keyed BO3 bone lengths (elbow 10.73,
+//      wrist 9.81 against BO2's 12.09 / 11.57), which drew short forearms and
+//      fingers on these arms. Shoulder/elbow/wrist were re-solved so each wrist
+//      stays on the same spot on the gun (max drift 0.01 units). Receipts:
+//      modding-jobs\bloodhound-port-001\retarget.log.
+//    - the base gun's 57 recordings: the missing sound bank, carved out of BO3's
+//      own zm_common / zm_zod banks by the key the handoff named each file after.
+//
+//  WHAT IS NOT DECLARED HERE:
+//    - the three defs. They ship raw in weapons\zm\ (bloodhound_zm,
+//      bloodhound_upgraded_zm, bloodhoundlh_upgraded_zm).
+//    - fx, tracer, icons, projectile: every one the defs name is on all six
+//      maps and in mod.ff already (the pistol flashes, the M&S PaP flashes,
+//      fx_tmp_m203_flash, fx_trail_grenade, projectile_m203grenade,
+//      hud_python, hud_icon_colt, reticle_side_small, tracer pistol).
+//    - dive-to-prone and crawl clips. BO3 has none. The base form plays the
+//      stock Python's, the Meat Wagon plays stock Mustang & Sally's (same
+//      arms); mod.ff already carries all of them.
+//    - the Meat Wagon's sounds: the stock wpn_1911_*_pap rows on every map's
+//      bank, which is what the friend's own build used.
+// ============================================================================
+
+// --- view / world models (materials and images come along) ------------------
+xmodel,t7_bloodhound_view
+xmodel,t7_bloodhound_view_lh
+xmodel,t7_bloodhound_world
+xmodel,t7_bloodhound_world_lh
+//  the Meat Wagon's round: stock's M&S grenade, re-declared (mod_base links it)
+xmodel,projectile_m203grenade
+
+// --- Pack-a-Punch camo: slots 3 (index 39), 8 (40, animated), 12 (45) -------
+camo,camo_qol_bloodhound
+
+// --- the 27 view anims the three defs name ----------------------------------
+xanim,vm_t7_bloodhound_idle
+xanim,vm_t7_bloodhound_fire
+xanim,vm_t7_bloodhound_fire_ads
+xanim,vm_t7_bloodhound_reload
+xanim,vm_t7_bloodhound_raise
+xanim,vm_t7_bloodhound_drop
+xanim,vm_t7_bloodhound_first_raise
+xanim,vm_t7_bloodhound_sprint_in
+xanim,vm_t7_bloodhound_sprint_loop
+xanim,vm_t7_bloodhound_sprint_out
+xanim,vm_t7_bloodhound_ads_up
+xanim,vm_t7_bloodhound_ads_down
+xanim,vm_t7_bloodhound_dw_idle_r
+xanim,vm_t7_bloodhound_dw_fire_r
+xanim,vm_t7_bloodhound_dw_reload_r
+xanim,vm_t7_bloodhound_dw_reload_empty_r
+xanim,vm_t7_bloodhound_dw_raise
+xanim,vm_t7_bloodhound_dw_drop
+xanim,vm_t7_bloodhound_dw_first_raise
+xanim,vm_t7_bloodhound_dw_sprint_in
+xanim,vm_t7_bloodhound_dw_sprint_loop
+xanim,vm_t7_bloodhound_dw_sprint_out
+xanim,vm_t7_bloodhound_dw_ads_up
+xanim,vm_t7_bloodhound_dw_ads_down
+xanim,vm_t7_bloodhound_dw_idle_l
+xanim,vm_t7_bloodhound_dw_fire_l
+xanim,vm_t7_bloodhound_dw_reload_l
+
+// --- stock clips the defs borrow, re-declared so the gate holds this zone to
+//     everything the defs name (mod_base / mod_bo1guns already link them) ----
+xanim,viewmodel_python_sw_d2p_in
+xanim,viewmodel_python_sw_d2p_loop
+xanim,viewmodel_python_sw_d2p_out
+xanim,viewmodel_python_crawl_in
+xanim,viewmodel_python_crawl_forward
+xanim,viewmodel_python_crawl_back
+xanim,viewmodel_python_crawl_right
+xanim,viewmodel_python_crawl_left
+xanim,viewmodel_python_crawl_out
+xanim,viewmodel_m1911_dw_d2p_in
+xanim,viewmodel_m1911_dw_d2p_loop
+xanim,viewmodel_m1911_dw_d2p_out
+xanim,viewmodel_m1911_dw_d2p_in_empty
+xanim,viewmodel_m1911_dw_d2p_loop_empty
+xanim,viewmodel_m1911_dw_d2p_out_empty
+xanim,viewmodel_m1911_dw_crawl_in
+xanim,viewmodel_m1911_dw_crawl_forward
+xanim,viewmodel_m1911_dw_crawl_back
+xanim,viewmodel_m1911_dw_crawl_right
+xanim,viewmodel_m1911_dw_crawl_left
+xanim,viewmodel_m1911_dw_crawl_out
+xanim,viewmodel_m1911_dw_crawl_in_empty
+xanim,viewmodel_m1911_dw_crawl_forward_empty
+xanim,viewmodel_m1911_dw_crawl_back_empty
+xanim,viewmodel_m1911_dw_crawl_right_empty
+xanim,viewmodel_m1911_dw_crawl_left_empty
+xanim,viewmodel_m1911_dw_crawl_out_empty
