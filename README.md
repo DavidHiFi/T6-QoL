@@ -231,6 +231,12 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Better Speed Cola:**
   * A **BETTER SPEED COLA** switch on the GAME 1 tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
 
+* **TranZit fixes from Tranzit Enhanced:**
+  * Turning on the power opens every turbine door. The Pack-a-Punch hatch still needs a Turbine in the lab once.
+  * Once the Pack-a-Punch door opens, it stays open after the Turbine is picked up or destroyed.
+  * Killing the Avogadro always drops a Max Ammo.
+  * Classic TranZit gets Town Survival's MP5 wall buy in the Juggernog room.
+
 * **Solo Easter Eggs:**
   * The **SOLO EASTER EGGS** option scales the main quests on TranZit, Die Rise, Buried, Origins, and Mob of the Dead to the current player count. It is off by default and only appears in Classic mode.
 
@@ -301,6 +307,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 | **Logo2K** — [Zombies Declassified](https://github.com/Logo-2K/zombies-declassified) | The native T6 Wave Gun package — Treyarch's DLC5 models, animations, effects, weapon defs, sounds and script. |
 | **Jbleezy** — [BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined) | The extra Survival locations, the Bouncing Betty carry animations, the two lines that let Pack-a-Punch take the Sliquifier, and confirming which two checks stand between a solo player and Mob of the Dead's Final Flight. |
 | **5and5** — [BO2-Remix](https://github.com/5and5/BO2-Remix) | The Die Rise Semtex wall buy. |
+| **Myrix** — [Tranzit Enhanced](https://forum.plutonium.pw/topic/46428/release-zm-tranzit-enhanced) | The TranZit fixes: turbine doors that open with the power, the Pack-a-Punch door that stays open, the Avogadro's Max Ammo and the Town MP5 wall buy. |
 | **Fraaagaaa** — [Strat Tester](https://github.com/Fraaagaaa/Strat-Tester-BO2) | Every destination in the teleport list except Nuketown's three, which are the map's own respawn points. |
 | **B2ORG** — [T6-B2OP-PATCH](https://github.com/B2ORG/T6-B2OP-PATCH)<br><sub>built with **Astrox** and **NoMoleMan**</sub> | The basis for most of the patches — rebuilt against the game's own scripts rather than copied wholesale. |
 | **Hadi77KSA** — [Any Player EE Scripts](https://github.com/Hadi77KSA/Plutonium-T6-Any-Player-EE-Scripts)<br><sub>building on work by **CCDeroga**, **teh_bandit**, **DaddyDontStop**, **shyperson0/znchi** and **Stick Gaming/Nathan3197**</sub> | The Solo Easter Eggs option — the quest steps that scale to the number of players on TranZit, Die Rise, Buried and Origins. |
