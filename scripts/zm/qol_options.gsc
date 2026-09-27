@@ -93,7 +93,8 @@ init()
     qol_opt_dvar( "solo_ee",               "0" );
     //  STARTING PISTOL, the pre-game lobby row (user, 2026-09-11). 0 = DEFAULT
     //  (this map's own pistol), 1 = M1911, 2 = MAUSER (c96_zm), 3 = TAC-45
-    //  (fnp45_zm). Registered here only so it shows up in console autocomplete
+    //  (fnp45_zm), 4 = BLOODHOUND (bloodhound_zm, 2026-09-27).
+    //  Registered here only so it shows up in console autocomplete
     //  and holds a real value on the first open of a lobby; the row itself lives
     //  in ui_mp\t6\menus\privategamelobby_project.lua and the behaviour lives in
     //  qol_opt_starting_pistol() / qol_opt_starting_pistol_player() below.
@@ -1965,6 +1966,7 @@ qol_opt_character()
 //  rendered above CHARACTER on every map and mode) writes `starting_pistol`:
 //      0 = DEFAULT - this map's own pistol, stock behaviour, the shipped default
 //      1 = M1911   (m1911_zm)   2 = MAUSER (c96_zm)   3 = TAC-45 (fnp45_zm)
+//      4 = BLOODHOUND (bloodhound_zm, Black Ops III, added 2026-09-27)
 //
 //  🌟 TWO HALVES, because neither half alone covers every spawn path. The level
 //  half repoints level.start_weapon (plus the three laststand pistol vars stock
@@ -1984,6 +1986,8 @@ qol_opt_character()
 //  was never precached, so asking for it falls back to stock with a log line
 //  rather than handing over a weapon that does not exist. Origins' precache
 //  ceiling (v2.15.3) is why nothing is precached here to "make sure".
+//  The Bloodhound (4) is registered on every map by scripts\zm\bloodhound.gsc,
+//  which owns its weapon budget; this file only names it.
 //
 //  🛑 ROOT SCRIPT, NO MAP REFERENCES (AI_CONTEXT rule 2): only weapon names,
 //  the dvar and level vars. Nothing here names a map, so it loads everywhere.
@@ -2000,6 +2004,9 @@ qol_opt_starting_pistol_name( n_choice )
         return "c96_zm";
     if ( n_choice == 3 )
         return "fnp45_zm";
+    //  2026-09-27 - the Bloodhound, registered on every map by bloodhound.gsc.
+    if ( n_choice == 4 )
+        return "bloodhound_zm";
     return undefined;
 }
 
@@ -2009,6 +2016,15 @@ qol_opt_starting_pistol_upgraded( str_base )
         return "c96_upgraded_zm";
     if ( str_base == "fnp45_zm" )
         return "fnp45_upgraded_zm";
+    //  The solo downed pistol is the Meat Wagon where it is registered. On
+    //  TranZit classic and Origins only the base Bloodhound fits the weapon
+    //  budget, so a downed solo player keeps the Bloodhound there.
+    if ( str_base == "bloodhound_zm" )
+    {
+        if ( isdefined( level.zombie_include_weapons ) && isdefined( level.zombie_include_weapons["bloodhound_upgraded_zm"] ) )
+            return "bloodhound_upgraded_zm";
+        return "bloodhound_zm";
+    }
     return "m1911_upgraded_zm";
 }
 

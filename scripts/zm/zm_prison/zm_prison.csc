@@ -157,7 +157,7 @@ include_weapons()
     include_weapon( "qcw05_zm" );
     include_weapon( "qcw05_upgraded_zm", 0 );
     include_weapon( "ak74u_extclip_zm" );
-    include_weapon( "ak74_extclip_upgraded_zm", 0 );
+    include_weapon( "ak74u_extclip_upgraded_zm", 0 );
     include_weapon( "beretta93r_extclip_zm", 0 );
     include_weapon( "beretta93r_extclip_upgraded_zm", 0 );
     include_weapon( "saritch_zm" );

@@ -306,14 +306,18 @@ zmqol_mp_weapons_init()
 	//  ============================================================
 	//  THE BLOODHOUND AND THE MEAT WAGON (BO3, ported by Halo / SickoHours).
 	//  Server twin is scripts\zm\bloodhound.gsc; mod_bloodhound.zone has the
-	//  assets. Same weapon-budget test as the server: Buried classic and
-	//  survival, and Docks (zm_prison survival). The Meat Wagon's left-hand
-	//  half is never included.
+	//  assets. Registered on every map as a STARTING PISTOL choice; boxed with
+	//  its Pack-a-Punch everywhere except TranZit classic and Origins, which
+	//  get the base gun only (weapon budget). Same test as the server. The Meat
+	//  Wagon's left-hand half is never included.
 	//  ============================================================
 	bloodhound_map = getdvar( "mapname" );
 	bloodhound_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( bloodhound_map == "zm_buried" && ( bloodhound_mode == "zclassic" || bloodhound_mode == "zsurvival" ) ||
-	     bloodhound_map == "zm_prison" && bloodhound_mode == "zsurvival" )
+	if ( bloodhound_map == "zm_tomb" || bloodhound_map == "zm_transit" && bloodhound_mode == "zclassic" )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "bloodhound_zm", 0 );
+	}
+	else
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "bloodhound_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "bloodhound_upgraded_zm", 0 );
@@ -348,9 +352,9 @@ zmqol_mp_weapons_init()
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "as50_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "titus6_upgraded_zm", 0 );
 
-	// attachment and projectile variants - same six as the server half
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "vector_extclip_zm", 0 );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "vector_extclip_upgraded_zm", 0 );
+	// attachment and projectile variants - same four as the server half
+	// (vector_extclip_* dropped 2026-09-27 on both halves: unreachable, and
+	// their two weapon slots now carry the Bloodhound)
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "gl_sig556_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sf_sa58_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "crossbow_explosive_bolt_zm", 0 );
