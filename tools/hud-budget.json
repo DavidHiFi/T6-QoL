@@ -42,7 +42,6 @@
     { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_compass_hud", "var": "self.qol_hud_compass", "group": "current", "life": "permanent", "count": 1, "what": "compass heading" },
     { "file": "scripts/zm/qol_options.gsc", "function": "qol_opt_round_timer_hud", "var": "self.qol_hud_roundtimer", "group": "current", "life": "permanent", "count": 1, "what": "round timer" },
     { "file": "scripts/zm/zmqol_subtitles.gsc", "function": "zmqol_subs_ensure_hud", "var": "e_line", "group": "current", "life": "ondemand", "count": 4, "what": "subtitle rows (zmqol_subs_rows, 1..4), released when nobody is talking" },
-    { "file": "scripts/zm/scavenger.gsc", "function": "scavenger_bolt_indicator", "var": "hud", "group": "archived", "life": "ondemand", "count": 3, "what": "Scavenger bolt indicators (BO1's grenade-style icon), one per live bolt, capped at 3 in the script, each destroyed at its blast" },
     { "file": "scripts/zm/quality_of_life.gsc", "function": "perk_bought", "var": "self.perkname_hud", "group": "archived", "life": "permanent", "count": 1, "what": "perk pop-up name (reserved at spawn, reused)" },
     { "file": "scripts/zm/quality_of_life.gsc", "function": "perk_bought", "var": "self.perkdesc_hud", "group": "archived", "life": "permanent", "count": 1, "what": "perk pop-up description" },
     { "file": "scripts/zm/quality_of_life.gsc", "function": "perk_bought", "var": "self.perkhud", "group": "archived", "life": "permanent", "count": 1, "what": "perk pop-up icon" },
