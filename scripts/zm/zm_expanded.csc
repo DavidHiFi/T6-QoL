@@ -303,6 +303,21 @@ zmqol_mp_weapons_init()
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
 	}
 
+	//  ============================================================
+	//  THE SCAVENGER, Call of the Dead's explosive sniper, out of BO1's
+	//  zombie_coast.ff. Server twin is scripts\zm\scavenger.gsc (same test:
+	//  TranZit survival, Buried classic and Maze - the maps with 2 spare in the
+	//  253-weapon table); mod_scavenger.zone has the assets.
+	//  ============================================================
+	scavenger_map = getdvar( "mapname" );
+	scavenger_mode = getdvar( "ui_zm_gamemodegroup" );
+	if ( scavenger_map == "zm_transit" && scavenger_mode == "zsurvival" ||
+	     scavenger_map == "zm_buried" && ( scavenger_mode == "zclassic" || scavenger_mode == "zsurvival" ) )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "scavenger_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "scavenger_upgraded_zm", 0 );
+	}
+
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
 	//  its pickup model.

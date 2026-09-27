@@ -318,4 +318,11 @@ LANG_ENGLISH        "Parasitic MIST"
 REFERENCE           WEAPON_BROWNINGHP_DW_UPGRADED
 LANG_ENGLISH        "Grand Puissances"
 
+// scavenger - weapon port (tools/port-weapon)
+REFERENCE           ZMWEAPON_SCAVENGER
+LANG_ENGLISH        "Scavenger"
+
+REFERENCE           ZMWEAPON_SCAVENGER_UPGRADED
+LANG_ENGLISH        "Hyena Infra-dead"
+
 ENDMARKER

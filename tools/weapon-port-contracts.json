@@ -49,6 +49,16 @@
       "soundPrefixes": ["wpn_browninghp_"],
       "donorZone": "angola",
       "imageMatch": ["mtl_t6_wpn_pistol_browninghp"]
+    },
+    {
+      "name": "Scavenger",
+      "zone": "zone_source/mod_scavenger.zone",
+      "weapons": ["scavenger_zm", "scavenger_upgraded_zm"],
+      "camo": "camo_qol_scavenger",
+      "camoBaseMaterials": ["mc/mtl_t5_weapon_zom_sniper", "mc/mtl_t5_weapon_zom_sniper_lens2"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["scav_", "sca_"],
+      "rawMaterials": "mc/mtl_t5_weapon_zom_sniper"
     }
   ]
 }
