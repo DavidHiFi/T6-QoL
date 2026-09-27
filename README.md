@@ -165,6 +165,8 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Browning HP — Pack-a-Punches into **Bap**
   * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
   * The L96A1 is on every map. The other three appear on every map except Origins, which lacks enough weapon precache slots.
+  * Scavenger, Call of the Dead's explosive sniper. Its bolt sticks, beeps and blows up three seconds later, and zombies it kills turn to mist. It Pack-a-Punches into the **Hyena Infra-dead**, with a bigger blast and an infrared scope. It has its own sounds, scopes, effects and animations, plus the stock and animated Pack-a-Punch camos.
+  * The Scavenger appears on Buried, Maze and TranZit's survival maps, the maps with room left in the weapon table.
 
 * **Black Ops Cold War guns in the box:**
   * Blast-O-Matic, the Gallo SA12 mastercraft. It Pack-a-Punches into the **H-NGM-N**, with its own sounds, animations and the stock and animated Pack-a-Punch camos.
@@ -298,6 +300,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 | **Synarxis** — *Inspiration* | This project wouldn't exist without their kindness & support. |
 | **sehteria** — *T6-ZM-Expanded* | The mod this one grew out of — extra weapons & perks on all maps. |
 | **SadSlothXL** — [t6-ports](https://github.com/SadSlothXL/t6-ports) | The Death Machine power-up — the drop, the weapon swap and its sounds — and the Blast-O-Matic port: its models, animations, textures, sounds and camo table. |
+| **VenomModding** — [T5-MissingAssets](https://github.com/VenomModding/T5-MissingAssets) | The Scavenger's Black Ops 1 effects: muzzle flash, bolt trail, explosion and death mist. |
 | **Mario Woopsie** — MOTD Old School Weapons (Nexus Mods) | The MM1 and Browning HP Dual Wield ports: the zombies weapon definitions, the Browning's left-hand models and both Pack-a-Punch names. |
 | **Logo2K** — [Zombies Declassified](https://github.com/Logo-2K/zombies-declassified) | The native T6 Wave Gun package — Treyarch's DLC5 models, animations, effects, weapon defs, sounds and script. |
 | **Jbleezy** — [BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined) | The extra Survival locations, the Bouncing Betty carry animations, the two lines that let Pack-a-Punch take the Sliquifier, and confirming which two checks stand between a solo player and Mob of the Dead's Final Flight. |
