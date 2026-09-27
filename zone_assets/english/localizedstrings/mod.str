@@ -318,6 +318,12 @@ LANG_ENGLISH        "Parasitic MIST"
 REFERENCE           WEAPON_BROWNINGHP_DW_UPGRADED
 LANG_ENGLISH        "Grand Puissances"
 
+// Bloodhound / Meat Wagon (BO3 Shadows of Evil; port by Halo / SickoHours)
+REFERENCE           ZMWEAPON_BLOODHOUND
+LANG_ENGLISH        "Bloodhound"
+
+REFERENCE           ZMWEAPON_BLOODHOUND_UPGRADED
+LANG_ENGLISH        "Meat Wagon"
 // scavenger - weapon port (tools/port-weapon)
 REFERENCE           ZMWEAPON_SCAVENGER
 LANG_ENGLISH        "Scavenger"
