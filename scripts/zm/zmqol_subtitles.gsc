@@ -426,6 +426,28 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
 
     if ( isdefined( e_listener ) )
     {
+        //  v2.18.1 - playsoundtoplayer() ON AN ENTITY IS STILL 3D. User,
+        //  2026-09-27, Buried, at Processing on round 1, a screenshot of
+        //  "[Ghost] You will stay forever.": *"i don't even hear that character
+        //  speaking"*. Stock's ghost_round_presentation_sound() starts at the
+        //  first round and has the ghost in the mansion windows say a line to
+        //  every player every 2-6 s, as `ghost playsoundtoplayer( line, player )`.
+        //  The alias is 3D with DistMaxDry 1250, so only a player within 1250
+        //  of the window hears it; the caption went to every player on the map.
+        //  The generated copies now pass the entity the sound plays on as
+        //  e_source, and a 3D line reaches this listener only within range of it.
+        //  A line a player plays to themselves passes, at distance 0.
+        if ( isdefined( e_source ) )
+        {
+            n_range_sq = zmqol_subs_range_sq( str_alias );
+
+            if ( n_range_sq < 4000 * 4000 && distancesquared( e_listener.origin, e_source.origin ) > n_range_sq )
+            {
+                println( "[zm_qol] subtitles: skipped " + str_alias + " (" + str_name + ") - listener out of earshot, " + int( distance( e_listener.origin, e_source.origin ) ) + " > " + int( sqrt( n_range_sq ) ) );
+                return;
+            }
+        }
+
         println( "[zm_qol] subtitles: " + str_alias + " (" + str_name + ") -> shown for " + n_secs + "s to one player" );
         e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_secs, "other" );
         return;
