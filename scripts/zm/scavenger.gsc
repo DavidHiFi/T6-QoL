@@ -55,6 +55,9 @@ init()
     precacheitem( "scavenger_zm" );
     precacheitem( "scavenger_upgraded_zm" );
     precachemodel( "t5_weapon_zom_sniper_projectile" );
+    //  BO1's bolt indicator (hud_indicator_sniper_explosive, 64x64, out of
+    //  zombie_coast.ff), on BO2's own grenade-icon material recipe.
+    precacheshader( "scav_hud_indicator_bolt" );
 
     //  Raw .efx in mod.iwd load only through a SERVER loadfx (the Wunderfizz
     //  lesson, tools\check-client-fx-precache.py). The four flash / trail names
@@ -77,11 +80,16 @@ init()
     //  (zm_buried.gsc / zm_transit.gsc add_zombie_weapon dsr50_zm).
     add_zombie_weapon( "scavenger_zm", "scavenger_upgraded_zm", &"ZMWEAPON_SCAVENGER", 50, "wpck_dsr50", "", undefined, 1 );
 
-    //  BO1's own tuning (sniper_explosive_bolt_zm / _upgraded_zm).
+    //  BO1's own tuning (sniper_explosive_bolt_zm / _upgraded_zm: fuseTime 3,
+    //  explosionRadius 360 / 480, explosionInner/OuterDamage 10000;
+    //  indicatorRadius 384 / 320 is how close a player must be to see the
+    //  bolt's indicator, the same test BO1's grenade indicator makes).
     level.scavenger_fuse = 3;
     level.scavenger_radius = 360;
     level.scavenger_radius_ug = 480;
     level.scavenger_damage = 10000;
+    level.scavenger_indicator_radius = 384;
+    level.scavenger_indicator_radius_ug = 320;
 
     maps\mp\zombies\_zm_spawner::register_zombie_death_animscript_callback( ::scavenger_death_response );
     level thread scavenger_on_player_connect();
@@ -144,6 +152,19 @@ scavenger_bolt( v_point, b_upgraded )
     //  BO1: wpn_ubersniper_bomb_rampup on the bolt, then the blast
     e_bolt playsound( "scav_bomb_rampup" );
 
+    //  BO1's bolt was a grenade with showIndicator 1, so every player near it
+    //  saw the Scavenger bolt icon on screen, like a grenade indicator. The
+    //  scripted bolt draws the same icon itself.
+    n_ind = level.scavenger_indicator_radius;
+
+    if ( b_upgraded )
+        n_ind = level.scavenger_indicator_radius_ug;
+
+    players = getplayers();
+
+    for ( i = 0; i < players.size; i++ )
+        players[i] thread scavenger_bolt_indicator( e_bolt, n_ind );
+
     wait( level.scavenger_fuse );
 
     v_blast = e_bolt.origin;
@@ -151,9 +172,61 @@ scavenger_bolt( v_point, b_upgraded )
     if ( isdefined( e_target ) )
         v_blast = v_blast + ( 0, 0, 10 );
 
+    e_bolt notify( "scavenger_blast" );
     e_bolt delete();
 
     self scavenger_explode( v_blast, b_upgraded );
+}
+
+//  One HUD element per player per live bolt, pinned over the bolt with
+//  setwaypoint, the stock way to hang an icon on a world position (the
+//  revive icon in _zm_chugabud.gsc). Shown only while the player is inside
+//  BO1's indicatorRadius, and faded in from the edge of it, so a far-away bolt
+//  never clutters the screen.
+//
+//  🛑 HUD BUDGET (tools\hud-budget.json). The non-archived group is already
+//  at 31 of 31 when every permanent and on-demand row is up, so these live in
+//  the archived group, which has room for 3. Three is also the most a player
+//  can have in the air: a bolt-action rechamber of 1.05 s means at most three
+//  shots inside one 3 s fuse. The cap below makes that a guarantee, even with
+//  teammates' bolts nearby: a fourth bolt simply draws no icon.
+scavenger_bolt_indicator( e_bolt, n_radius )
+{
+    self endon( "disconnect" );
+
+    if ( !isdefined( self.scavenger_indicators ) )
+        self.scavenger_indicators = 0;
+
+    if ( self.scavenger_indicators >= 3 )
+        return;
+
+    self.scavenger_indicators++;
+    hud = newclienthudelem( self );
+    hud.alpha = 0;
+    hud.hidewheninmenu = 1;
+    hud setshader( "scav_hud_indicator_bolt", 16, 16 );
+    hud setwaypoint( 1 );
+
+    n_radius_sq = n_radius * n_radius;
+
+    while ( isdefined( e_bolt ) )
+    {
+        hud.x = e_bolt.origin[0];
+        hud.y = e_bolt.origin[1];
+        hud.z = e_bolt.origin[2] + 8;
+
+        n_dist = distancesquared( self.origin, e_bolt.origin );
+
+        if ( n_dist > n_radius_sq )
+            hud.alpha = 0;
+        else
+            hud.alpha = 1 - 0.6 * ( n_dist / n_radius_sq );
+
+        wait 0.05;
+    }
+
+    hud destroy();
+    self.scavenger_indicators--;
 }
 
 scavenger_bolt_target( v_point )
@@ -203,6 +276,13 @@ scavenger_explode( v_blast, b_upgraded )
     //  every living zombie inside the radius, with the blast's own falloff from
     //  10000 at the centre. The attacker is the shooter, so points, kills,
     //  powerup drops and the insta-kill / double points rules are stock's.
+    //
+    //  SCAVENGER BUFF (GAME 3, dvar scavenger_buff). Pack-a-Punched only, the
+    //  same rule as WINTERS HOWL BUFF: the blast deals each zombie its own
+    //  remaining health, so it kills at any round without a constant that
+    //  could overflow. (The only boss hook, Mob's Brutus, is on a map this gun
+    //  is not registered on.)
+    b_buff = b_upgraded && getdvarint( "scavenger_buff" ) == 1;
     a_zombies = getaispeciesarray( level.zombie_team, "all" );
     n_radius_sq = n_radius * n_radius;
 
@@ -216,10 +296,15 @@ scavenger_explode( v_blast, b_upgraded )
         if ( distancesquared( e_zombie.origin, v_blast ) > n_radius_sq )
             continue;
 
+        n_damage = level.scavenger_damage;
+
+        if ( b_buff && isdefined( e_zombie.health ) && e_zombie.health > n_damage )
+            n_damage = e_zombie.health;
+
         if ( isdefined( self ) && isplayer( self ) )
-            e_zombie dodamage( level.scavenger_damage, v_blast, self, self, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
+            e_zombie dodamage( n_damage, v_blast, self, self, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
         else
-            e_zombie dodamage( level.scavenger_damage, v_blast, undefined, undefined, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
+            e_zombie dodamage( n_damage, v_blast, undefined, undefined, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
     }
 }
 

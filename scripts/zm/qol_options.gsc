@@ -448,12 +448,20 @@ init()
 
     //  v2.8.2 - WINTER'S HOWL INFINITE DAMAGE, user request 2026-08-29, the
     //  PATCHES tab. OFF (0) = the gun's shipped damage numbers. ON (1) makes
-    //  all four of its damage figures effectively unbounded. Read per shot by
-    //  the four freezegun_get_*_damage() accessors in
+    //  the PACK-A-PUNCHED gun's direct hit and shatter blast kill outright; the
+    //  base gun keeps BO1's numbers (user, 2026-09-27). Read per shot in
+    //  freezegun_do_damage() and freezegun_do_shatter() in
     //  maps\mp\zombies\_zm_weap_freezegun.gsc, so it is live mid-match in both
     //  directions. Does nothing on a map without the gun, and nothing at all
     //  while the zmqol_ww gate has the wonder weapons switched off.
     qol_opt_dvar( "winters_howl_infinite", "0" );
+
+    //  SCAVENGER BUFF, user request 2026-09-27, the GAME 3 tab. OFF (0) = BO1's
+    //  numbers. ON (1): the Pack-a-Punched Scavenger's blast kills every zombie
+    //  it reaches, at any round; the base Scavenger is unchanged, the same split
+    //  as WINTERS HOWL BUFF. Read at each blast in scripts\zm\scavenger.gsc, so
+    //  it is live mid-match in both directions.
+    qol_opt_dvar( "scavenger_buff", "0" );
 
     //  v2.8.2 - ROUND DELAY OFF, user request 2026-08-29, the PATCHES tab.
     //  OFF (0) = stock's 10-second gap plus the 2.5-second round-announce beat.
