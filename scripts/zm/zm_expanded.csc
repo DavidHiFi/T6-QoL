@@ -326,8 +326,11 @@ zmqol_mp_weapons_init()
 	//  ============================================================
 	//  THE SCAVENGER, Call of the Dead's explosive sniper, out of BO1's
 	//  zombie_coast.ff. Server twin is scripts\zm\scavenger.gsc (same test:
-	//  TranZit survival, Buried classic and Maze - the maps with 2 spare in the
-	//  253-weapon table); mod_scavenger.zone has the assets.
+	//  TranZit survival, Buried classic and Maze - the maps with room for its
+	//  3 slots in the 253-weapon table); mod_scavenger.zone has the assets.
+	//  The third slot, the bolt grenade scavenger_bolt_zm, is never in the box,
+	//  so it has no include here (stock includes no projectile def either:
+	//  zm_prison.csc lists the Blundergat, not its blundersplat dart).
 	//  ============================================================
 	scavenger_map = getdvar( "mapname" );
 	scavenger_mode = getdvar( "ui_zm_gamemodegroup" );

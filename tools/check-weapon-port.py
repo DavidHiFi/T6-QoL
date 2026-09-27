@@ -205,7 +205,10 @@ def source_pass(port, errors, all_zones, sound_aliases):
             errors.append(f"{name}: {weapon} exceeds the 20480-byte raw weapon limit")
         fields = weapon_fields(path)
         forms[weapon] = fields
-        if fields.get("camo") != camo_name:
+        # A projectile def nobody holds (the Scavenger's bolt grenade, like
+        # stock's blundersplat dart) has no view model and so no camo to draw.
+        held = fields.get("gunModel") or fields.get("inventoryType") != "offhand"
+        if held and fields.get("camo") != camo_name:
             errors.append(f"{name}: {weapon} uses {fields.get('camo')}, expected {camo_name}")
         for key, value in fields.items():
             if not value:

@@ -14,21 +14,31 @@
 //      no body left behind, and still pays death points;
 //    - the Hyena Infra-dead's scope is an infrared scope.
 //
-//  🛑 WHY THE BOLT IS SCRIPTED. BO1 spawns a second weapon, the timed grenade
-//  sniper_explosive_bolt_zm, where the bolt lands. Every weapon def costs one
-//  slot of the engine's 253-weapon table on every map it loads on, and the maps
-//  that fit this gun have 2 spare (modding-jobs\motd-port-001\BUDGET.md). So
-//  the rifle's projectile bursts on impact like an Origins staff
-//  (projImpactExplode 1, radius 1 / damage 1: staff_air_zm's values), the
-//  engine raises "projectile_impact" on the shooter, and this file plants the
-//  bolt model there and runs BO1's fuse. 2 slots instead of 4.
+//  THE BOLT. BO1 spawns a second weapon where the bolt lands: the timed sticky
+//  grenade sniper_explosive_bolt_zm (and an _upgraded_ twin). Its showIndicator
+//  1 + indicatorIcon hud_indicator_sniper_explosive is what draws the warning
+//  round the crosshair, the frag-grenade indicator with the Scavenger's bolt
+//  icon. Only a grenade def gets that from the engine; a scripted HUD waypoint
+//  over the bolt looked wrong in game (user, 2026-09-28, with screenshots).
 //
-//  WHERE IT IS REGISTERED. The weapon table ceiling is 253 per map and most
-//  maps are within 0-3 of it after the MM1 and dual Browning. The Scavenger
-//  (2 slots) goes on the maps with room: TranZit's 7 survival locations,
-//  Buried classic and Maze. Nuketown, Die Rise, Mob, Docks, TranZit classic
-//  and Origins have no room (Docks' spare went to the Bloodhound, agreed on
-//  coop 2026-09-27). zm_expanded.csc's twin uses the same test.
+//  🛑 ONE BOLT DEF, NOT TWO. Every weapon def costs one slot of the engine's
+//  253-weapon table on every map it loads on (motd-port-001\BUDGET.md), and
+//  the TranZit survival locations sit at 252 with the Scavenger, the MM1 and
+//  the Bloodhound (bloodhound-port-001\live\r2-table-town.txt). So there is
+//  one bolt, weapons\zm\scavenger_bolt_zm (T6's own crossbow explosive_bolt_mp
+//  with BO1's bolt values), and it deals no damage: the rifle's projectile
+//  bursts on impact like an Origins staff (projImpactExplode 1, radius 1 /
+//  damage 1: staff_air_zm's values), the engine raises "projectile_impact" on
+//  the shooter, this file launches the bolt grenade into that spot so it sticks
+//  there, and runs BO1's fuse, blast and death mist itself. Everything the PaP
+//  bolt did differently (radius 480, the _ug fx, the PaP sound) is script-side
+//  already; only BO1's PaP indicatorRadius (320, vs 384) is not kept. 3 slots.
+//
+//  WHERE IT IS REGISTERED. The Scavenger (3 slots) goes on the maps with room:
+//  TranZit's 7 survival locations (252 -> 253, the ceiling), Buried classic
+//  (250 -> 251) and Maze (243 -> 244). Nuketown, Die Rise, Mob, Docks, TranZit
+//  classic and Origins have no room (Docks' spare went to the Bloodhound,
+//  agreed on coop 2026-09-27). zm_expanded.csc's twin uses the same test.
 //
 //  🛑 WHY THIS IS ITS OWN FILE. quality_of_life.gsc is full on symbols; any new
 //  call there can stop an unrelated import resolving and kill every map
@@ -54,9 +64,10 @@ init()
 
     precacheitem( "scavenger_zm" );
     precacheitem( "scavenger_upgraded_zm" );
+    precacheitem( "scavenger_bolt_zm" );
     precachemodel( "t5_weapon_zom_sniper_projectile" );
-    //  BO1's bolt indicator (hud_indicator_sniper_explosive, 64x64, out of
-    //  zombie_coast.ff), on BO2's own grenade-icon material recipe.
+    //  The bolt def's indicatorIcon: BO1's hud_indicator_sniper_explosive
+    //  (64x64, out of zombie_coast.ff), on BO2's own grenade-icon material.
     precacheshader( "scav_hud_indicator_bolt" );
 
     //  Raw .efx in mod.iwd load only through a SERVER loadfx (the Wunderfizz
@@ -81,15 +92,12 @@ init()
     add_zombie_weapon( "scavenger_zm", "scavenger_upgraded_zm", &"ZMWEAPON_SCAVENGER", 50, "wpck_dsr50", "", undefined, 1 );
 
     //  BO1's own tuning (sniper_explosive_bolt_zm / _upgraded_zm: fuseTime 3,
-    //  explosionRadius 360 / 480, explosionInner/OuterDamage 10000;
-    //  indicatorRadius 384 / 320 is how close a player must be to see the
-    //  bolt's indicator, the same test BO1's grenade indicator makes).
+    //  explosionRadius 360 / 480, explosionInner/OuterDamage 10000). The
+    //  indicator's range, BO1's indicatorRadius 384, is in the bolt def.
     level.scavenger_fuse = 3;
     level.scavenger_radius = 360;
     level.scavenger_radius_ug = 480;
     level.scavenger_damage = 10000;
-    level.scavenger_indicator_radius = 384;
-    level.scavenger_indicator_radius_ug = 320;
 
     maps\mp\zombies\_zm_spawner::register_zombie_death_animscript_callback( ::scavenger_death_response );
     level thread scavenger_on_player_connect();
@@ -136,120 +144,69 @@ scavenger_watch_impact()
     }
 }
 
-//  The stuck bolt: BO1's model where the shot landed, following a zombie it hit
-//  the way BO1's bolt rode its target (the sticky grenade stuck to the AI).
+//  The stuck bolt. The rifle's shot has just burst at v_point, so the bolt
+//  grenade (weapons\zm\scavenger_bolt_zm, "Stick to all") is launched into that
+//  same spot from a little way back along the shot. It sticks where the shot
+//  landed, on a wall, the floor or a zombie, and rides a zombie the way BO1's
+//  did. Being a grenade with showIndicator 1, it is what makes the engine draw
+//  BO1's warning: the Scavenger bolt icon and arrow round the crosshair,
+//  inside BO1's indicatorRadius (384).
+//
+//  The grenade's own fuse is set a second past BO1's 3 s, so this thread, not
+//  the engine, times the blast; the def deals no damage and plays no blast of
+//  its own either way. Its position is read every frame, so a bolt that goes
+//  away early (the zombie it rode was deleted) still blows where it last was.
 scavenger_bolt( v_point, b_upgraded )
 {
-    e_bolt = spawn( "script_model", v_point );
-    e_bolt setmodel( "t5_weapon_zom_sniper_projectile" );
-    e_bolt.angles = self getplayerangles();
+    v_eye = self geteye();
+    v_dir = vectornormalize( v_point - v_eye );
 
-    e_target = scavenger_bolt_target( v_point );
+    //  40 back clears a zombie's collision box however the shot entered it;
+    //  that stretch of the shot line was just flown by the rifle's projectile,
+    //  so nothing solid is in it. A point-blank shot starts at the eye.
+    n_back = distance( v_eye, v_point ) - 4;
 
-    if ( isdefined( e_target ) )
-        e_bolt linkto( e_target, "j_spine4" );
+    if ( n_back > 40 )
+        n_back = 40;
+
+    if ( n_back < 0 )
+        n_back = 0;
+
+    e_bolt = self magicgrenadetype( "scavenger_bolt_zm", v_point - v_dir * n_back, v_dir * 2000, level.scavenger_fuse + 1 );
 
     //  BO1: wpn_ubersniper_bomb_rampup on the bolt, then the blast
-    e_bolt playsound( "scav_bomb_rampup" );
+    if ( isdefined( e_bolt ) )
+        e_bolt playsound( "scav_bomb_rampup" );
+    else
+        playsoundatposition( "scav_bomb_rampup", v_point );
 
-    //  BO1's bolt was a grenade with showIndicator 1, so every player near it
-    //  saw the Scavenger bolt icon on screen, like a grenade indicator. The
-    //  scripted bolt draws the same icon itself.
-    n_ind = level.scavenger_indicator_radius;
+    v_blast = v_point;
+    b_rode = 0;
+    n_end = gettime() + level.scavenger_fuse * 1000;
 
-    if ( b_upgraded )
-        n_ind = level.scavenger_indicator_radius_ug;
-
-    players = getplayers();
-
-    for ( i = 0; i < players.size; i++ )
-        players[i] thread scavenger_bolt_indicator( e_bolt, n_ind );
-
-    wait( level.scavenger_fuse );
-
-    v_blast = e_bolt.origin;
-
-    if ( isdefined( e_target ) )
-        v_blast = v_blast + ( 0, 0, 10 );
-
-    e_bolt notify( "scavenger_blast" );
-    e_bolt delete();
-
-    self scavenger_explode( v_blast, b_upgraded );
-}
-
-//  One HUD element per player per live bolt, pinned over the bolt with
-//  setwaypoint, the stock way to hang an icon on a world position (the
-//  revive icon in _zm_chugabud.gsc). Shown only while the player is inside
-//  BO1's indicatorRadius, and faded in from the edge of it, so a far-away bolt
-//  never clutters the screen.
-//
-//  🛑 HUD BUDGET (tools\hud-budget.json). The non-archived group is already
-//  at 31 of 31 when every permanent and on-demand row is up, so these live in
-//  the archived group, which has room for 3. Three is also the most a player
-//  can have in the air: a bolt-action rechamber of 1.05 s means at most three
-//  shots inside one 3 s fuse. The cap below makes that a guarantee, even with
-//  teammates' bolts nearby: a fourth bolt simply draws no icon.
-scavenger_bolt_indicator( e_bolt, n_radius )
-{
-    self endon( "disconnect" );
-
-    if ( !isdefined( self.scavenger_indicators ) )
-        self.scavenger_indicators = 0;
-
-    if ( self.scavenger_indicators >= 3 )
-        return;
-
-    self.scavenger_indicators++;
-    hud = newclienthudelem( self );
-    hud.alpha = 0;
-    hud.hidewheninmenu = 1;
-    hud setshader( "scav_hud_indicator_bolt", 16, 16 );
-    hud setwaypoint( 1 );
-
-    n_radius_sq = n_radius * n_radius;
-
-    while ( isdefined( e_bolt ) )
+    while ( gettime() < n_end )
     {
-        hud.x = e_bolt.origin[0];
-        hud.y = e_bolt.origin[1];
-        hud.z = e_bolt.origin[2] + 8;
-
-        n_dist = distancesquared( self.origin, e_bolt.origin );
-
-        if ( n_dist > n_radius_sq )
-            hud.alpha = 0;
-        else
-            hud.alpha = 1 - 0.6 * ( n_dist / n_radius_sq );
+        if ( isdefined( e_bolt ) )
+        {
+            v_blast = e_bolt.origin;
+            b_rode = isdefined( e_bolt getlinkedent() );
+        }
 
         wait 0.05;
     }
 
-    hud destroy();
-    self.scavenger_indicators--;
-}
-
-scavenger_bolt_target( v_point )
-{
-    a_zombies = getaispeciesarray( level.zombie_team, "all" );
-    e_best = undefined;
-    n_best = 1024;
-
-    for ( i = 0; i < a_zombies.size; i++ )
+    if ( isdefined( e_bolt ) )
     {
-        if ( !isalive( a_zombies[i] ) )
-            continue;
-
-        n_dist = distancesquared( a_zombies[i] gettagorigin( "j_spine4" ), v_point );
-
-        if ( n_dist < n_best )
-        {
-            n_best = n_dist;
-            e_best = a_zombies[i];
-        }
+        v_blast = e_bolt.origin;
+        b_rode = isdefined( e_bolt getlinkedent() );
+        e_bolt delete();
     }
 
-    return e_best;
+    //  a bolt riding a zombie sits in its body; lift the blast clear of it
+    if ( b_rode )
+        v_blast = v_blast + ( 0, 0, 10 );
+
+    self scavenger_explode( v_blast, b_upgraded );
 }
 
 scavenger_explode( v_blast, b_upgraded )
