@@ -324,5 +324,11 @@ LANG_ENGLISH        "Bloodhound"
 
 REFERENCE           ZMWEAPON_BLOODHOUND_UPGRADED
 LANG_ENGLISH        "Meat Wagon"
+// scavenger - weapon port (tools/port-weapon)
+REFERENCE           ZMWEAPON_SCAVENGER
+LANG_ENGLISH        "Scavenger"
+
+REFERENCE           ZMWEAPON_SCAVENGER_UPGRADED
+LANG_ENGLISH        "Hyena Infra-dead"
 
 ENDMARKER

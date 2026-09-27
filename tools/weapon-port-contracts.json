@@ -59,6 +59,16 @@
       "camoSlots": [3, 8, 12],
       "soundPrefixes": ["t7_bloodhound_"],
       "rawMaterials": "mc/mtl_t7_bloodhound_"
+    },
+    {
+      "name": "Scavenger",
+      "zone": "zone_source/mod_scavenger.zone",
+      "weapons": ["scavenger_zm", "scavenger_upgraded_zm"],
+      "camo": "camo_qol_scavenger",
+      "camoBaseMaterials": ["mc/mtl_t5_weapon_zom_sniper", "mc/mtl_t5_weapon_zom_sniper_lens2"],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["scav_", "sca_"],
+      "rawMaterials": "mc/mtl_t5_weapon_zom_sniper"
     }
   ]
 }

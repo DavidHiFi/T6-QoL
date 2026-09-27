@@ -1,0 +1,28 @@
+{
+    "$schema": "http://openassettools.dev/schema/xmodel.v1.json",
+    "_game": "t6",
+    "_type": "xmodel",
+    "_version": 2,
+    "flags": 0,
+    "lods": [
+        {
+            "distance": 1000.0,
+            "file": "model_export/t5_weapon_zom_sniper_world_lod0.glb"
+        },
+        {
+            "distance": 2000.0,
+            "file": "model_export/t5_weapon_zom_sniper_world_lod1.glb"
+        },
+        {
+            "distance": 3998.0,
+            "file": "model_export/t5_weapon_zom_sniper_world_lod2.glb"
+        }
+    ],
+    "type": "rigid",
+    "lightingOriginOffset": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.5
+    },
+    "lightingOriginRange": 0.5
+}
