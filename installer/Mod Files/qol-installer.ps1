@@ -960,6 +960,22 @@ $HASHBOUNDFILES = @(
     '4238982186.iwi'
 )
 
+# The mod's own main-menu art (images_menu\ in the source tree). It ships inside
+# mod.iwd, which the game mounts only while this mod is loaded. A loose copy in
+# storage\t6\images shows on the stock game and on every other mod too, which
+# the user rejected on 2026-09-14 and again on 2026-09-23. HD.Texture.Pack.zip
+# up to v2.16.17 still carried 18 of these, so no pack may install them.
+$MENUARTFILES = @(
+    '1429008398.iwi', '1777841770.iwi', '2125833060.iwi', '260179946.iwi',
+    '3018744286.iwi', '3243541390.iwi', '3331619410.iwi', '3683125256.iwi',
+    '448887191.iwi',  '526515145.iwi',
+    'globe_map_zm.iwi', 'lui_bkg_zm.iwi', 'lui_bkg_zm_flare.iwi',
+    'lui_bkg_zm_flare_left.iwi', 'lui_bkg_zm_meteor.iwi',
+    'lui_bkg_zm_rocks_back.iwi', 'lui_bkg_zm_rocks_front.iwi',
+    'lui_bkg_zm_rocks_front_forward.iwi', 'lui_bkg_zm_sun.iwi',
+    'menu_zm_title_screen.iwi'
+)
+
 # Which pack is installed right now, or $null. Kept next to the manifests.
 $PACKFILE = Join-Path $STATE 'controller-pack.txt'
 function Get-ControllerPack {
@@ -1513,7 +1529,7 @@ function Copy-Payload {
     #  CIA/CDC arms are not in the pack and are untouched.
     # -----------------------------------------------------------------------
     $blocked = @()
-    if ($Kind -eq 'images') { $blocked = @('hud_dpad_blood.iwi') + $ICONFILES + $VIEWARMFILES + $HASHBOUNDFILES }
+    if ($Kind -eq 'images') { $blocked = @('hud_dpad_blood.iwi') + $ICONFILES + $VIEWARMFILES + $HASHBOUNDFILES + $MENUARTFILES }
     $blockLower = @{}
     foreach ($b in $blocked) { $blockLower[$b.ToLower()] = $true }
 
@@ -1904,7 +1920,10 @@ function Act-InstallMod {
 function Act-InstallImages {
     param([int] $Pick = -1)
     $src = Find-Payload 'images'
-    if (-not $src) { $src = Get-RemotePayload 'zm_qol-textures.zip' 'images' }
+    #  v2.18.0 - the release asset is HD.Texture.Pack.zip. zm_qol-textures.zip
+    #  was last attached to v2.0.0, past the 30 releases Find-ReleaseAsset looks
+    #  at, so this download had been failing for every player.
+    if (-not $src) { $src = Get-RemotePayload 'HD.Texture.Pack.zip' 'images' }
     if (-not $src) {
         Draw-Header 'HD texture pack'
         Say "The texture pack is not in this folder, and it is not attached to" $C.Warn
@@ -3340,6 +3359,11 @@ function Get-RemotePayload {
     try { Expand-Archive -LiteralPath $zip -DestinationPath $out -Force } catch { Say 'Unpacking failed.' $C.Bad; return $null }
     $inner = Join-Path $out $FolderName
     if (Test-Path $inner) { return $inner }
+    # HD.Texture.Pack.zip keeps its files under "HD Texture Pack\images\".
+    # Copying from the unzip root would recreate that folder inside the
+    # destination, where the game never looks.
+    $nested = Get-ChildItem -LiteralPath $out -Directory -Recurse -Filter $FolderName -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($nested) { return $nested.FullName }
     return $out
 }
 
@@ -3388,7 +3412,11 @@ function Act-CheckUpdate {
     if (-not $sel -or $sel.Key -eq 'back') { return }
 
     Draw-Header 'Downloading'
-    $asset = $rel.assets | Where-Object { $_.name -like '*.zip' -and $_.name -notlike '*texture*' -and $_.name -notlike '*sound*' } | Select-Object -First 1
+    #  v2.18.0 - ask for the mod package by name. GitHub lists assets
+    #  alphabetically, so the old "first zip that is not textures or sounds"
+    #  rule picked Controller.Icons.Pack.zip and reported no mod inside it.
+    $asset = $rel.assets | Where-Object { $_.name -like 'Quality.Of.Life.Mod*.zip' } | Select-Object -First 1
+    if (-not $asset) { $asset = $rel.assets | Where-Object { $_.name -like '*.zip' -and $_.name -notmatch '(?i)texture|sound|controller|icon' } | Select-Object -First 1 }
     if (-not $asset) { Say 'That release has no mod zip attached.' $C.Bad; Pause-Key; return }
     Say "Downloading $($asset.name) ($(Format-Size $asset.size)) ..." $C.Text
     if ($DryRun) { Say '(dry run)' $C.Dim; Pause-Key; return }

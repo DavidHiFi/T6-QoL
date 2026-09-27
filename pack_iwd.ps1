@@ -79,6 +79,8 @@ try {
     #  instead, and build.bat mirrors it into the deployed mod and points
     #  storage\t6\images at it with a junction - see the texture-pack block
     #  there. The bytes still live in the mod; only the doorway is outside it.
+    #  The mod's OWN art in images\ (not the HD pack) is packed separately after
+    #  this loop - see the v2.18.0 block below.
     #  'images_menu' (v2.17.45) - THE MAIN-MENU ART, AND WHY IT IS THE ONE
     #  TEXTURE FOLDER THAT GOES INSIDE mod.iwd.
     #
@@ -120,6 +122,7 @@ try {
     $fs  = [System.IO.File]::Open($tempPath, [System.IO.FileMode]::CreateNew)
     $zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
     $count = 0
+    $packedImages = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
     try {
         foreach ($folder in $folders) {
             $folderPath = Join-Path $rootPath $folder
@@ -169,9 +172,63 @@ try {
                     $fsIn = [System.IO.File]::OpenRead($_.FullName)
                     try { $fsIn.CopyTo($es) } finally { $fsIn.Dispose() }
                 } finally { $es.Dispose() }
+                if ($isMenuArt) { [void]$packedImages.Add($_.Name) }
                 $count++
             }
         }
+
+        # 🛑 v2.18.0 - THE MOD'S OWN ART GOES IN mod.iwd. images\ as a whole
+        #  stays out (the block above), but part of it is not the HD pack at
+        #  all: the pixels behind mod.ff's own image headers (zone_assets\images)
+        #  and the git-tracked art no retail file supplies - the L96A1, the
+        #  Blast-O-Matic, the wonder-weapon skins, the Zombie Blood icon.
+        #
+        #  v2.16.17 shipped all of them in here. The v2.17.35 change dropped the
+        #  whole folder, and on the build PC nothing looked wrong because
+        #  storage\t6\images is a junction onto this tree's images\. A player
+        #  installing the release has no such junction: mod.iwd was the only
+        #  place those pixels could come from, and without them the guns draw
+        #  black (the L96A1's black-gun bug, v2.15.6).
+        #
+        #  The rule: an .iwi in images\ that the HD pack does not provide
+        #  (installer\Mod Files\textures-manifest.txt is the pack's exact name
+        #  list), or that backs a mod.ff image header, is the mod's own.
+        #  camo_zmb_dlc2* stays out, as in build.bat's step [1/9].
+        $manifest = Join-Path $rootPath 'installer\Mod Files\textures-manifest.txt'
+        $imgDir   = Join-Path $rootPath 'images'
+        $zaDir    = Join-Path $rootPath 'zone_assets\images'
+        if (-not (Test-Path -LiteralPath $manifest)) { throw 'installer\Mod Files\textures-manifest.txt is missing - cannot tell the mod''s own art from the HD pack.' }
+        $hdPack = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+        foreach ($line in [System.IO.File]::ReadAllLines($manifest)) { $t = $line.Trim(); if ($t) { [void]$hdPack.Add($t) } }
+        $backsHeader = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+        if (Test-Path -LiteralPath $zaDir) {
+            Get-ChildItem -LiteralPath $zaDir -File -Filter '*.iwi' | ForEach-Object { [void]$backsHeader.Add($_.Name) }
+        }
+        $own = 0
+        if (Test-Path -LiteralPath $imgDir) {
+            # A stray menu-art copy in images\ is skipped: images_menu\ owns
+            # those names, and build.bat's deploy step evicts the stray.
+            Get-ChildItem -LiteralPath $imgDir -File -Filter '*.iwi' | Where-Object {
+                $_.Name -notmatch 'camo_zmb_dlc2' -and -not $packedImages.Contains($_.Name) -and
+                ($backsHeader.Contains($_.Name) -or -not $hdPack.Contains($_.Name))
+            } | Sort-Object Name | ForEach-Object {
+                [void]$packedImages.Add($_.Name)
+                $entry = $zip.CreateEntry('images/' + $_.Name, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $es    = $entry.Open()
+                try {
+                    $fsIn = [System.IO.File]::OpenRead($_.FullName)
+                    try { $fsIn.CopyTo($es) } finally { $fsIn.Dispose() }
+                } finally { $es.Dispose() }
+                $own++
+                $count++
+            }
+        }
+        # Every mod.ff image header needs its pixels in here. build.bat's step
+        # [1/9] copies zone_assets\images into images\ first, so a gap means
+        # that sync did not run or a file was lost.
+        $gap = @($backsHeader | Where-Object { $_ -notmatch 'camo_zmb_dlc2' -and -not $packedImages.Contains($_) })
+        if ($gap.Count -gt 0) { throw "$($gap.Count) mod.ff image(s) have no pixels in images\ to pack: $(($gap | Select-Object -First 6) -join ', ')" }
+        Write-Output ("  mod's own textures packed: {0:N0}" -f $own)
     }
     finally {
         try { if ($zip) { $zip.Dispose() } }
