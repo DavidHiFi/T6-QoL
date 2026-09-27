@@ -2025,7 +2025,7 @@ qol_opt_starting_pistol_upgraded( str_base )
     if ( str_base == "fnp45_zm" )
         return "fnp45_upgraded_zm";
     //  The solo downed pistol is the Meat Wagon where it is registered. On
-    //  TranZit classic and Origins only the base Bloodhound fits the weapon
+    //  TranZit and Origins only the base Bloodhound fits the weapon
     //  budget, so a downed solo player keeps the Bloodhound there.
     if ( str_base == "bloodhound_zm" )
     {

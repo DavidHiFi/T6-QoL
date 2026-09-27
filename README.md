@@ -174,7 +174,8 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 * **Black Ops III guns in the box:**
   * Bloodhound, the Shadows of Evil revolver, with its own sounds, animations and the stock and animated Pack-a-Punch camos. It Pack-a-Punches into the **Meat Wagon**, a Bloodhound in each hand firing explosive rounds.
-  * It appears on Buried, Buried Maze and Docks. Every other map is too close to the weapon table's limit.
+  * It's in the box on Nuketown, Die Rise, Mob of the Dead, Docks, Buried and Buried Maze.
+  * It's a **STARTING PISTOL** choice in the lobby on every map. On TranZit and Origins it's a starting pistol only, with no box or Pack-a-Punch, because those maps have no room left in the weapon table.
 
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.

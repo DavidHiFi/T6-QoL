@@ -307,13 +307,13 @@ zmqol_mp_weapons_init()
 	//  THE BLOODHOUND AND THE MEAT WAGON (BO3, ported by Halo / SickoHours).
 	//  Server twin is scripts\zm\bloodhound.gsc; mod_bloodhound.zone has the
 	//  assets. Registered on every map as a STARTING PISTOL choice; boxed with
-	//  its Pack-a-Punch everywhere except TranZit classic and Origins, which
+	//  its Pack-a-Punch everywhere except TranZit (all modes) and Origins, which
 	//  get the base gun only (weapon budget). Same test as the server. The Meat
 	//  Wagon's left-hand half is never included.
 	//  ============================================================
 	bloodhound_map = getdvar( "mapname" );
 	bloodhound_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( bloodhound_map == "zm_tomb" || bloodhound_map == "zm_transit" && bloodhound_mode == "zclassic" )
+	if ( bloodhound_map == "zm_tomb" || bloodhound_map == "zm_transit" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "bloodhound_zm", 0 );
 	}
