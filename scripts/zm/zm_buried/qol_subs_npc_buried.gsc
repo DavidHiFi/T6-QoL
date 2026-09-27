@@ -87,7 +87,7 @@ zmqol_npc_richtofensay( vox_line, time, play_in_3d )
     }
     else
     {
-        scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, undefined, undefined, level.rich_sq_player );
+        scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, level.rich_sq_player, undefined, level.rich_sq_player );
         level.rich_sq_player playsoundtoplayer( vox_line, level.rich_sq_player );
     }
 
@@ -129,7 +129,7 @@ zmqol_npc_ghost_talk_to_target( player )
     level endon( "intermission" );
     vox_index = randomint( level.ghost_vox.size );
     vox_line = level.ghost_vox[vox_index];
-    scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, undefined, undefined, player );
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, self, undefined, player );
     self playsoundtoplayer( vox_line, player );
     player.ghost_talking = 1;
     wait 6;
@@ -154,7 +154,7 @@ zmqol_npc_ghost_round_presentation_sound()
             {
                 vox_index = randomint( level.ghost_vox.size );
                 vox_line = level.ghost_vox[vox_index];
-                scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, undefined, undefined, player );
+                scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, self, undefined, player );
                 self playsoundtoplayer( vox_line, player );
             }
         }

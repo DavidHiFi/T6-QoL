@@ -167,7 +167,7 @@ zmqol_npc_watch_one_shot_samantha_clue( str_line, str_notify, str_endon )
 
             maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
             level.sam_talking = 1;
-            scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_line, undefined, undefined, e_player );
+            scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_line, e_player, undefined, e_player );
             e_player playsoundtoplayer( str_line, e_player );
             n_duration = soundgetplaybacktime( str_line );
             wait( n_duration / 1000 );
@@ -193,7 +193,7 @@ zmqol_npc_play_sam_promises_conversation( a_promises )
         if ( issubstr( a_promises[i], "sam_sam" ) || issubstr( a_promises[i], "samantha" ) )
         {
             self thread maps\mp\zm_tomb_vo::sam_promises_conversation_ended_early( a_promises[i] );
-            scripts\zm\zmqol_subtitles::zmqol_subs_npc( a_promises[i], undefined, undefined, self );
+            scripts\zm\zmqol_subtitles::zmqol_subs_npc( a_promises[i], self, undefined, self );
             self playsoundtoplayer( a_promises[i], self );
             n_duration = soundgetplaybacktime( a_promises[i] );
             wait( n_duration / 1000 );
@@ -249,7 +249,7 @@ zmqol_npc_zombie_blood_hint_watch()
                 maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
                 level.sam_talking = 1;
                 str_vox = maps\mp\zm_tomb_ee_main::get_zombie_blood_hint_vox();
-                scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_vox, undefined, undefined, e_player );
+                scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_vox, e_player, undefined, e_player );
                 e_player playsoundtoplayer( str_vox, e_player );
                 n_duration = soundgetplaybacktime( str_vox );
                 wait( n_duration / 1000 );
@@ -275,7 +275,7 @@ zmqol_npc_zombie_blood_hint_watch()
                 {
                     maps\mp\zm_tomb_vo::set_players_dontspeak( 1 );
                     level.sam_talking = 1;
-                    scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_vox, undefined, undefined, e_player );
+                    scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_vox, e_player, undefined, e_player );
                     e_player playsoundtoplayer( str_vox, e_player );
                     n_duration = soundgetplaybacktime( str_vox );
                     wait( n_duration / 1000 );
@@ -308,7 +308,7 @@ zmqol_npc_tablet_cleanliness_chastise( e_player, b_cleaned )
 
     if ( isdefined( e_player ) )
     {
-        scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_line, undefined, undefined, e_player );
+        scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_line, e_player, undefined, e_player );
         e_player playsoundtoplayer( str_line, e_player );
     }
 

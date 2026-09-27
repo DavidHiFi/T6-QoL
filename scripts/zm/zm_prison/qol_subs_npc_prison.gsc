@@ -229,7 +229,7 @@ zmqol_npc_tomahawk_the_spoon( grenade, n_grenade_charge_power )
         self thread maps\mp\zm_prison_spoon::give_player_spoon_upon_receipt( m_tomahawk, m_player_spoon );
         self thread maps\mp\zm_prison_spoon::dip_the_spoon();
         flag_set( "spoon_obtained" );
-        scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_brutus_easter_egg_101_0", undefined, undefined, self );
+        scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_brutus_easter_egg_101_0", self, undefined, self );
         self playsoundtoplayer( "vox_brutus_easter_egg_101_0", self );
         return true;
     }
@@ -258,6 +258,6 @@ zmqol_npc_take_old_weapon_and_give_reward( current_weapon, reward_weapon, weapon
     self giveweapon( reward_weapon );
     self switchtoweapon( reward_weapon );
     flag_set( "warden_blundergat_obtained" );
-    scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_brutus_easter_egg_872_0", undefined, undefined, self );
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_brutus_easter_egg_872_0", self, undefined, self );
     self playsoundtoplayer( "vox_brutus_easter_egg_872_0", self );
 }
