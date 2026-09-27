@@ -102,7 +102,7 @@ zmqol_npc_richtofensay( vox_line, time )
 
     if ( isdefined( level.rich_sq_player ) && is_player_valid( level.rich_sq_player ) )
     {
-        scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, undefined, undefined, level.rich_sq_player );
+        scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, level.rich_sq_player, undefined, level.rich_sq_player );
         level.rich_sq_player playsoundtoplayer( vox_line, level.rich_sq_player );
 
         if ( !is_true( level.richtofen_talking_to_samuel ) )
@@ -197,7 +197,7 @@ zmqol_npc_custom_zombie_audio_func( alias, alias_type )
                     {
                         level.last_custom_zombie_sound_time = gettime();
                         alias_to_play = maps\mp\zm_highrise::choose_a_line_to_play();
-                        scripts\zm\zmqol_subtitles::zmqol_subs_npc( alias_to_play, undefined, undefined, player );
+                        scripts\zm\zmqol_subtitles::zmqol_subs_npc( alias_to_play, self, undefined, player );
                         self playsoundtoplayer( alias_to_play, player );
                         continue;
                     }
