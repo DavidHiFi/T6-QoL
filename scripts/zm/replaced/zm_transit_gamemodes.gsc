@@ -82,4 +82,33 @@ init()
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "tunnel", scripts\zm\locs\zm_transit_loc_tunnel::struct_init);
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zstandard", "cornfield", scripts\zm\locs\zm_transit_loc_cornfield::struct_init);
 	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zgrief", "cornfield", scripts\zm\locs\zm_transit_loc_cornfield::struct_init);
+
+	scripts\zm\replaced\utility::add_struct_location_gamemode_func("zclassic", "transit", ::classic_struct_init);
+}
+
+// ============================================================================
+//  THE TOWN MP5 WALL BUY ON CLASSIC TRANZIT                (2026-09-27)
+//
+//  User, 2026-09-27, from Myrix's Tranzit Enhanced: Town survival has an MP5
+//  wall buy in the Juggernog room and classic TranZit has none in Town.
+//
+//  The wall buy is already in the map. zm_transit.mapents ships the struct at
+//  (611.1, -993.1, 181), angles 0 270 0, tagged
+//  "zrace_town, zstandard_town, zgrief_town", and classic matches
+//  "zclassic_transit", so stock skips it. Adding that tag spawns stock's own
+//  wall buy: its chalk, its model, its trigger and the shared "bought once,
+//  shown everywhere" link with the Diner MP5. Tranzit Enhanced spawned a
+//  second trigger by hand instead, which has no chalk and no clientfield.
+//
+//  The MP5 is already in classic TranZit's weapon table (the Diner wall buy),
+//  so this costs no weapon slot. It adds one "world" clientfield, and its
+//  client twin is the "transit" branch of zm_expanded.csc's
+//  zmqol_enable_wallbuys(). Both must tag the same origin or every player is
+//  dropped with EXE_CLIENT_FIELD_MISMATCH.
+// ============================================================================
+classic_struct_init()
+{
+	a_wallbuys = [];
+	a_wallbuys[a_wallbuys.size] = ( 611.1, -993.1, 181 );   // mp5k_zm, Town, the Juggernog room
+	scripts\zm\locs\loc_common::enable_wallbuys( a_wallbuys );
 }

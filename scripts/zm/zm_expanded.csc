@@ -555,6 +555,7 @@ zmqol_enable_bonfire_sale()
 //  mirrored here, or the map stops loading with the error above. The .gsc side:
 //      scripts\zm\locs\zm_transit_loc_diner.gsc       (2 origins)
 //      scripts\zm\locs\zm_transit_loc_tunnel.gsc      (1 origin)
+//      scripts\zm\replaced\zm_transit_gamemodes.gsc   (1 origin, classic)
 //      scripts\zm\replaced\zm_buried_gamemodes.gsc    (3 origins)
 //
 //  ORDERING: this replaces _utility_code::struct_class_init, called from
@@ -874,6 +875,12 @@ zmqol_enable_wallbuys()
 		// Out in v2.14.0 with the location, back in v2.14.30 with it; the
 		// server twin is in that file's struct_init().
 		a_origins[a_origins.size] = ( -11839, -1695.1, 287 );      // m16_zm
+	}
+	else if ( str_map == "zm_transit" && str_location == "transit" && str_gametype == "zclassic" )
+	{
+		// zm_transit_gamemodes.gsc classic_struct_init() - classic only. Bus
+		// Depot survival is "transit" too, and the server does not re-tag there.
+		a_origins[a_origins.size] = ( 611.1, -993.1, 181 );        // mp5k_zm, Town
 	}
 	else if ( str_map == "zm_buried" && str_location == "street" && str_gametype == "zstandard" )
 	{

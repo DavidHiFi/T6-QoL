@@ -225,33 +225,9 @@ init()
     level thread zmqol_jetgun_real_slot();
     level thread zmqol_no_power_transit_extras();
 
-    //  ========================================================================
-    //  v2.9.16 - THE PACK-A-PUNCH DOOR STAYS OPEN, user request 2026-08-31:
-    //  "Once a player opens the Power Station door with a Turbine, keep the
-    //  Town Bank Vault Pack-a-Punch door permanently open without requiring a
-    //  Turbine to remain behind."
-    //
-    //  🌟 TREYARCH SHIPPED THE SWITCH; THIS SETS IT. _zm_blockers.gsc's
-    //  door_think() checks `level.local_doors_stay_open` immediately after a
-    //  local_electric_door opens (:588) and RETURNS - the close half of the
-    //  loop (wait 3 / waittill_door_can_close / door_block) never runs, so the
-    //  door latches open the first time a Turbine powers it. Stock itself sets
-    //  this flag in _zm_game_module::turn_power_on_and_open_doors() (:121) for
-    //  the grief/turned modules, so this is a supported state, not a hack.
-    //
-    //  📝 WHAT IT COVERS: every `local_electric_door` on the map - the bank
-    //  vault Pack-a-Punch door AND the power station's turbine door. Both still
-    //  need a Turbine placed ONCE to open (door_think still waits on
-    //  "local_power_on"); the flag only stops them closing again when the
-    //  Turbine leaves or dies.
-    //
-    //  Recovery with no rebuild: pap_door_stays_open 0, next map load.
-    //  ========================================================================
-    if ( getdvar( "pap_door_stays_open" ) == "" )
-        setdvar( "pap_door_stays_open", "1" );
-
-    if ( getdvarint( "pap_door_stays_open" ) )
-        level.local_doors_stay_open = 1;
+    //  v2.9.16's PACK-A-PUNCH DOOR STAYS OPEN moved to qol_tranzit_enhanced.gsc
+    //  on 2026-09-27, beside the turbine doors that the power now opens. Same
+    //  dvar (pap_door_stays_open) and same flag.
 }
 
 // ============================================================================
