@@ -629,7 +629,7 @@ CoD.PrivateGameLobby.QolStartingPistol[1].values[3] = 2
 CoD.PrivateGameLobby.QolStartingPistol[1].values[4] = 3
 --  2026-09-27 - the Bloodhound (Black Ops III), scripts\zm\bloodhound.gsc
 --  registers it on every map: boxed with its Meat Wagon Pack-a-Punch on all but
---  TranZit classic and Origins, which get the base gun only (weapon budget).
+--  TranZit (every mode) and Origins, which get the base gun only (weapon budget).
 CoD.PrivateGameLobby.QolStartingPistol[1].values[5] = 4
 CoD.PrivateGameLobby.DvarDefaults["starting_pistol"] = 0
 CoD.PrivateGameLobby.Dvars = {}

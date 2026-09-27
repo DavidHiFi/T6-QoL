@@ -19,9 +19,10 @@
 //
 //  TWO LEVELS, so it can be a starting pistol everywhere:
 //    BOX                   all three defs, in the mystery box, Pack-a-Punches
-//                          into the Meat Wagon. Every map but TranZit classic
-//                          and Origins.
-//    STARTING PISTOL ONLY  TranZit classic and Origins, which sit at the
+//                          into the Meat Wagon. Nuketown, Die Rise, Mob, Docks,
+//                          Buried and Maze.
+//    STARTING PISTOL ONLY  TranZit (classic and every survival location) and
+//                          Origins, which sit at the
 //                          ceiling: only the base gun is registered (1 slot),
 //                          not boxed and with no Pack-a-Punch form. The Meat
 //                          Wagon is a dual wield, and a dual wield whose left
@@ -31,6 +32,9 @@
 //                          Downed in solo, the player gets the Bloodhound back
 //                          (qol_options.gsc keeps the base gun when no upgrade
 //                          is registered).
+//  Measured 2026-09-28 (live\m-*-table-*.txt, main + Scavenger + Bloodhound):
+//  TranZit 252, Origins 252, Mob 252, Nuketown 253, Die Rise 253, Buried 250;
+//  Town hit 254 with the box form, so all of TranZit is starting-pistol only.
 //  The room comes from two weapons zm_qol always registered and nothing ever
 //  hands out: vector_extclip_zm / _upgraded_zm (quality_of_life.gsc and the
 //  zm_expanded.csc twin no longer include them), and on Mob / Docks the
@@ -86,14 +90,17 @@ init()
     println( "[zm_qol] bloodhound: registered on " + map + " (box + starting pistol)" );
 }
 
-//  The box needs the third slot (the Meat Wagon's left hand). TranZit classic
-//  and Origins sit at the ceiling even after the freed slots.
+//  The box needs all three slots. TranZit (classic and all seven survival
+//  locations) and Origins sit at the ceiling even after the freed slots:
+//  measured 2026-09-28 with the Scavenger in, Town reached 254 with the box
+//  form, one past the 253 RadiusDamage bound (BUDGET.md). There the gun is a
+//  starting pistol only.
 bloodhound_in_box( map, mode )
 {
     if ( map == "zm_tomb" )
         return 0;
 
-    if ( map == "zm_transit" && mode == "zclassic" )
+    if ( map == "zm_transit" )
         return 0;
 
     return 1;
