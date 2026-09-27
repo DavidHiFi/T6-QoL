@@ -19,7 +19,7 @@
 //    3. Carpenter can drop once a window is broken.
 //
 //  Classic modes are untouched: init() returns unless ui_zm_gamemodegroup is
-//  zsurvival. Record: modding-jobs\survival-barriers-001\FINDINGS.md.
+//  zsurvival.
 //
 //  Its own root script, not quality_of_life.gsc, which is full (AGENTS.md 1b).
 // ============================================================================

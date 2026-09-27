@@ -31,8 +31,8 @@ Install Plutonium and run it once so its folders exist, then close it. Then pick
 [**Quality of Life Series**](https://github.com/DavidHiFi/QualityOfLifeSeries) is a small app that installs, updates and removes this mod for you, and manages every other mod in your Plutonium folders as well.
 
 1. [Download it](https://github.com/DavidHiFi/QualityOfLifeSeries/releases/latest) - the setup installs it like any other program, or the portable zip runs as-is.
-2. Open it and go to **Black Ops II (T6)**.
-3. Choose **The mod → Install**. The HD textures go in with it, so there is nothing else to add.
+2. Open it and choose **Quality of Life** in the sidebar.
+3. Press **Install** on **Quality of Life for Black Ops II**, then **Install** on **HD texture pack**.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
 It backs up anything it replaces, keeps your saved menu settings across updates, and tells you when a newer release is out.
@@ -41,7 +41,7 @@ It backs up anything it replaces, keeps your saved menu settings across updates,
 
 1. [Download the latest release](https://github.com/DavidHiFi/T6-QoL/releases/latest) and unzip it anywhere.
 2. Run **`Windows Install.bat`**.
-3. Choose **INSTALL → The mod** and confirm.
+3. Choose **INSTALL → The mod** and confirm. It installs the HD textures too, downloading them if they are not in the folder.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
 Use the arrow keys to move, **Enter** to choose, and **Q** to quit. No admin rights are needed. The installer can also add texture and sound packs, controller icons, ReShade, backups, Start menu shortcuts, and an uninstaller.
@@ -51,13 +51,12 @@ The optional Start menu shortcuts open the installer and ReShade Watcher. They p
 ### Standalone downloads
 
 Neither needs the mod installed. Installing the mod already puts the HD textures
-in place for you, so you only need these if you want the art on its own — they
-are no longer updated.
+in place, so you only need these if you want the art on its own.
 
 | Download | Size | What it is |
 |---|---|---|
-| [**HD Texture Pack**](https://github.com/DavidHiFi/T6-QoL/releases/download/v2.15.44/HD.Texture.Pack.zip) | 525 MB | The same higher-resolution textures the mod already carries, for use without it. Unzip and drop the `images` folder into `%LOCALAPPDATA%\Plutonium\storage\t6\`. |
-| [**Controller Icons**](https://github.com/DavidHiFi/T6-QoL/releases/download/v2.15.44/Controller.Icons.Pack.zip) | 184 KB | PlayStation 5, Nintendo Switch and Xbox One button prompts. Pick one of the three folders inside and copy the `.iwi` files into `%LOCALAPPDATA%\Plutonium\storage\t6\images\`. |
+| [**HD Texture Pack**](https://github.com/DavidHiFi/T6-QoL/releases/latest/download/HD.Texture.Pack.zip) | 514 MB | The same higher-resolution textures the mod already carries, for use without it. Unzip and drop the `images` folder into `%LOCALAPPDATA%\Plutonium\storage\t6\`. |
+| [**Controller Icons**](https://github.com/DavidHiFi/T6-QoL/releases/latest/download/Controller.Icons.Pack.zip) | 184 KB | PlayStation 5, Nintendo Switch and Xbox One button prompts. Pick one of the three folders inside and copy the `.iwi` files into `%LOCALAPPDATA%\Plutonium\storage\t6\images\`. |
 
 <details>
 <summary><b>Install the mod by hand (Windows and Linux)</b></summary>
@@ -146,9 +145,12 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * MSMC
   * Peacekeeper
   * Crossbow
-  * XPR-50
+  * XPR-50 (every map except Origins)
   * Titus-6
   * Tac-45
+
+* **Blundergat on every map:**
+  * Mob of the Dead's wonder weapon is in the Mystery Box on every map, one per match. It Pack-a-Punches into the **Sweeper**.
 
 * **DLC5 wonder weapons:**
   * The Wave Gun
@@ -162,7 +164,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * L96A1 — Pack-a-Punches into the **L115 Isolator**
   * Browning HP — Pack-a-Punches into **Bap**
   * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
-  * All four appear on every map except Origins, which lacks enough weapon precache slots.
+  * The L96A1 is on every map. The other three appear on every map except Origins, which lacks enough weapon precache slots.
 
 * **Black Ops Cold War guns in the box:**
   * Blast-O-Matic, the Gallo SA12 mastercraft. It Pack-a-Punches into the **H-NGM-N**, with its own sounds, animations and the stock and animated Pack-a-Punch camos.
@@ -171,7 +173,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
   * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
-  * Both appear on Nuketown and Buried, including Buried Maze. The MM1 also appears on Die Rise, Origins, TranZit survival locations and Mob's Docks. TranZit classic and Mob classic have no safe room in the weapon table for either gun.
+  * Both appear on Nuketown and Buried, including Buried Maze. The MM1 also appears on Die Rise, Origins, and the TranZit and Mob of the Dead survival maps. TranZit classic and Mob classic have no safe room in the weapon table for either gun.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
@@ -185,7 +187,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 * **Pack-a-Punchable Sliquifier:**
   * Die Rise's Sliquifier can be upgraded into Treyarch's unused **Sl1qu1f13r**.
-  * The upgrade kills at any round. The standard Sliquifier is unchanged.
+  * The upgrade kills at any round and wears the Pack-a-Punch camo. The standard Sliquifier is unchanged.
 
 ---
 
@@ -196,25 +198,34 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Diner
   * Power Station
   * Tunnel
+  * Cornfield
 * **Die Rise**
   * Shopping Mall
   * Dragon Rooftop
   * Sweatshop
 * **Mob of the Dead**
   * Cell Block
+  * Docks
 * **Buried**
   * Borough
+  * Maze
 * **Origins**
   * The Crazy Place
+  * Trenches
+  * Excavation Site
+  * Church
+
+* **Barricades in Survival:**
+  * Windows start boarded up, zombies tear the boards off to get in, and the Carpenter power-up drops. Brutus never smashes barricades.
 
 * **Der Wunderfizz Machine on all maps:**
   * The random perk machine is available on every map, not just Origins.
 
-* **No perk limit:**
-  * Carry as many as you like by default, or set a cap of 1–12 from the pre-game lobby.
+* **Perk limit:**
+  * Set a cap of 1-12 in the pre-game lobby, or MAP MAX to carry every perk the map offers. The default is the stock 4.
 
 * **Better Speed Cola:**
-  * A **BETTER SPEED COLA** switch on the GAME tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
+  * A **BETTER SPEED COLA** switch on the GAME 1 tab. With it on, Speed Cola also boards up windows faster and drinks perk bottles faster.
 
 * **Solo Easter Eggs:**
   * The **SOLO EASTER EGGS** option scales the main quests on TranZit, Die Rise, Buried, Origins, and Mob of the Dead to the current player count. It is off by default and only appears in Classic mode.
@@ -223,7 +234,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War - Zombies. It can be turned on or off in the settings menu.
 
 * **Bonfire Sale:**
-  * BO1's Pack-a-Punch power-up, from *Five*. Pick it up and Pack-a-Punch costs 1,000 points instead of 5,000 for thirty seconds. Part of the **Custom Power-Ups** option, on every map except Mob of the Dead and Buried.
+  * BO1's Pack-a-Punch power-up, from *Five*. Pick it up and Pack-a-Punch costs 1,000 points instead of 5,000 for thirty seconds. Part of the **Custom Power-Ups** option. On Mob of the Dead and Buried it drops in Survival only.
 
 ---
 
@@ -243,6 +254,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 * **Subtitles:**
   * The HUD menu can show subtitles with optional speaker names on every map in solo and co-op. It covers characters, announcers, radios, quest dialogue, and other map voices. Overlapping lines stack on screen. The text was machine-transcribed, so some words may be wrong.
+  * Easter egg songs show their title, and the sung ones show timed lyrics.
 
 * **Scoreboard crew emblems:**
   * The scoreboard shows the correct crew emblem for each map and mode instead of a missing texture.
@@ -262,8 +274,11 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Mud:**
   * A **NO MUD SLOWDOWN** switch on the GAME 3 tab. Turn it on and Origins mud stops dragging you down — you run and walk through it at full speed, in the main map and in every Origins survival and grief location.
 
-* **Extras:**
-  * Native "Tap to Interact" controller support under the standard Gamepad menu, and a tailored *Cinematic Colour Grading* ReShade preset.
+* **Tap to Interact:**
+  * Controller support under the standard Gamepad menu.
+
+* **Cinematic Colour Grading:**
+  * A ReShade preset included with the mod.
 
 ---
 

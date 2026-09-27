@@ -860,8 +860,6 @@ setupWunderfizz()
     	//  (4643,768) and (4643,692), which is how that corner is located). Half
     	//  the machine's width is 37, so that leaves ~40 units of air to the left
     	//  hedge: off it, not in it.
-    	//
-    	//  Measurement: modding-jobs\locs-restore-001\maze_spawners.py
     	zmqol_wf_add( ( getdvarintdefault( "zmqol_wf_maze_x", 4720 ),
     	                getdvarintdefault( "zmqol_wf_maze_y", 690 ),
     	                2 ),

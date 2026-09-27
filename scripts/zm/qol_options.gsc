@@ -973,7 +973,7 @@ qol_opt_connect_loop()
 //
 //  .archived DEFAULTS TO 1 (HudElem_Alloc writes it), so every element this
 //  mod ever made landed in ONE group. Read out of the running game's memory
-//  (modding-jobs\hud-regress-001\hud_census.py) at a fresh TranZit spawn:
+//  at a fresh TranZit spawn:
 //        archived group      30 / 31      <- this mod, plus 4 stock
 //        non-archived group   8 / 31      <- stock's _hud_message elements
 //  One free slot. Stock's buildable bar is FOUR elements (createbar() makes

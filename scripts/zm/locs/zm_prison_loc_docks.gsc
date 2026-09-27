@@ -309,7 +309,7 @@ disable_craftable_triggers()
 //  one is inside the arena:
 //        wolf_hurt_trigger_docks   (19, 6252, 129)   410 units from a spawn
 //  The other four are up at the cellblock/warden end, 4000+ away.
-//  (Audit: modding-jobs\locs-restore-001\death_zones.py. The same sweep finds
+//  (A sweep of every map's trigger_hurt entities. The same sweep finds
 //  ZERO trigger_hurt on zm_tomb and zm_buried, so Trenches, Church, Excavation
 //  Site and Maze cannot have this bug - that is checked, not assumed.)
 //

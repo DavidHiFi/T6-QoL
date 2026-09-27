@@ -395,7 +395,7 @@ zmqol_enable_dog_rounds()
     //  contains points outside the arena's walls. This is not fixable by
     //  filtering the list here. The proper fix needs the placement validation
     //  that v2.16.9 prototyped, and that cannot ship in THIS file: it is on a
-    //  compiled-bytecode ceiling (see item 1b in H:\Plutonium\AGENTS.md), and
+    //  compiled-bytecode ceiling (see item 1b in the workspace AGENTS.md), and
     //  +944 bytes of code took 14 unrelated imports down with it. When the
     //  work resumes, it belongs in its own raw script under scripts\zm\.
     //
@@ -590,7 +590,7 @@ zmqol_dog_owns_this_map()
 //  caller was gone. It is recoverable from commit de340cb if the parked
 //  custom-arena work resumes, and that is where it should be rebuilt: in a
 //  separate raw script, not here. This file is on a compiled-bytecode ceiling
-//  (H:\Plutonium\AGENTS.md item 1b) and deleting this function is what paid
+//  (workspace AGENTS.md item 1b) and deleting this function is what paid
 //  for the location gate above.
 //
 //  zmqol_dog_spawn_logic below is now reached only through
