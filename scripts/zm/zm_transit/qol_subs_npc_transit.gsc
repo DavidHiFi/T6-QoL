@@ -114,7 +114,7 @@ zmqol_npc_richtofensay( vox_line, intro, ignore_power_state, time )
         if ( ( !flag( "power_on" ) || !flag( "switches_on" ) ) && !( isdefined( ignore_power_state ) && ignore_power_state ) )
             return;
 
-        scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, undefined, undefined, level.rich_sq_player );
+        scripts\zm\zmqol_subtitles::zmqol_subs_npc( vox_line, level.rich_sq_player, undefined, level.rich_sq_player );
         level.rich_sq_player playsoundtoplayer( vox_line, level.rich_sq_player );
 
         if ( !( isdefined( level.richtofen_talking_to_samuel ) && level.richtofen_talking_to_samuel ) )
@@ -154,7 +154,7 @@ zmqol_npc_wait_for_richtoffen_intro()
     if ( isdefined( level.intermission ) && level.intermission )
         return;
 
-    scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_zmba_sidequest_power_on_0", undefined, undefined, level.rich_sq_player );
+    scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_zmba_sidequest_power_on_0", level.rich_sq_player, undefined, level.rich_sq_player );
     level.rich_sq_player playsoundtoplayer( "vox_zmba_sidequest_power_on_0", level.rich_sq_player );
     maps\mp\zm_transit_sq::richtofen_talking( 45 );
     level.richtofen_sq_intro_said = 1;
