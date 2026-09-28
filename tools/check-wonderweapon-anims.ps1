@@ -107,6 +107,49 @@ if ((Test-Path -LiteralPath $tomb) -and ((Get-Content -LiteralPath $tomb -Raw) -
     $fail += "zm_tomb_basic.asd has no zm_death_freeze_t5 state - the Winter's Howl cannot freeze on Origins"
 }
 
+# --- 2b. every shipped basic .asd carries the Electric Cherry stun state -----
+#  Same silent-fallback class, added 2026-09-28: the core electric-cherry
+#  module's electric_cherry_stun() animscripted() zm_afterlife_stun on every
+#  zombie the reload shock does not kill. Only Mob and Origins carry the state
+#  natively. On the three maps above plus Buried the state MUST ship, or the
+#  zombies take the damage and never play a clip - the exact "zombies take
+#  damage without the stun animation" report. And because the asd is validated
+#  against the anim list baked into the AITYPE, the aitype overrides MUST carry
+#  the five dummy_anim_ref lines or the map dies at BG_AnimStateDef_Parse
+#  instead (worse: loud). Zone lines + this block:
+#      xanim,ai_zombie_afterlife_stun_a..e  mod_locations.zone (cherry block)
+#      rawfile atr/asd for the four maps    mod_wonderweapons 200-205 + the
+#                                           buried pair in mod_locations 1846
+#  Buried's asd lives here since 2026-09-28; the other three do since the
+#  wonder-weapon route itself.
+$cherryMaps = @('zm_transit', 'zm_nuked', 'zm_highrise', 'zm_buried')
+foreach ($m in $cherryMaps) {
+    $p = Join-Path $asdDir "$($m)_basic.asd"
+    if (-not (Test-Path -LiteralPath $p)) {
+        $fail += "$($m)_basic.asd is missing from zone_assets\animstatedefs"
+        continue
+    }
+    $body = Get-Content -LiteralPath $p -Raw
+    if ($body -notmatch 'zm_afterlife_stun')
+        { $fail += "$($m)_basic.asd has no zm_afterlife_stun state - Electric Cherry's reload shock will not stun zombies on this map" }
+}
+foreach ($m in $cherryMaps) {
+    $p = Join-Path $proj "zone_assets\animtrees\$($m)_basic.atr"
+    if (Test-Path -LiteralPath $p) {
+        $body = Get-Content -LiteralPath $p -Raw
+        if ($body -notmatch 'ai_zombie_afterlife_stun_a')
+            { $fail += "$($m)_basic.atr has no ai_zombie_afterlife_stun_a entry - the stun state references an anim the tree does not carry" }
+    }
+}
+$cherryZone = Join-Path $proj 'zone_source\mod_locations.zone'
+if (Test-Path -LiteralPath $cherryZone) {
+    $zoneBody = Get-Content -LiteralPath $cherryZone -Raw
+    foreach ($n in 'a','b','c','d','e') {
+        if ($zoneBody -notmatch "xanim,ai_zombie_afterlife_stun_$n")
+            { $fail += "mod_locations.zone does not ship xanim,ai_zombie_afterlife_stun_$n - the stun clip resolves from no fastfile on the four non-native maps" }
+    }
+}
+
 # --- 3 + 4. the aitype overrides exist and still carry the anim refs ---------
 $aiDir = Join-Path $proj 'aitype'
 if (-not (Test-Path -LiteralPath $aiDir)) {
@@ -118,7 +161,16 @@ if (-not (Test-Path -LiteralPath $aiDir)) {
     if ($csc.Count -lt 14) { $fail += "aitype\clientscripts\ has $($csc.Count) .csc, expected 14" }
 
     $stripped = @()
-    foreach ($f in $gsc) {
+    #  The microwave/freeze check applies only to overrides for maps that carry
+    #  the sizzle/freeze asd route (transit/nuked/highrise/alcatraz). Buried's
+    #  nine never needed those states: stock Buried aitypes never carried the
+    #  anims and stock Buried ships no sizzle/freeze asd (zm_buried_basic.asd
+    #  gained only the cherry-stun state in this edit). Expecting refs the map
+    #  never shipped would fail the gate on files that are correct.
+    $wwTypes = @('zm_alcatraz_basic','zm_highrise_basic_01','zm_highrise_basic_02','zm_highrise_basic_03',
+                 'zm_nuked_basic_01','zm_nuked_basic_02','zm_nuked_basic_01_beyes','zm_nuked_basic_02_beyes',
+                 'zm_transit_basic_01','zm_transit_basic_02','zm_transit_basic_03','zm_transit_basic_05','zm_transit_basic_08','zm_transit_basic_09')
+    foreach ($f in ($gsc | Where-Object { $_.BaseName -in $wwTypes })) {
         $body = Get-Content -LiteralPath $f.FullName -Raw
         $hasMicro  = $body -match 'ai_zombie_microwave_death'
         $hasFreeze = $body -match 'ai_zombie_freeze_death'
@@ -126,6 +178,26 @@ if (-not (Test-Path -LiteralPath $aiDir)) {
     }
     if ($stripped.Count -gt 0) {
         $fail += "aitype override(s) lost their microwave/freeze anim refs: $($stripped -join ', ')"
+    }
+
+    # 2b's twin: every aitype override for a cherry-stun map must still carry
+    # the afterlife refs, or the asd state parse-fails the map at load.
+    $cherryTypes = @('zm_transit_basic_01','zm_transit_basic_02','zm_transit_basic_03','zm_transit_basic_05','zm_transit_basic_08','zm_transit_basic_09',
+                     'zm_nuked_basic_01','zm_nuked_basic_02','zm_nuked_basic_01_beyes','zm_nuked_basic_02_beyes',
+                     'zm_highrise_basic_01','zm_highrise_basic_02','zm_highrise_basic_03',
+                     'zm_buried_basic_03','zm_buried_basic_01_char_01','zm_buried_basic_01_char_02','zm_buried_basic_01_char_03','zm_buried_basic_01_char_04','zm_buried_basic_01_char_05','zm_buried_basic_02_char_01','zm_buried_basic_02_char_02','zm_buried_basic_02_char_03')
+    foreach ($t in $cherryTypes) {
+        $g = Join-Path $aiDir "$t.gsc"
+        $c = Join-Path $aiDir "clientscripts\$t.csc"
+        foreach ($p in @($g, $c)) {
+            if (-not (Test-Path -LiteralPath $p)) {
+                $fail += "missing aitype file: $((Split-Path $p -Leaf)) - the cherry-stun asd parse-fails without its refs"
+                continue
+            }
+            $b = Get-Content -LiteralPath $p -Raw
+            if ($b -notmatch 'ai_zombie_afterlife_stun_a')
+                { $fail += "$(Split-Path $p -Leaf) lost its ai_zombie_afterlife_stun_a ref - the stun asd parse-fails this map" }
+        }
     }
 }
 

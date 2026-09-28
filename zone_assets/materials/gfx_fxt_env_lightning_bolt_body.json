@@ -120,7 +120,7 @@
     },
     "textures": [
         {
-            "image": "fxt_env_lightning_bolt_air",
+            "image": "fxt_env_lighting_bolt_air",
             "isMatureContent": false,
             "name": "colorMap",
             "samplerState": {

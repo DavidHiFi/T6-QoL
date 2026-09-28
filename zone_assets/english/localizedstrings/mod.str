@@ -318,4 +318,10 @@ LANG_ENGLISH        "Parasitic MIST"
 REFERENCE           WEAPON_BROWNINGHP_DW_UPGRADED
 LANG_ENGLISH        "Grand Puissances"
 
+// Electric Cherry's buy prompt. Stock ships the key only in en_zm_prison.ff,
+// so Buried's machine (in PhD's old spot) printed the raw key. Mob's own
+// text, word for word; mod.ff loads first on Mob too, so it is unchanged there.
+REFERENCE           ZM_PRISON_PERK_CHERRY
+LANG_ENGLISH        "Hold ^3[{+activate}]^7 to buy Electric Cherry [Cost: &&1]"
+
 ENDMARKER
