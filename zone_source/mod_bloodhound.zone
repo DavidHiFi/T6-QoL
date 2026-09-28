@@ -25,9 +25,6 @@
 //      maps and in mod.ff already (the pistol flashes, the M&S PaP flashes,
 //      fx_tmp_m203_flash, fx_trail_grenade, projectile_m203grenade,
 //      hud_python, hud_icon_colt, reticle_side_small, tracer pistol).
-//    - dive-to-prone and crawl clips. BO3 has none. The base form plays the
-//      stock Python's, the Meat Wagon plays stock Mustang & Sally's (same
-//      arms); mod.ff already carries all of them.
 //    - the Meat Wagon's sounds: the stock wpn_1911_*_pap rows on every map's
 //      bank, which is what the friend's own build used.
 // ============================================================================
@@ -43,7 +40,7 @@ xmodel,projectile_m203grenade
 // --- Pack-a-Punch camo: slots 3 (index 39), 8 (40, animated), 12 (45) -------
 camo,camo_qol_bloodhound
 
-// --- the 27 view anims the three defs name ----------------------------------
+// --- the friend's 27 view anims ---------------------------------------------
 xanim,vm_t7_bloodhound_idle
 xanim,vm_t7_bloodhound_fire
 xanim,vm_t7_bloodhound_fire_ads
@@ -72,32 +69,36 @@ xanim,vm_t7_bloodhound_dw_idle_l
 xanim,vm_t7_bloodhound_dw_fire_l
 xanim,vm_t7_bloodhound_dw_reload_l
 
-// --- stock clips the defs borrow, re-declared so the gate holds this zone to
-//     everything the defs name (mod_base / mod_bo1guns already link them) ----
-xanim,viewmodel_python_sw_d2p_in
-xanim,viewmodel_python_sw_d2p_loop
-xanim,viewmodel_python_sw_d2p_out
-xanim,viewmodel_python_crawl_in
-xanim,viewmodel_python_crawl_forward
-xanim,viewmodel_python_crawl_back
-xanim,viewmodel_python_crawl_right
-xanim,viewmodel_python_crawl_left
-xanim,viewmodel_python_crawl_out
-xanim,viewmodel_m1911_dw_d2p_in
-xanim,viewmodel_m1911_dw_d2p_loop
-xanim,viewmodel_m1911_dw_d2p_out
-xanim,viewmodel_m1911_dw_d2p_in_empty
-xanim,viewmodel_m1911_dw_d2p_loop_empty
-xanim,viewmodel_m1911_dw_d2p_out_empty
-xanim,viewmodel_m1911_dw_crawl_in
-xanim,viewmodel_m1911_dw_crawl_forward
-xanim,viewmodel_m1911_dw_crawl_back
-xanim,viewmodel_m1911_dw_crawl_right
-xanim,viewmodel_m1911_dw_crawl_left
-xanim,viewmodel_m1911_dw_crawl_out
-xanim,viewmodel_m1911_dw_crawl_in_empty
-xanim,viewmodel_m1911_dw_crawl_forward_empty
-xanim,viewmodel_m1911_dw_crawl_back_empty
-xanim,viewmodel_m1911_dw_crawl_right_empty
-xanim,viewmodel_m1911_dw_crawl_left_empty
-xanim,viewmodel_m1911_dw_crawl_out_empty
+// --- dive-to-prone and crawl: BO3 has none, so these are the stock Python
+//     (base) and Mustang & Sally (Meat Wagon) clips with every Bloodhound gun
+//     bone keyed as the form's idle keys it. The stock clips never key the
+//     tag_*_animate bones, so while prone the speedloader, rounds and spent
+//     casings fell back to the rest pose 6-12 units off the gun (user, round 7).
+//     Built by modding-jobs\bloodhound-port-001\round8\prone_clips.py. -----
+xanim,vm_t7_bloodhound_d2p_in
+xanim,vm_t7_bloodhound_d2p_loop
+xanim,vm_t7_bloodhound_d2p_out
+xanim,vm_t7_bloodhound_crawl_in
+xanim,vm_t7_bloodhound_crawl_forward
+xanim,vm_t7_bloodhound_crawl_back
+xanim,vm_t7_bloodhound_crawl_right
+xanim,vm_t7_bloodhound_crawl_left
+xanim,vm_t7_bloodhound_crawl_out
+xanim,vm_t7_bloodhound_dw_d2p_in
+xanim,vm_t7_bloodhound_dw_d2p_in_empty
+xanim,vm_t7_bloodhound_dw_d2p_loop
+xanim,vm_t7_bloodhound_dw_d2p_loop_empty
+xanim,vm_t7_bloodhound_dw_d2p_out
+xanim,vm_t7_bloodhound_dw_d2p_out_empty
+xanim,vm_t7_bloodhound_dw_crawl_in
+xanim,vm_t7_bloodhound_dw_crawl_in_empty
+xanim,vm_t7_bloodhound_dw_crawl_forward
+xanim,vm_t7_bloodhound_dw_crawl_forward_empty
+xanim,vm_t7_bloodhound_dw_crawl_back
+xanim,vm_t7_bloodhound_dw_crawl_back_empty
+xanim,vm_t7_bloodhound_dw_crawl_right
+xanim,vm_t7_bloodhound_dw_crawl_right_empty
+xanim,vm_t7_bloodhound_dw_crawl_left
+xanim,vm_t7_bloodhound_dw_crawl_left_empty
+xanim,vm_t7_bloodhound_dw_crawl_out
+xanim,vm_t7_bloodhound_dw_crawl_out_empty
