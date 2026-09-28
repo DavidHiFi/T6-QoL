@@ -1,0 +1,76 @@
+// ============================================================================
+//  mod_scavenger.zone  -  THE SCAVENGER, Call of the Dead's explosive sniper
+//
+//  Source: Treyarch, Black Ops 1 (zombie_coast.ff), extracted from the installed
+//  game with tools\port-weapon\bo1\bo1_extract_gun.py and laid out as a T6 raw
+//  source by modding-jobs\scavenger-port-001\make_src.py. Its 9 effects are
+//  BO1's raw .efx from VenomModding/T5-MissingAssets (fx\weapon\jackal\,
+//  fx\maps\zombie\fx_zmb_coast_jackal_death.efx), shipped raw in mod.iwd the
+//  way the Thundergun's are; scripts\zm\scavenger.gsc loadfx's all of them.
+//
+//  Defs ship raw in weapons\zm\ (scavenger_zm, scavenger_upgraded_zm). BO1's
+//  second weapon, the timed-grenade bolt sniper_explosive_bolt_zm, is NOT
+//  ported as a def: every def costs a slot in the 253-weapon table. The bolt
+//  is scripted instead (scavenger.gsc), so the gun costs 2 slots, not 4.
+// ============================================================================
+
+//  View and world models. Their three materials and nine images come along as
+//  xmodel sub-assets: body (mtl_t5_weapon_zom_sniper, camo-able), lens
+//  (mtl_t5_weapon_zom_sniper_lens2) and the scrolling range-finder display
+//  (mtl_t5_weapon_sniper_glow, rebuilt on Origins' unlit rune shader).
+xmodel,t5_weapon_zom_sniper_view
+xmodel,t5_weapon_zom_sniper_world
+
+//  The bolt, in flight (projectileModel) and stuck where it lands
+//  (scavenger.gsc spawns it there for the fuse). Body material shared.
+xmodel,t5_weapon_zom_sniper_projectile
+
+camo,camo_qol_scavenger
+
+//  Scope overlays: BO1's own art (M40A3 scope for the Scavenger, the NSP-3
+//  infrared scope for the Hyena Infra-dead) on BO2's scope_overlay_m40a3
+//  recipe. Private names; the stock scope_overlay_m40a3 is a map asset.
+material,mtl_scav_scope_overlay
+material,mtl_scav_scope_overlay_ir
+
+//  BO1's bolt indicator (hud_indicator_sniper_explosive, 64x64 DXT3 out of
+//  zombie_coast.ff) on BO2's hud_grenadeicon recipe. scavenger.gsc hangs it
+//  over each live bolt, the way BO1's grenade indicator showed the bolt.
+image,scav_hud_indicator_bolt
+material,scav_hud_indicator_bolt
+
+//  The three materials the jackal .efx draw with that neither mod.ff nor every
+//  stock map carries (measured against the v2.18.0 mod.ff listing and the six
+//  map zones). The Linker copies each out of a --load'ed zone:
+//    gfx_fxt_fx_ring_spiral      muzzle flash + trail rings (so_zclassic_zm_transit)
+//    gfx_fxt_smk_def_1_z120      explosion smoke             (so_zsurvival_zm_transit)
+//  Their images (fxt_fx_ring_spiral, fxt_smk_def_1) have pixels in the
+//  startup .ipak banks on every map.
+material,gfx_fxt_fx_ring_spiral
+material,gfx_fxt_smk_def_1_z120
+
+//  The explosion's swirl (fx_jackal_exp / _ug). In no BO2 fastfile, so the
+//  first build lost that layer. Rebuilt from BO1's own material (effect,
+//  additive, feather 1/60 over 60 units, image fxt_smk_swirl) on T6's
+//  gfx_fxt_smk_spiral_add_z40 recipe: same techset, same image, BO1's feather.
+material,gfx_fxt_smk_spiral_add_z60
+
+xanim,viewmodel_zombie_sniper_ads_down
+xanim,viewmodel_zombie_sniper_ads_fire
+xanim,viewmodel_zombie_sniper_ads_rechamber
+xanim,viewmodel_zombie_sniper_ads_up
+xanim,viewmodel_zombie_sniper_d2p_in
+xanim,viewmodel_zombie_sniper_d2p_loop
+xanim,viewmodel_zombie_sniper_d2p_out
+xanim,viewmodel_zombie_sniper_fire
+xanim,viewmodel_zombie_sniper_first_raise
+xanim,viewmodel_zombie_sniper_idle_loop
+xanim,viewmodel_zombie_sniper_pullout
+xanim,viewmodel_zombie_sniper_pullout_quick
+xanim,viewmodel_zombie_sniper_putaway
+xanim,viewmodel_zombie_sniper_putaway_quick
+xanim,viewmodel_zombie_sniper_rechamber
+xanim,viewmodel_zombie_sniper_reload_empty
+xanim,viewmodel_zombie_sniper_sprint_in
+xanim,viewmodel_zombie_sniper_sprint_loop
+xanim,viewmodel_zombie_sniper_sprint_out

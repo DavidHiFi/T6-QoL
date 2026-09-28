@@ -205,7 +205,10 @@ def source_pass(port, errors, all_zones, sound_aliases):
             errors.append(f"{name}: {weapon} exceeds the 20480-byte raw weapon limit")
         fields = weapon_fields(path)
         forms[weapon] = fields
-        if fields.get("camo") != camo_name:
+        # A projectile def nobody holds (the Scavenger's bolt grenade, like
+        # stock's blundersplat dart) has no view model and so no camo to draw.
+        held = fields.get("gunModel") or fields.get("inventoryType") != "offhand"
+        if held and fields.get("camo") != camo_name:
             errors.append(f"{name}: {weapon} uses {fields.get('camo')}, expected {camo_name}")
         for key, value in fields.items():
             if not value:
@@ -221,9 +224,36 @@ def source_pass(port, errors, all_zones, sound_aliases):
     return forms
 
 
+def raw_server_fx():
+    """Effects that ship raw (fx/<name>.efx, packed into mod.iwd) AND that a server
+    script loadfx's. Plutonium loads such an effect at precache ("Loaded fx:
+    <name>" in console_zm.log), and a weapon def naming it then resolves: the
+    Thundergun's and Winter's Howl's muzzle flashes have always shipped this way.
+    A raw .efx that no server script loadfx's does NOT load (the client-only
+    Wunderfizz marker, tools/check-client-fx-precache.py), so it is not counted."""
+    fx_dir = ROOT / "fx"
+    if not fx_dir.is_dir():
+        return set()
+    raw = {p.relative_to(fx_dir).with_suffix("").as_posix().lower() for p in fx_dir.rglob("*.efx")}
+    loaded = set()
+    pattern = re.compile(r'loadfx\s*\(\s*"([^"]+)"', re.I)
+    for top in ("scripts", "maps"):
+        base = ROOT / top
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*.gsc"):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+            text = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+            loaded |= {m.group(1).replace("\\", "/").strip("/").lower() for m in pattern.finditer(text)}
+    return {("fx", n) for n in raw & loaded}
+
+
 def readback_pass(port, forms, errors, linked, everywhere):
-    """Every asset a def names must be in mod.ff or on every stock map."""
+    """Every asset a def names must be in mod.ff, on every stock map, or (fx only)
+    ship raw in mod.iwd with a server loadfx."""
     name = port["name"]
+    raw_fx = raw_server_fx()
     for weapon, fields in forms.items():
         for key, value in fields.items():
             if not value or value.lower() == "none":
@@ -238,9 +268,12 @@ def readback_pass(port, forms, errors, linked, everywhere):
                 kind = "material"
             else:
                 continue
+            if (kind, value) in raw_fx:
+                continue
             if (kind, value) not in linked and (kind, value) not in everywhere:
                 errors.append(f"{name}: {weapon} {key} names {kind} {value}, which is neither "
-                              f"in the linked mod.ff nor on every stock map; declare it in {port['zone']}")
+                              f"in the linked mod.ff nor on every stock map; declare it in {port['zone']}"
+                              + (" or ship fx/<name>.efx with a server loadfx" if kind == "fx" else ""))
     zone = zone_entries(ROOT / port["zone"])
     for kind, asset in sorted(zone):
         if kind in ("xmodel", "xanim", "fx", "camo", "material") and (kind, asset) not in linked:

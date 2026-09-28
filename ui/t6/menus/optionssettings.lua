@@ -2290,8 +2290,13 @@ CoD.OptionsSettings.CreateQolPatchesTab = function (QolPatchesTab, LocalClientIn
 	--  📝 Range is deliberately untouched: the request was infinite damage, not
 	--  infinite reach, and widening the blast would change WHERE the gun kills.
 	--  Does nothing on a map without the gun.
+	--
+	--  🛑 PACK-A-PUNCHED ONLY (user, 2026-09-27: "make sure that the buff part
+	--  only applies when it's pack-a-punched"). Until then neither damage path
+	--  checked the form, so the base gun one-shot everything too. Both now test
+	--  the upgraded flag. SCAVENGER BUFF on GAME 3 follows the same rule.
 	-- ========================================================================
-	T(QolPatchesButtons, LocalClientIndex, "WINTERS HOWL BUFF", "winters_howl_infinite", "The Winter's Howl kills anything it hits. Its blast range is unchanged.")
+	T(QolPatchesButtons, LocalClientIndex, "WINTERS HOWL BUFF", "winters_howl_infinite", "The Pack-a-Punched Winter's Howl kills anything it hits. The base gun is unchanged.")
 
 	-- ========================================================================
 	--  v2.8.2 - ROUND DELAY OFF. User request 2026-08-29: no wait between
@@ -2398,6 +2403,12 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	-- what the row does and does not register is in CreateQolTab's history.
 	T(QolGame3Buttons, LocalClientIndex, "PERMA-PERKS",        "perma_perks",        "Every perma-perk this map has, active from the start.")
 
+	-- SCAVENGER BUFF. User, 2026-09-27: "add a scavenger buff option into game 3,
+	-- so similar to the winter's howl buff ... make the scavenger when it's
+	-- pack-a-punched deal infinite damage". Pack-a-Punched only; the base gun
+	-- keeps BO1's numbers. Read at each blast in scripts\zm\scavenger.gsc.
+	T(QolGame3Buttons, LocalClientIndex, "SCAVENGER BUFF",     "scavenger_buff",     "The Pack-a-Punched Scavenger's blast kills every zombie it reaches. The base gun is unchanged.")
+
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.
 	local MagicSelector = QolGame3Buttons:addGametypeSettingLeftRightSelector(
@@ -2420,7 +2431,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 	CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 
-	return QolGame3Container                          -- 6 rows + 0 spacers = 6.0
+	return QolGame3Container                          -- 7 rows + 0 spacers = 7.0 (v2.18.x: SCAVENGER BUFF)
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)

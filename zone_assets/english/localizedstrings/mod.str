@@ -324,4 +324,17 @@ LANG_ENGLISH        "Grand Puissances"
 REFERENCE           ZM_PRISON_PERK_CHERRY
 LANG_ENGLISH        "Hold ^3[{+activate}]^7 to buy Electric Cherry [Cost: &&1]"
 
+// Bloodhound / Meat Wagon (BO3 Shadows of Evil; port by Halo / SickoHours)
+REFERENCE           ZMWEAPON_BLOODHOUND
+LANG_ENGLISH        "Bloodhound"
+
+REFERENCE           ZMWEAPON_BLOODHOUND_UPGRADED
+LANG_ENGLISH        "Meat Wagon"
+// scavenger - weapon port (tools/port-weapon)
+REFERENCE           ZMWEAPON_SCAVENGER
+LANG_ENGLISH        "Scavenger"
+
+REFERENCE           ZMWEAPON_SCAVENGER_UPGRADED
+LANG_ENGLISH        "Hyena Infra-dead"
+
 ENDMARKER

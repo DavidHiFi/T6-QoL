@@ -601,8 +601,9 @@ CoD.PrivateGameLobby.DvarDefaults["character"] = 0
 --
 --  📝 The values ARE the `starting_pistol` dvar directly: 0 = DEFAULT (stock,
 --  this map's own pistol), 1 = M1911, 2 = MAUSER (c96_zm), 3 = TAC-45
---  (fnp45_zm). qol_options.gsc::qol_opt_starting_pistol() owns the other half;
---  do not change one side without the other.
+--  (fnp45_zm), 4 = BLOODHOUND (bloodhound_zm, added 2026-09-27).
+--  qol_options.gsc::qol_opt_starting_pistol() owns the other half; do not
+--  change one side without the other.
 --
 --  📝 The hint is 63 characters. ~90 is the measured ceiling before it wraps
 --  into the map preview panel - see the MACHINE DROPS note.
@@ -620,11 +621,16 @@ CoD.PrivateGameLobby.QolStartingPistol[1].labels[1] = "DEFAULT"
 CoD.PrivateGameLobby.QolStartingPistol[1].labels[2] = "M1911"
 CoD.PrivateGameLobby.QolStartingPistol[1].labels[3] = "MAUSER"
 CoD.PrivateGameLobby.QolStartingPistol[1].labels[4] = "TAC-45"
+CoD.PrivateGameLobby.QolStartingPistol[1].labels[5] = "BLOODHOUND"
 CoD.PrivateGameLobby.QolStartingPistol[1].values = {}
 CoD.PrivateGameLobby.QolStartingPistol[1].values[1] = 0
 CoD.PrivateGameLobby.QolStartingPistol[1].values[2] = 1
 CoD.PrivateGameLobby.QolStartingPistol[1].values[3] = 2
 CoD.PrivateGameLobby.QolStartingPistol[1].values[4] = 3
+--  2026-09-27 - the Bloodhound (Black Ops III), scripts\zm\bloodhound.gsc
+--  registers it on every map: boxed with its Meat Wagon Pack-a-Punch on all but
+--  TranZit (every mode) and Origins, which get the base gun only (weapon budget).
+CoD.PrivateGameLobby.QolStartingPistol[1].values[5] = 4
 CoD.PrivateGameLobby.DvarDefaults["starting_pistol"] = 0
 CoD.PrivateGameLobby.Dvars = {}
 -- CoD.PrivateGameLobby.Dvars[1] = {}
