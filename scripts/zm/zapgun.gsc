@@ -1026,10 +1026,12 @@ microwavegun_sizzle_zombie( player, sizzle_vec, index )
             //  to sound\_unnamed\{8a417db0,17e5f16f,a58a652e}.wav - the exact
             //  three payloads this mod already ships, which is what proves the
             //  method rather than assuming it.
+            //  2026-09-28 - no fx_sizzle_blood_eyes. It draws as a white stream
+            //  out of the face on this engine, which BO1 never showed (user
+            //  request). Same removal on the fallback path below.
             self.nodeathragdoll = 1;
             self playsound( "wpn_mgun_cook_zombie" );
             self playsound( "wpn_mgun_impact_zombie" );
-            network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
             self.handle_death_notetracks = ::microwavegun_handle_death_notetracks;
             self thread zmqol_mgun_sizzle_watchdog();
 
@@ -1353,11 +1355,8 @@ zmqol_mgun_microwave_burst()
 
     self playsound( "wpn_mgun_dual_sizzle" );
 
-    //  Keep the eye blood attached to the corpse, matching the full sizzle
-    //  route above. The old positional playfx survived self_delete() and left
-    //  a stream hanging in the world after the zombie was gone.
-    if ( isdefined( self gettagorigin( "J_Eyeball_LE" ) ) )
-        network_safe_play_fx_on_tag( "zmqol_mgun_sizzle_fx", 2, level.zmqol_mgun_effects["microwavegun_sizzle_blood_eyes"], self, "J_Eyeball_LE" );
+    //  2026-09-28 - the eye fx that used to play here is gone: it drew as a
+    //  white stream out of the face (user request). See the anim branch.
 
     //  Start the swell on the same clientfield the notetrack uses, and mark it
     //  seen so nothing else tries to cut the cycle short.

@@ -466,9 +466,14 @@ freezegun_do_damage( upgraded, player, dist_ratio )
         ( level.zombie_vars[player.team]["zombie_insta_kill"] ||
           isdefined( player.personal_instakill ) && player.personal_instakill );
 
+    //  v2.18.x - THE BUFF IS FOR THE PACK-A-PUNCHED GUN ONLY. User, 2026-09-27:
+    //  "make sure that the buff part only applies when it's pack-a-punched".
+    //  The audit found this line never checked: the base Winter's Howl was also
+    //  one-shotting everything with the row on. `upgraded` is this thread's own
+    //  argument (freezegun_fired passes currentweapon == "freezegun_upgraded_zm").
     if ( b_instakill && isdefined( self.health ) )
         damage = self.health + 666;
-    else if ( getdvarintdefault( "winters_howl_infinite", 0 ) && isdefined( self.health ) && self.health > damage )
+    else if ( upgraded && getdvarintdefault( "winters_howl_infinite", 0 ) && isdefined( self.health ) && self.health > damage )
         damage = self.health;
 
     self DoDamage( damage, player.origin, player, player, "none", "MOD_PROJECTILE" );
@@ -621,7 +626,9 @@ freezegun_do_shatter( player, weap, shatter_trigger, crumple_trigger )
     n_sh_inner = freezegun_get_shatter_inner_damage( upgraded );
     n_sh_outer = freezegun_get_shatter_outer_damage( upgraded );
 
-    if ( getdvarintdefault( "winters_howl_infinite", 0 ) )
+    //  Pack-a-Punched shatters only, the same rule as the direct hit above.
+    //  `upgraded` is set a few lines up from the weapon that froze this zombie.
+    if ( upgraded && getdvarintdefault( "winters_howl_infinite", 0 ) )
     {
         n_sh_inner = 999999999;
         n_sh_outer = 999999999;

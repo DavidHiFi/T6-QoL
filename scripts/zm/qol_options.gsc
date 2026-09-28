@@ -93,7 +93,8 @@ init()
     qol_opt_dvar( "solo_ee",               "0" );
     //  STARTING PISTOL, the pre-game lobby row (user, 2026-09-11). 0 = DEFAULT
     //  (this map's own pistol), 1 = M1911, 2 = MAUSER (c96_zm), 3 = TAC-45
-    //  (fnp45_zm). Registered here only so it shows up in console autocomplete
+    //  (fnp45_zm), 4 = BLOODHOUND (bloodhound_zm, 2026-09-27).
+    //  Registered here only so it shows up in console autocomplete
     //  and holds a real value on the first open of a lobby; the row itself lives
     //  in ui_mp\t6\menus\privategamelobby_project.lua and the behaviour lives in
     //  qol_opt_starting_pistol() / qol_opt_starting_pistol_player() below.
@@ -447,12 +448,20 @@ init()
 
     //  v2.8.2 - WINTER'S HOWL INFINITE DAMAGE, user request 2026-08-29, the
     //  PATCHES tab. OFF (0) = the gun's shipped damage numbers. ON (1) makes
-    //  all four of its damage figures effectively unbounded. Read per shot by
-    //  the four freezegun_get_*_damage() accessors in
+    //  the PACK-A-PUNCHED gun's direct hit and shatter blast kill outright; the
+    //  base gun keeps BO1's numbers (user, 2026-09-27). Read per shot in
+    //  freezegun_do_damage() and freezegun_do_shatter() in
     //  maps\mp\zombies\_zm_weap_freezegun.gsc, so it is live mid-match in both
     //  directions. Does nothing on a map without the gun, and nothing at all
     //  while the zmqol_ww gate has the wonder weapons switched off.
     qol_opt_dvar( "winters_howl_infinite", "0" );
+
+    //  SCAVENGER BUFF, user request 2026-09-27, the GAME 3 tab. OFF (0) = BO1's
+    //  numbers. ON (1): the Pack-a-Punched Scavenger's blast kills every zombie
+    //  it reaches, at any round; the base Scavenger is unchanged, the same split
+    //  as WINTERS HOWL BUFF. Read at each blast in scripts\zm\scavenger.gsc, so
+    //  it is live mid-match in both directions.
+    qol_opt_dvar( "scavenger_buff", "0" );
 
     //  v2.8.2 - ROUND DELAY OFF, user request 2026-08-29, the PATCHES tab.
     //  OFF (0) = stock's 10-second gap plus the 2.5-second round-announce beat.
@@ -1965,6 +1974,7 @@ qol_opt_character()
 //  rendered above CHARACTER on every map and mode) writes `starting_pistol`:
 //      0 = DEFAULT - this map's own pistol, stock behaviour, the shipped default
 //      1 = M1911   (m1911_zm)   2 = MAUSER (c96_zm)   3 = TAC-45 (fnp45_zm)
+//      4 = BLOODHOUND (bloodhound_zm, Black Ops III, added 2026-09-27)
 //
 //  🌟 TWO HALVES, because neither half alone covers every spawn path. The level
 //  half repoints level.start_weapon (plus the three laststand pistol vars stock
@@ -1984,6 +1994,8 @@ qol_opt_character()
 //  was never precached, so asking for it falls back to stock with a log line
 //  rather than handing over a weapon that does not exist. Origins' precache
 //  ceiling (v2.15.3) is why nothing is precached here to "make sure".
+//  The Bloodhound (4) is registered on every map by scripts\zm\bloodhound.gsc,
+//  which owns its weapon budget; this file only names it.
 //
 //  🛑 ROOT SCRIPT, NO MAP REFERENCES (AI_CONTEXT rule 2): only weapon names,
 //  the dvar and level vars. Nothing here names a map, so it loads everywhere.
@@ -2000,6 +2012,9 @@ qol_opt_starting_pistol_name( n_choice )
         return "c96_zm";
     if ( n_choice == 3 )
         return "fnp45_zm";
+    //  2026-09-27 - the Bloodhound, registered on every map by bloodhound.gsc.
+    if ( n_choice == 4 )
+        return "bloodhound_zm";
     return undefined;
 }
 
@@ -2009,6 +2024,15 @@ qol_opt_starting_pistol_upgraded( str_base )
         return "c96_upgraded_zm";
     if ( str_base == "fnp45_zm" )
         return "fnp45_upgraded_zm";
+    //  The solo downed pistol is the Meat Wagon where it is registered. On
+    //  TranZit and Origins only the base Bloodhound fits the weapon
+    //  budget, so a downed solo player keeps the Bloodhound there.
+    if ( str_base == "bloodhound_zm" )
+    {
+        if ( isdefined( level.zombie_include_weapons ) && isdefined( level.zombie_include_weapons["bloodhound_upgraded_zm"] ) )
+            return "bloodhound_upgraded_zm";
+        return "bloodhound_zm";
+    }
     return "m1911_upgraded_zm";
 }
 

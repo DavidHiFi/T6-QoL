@@ -572,7 +572,10 @@ added_weapons()
         add_zombie_weapon_prison( "qcw05_zm", "qcw05_upgraded_zm", &"ZOMBIE_WEAPON_QCW05", 50, "wpck_chicom", "", undefined, 1 );
 
         include_weapon( "ak74u_extclip_zm" );
-        include_weapon( "ak74_extclip_upgraded_zm", 0 );
+        //  2026-09-27: was "ak74_extclip_upgraded_zm" (no u) since the first
+        //  checkpoint. No def has that name, so it only logged "Could not load
+        //  weapon" and took a weapon-table slot on Mob and Docks.
+        include_weapon( "ak74u_extclip_upgraded_zm", 0 );
         add_zombie_weapon_prison( "ak74u_extclip_zm", "ak74u_extclip_upgraded_zm", &"ZOMBIE_WEAPON_AK74U", 1200, "smg", "", undefined, 1 );
 
         include_weapon( "beretta93r_extclip_zm" );

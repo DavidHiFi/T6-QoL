@@ -11844,8 +11844,12 @@ zmqol_mp_weapons_init()
 
     // Reachable only via a PaP attachment or as a projectile - never a box
     // result, but they must be included or their owner cannot resolve them.
-    zmqol_include_variant( "vector_extclip_zm" );
-    zmqol_include_variant( "vector_extclip_upgraded_zm" );
+    //  2026-09-27: vector_extclip_zm / _upgraded_zm are no longer included.
+    //  Nothing reaches them: the Vector's upgrade is vector_upgraded_zm, no def
+    //  names them as altWeapon, and add_attachments() only reads the
+    //  pap_attach_qol.csv row of a gun registered with add_zombie_weapon. They
+    //  cost a weapon-table slot on every map, and those two slots are what let
+    //  the Bloodhound be a starting pistol on every map (scripts\zm\bloodhound.gsc).
     zmqol_include_variant( "gl_sig556_upgraded_zm" );
     zmqol_include_variant( "sf_sa58_upgraded_zm" );
     zmqol_include_variant( "crossbow_explosive_bolt_zm" );

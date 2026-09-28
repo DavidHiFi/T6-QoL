@@ -1,0 +1,216 @@
+{
+    "$schema": "http://openassettools.dev/schema/material.v1.json",
+    "_game": "t6",
+    "_type": "material",
+    "_version": 1,
+    "cameraRegion": "litTrans",
+    "constants": [
+        {
+            "literal": [
+                4.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "hdrAmount"
+        },
+        {
+            "literal": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Reflection_Amount"
+        },
+        {
+            "literal": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Rotation"
+        },
+        {
+            "literal": [
+                0.38,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Scroll"
+        },
+        {
+            "literal": [
+                0.5,
+                0.5,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Origin"
+        },
+        {
+            "literal": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Offset"
+        },
+        {
+            "literal": [
+                1.0,
+                1.0,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Scale"
+        },
+        {
+            "literal": [
+                1.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Alpha"
+        },
+        {
+            "literal": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Layer1Depth"
+        },
+        {
+            "literal": [
+                1.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Gloss_Amount"
+        }
+    ],
+    "contents": 1,
+    "gameFlags": [
+        "10"
+    ],
+    "layeredSurfaceTypes": 536870912,
+    "sortKey": 40,
+    "stateBits": [
+        {
+            "alphaTest": "gt0",
+            "blendOpAlpha": "add",
+            "blendOpRgb": "add",
+            "colorWriteAlpha": true,
+            "colorWriteRgb": true,
+            "cullFace": "none",
+            "depthTest": "less_equal",
+            "depthWrite": false,
+            "dstBlendAlpha": "one",
+            "dstBlendRgb": "invsrcalpha",
+            "polygonOffset": "offset0",
+            "polymodeLine": false,
+            "srcBlendAlpha": "invdestalpha",
+            "srcBlendRgb": "srcalpha"
+        },
+        {
+            "alphaTest": "disabled",
+            "blendOpAlpha": "disabled",
+            "blendOpRgb": "disabled",
+            "colorWriteAlpha": false,
+            "colorWriteRgb": true,
+            "cullFace": "back",
+            "depthTest": "less_equal",
+            "depthWrite": false,
+            "dstBlendAlpha": "zero",
+            "dstBlendRgb": "zero",
+            "polygonOffset": "offset2",
+            "polymodeLine": true,
+            "srcBlendAlpha": "one",
+            "srcBlendRgb": "one"
+        },
+        {
+            "alphaTest": "disabled",
+            "blendOpAlpha": "disabled",
+            "blendOpRgb": "add",
+            "colorWriteAlpha": true,
+            "colorWriteRgb": true,
+            "cullFace": "none",
+            "depthTest": "less_equal",
+            "depthWrite": false,
+            "dstBlendAlpha": "zero",
+            "dstBlendRgb": "one",
+            "polygonOffset": "offset0",
+            "polymodeLine": false,
+            "srcBlendAlpha": "one",
+            "srcBlendRgb": "one"
+        }
+    ],
+    "stateBitsEntry": [
+        -1,
+        -1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        -1,
+        -1,
+        2
+    ],
+    "stateFlags": 20,
+    "surfaceFlags": 0,
+    "surfaceTypeBits": 0,
+    "techniqueSet": "mc_sw4_3d_unlit_1layer_nofog_91f00f80",
+    "textureAtlas": {
+        "columns": 1,
+        "rows": 1
+    },
+    "textures": [
+        {
+            "image": "zombie_sniper_glow_c",
+            "isMatureContent": false,
+            "name": "Layer1Map",
+            "samplerState": {
+                "clampU": false,
+                "clampV": false,
+                "clampW": false,
+                "filter": "aniso4x",
+                "mipMap": "linear"
+            },
+            "semantic": "colorMap"
+        }
+    ]
+}
