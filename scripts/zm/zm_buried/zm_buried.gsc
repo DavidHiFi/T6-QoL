@@ -118,12 +118,62 @@ init()
 {
     zmqol_precache_survival_characters();
     added_weapons();
-    move_divetonuke_collision();
+    move_cherry_collision();
 
     // DIAGNOSTIC, still open: Perma-Flopper does not explode in classic Buried.
     // Unrelated to the survival locations - it is a classic-only feature and the
     // bug predates all of that work - so the probe stays until it is read.
     level thread zmqol_flopper_probe();
+}
+
+// ============================================================================
+//  ELECTRIC CHERRY TAKES THE PhD MACHINE'S SPOT  (user, 2026-09-28)
+//
+//  "buried is the only map ... that has the phd flopper perma perk ... get rid
+//  of phd flopper and instead replace it with electric cherry".
+//
+//  The PhD machine was never stock: it is the struct this mod copied from
+//  BO2-Reimagined into maps\mp\zm_buried.d3dbsp. That struct now names
+//  specialty_grenadepulldeath and the Cherry model, so stock
+//  perk_machine_spawn_init() builds a Cherry machine in the same place and
+//  the same facing. The Perma-Flopper upgrade is untouched: it is Buried's own
+//  persistent ability and never needed the machine.
+//
+//  Toplayer budget: Buried classic is the fullest set in the game (63 stock).
+//  perk_dive_to_nuke's 1 bit comes out (perks_register_clientfield skips it on
+//  Buried on both sides) and perk_electric_cherry's 1 bit goes in. Still 63.
+//
+//  Power: stock Buried's power switch notifies "electric_cherry_on" through
+//  _zm_power::perk_power_on(), but zmqol_enable_electric_cherry() unhooks the
+//  think thread that listens for it. loc_common's power-on half is the same
+//  code Docks uses for its Cherry machine; it is run here once the switch is
+//  thrown.
+// ============================================================================
+//  Reimagined's collision fix for this spot (d961622d): the stock clip sits
+//  in the walkway. It is the machine's position, not PhD's, so it carries over.
+move_cherry_collision()
+{
+    if ( !is_gametype_active( "zclassic" ) )
+        return;
+
+    trigs = getentarray( "vending_electriccherry", "target" );
+
+    foreach ( trig in trigs )
+    {
+        if ( isdefined( trig.clip ) )
+            trig.clip.origin += ( 0, 0, -128 );
+    }
+
+    level thread zmqol_power_cherry_machine();
+}
+
+zmqol_power_cherry_machine()
+{
+    level endon( "end_game" );
+
+    flag_wait( "power_on" );
+    wait_network_frame();
+    scripts\zm\locs\loc_common::zmqol_power_electric_cherry_machines();
 }
 
 zmqol_flopper_probe()
@@ -261,27 +311,3 @@ added_weapons()
         add_shared_ammo_weapon( "ak74u_extclip_zm", "ak74u_zm" );
     }
 }
-
-move_divetonuke_collision()
-{
-	if (!is_gametype_active("zclassic"))
-	{
-		return;
-	}
-
-	trigs = getentarray("vending_divetonuke", "target");
-
-	if (!isdefined(trigs))
-	{
-		return;
-	}
-
-	foreach (trig in trigs)
-	{
-		if (isdefined(trig.clip))
-		{
-			trig.clip.origin += (0, 0, -128);
-		}
-	}
-}
-

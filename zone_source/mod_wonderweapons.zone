@@ -535,7 +535,10 @@ material,gfx_fxt_env_electric_arc2_add_vm
 image,fxt_env_lightning_bolt_air
 material,gfx_fxt_env_lightning_bolt_air_add
 techniqueset,effect_60e2624u
-image,fxt_env_lightning_bolt_air
+// zm_qol 2026-09-28: Mob's own sheet (Treyarch spells it "lighting"). The T5
+// port pointed this material at T5's grey 2x2 fxt_env_lightning_bolt_air, so
+// the 2x4 atlas cut its bolts in half, on every map including Mob and Origins.
+image,fxt_env_lighting_bolt_air
 material,gfx_fxt_env_lightning_bolt_body
 techniqueset,effect_z096f2e2
 image,fxt_env_lighting_bolt_ground

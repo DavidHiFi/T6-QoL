@@ -593,4 +593,15 @@ body
 	ai_zombie_crawl_freeze_death_01
 	ai_zombie_crawl_freeze_death_02
 
+
+	// Electric Cherry stun (2026-09-28): Mob's five clips, from zm_prison.ff
+	// which build_ff.bat --loads. The state is the one stock's core
+	// _zm_perk_electric_cherry::electric_cherry_stun() plays with animscripted.
+	ai_zombie_afterlife_stun_a
+	ai_zombie_afterlife_stun_b
+	ai_zombie_afterlife_stun_c
+	ai_zombie_afterlife_stun_d
+	ai_zombie_afterlife_stun_e
+
 } // end body
+
