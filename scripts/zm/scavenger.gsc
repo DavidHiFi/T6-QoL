@@ -119,6 +119,7 @@ scavenger_enabled( map, mode )
 
 scavenger_on_player_connect()
 {
+    level endon( "end_game" );
     for (;;)
     {
         level waittill( "connecting", player );
@@ -129,6 +130,7 @@ scavenger_on_player_connect()
 scavenger_watch_impact()
 {
     self endon( "disconnect" );
+    level endon( "end_game" );
 
     for (;;)
     {
@@ -158,6 +160,7 @@ scavenger_watch_impact()
 //  away early (the zombie it rode was deleted) still blows where it last was.
 scavenger_bolt( v_point, b_upgraded )
 {
+    level endon( "end_game" );
     v_eye = self geteye();
     v_dir = vectornormalize( v_point - v_eye );
 
@@ -242,6 +245,8 @@ scavenger_explode( v_blast, b_upgraded )
     b_buff = b_upgraded && getdvarint( "scavenger_buff" ) == 1;
     a_zombies = getaispeciesarray( level.zombie_team, "all" );
     n_radius_sq = n_radius * n_radius;
+    b_hit = 0;
+    b_kill = 0;
 
     for ( i = 0; i < a_zombies.size; i++ )
     {
@@ -255,14 +260,34 @@ scavenger_explode( v_blast, b_upgraded )
 
         n_damage = level.scavenger_damage;
 
-        if ( b_buff && isdefined( e_zombie.health ) && e_zombie.health > n_damage )
+        // Preserve boss armor, immunity and custom death behavior. The unlimited
+        // damage option applies only to stock humanoid zombies.
+        if ( b_buff && isdefined( e_zombie.animname ) && e_zombie.animname == "zombie" &&
+             isdefined( e_zombie.health ) && e_zombie.health > n_damage )
             n_damage = e_zombie.health;
+
+        n_health_before = e_zombie.health;
 
         if ( isdefined( self ) && isplayer( self ) )
             e_zombie dodamage( n_damage, v_blast, self, self, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
         else
             e_zombie dodamage( n_damage, v_blast, undefined, undefined, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
+
+        // DoDamage applies the actor's own damage override before returning.
+        // Rejected damage produces no feedback. Never infer a hit from distance.
+        if ( !isdefined( e_zombie ) || !isalive( e_zombie ) )
+        {
+            b_hit = 1;
+            b_kill = 1;
+        }
+        else if ( isdefined( n_health_before ) && e_zombie.health < n_health_before )
+            b_hit = 1;
     }
+
+    // One response per explosion, owned by the shooter. A kill takes precedence
+    // over nonlethal hits, so a horde does not play dozens of feedback sounds.
+    if ( b_hit && isdefined( self ) && isplayer( self ) )
+        self thread scripts\zm\quality_of_life::updatedamagefeedback( "MOD_EXPLOSIVE", self, b_kill, 0 );
 }
 
 //  BO1's sniper_explosive_death_response(): a zombie the blast kills turns to
@@ -271,6 +296,11 @@ scavenger_explode( v_blast, b_upgraded )
 //  way BO1's player_add_points( "death" ) did.
 scavenger_death_response()
 {
+    // Special actors own quest events, round completion, drops and corpse FX.
+    // Their native death path must survive a Scavenger kill.
+    if ( !isdefined( self.animname ) || self.animname != "zombie" )
+        return 0;
+
     if ( !isdefined( self.damageweapon ) || !isdefined( self.damagemod ) )
         return 0;
 
