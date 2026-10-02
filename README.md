@@ -223,7 +223,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Church
 
 * **Barricades in Survival:**
-  * Windows start boarded up, zombies tear the boards off to get in, and the Carpenter power-up drops. Brutus never smashes barricades.
+  * Windows start boarded up, zombies tear the boards off to get in, and the Carpenter power-up drops. Brutus smashes barricades as he does in the stock game.
 
 * **Der Wunderfizz Machine on all maps:**
   * The random perk machine is available on every map, not just Origins.
