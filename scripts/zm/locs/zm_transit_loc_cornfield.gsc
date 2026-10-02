@@ -541,6 +541,7 @@ init_barriers()
 	// Restored: the invisible wall that keeps players inside the cornfield.
 	collision = spawn("script_model", (10500, -850, 0), 1);
 	collision setmodel("zm_collision_transit_cornfield_survival");
+	collision hide();
 	collision disconnectpaths();
 
 	// cornfield left

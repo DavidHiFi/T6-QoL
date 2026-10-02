@@ -1642,6 +1642,7 @@ init_barriers()
 {
 	collision = spawn("script_model", (-5000, -6700, 0), 1);
 	collision setmodel("zm_collision_transit_diner_survival");
+	collision hide();
 	collision disconnectpaths();
 
 	origin = (-6350, -7046, -60);

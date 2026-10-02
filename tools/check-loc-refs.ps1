@@ -143,5 +143,9 @@ if ($bad.Count -gt 0) {
     exit 1
 }
 
+# Collision visibility is part of the location source contract.
+& python (Join-Path $PSScriptRoot "check-collision-barriers.py") --root $Root
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
 Write-Host "check-loc-refs: PASS - every in-mod cross-script call resolves"
 exit 0

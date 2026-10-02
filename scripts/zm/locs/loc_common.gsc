@@ -298,6 +298,7 @@ increase_pap_collision()
 			collision = spawn("script_model", pap_trigger.clip.origin + anglestoforward(pap_trigger.clip.angles) * move_amount * -1, 1);
 			collision.angles = pap_trigger.clip.angles;
 			collision setmodel("zm_collision_perks1");
+			collision hide();
 			collision.script_noteworthy = "clip";
 			collision disconnectpaths();
 			pap_trigger.clip2 = collision;
@@ -322,6 +323,13 @@ barrier(model, origin, angles, disconnect_paths = 0)
 
 	barrier.angles = angles;
 	barrier setModel(model);
+
+	// Stock mc/global_invisible writes depth. Hide collision geometry without
+	// changing solidity or the path blocker; visible scenery still renders.
+	if (issubstr(model, "collision_"))
+	{
+		barrier hide();
+	}
 
 	if (disconnect_paths)
 	{
