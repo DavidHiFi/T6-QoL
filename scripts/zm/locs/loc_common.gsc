@@ -303,6 +303,7 @@ increase_pap_collision()
 			collision disconnectpaths();
 			pap_trigger.clip2 = collision;
 
+			pap_trigger.clip hide();
 			pap_trigger.clip.origin += anglestoforward(pap_trigger.clip.angles) * move_amount;
 		}
 	}

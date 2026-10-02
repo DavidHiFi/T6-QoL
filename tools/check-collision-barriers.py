@@ -33,6 +33,7 @@ def check(root):
     assert re.search(r'if\s*\(disconnect_paths\)\s*\{\s*barrier disconnectPaths\(\);\s*\}', barrier), "Preserve conditional zombie path blocker"
 
     protected = [barrier, body(common, "increase_pap_collision")]
+    assert "pap_trigger.clip hide();" in protected[1], "Hide the moved PaP clip as well as the added clip"
     for filename, model in [
         ("loc_common.gsc", "zm_collision_perks1"),
         ("zm_transit_loc_diner.gsc", "zm_collision_transit_diner_survival"),
