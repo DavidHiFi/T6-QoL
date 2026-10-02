@@ -1,0 +1,116 @@
+{
+  "reference": "Stock zm/playeranim.script selects pistol and RPG idle, movement and fire by weaponClass; playerAnimType crossbow only changes the reload. The BO1 retail definitions (raw/weapons/sp) are Wunderwaffe rifle/default and Thundergun rifle/crossbow. Native MM1 and RPG categories remain unchanged.",
+  "models": {
+    "t7_bloodhound_world": {
+      "reference": "Native Python world grip. Match heel height and nine lower-palm backstrap triangle sections. Preserve Bloodhound scale and barrel direction.",
+      "translationFromDonorCoD": [
+        -12.195645531739812,
+        0,
+        -3.8624899387359615
+      ],
+      "rootRotation": [
+        -0.7071068286895752,
+        0,
+        0,
+        0.7071068286895752
+      ],
+      "boundsMin": [
+        -14.16011905670166,
+        -6.2151970863342285,
+        -1.050845742225647
+      ],
+      "boundsMax": [
+        -4.879998683929443,
+        0.269885778427124,
+        1.0044238567352295
+      ],
+      "muzzleTag": "tag_flash",
+      "muzzlePosition": [
+        -5.15886040600739,
+        -0.0004558563232421875,
+        -0.5749907493591304
+      ]
+    },
+    "t7_bloodhound_world_lh": {
+      "reference": "Native Python world grip. Match heel height and nine lower-palm backstrap triangle sections. Preserve Bloodhound scale and barrel direction.",
+      "translationFromDonorCoD": [
+        -12.195645531739812,
+        0,
+        -3.8624899387359615
+      ],
+      "rootRotation": [
+        -0.7071068286895752,
+        0,
+        0,
+        0.7071068286895752
+      ],
+      "boundsMin": [
+        -14.16011905670166,
+        -6.2151970863342285,
+        -1.050845742225647
+      ],
+      "boundsMax": [
+        -4.879999160766602,
+        0.269885778427124,
+        1.0044238567352295
+      ],
+      "muzzleTag": "tag_flash1",
+      "muzzlePosition": [
+        -5.15886040600739,
+        -0.0004558563232421875,
+        -0.5749907493591304
+      ]
+    }
+  },
+  "weapons": {
+    "bloodhound_zm": {
+      "weaponClass": "pistol",
+      "playerAnimType": "default",
+      "inventoryType": "primary",
+      "worldModel": "t7_bloodhound_world",
+      "gunModel": "t7_bloodhound_view"
+    },
+    "bloodhound_upgraded_zm": {
+      "weaponClass": "pistol",
+      "playerAnimType": "dualwield",
+      "inventoryType": "primary",
+      "worldModel": "t7_bloodhound_world",
+      "gunModel": "t7_bloodhound_view"
+    },
+    "bloodhoundlh_upgraded_zm": {
+      "weaponClass": "pistol",
+      "playerAnimType": "default",
+      "inventoryType": "dwlefthand",
+      "worldModel": "t7_bloodhound_world_lh",
+      "gunModel": "t7_bloodhound_view_lh"
+    },
+    "tesla_gun_zm": {
+      "weaponClass": "rifle",
+      "playerAnimType": "default",
+      "inventoryType": "primary",
+      "worldModel": "t6_wpn_zmb_tesla_world",
+      "gunModel": "t6_wpn_zmb_tesla_view"
+    },
+    "tesla_gun_upgraded_zm": {
+      "weaponClass": "rifle",
+      "playerAnimType": "default",
+      "inventoryType": "primary",
+      "worldModel": "t6_wpn_zmb_tesla_world",
+      "gunModel": "t6_wpn_zmb_tesla_view"
+    },
+    "thundergun_zm": {
+      "weaponClass": "rifle",
+      "playerAnimType": "crossbow",
+      "inventoryType": "primary",
+      "worldModel": "t5_wpn_zmb_thundergun_world",
+      "gunModel": "t5_wpn_zmb_thundergun_view"
+    },
+    "thundergun_upgraded_zm": {
+      "weaponClass": "rifle",
+      "playerAnimType": "crossbow",
+      "inventoryType": "primary",
+      "worldModel": "t5_wpn_zmb_thundergun_world",
+      "gunModel": "t5_wpn_zmb_thundergun_view"
+    }
+  }
+}

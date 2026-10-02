@@ -409,6 +409,14 @@ def main():
         return 0
 
     errors = []
+    # The world roots and grip pivots are independent of first-person clips.
+    # Donor skeletons can also be checked with check-world-grip.py --model-root.
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("world_grip", ROOT / "tools/check-world-grip.py")
+    world_grip = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(world_grip)
+    if world_grip.run():
+        errors.append("third-person world grip source check failed")
     contracts = json.loads(CONTRACTS.read_text(encoding="utf-8"))["ports"]
     all_zones = set()
     for path in (ROOT / "zone_source").glob("*.zone"):
