@@ -251,6 +251,17 @@ LUI.createMenu.AmmoAreaZombie = function (f1_arg0)
 	return f1_local0
 end
 
+-- Slot 1 owns alternate fire. Slot 3 owns equipment. Slot 4 remains mines.
+-- Layout indices affect icon positions only, never +actionslot key bindings.
+CoD.AmmoAreaZombie.ActionSlotLayoutIndex = function (slotIndex)
+    if slotIndex == 3 then
+        return 1
+    elseif slotIndex == 1 then
+        return 3
+    end
+    return slotIndex
+end
+
 CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 	if f2_arg0.actionSlots == nil then
 		f2_arg0.actionSlots = {}
@@ -261,6 +272,8 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 		f2_arg0.actionSlots = {}
 	end
 	for f2_local4, f2_local12 in pairs(f2_arg1.actionSlotData) do
+		-- Keep equipment below mines while preserving the actual key binding.
+		local layoutSlot = CoD.AmmoAreaZombie.ActionSlotLayoutIndex(f2_local4)
 		local f2_local13 = CoD.AmmoAreaZombie.CircleSize / 4
 		local f2_local14 = f2_local13 * f2_local12.aspectRatio
 		local f2_local5 = nil
@@ -270,7 +283,7 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 			f2_local5 = CoD.HUDAlphaEmpty
 		end
 		local f2_local6, f2_local7 = nil
-		if f2_local4 == 1 then
+		if layoutSlot == 1 then
 			f2_local7 = {
 				left = -f2_local14 / 2,
 				top = CoD.AmmoAreaZombie.CircleSize / 4 - f2_local13 / 2 - 9,
@@ -281,7 +294,7 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 				rightAnchor = false,
 				bottomAnchor = false
 			}
-		elseif f2_local4 == 2 then
+		elseif layoutSlot == 2 then
 			f2_local7 = {
 				left = -f2_local14 / 2,
 				top = -CoD.AmmoAreaZombie.CircleSize / 4 - f2_local13 / 2 + 2,
@@ -292,7 +305,7 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 				rightAnchor = false,
 				bottomAnchor = true
 			}
-		elseif f2_local4 == 3 then
+		elseif layoutSlot == 3 then
 			f2_local7 = {
 				left = CoD.AmmoAreaZombie.CircleSize / 4 - f2_local14 / 2 - 2,
 				top = -f2_local13 / 2,
@@ -303,7 +316,7 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 				rightAnchor = false,
 				bottomAnchor = false
 			}
-		elseif f2_local4 == 4 then
+		elseif layoutSlot == 4 then
 			f2_local7 = {
 				left = -CoD.AmmoAreaZombie.CircleSize / 4 - f2_local14 / 2 + 5,
 				top = -f2_local13 / 2,
@@ -327,7 +340,7 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 				f2_local9:setAlpha(f2_local5)
 				f2_local9:setImage(f2_local12.material)
 				Widget:addElement(f2_local9)
-				if f2_local4 ~= 1 and f2_local12.hasSelectFireAttachment == false then
+				if f2_local4 ~= 1 and f2_local4 ~= 3 and f2_local12.hasSelectFireAttachment == false then
 					local f2_local10 = LUI.UIText.new()
 					f2_local10:setLeftRight(false, false, -10, 10)
 					f2_local10:setTopBottom(false, false, -CoD.textSize.Default / 2, CoD.textSize.Default / 2)
@@ -342,7 +355,7 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 						f2_local10 = 200
 					end
 					local f2_local11 = nil
-					if f2_local4 == 1 then
+					if layoutSlot == 1 then
 						f2_local11 = {
 							leftAnchor = false,
 							rightAnchor = true,
@@ -350,11 +363,11 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 							right = 0,
 							topAnchor = false,
 							bottomAnchor = false,
-							top = -f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
-							bottom = f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
+							top = -f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
+							bottom = f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
 							alignment = LUI.Alignment.Right
 						}
-					elseif f2_local4 == 3 then
+					elseif layoutSlot == 3 then
 						f2_local11 = {
 							leftAnchor = false,
 							rightAnchor = true,
@@ -362,11 +375,11 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 							right = 0,
 							topAnchor = false,
 							bottomAnchor = false,
-							top = -f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
-							bottom = f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
+							top = -f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
+							bottom = f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
 							alignment = LUI.Alignment.Right
 						}
-					elseif f2_local4 == 2 then
+					elseif layoutSlot == 2 then
 						f2_local11 = {
 							leftAnchor = false,
 							rightAnchor = true,
@@ -374,11 +387,11 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 							right = 0,
 							topAnchor = false,
 							bottomAnchor = true,
-							top = -f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
-							bottom = f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
+							top = -f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
+							bottom = f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
 							alignment = LUI.Alignment.Right
 						}
-					elseif f2_local4 == 4 then
+					elseif layoutSlot == 4 then
 						f2_local11 = {
 							leftAnchor = false,
 							rightAnchor = true,
@@ -386,8 +399,8 @@ CoD.AmmoAreaZombie.UpdateActionSlots = function (f2_arg0, f2_arg1)
 							right = 0,
 							topAnchor = false,
 							bottomAnchor = true,
-							top = -f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
-							bottom = f2_local14 / 2 - f2_local4 * f2_local14 - f2_local10,
+							top = -f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
+							bottom = f2_local14 / 2 - layoutSlot * f2_local14 - f2_local10,
 							alignment = LUI.Alignment.Right
 						}
 					end
