@@ -106,7 +106,7 @@ struct_init()
 
 	//  Origins' own Pack-a-Punch out of the struct index BEFORE this arena
 	//  registers its own below - otherwise the singular
-	//  getent( "vending_packapunch" ) lookups in new_pap_trigger() and
+	//  getent( "vending_packapunch" ) lookups in qol_ipap_trigger() and
 	//  _zm_perks::vending_weapon_upgrade() can bind the map's machine out in No
 	//  Man's Land instead of ours, which is what broke Instant PaP on Trenches.
 	scripts\zm\locs\loc_common::drop_map_pap_structs();

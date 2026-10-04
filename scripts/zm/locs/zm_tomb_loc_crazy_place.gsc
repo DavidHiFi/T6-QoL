@@ -148,7 +148,7 @@ struct_init()
 	//  "crazy place pap: trigger 1 machine at (-5,-8,335)" - the map's own
 	//  machine at the Excavation Site was being spawned alongside this one, and
 	//  every stock lookup is written for a map with ONE machine:
-	//    * quality_of_life.gsc::new_pap_trigger() takes trigger [0] and
+	//    * qol_instant_pap.gsc::qol_ipap_trigger() takes trigger [0] and
 	//      getent( "vending_packapunch", "targetname" ) and builds the instant
 	//      radius trigger there - i.e. at the Excavation Site, outside the arena.
 	//    * _zm_perks::vending_weapon_upgrade() (stock mode) does
@@ -386,7 +386,7 @@ zmqol_cp_pap_built_pose()
 //  (stock's pack_a_punch_intro_trigger sits 95 to the machine's RIGHT, and
 //  the base's front face is at -34.5), and a player whose origin sits against
 //  a clip face at -24 is 39 from the machine origin - inside the mod's
-//  INSTANT PAP trigger_radius (60, quality_of_life.gsc::new_pap_trigger) and,
+//  INSTANT PAP trigger_radius (60, qol_instant_pap.gsc::qol_ipap_trigger) and,
 //  by one unit, inside stock's trigger_radius_use 40 (_zm_perks.gsc:2877) for
 //  when INSTANT PAP is off. Full-depth coverage of the base front would put
 //  that player at 49.5 and break stock-mode use. The machine's struct angles
