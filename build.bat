@@ -74,6 +74,16 @@ if not exist "%~dp0tools\check-lobby-options.ps1" (
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lobby-options.ps1"
 if errorlevel 1 goto lobbyoptionsfail
 
+REM --- LUI event guard: ui\t6\codroot.lua + ui\t6\mainlobby.lua -----------------
+REM  The block that keeps a throwing menu handler from ending the UI VM ships in
+REM  both files and must stay identical. It was lost from every build once
+REM  already. -PostPack below proves it reached mod.iwd.
+if not exist "%~dp0tools\check-lui-guard.ps1" (
+    color C & echo. & echo   tools\check-lui-guard.ps1 is missing - cannot verify the LUI event guard. & pause & exit /b 1
+)
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\check-lui-guard.ps1"
+if errorlevel 1 goto luiguardfail
+
 REM --- client HUD slot budget (v2.17.41) --------------------------------------
 REM  The engine draws at most 31 archived + 31 non-archived hudelems per client
 REM  and silently drops the rest. Every creation site must be in
@@ -282,6 +292,10 @@ REM  Same reasoning for the menu art: prove the 20 textures are actually inside
 REM  the archive, under images/, and not merely sitting in images_menu\.
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-menu-art-modgated.ps1" -PostPack
 if errorlevel 1 goto menuartfail
+
+REM  And the LUI event guard: both files inside the built mod.iwd, guard intact.
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-lui-guard.ps1" -PostPack
+if errorlevel 1 goto luiguardfail
 
 echo.
 echo [3/9] Verifying all 5 source files are present...
@@ -666,6 +680,14 @@ exit /b 1
 color C
 echo.
 echo   BUILD STOPPED: the permanent lobby-option regression gate failed.
+if not defined OFFLINE pause
+exit /b 1
+
+:luiguardfail
+color C
+echo.
+echo   BUILD STOPPED: the LUI event guard gate failed - see the lines above and
+echo   the header of ui\t6\codroot.lua.
 if not defined OFFLINE pause
 exit /b 1
 
