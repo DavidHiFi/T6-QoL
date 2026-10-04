@@ -21163,7 +21163,12 @@ zmqol_patches_watch()
     //  cached barrier range below is the real stock value, not undefined.
     flag_wait( "initial_blackscreen_passed" );
 
-    n_dt_stock = getdvarintdefault( "perk_weapRateEnhanced", 1 );
+    //  🛑 NOT READ FROM THE DVAR. Dvars outlive fast_restart, map_restart and a
+    //  map change, and this loop is the only writer of 0. With DOUBLE TAP 1.0 on
+    //  at a restart, the read cached 0 as "stock" and switching the row off left
+    //  Double Tap 2.0 disabled until the game was closed. 1 is the boot value
+    //  measured in the header above.
+    n_dt_stock = 1;
 
     n_barrier_stock = 109.8;
 
