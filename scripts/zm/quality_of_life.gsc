@@ -1487,7 +1487,8 @@ init()
     level thread counters_onplayerconnect();
 
     // --- deathmachine_powerup ---
-    level thread dm_onplayerconnect();
+    //  The pickup hook and the Death Machine run live in
+    //  scripts/zm/qol_powerup_dispatch.gsc, installed from its own init().
     precachemodel( "zombie_pickup_minigun" );
     precacheitem( "deathmachine_zm" );
     level.deathmachine_weapon = "deathmachine_zm";
@@ -1655,7 +1656,7 @@ bo4maxammo_onplayerspawned()
     {
         self waittill("spawned_player");
         //  ====================================================================
-        //  v2.13.0 - THE SAME CO-OP RACE AS dm_onplayerspawned(), SAME FIX:
+        //  v2.13.0 - THE SAME CO-OP RACE THE OLD DEATH MACHINE HOOK HAD, SAME FIX:
         //  claim the flag BEFORE the wait, not after it.
         //
         //  This is a per-player thread installing a level-wide replaceFunc.
@@ -3840,75 +3841,9 @@ shield_hud()
 // ============================================================================
 //  deathmachine_powerup  (was deathmachine_powerup.gsc)
 // ============================================================================
-dm_onplayerconnect()
-{
-    for ( ;; )
-    {
-        level waittill( "connected", player );
-        player thread dm_onplayerspawned();
-    }
-}
-
-dm_onplayerspawned()
-{
-    self endon( "disconnect" );
-    level endon( "end_game" );
-    for ( ;; )
-    {
-        self waittill( "spawned_player" );
-        deathmachine_clear_powerup_state( self );
-        //  ====================================================================
-        //  🛑 v2.13.0 - THE CO-OP CRASH. THE FLAG IS CLAIMED *BEFORE* THE WAIT,
-        //  AND THAT ONE LINE IS THE WHOLE FIX.
-        //
-        //  This is a PER-PLAYER thread (dm_onplayerconnect threads one per
-        //  player), and it installed a LEVEL-WIDE hook. The guard tested
-        //  level.deathmachine_powerup_init_done and only set it AFTER `wait 2`,
-        //  so in co-op every player's thread passed the test inside the same
-        //  window - they all spawn together at match start - and every one of
-        //  them then ran the install block.
-        //
-        //  🌟 WHY THAT CRASHES, EXACTLY. The block saves the current handler and
-        //  then overwrites it:
-        //        level.original_deathmachine_powerup_grab = level._zombiemode_powerup_grab;
-        //        level._zombiemode_powerup_grab           = ::custom_powerup_grab;
-        //  The FIRST thread saves the real handler (stock's, or the map's own -
-        //  Origins' ::tomb_powerup_grab). The SECOND thread, resuming from its
-        //  own wait a frame later, saves what the first one just installed:
-        //  ::custom_powerup_grab ITSELF. So original == custom.
-        //
-        //  custom_powerup_grab()'s last line chains the saved handler:
-        //        level thread [[ level.original_deathmachine_powerup_grab ]]( ... );
-        //  which is now itself. Picking up ANY power-up that is not the Death
-        //  Machine or Zombie Blood - Max Ammo, Nuke, Insta-Kill, Carpenter,
-        //  Double Points, Fire Sale - therefore spawns a thread that spawns a
-        //  thread that spawns a thread, with no wait anywhere in the chain, and
-        //  the server dies on the spot. Two players is enough; solo can never
-        //  reach it because there is only ever one thread.
-        //
-        //  🌟 THE FIX IS ATOMIC BECAUSE GSC IS COOPERATIVE. There is no
-        //  preemption between the isDefined test and the assignment below - a
-        //  thread only yields at a wait - so exactly one player's thread can
-        //  ever win the claim, and the losers skip the block entirely. The
-        //  `wait 2` still happens inside the winner, so the map's own handler is
-        //  still in place before it is chained; only the bookkeeping moved.
-        //
-        //  📝 Same defect, same fix, in bo4maxammo_onplayerspawned() above.
-        //  ====================================================================
-        if ( !isDefined( level.deathmachine_powerup_init_done ) )
-        {
-            level.deathmachine_powerup_init_done = 1;
-            wait 2;
-            if ( isDefined( level._zombiemode_powerup_grab ) )
-            {
-                level.original_deathmachine_powerup_grab = level._zombiemode_powerup_grab;
-            }
-            level._zombiemode_powerup_grab = ::custom_powerup_grab;
-        }
-        self notify( "restart_deathmachine_test" );
-        //self thread powerup_test();
-    }
-}
+//  The level._zombiemode_powerup_grab hook and the Death Machine run moved
+//  to scripts/zm/qol_powerup_dispatch.gsc (issue 13). This file keeps the
+//  registration, the drop predicate, the damage callback and the state flags.
 
 drop_deathmachine()
 {
@@ -3996,262 +3931,6 @@ deathmachine_clear_powerup_state( player )
     player setclientdvar( "deathmachine_powerup_state", 0 );
 }
 
-custom_powerup_grab( s_powerup, e_player )
-{
-    if ( isDefined( s_powerup ) && isDefined( s_powerup.powerup_name ) && s_powerup.powerup_name == "deathmachine" )
-    {
-        level thread deathmachine_powerup( s_powerup, e_player );
-        return;
-    }
-    //  ZOMBIE BLOOD, v1.65.0. Core's powerup_grab() sends every power-up name it
-    //  does not handle itself down level._zombiemode_powerup_grab
-    //  (_zm_powerups.gsc:1072, the `default:` branch), and this function IS that
-    //  pointer on every map - the deathmachine module installs it and chains the
-    //  map's own previous handler below, so Origins' ::tomb_powerup_grab is still
-    //  reached there. That chaining is exactly why this branch is safe to add
-    //  here rather than needing a hook of its own.
-    //
-    //  🛑 THE MAP GATE IS NOT OPTIONAL AND IT IS THE WHOLE REASON ORIGINS STILL
-    //  WORKS. On zm_tomb the chained handler below IS ::tomb_powerup_grab, which
-    //  runs Treyarch's own zombie_blood_powerup(). Intercepting the name here
-    //  without the gate would run OUR copy on Origins instead - where
-    //  zmqol_enable_zombie_blood() deliberately registered nothing, so
-    //  level._effect["zombie_blood"] and level.a_zombie_blood_entities do not
-    //  exist and the power-up would break on the one map that ships it.
-    if ( zmqol_zombie_blood_enabled() && isDefined( s_powerup ) && isDefined( s_powerup.powerup_name ) && s_powerup.powerup_name == "zombie_blood" )
-    {
-        level thread zmqol_zb_powerup( s_powerup, e_player );
-        return;
-    }
-    if ( isDefined( level.original_deathmachine_powerup_grab ) )
-    {
-        level thread [[level.original_deathmachine_powerup_grab]]( s_powerup, e_player );
-    }
-}
-
-deathmachine_powerup( m_powerup, e_player )
-{
-    if ( !isDefined( e_player ) )
-    {
-        return;
-    }
-    if ( e_player maps\mp\zombies\_zm_laststand::player_is_in_laststand() )
-    {
-        return;
-    }
-    level.deathmachine_duration = getdvarintdefault( "sv_deathmachine_duration", 30 );
-
-    //  v2.9.9 - the announcer line, played the way BLOOD MONEY's is (v2.8.8):
-    //  directly through zmqol_play_announcer_line(), not via stock's
-    //  leaderdialog path. Stock's playleaderdialogonplayer() drops the line
-    //  outright when self.zmbdialogactive is already 1, and a Death Machine
-    //  grab always has competing dialog (the character's own pickup quip plus
-    //  the weapon-raise foley - the "gun-cock" the user reported was the ONLY
-    //  audible part). The payload itself was never wrong: the staged flac is
-    //  the same 48 kHz / ~114k-sample recording as BO1's own
-    //  english\sound\vox\scripted\zmb\announcer\death_machine.wav (measured
-    //  against the real BO1 file, localized_English_iw04.iwd) - Treyarch
-    //  carried the Samantha line forward into Die Rise's bank, which is where
-    //  this mod's copy came from. The createvox registration that used to
-    //  feed stock's route is REMOVED in the same change, for the same reason
-    //  Blood Money's was: with no vox registered for the key, stock's
-    //  leaderdialog on the grab returns before playing, so the line cannot
-    //  double-play.
-    level thread zmqol_play_announcer_line( "qol_powerup_death_machine" );
-
-    e_player notify( "end_deathmachine" );
-    wait 0.05;
-    //  v1.99.2: stamp when this run ends, for the power-up timer HUD.
-    //  notify_deathmachine_end() below starts its wait on the SAME dvar value in
-    //  this same frame, so this end time is what actually ends the power-up -
-    //  it is not a second, drifting countdown.
-    e_player.zmqol_deathmachine_end_time = gettime() + ( level.deathmachine_duration * 1000 );
-    e_player thread powerup_state_monitor();
-    e_player thread start_deathmachine();
-    e_player thread notify_deathmachine_end();
-}
-
-powerup_state_monitor()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    time_left = getdvarintdefault( "sv_deathmachine_duration", 30 );
-    self setclientdvar( "deathmachine_powerup_state", 1 );
-    while ( time_left > 10 )
-    {
-        wait 0.05;
-        time_left -= 0.05;
-    }
-    flash_on = 1;
-    while ( time_left > 0 )
-    {
-        if ( time_left <= 5 )
-        {
-            blink_time = 0.1;
-        }
-        else
-        {
-            blink_time = 0.2;
-        }
-        if ( flash_on )
-        {
-            self setclientdvar( "deathmachine_powerup_state", 3 );
-        }
-        else
-        {
-            self setclientdvar( "deathmachine_powerup_state", 2 );
-        }
-        flash_on = !flash_on;
-        wait blink_time;
-        time_left -= blink_time;
-    }
-    self setclientdvar( "deathmachine_powerup_state", 0 );
-}
-
-start_deathmachine()
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    weapon = get_deathmachine_weapon();
-    self.weapon_before_deathmachine = self getcurrentweapon();
-    self.deathmachine_had_weapon_before = self hasweapon( weapon );
-    set_powerup_state( self );
-    if ( !self.deathmachine_had_weapon_before )
-    {
-        self notify( "replace_weapon_powerup" );
-        self giveweapon( weapon );
-        wait 0.05;
-    }
-    self setweaponammoclip( weapon, 150 );
-    self setweaponammostock( weapon, 300 );
-    self switchtoweapon( weapon );
-    self thread deathmachine_infinite_ammo();
-    self thread end_deathmachine_powerup();
-    self thread end_deathmachine_on_weapon_switch( weapon );
-}
-
-deathmachine_infinite_ammo()
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    weapon = get_deathmachine_weapon();
-    for ( ;; )
-    {
-        if ( self hasweapon( weapon ) )
-        {
-            self setweaponammoclip( weapon, 150 );
-            self setweaponammostock( weapon, 300 );
-        }
-        wait 0.05;
-    }
-}
-
-end_deathmachine_powerup()
-{
-    level endon( "end_game" );
-    self waittill_any( "end_deathmachine", "disconnect", "death" );
-    weapon = get_deathmachine_weapon();
-    if ( !isDefined( self.deathmachine_had_weapon_before ) || !self.deathmachine_had_weapon_before )
-    {
-        if ( self hasweapon( weapon ) )
-        {
-            self takeweapon( weapon );
-        }
-        if ( isDefined( self.weapon_before_deathmachine ) )
-        {
-            player_weapons = self getweaponslistprimaries();
-            for ( i = 0; i < player_weapons.size; i++ )
-            {
-                if ( player_weapons[i] == self.weapon_before_deathmachine )
-                {
-                    self switchtoweapon( self.weapon_before_deathmachine );
-                    deathmachine_clear_powerup_state( self );
-                    clear_deathmachine_vars();
-                    return;
-                }
-            }
-        }
-        self switch_back_from_deathmachine();
-    }
-    else if ( self getcurrentweapon() == weapon && isDefined( self.weapon_before_deathmachine ) && self.weapon_before_deathmachine != "none" && self.weapon_before_deathmachine != weapon && self hasweapon( self.weapon_before_deathmachine ) )
-    {
-        self switchtoweapon( self.weapon_before_deathmachine );
-    }
-    deathmachine_clear_powerup_state( self );
-    clear_deathmachine_vars();
-}
-
-end_deathmachine_on_weapon_switch( weapon )
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    for ( ;; )
-    {
-        if ( self getcurrentweapon() == weapon )
-        {
-            break;
-        }
-        wait 0.05;
-    }
-    wait 0.1;
-    for ( ;; )
-    {
-        if ( !self hasweapon( weapon ) )
-        {
-            return;
-        }
-        if ( self getcurrentweapon() != weapon )
-        {
-            self notify( "end_deathmachine" );
-            return;
-        }
-        wait 0.05;
-    }
-}
-
-switch_back_from_deathmachine()
-{
-    wait 0.05;
-    if ( isDefined( self.weapon_before_deathmachine ) && self.weapon_before_deathmachine != "none" && self hasweapon( self.weapon_before_deathmachine ) )
-    {
-        self switchtoweapon( self.weapon_before_deathmachine );
-    }
-    else
-    {
-        primaryweapons = self getweaponslistprimaries();
-        if ( isDefined( primaryweapons ) && primaryweapons.size > 0 )
-        {
-            self switchtoweapon( primaryweapons[0] );
-        }
-        else
-        {
-            self maps\mp\zombies\_zm_weapons::give_fallback_weapon();
-        }
-    }
-}
-
-notify_deathmachine_end()
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    wait getdvarintdefault( "sv_deathmachine_duration", 30 );
-    self playsound( "zmb_insta_kill" );
-    self notify( "end_deathmachine" );
-}
-
 get_deathmachine_weapon()
 {
     if ( isDefined( level.deathmachine_weapon ) )
@@ -4259,12 +3938,6 @@ get_deathmachine_weapon()
         return level.deathmachine_weapon;
     }
     return "deathmachine_zm";
-}
-
-clear_deathmachine_vars()
-{
-    self.deathmachine_had_weapon_before = undefined;
-    self.weapon_before_deathmachine = undefined;
 }
 
 // ============================================================================
@@ -14894,7 +14567,7 @@ zmqol_zb_init_player_vars()
 // ============================================================================
 //  zmqol_zb_powerup  -  _zm_powerup_zombie_blood::zombie_blood_powerup(), ported
 //
-//  Reached from custom_powerup_grab() (the deathmachine module's
+//  Reached from zmqol_pd_grab() in qol_powerup_dispatch.gsc (the
 //  level._zombiemode_powerup_grab hook), which is where core's powerup_grab()
 //  sends every power-up name it does not handle itself - _zm_powerups.gsc:1072,
 //  the `default:` branch.
