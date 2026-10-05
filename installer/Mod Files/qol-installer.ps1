@@ -1,4 +1,4 @@
-<#
+﻿<#
 ================================================================================
   Quality of Life Series Launcher - the installer for the Quality of Life mods.
 
@@ -1789,6 +1789,23 @@ function Act-InstallMod {
 
     Draw-Header 'Install the mod'
     Write-Log "action: install mod ($($sel.Key))"
+
+    #  🛑 2026-09-29 - REFUSE TO COPY WHILE PLUTONIUM IS RUNNING.
+    #
+    #  The five mod files are deleted first and only verified by the readback
+    #  below; with the game open, mod.iwd is locked, Copy-Item throws, and the
+    #  player is left with a half-installed mod whose maps will not load. The
+    #  front menu warns about this (Main-Menu) but nothing here ENFORCED it.
+    #  Forum case 2026-09-29 (jomeidragon): installed while the game was up,
+    #  then no map would load.
+    if (-not $DryRun -and (Test-PlutoRunning)) {
+        Say '!Plutonium is running right now, so the mod files are locked.' $C.Bad
+        Say '!Installing over them would leave a half-copied mod that fails to load.' $C.Bad
+        Say '!Close Plutonium completely (check the tray too), then run this again.' $C.Dim
+        Write-Log 'install mod REFUSED: Plutonium is running'
+        Pause-Key; return
+    }
+
     Repair-BadAaSamples
 
     $missing = @()
@@ -1821,6 +1838,28 @@ function Act-InstallMod {
         if ($DryRun) { Say "would copy $f" $C.Dim; continue }
         try { Copy-Item -LiteralPath (Join-Path $src $f) -Destination (Join-Path $MODDIR $f) -Force; Say $f $C.Text }
         catch { Say "FAILED to copy $f - is Plutonium running?" $C.Bad; $ok = $false }
+    }
+
+    #  2026-09-29 - READBACK. Copy-Item succeeding is a claim; the file on disk
+    #  is the receipt. A copy that silently came up short is exactly the "maps
+    #  will not load" report, and nothing below re-checked what had landed
+    #  until now. Size, not hash: five files, two of them hundreds of MB, and
+    #  a truncated copy never matches the source length.
+    if (-not $DryRun) {
+        foreach ($f in $MODFILES) {
+            $dstFile = Join-Path $MODDIR $f
+            if (-not (Test-Path -LiteralPath $dstFile)) {
+                Say "!$f did not land in the mod folder - the install is incomplete." $C.Bad
+                $ok = $false
+                continue
+            }
+            $srcLen = (Get-Item -LiteralPath (Join-Path $src $f)).Length
+            $dstLen = (Get-Item -LiteralPath $dstFile).Length
+            if ($dstLen -ne $srcLen) {
+                Say "!$f is $dstLen bytes on disk but $srcLen in this package - it was copied short. Install again with Plutonium closed." $C.Bad
+                $ok = $false
+            }
+        }
     }
     # -------------------------------------------------------------------
     #  🛑 v2.16.19 - THE TEXTURES CANNOT LIVE IN THE MOD, SO THE MOD INSTALLS
@@ -1913,6 +1952,10 @@ function Act-InstallMod {
         Write-Host ''
         Say "✅  The mod is installed - version $v" $C.Good
         Say "Plutonium T6 → Zombies → Mods → $MODNAME" $C.Dim
+    } else {
+        Write-Host ''
+        Say '!The mod is NOT fully installed. Close Plutonium completely and run this again.' $C.Bad
+        Write-Log 'install mod: incomplete after readback'
     }
     Pause-Key
 }
@@ -3347,16 +3390,43 @@ function Get-RemotePayload {
     $tmp = Join-Path $env:TEMP 'zm_qol_installer'
     if (-not (Test-Path $tmp)) { New-Item -ItemType Directory -Force -Path $tmp | Out-Null }
     $zip = Join-Path $tmp $AssetName
-    try {
-        if (Get-Command curl.exe -ErrorAction SilentlyContinue) { & curl.exe -L --fail --progress-bar -o $zip $asset.browser_download_url }
-        else { Invoke-WebRequest $asset.browser_download_url -OutFile $zip -UseBasicParsing }
-    } catch { Say 'Download failed.' $C.Bad; return $null }
-    if (-not (Test-Path $zip)) { return $null }
+    #  2026-09-29 - a download that dies halfway used to leave a truncated zip
+    #  in TEMP with no complaint: curl's exit code was never looked at, so the
+    #  bad file sat there until Expand-Archive failed on it and the release
+    #  looked corrupt (the "github files were damaged?" report). Check the
+    #  exit code, delete anything that did not arrive whole, say so plainly.
+    if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+        & curl.exe -L --fail --progress-bar -o $zip $asset.browser_download_url
+        if ($LASTEXITCODE -ne 0) {
+            Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+            Say "!The download failed (curl exit $LASTEXITCODE). Nothing was kept - run this again for a fresh copy." $C.Bad
+            return $null
+        }
+    }
+    else {
+        try { Invoke-WebRequest $asset.browser_download_url -OutFile $zip -UseBasicParsing }
+        catch {
+            Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+            Say '!The download failed. Nothing was kept - run this again for a fresh copy.' $C.Bad
+            return $null
+        }
+    }
+    if (-not (Test-Path $zip) -or (Get-Item -LiteralPath $zip -ErrorAction SilentlyContinue).Length -eq 0) {
+        Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+        Say '!The download did not arrive whole. Nothing was kept - run this again for a fresh copy.' $C.Bad
+        return $null
+    }
     $out = Join-Path $tmp $FolderName
     if (Test-Path $out) { Remove-Item -LiteralPath $out -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $out | Out-Null
     Say 'Unpacking ...' $C.Text
-    try { Expand-Archive -LiteralPath $zip -DestinationPath $out -Force } catch { Say 'Unpacking failed.' $C.Bad; return $null }
+    try { Expand-Archive -LiteralPath $zip -DestinationPath $out -Force }
+    catch {
+        Say '!The download is damaged - Windows could not unpack it. It has been deleted; run this again for a fresh copy.' $C.Bad
+        Write-Log "unpack failed: $($_.Exception.Message)"
+        Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+        return $null
+    }
     $inner = Join-Path $out $FolderName
     if (Test-Path $inner) { return $inner }
     # HD.Texture.Pack.zip keeps its files under "HD Texture Pack\images\".
@@ -3420,18 +3490,55 @@ function Act-CheckUpdate {
     if (-not $asset) { Say 'That release has no mod zip attached.' $C.Bad; Pause-Key; return }
     Say "Downloading $($asset.name) ($(Format-Size $asset.size)) ..." $C.Text
     if ($DryRun) { Say '(dry run)' $C.Dim; Pause-Key; return }
+
+    #  🛑 2026-09-29 - REFUSE while Plutonium is running, BEFORE downloading.
+    #  Act-InstallMod enforces the same rule; this path used to download the
+    #  whole release and then die part-way through the copy with the game
+    #  holding mod.iwd - a partial update and no explanation.
+    if (Test-PlutoRunning) {
+        Say '!Plutonium is running right now, so the mod files are locked.' $C.Bad
+        Say '!Close Plutonium completely (check the tray too), then run this again.' $C.Dim
+        Write-Log 'update REFUSED: Plutonium is running'
+        Pause-Key; return
+    }
+
     $tmp = Join-Path $env:TEMP 'zm_qol_installer'
     if (-not (Test-Path $tmp)) { New-Item -ItemType Directory -Force -Path $tmp | Out-Null }
     $zip = Join-Path $tmp $asset.name
-    try {
-        if (Get-Command curl.exe -ErrorAction SilentlyContinue) { & curl.exe -L --fail --progress-bar -o $zip $asset.browser_download_url }
-        else { Invoke-WebRequest $asset.browser_download_url -OutFile $zip -UseBasicParsing }
-    } catch { Say 'Download failed.' $C.Bad; Pause-Key; return }
+    #  Same guard as Get-RemotePayload: look at curl's exit code and delete a
+    #  truncated file instead of leaving it for Expand-Archive to choke on.
+    if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+        & curl.exe -L --fail --progress-bar -o $zip $asset.browser_download_url
+        if ($LASTEXITCODE -ne 0) {
+            Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+            Say "!The download failed (curl exit $LASTEXITCODE). Nothing was kept - run this again for a fresh copy." $C.Bad
+            Pause-Key; return
+        }
+    }
+    else {
+        try { Invoke-WebRequest $asset.browser_download_url -OutFile $zip -UseBasicParsing }
+        catch {
+            Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+            Say '!The download failed. Nothing was kept - run this again for a fresh copy.' $C.Bad
+            Pause-Key; return
+        }
+    }
+    if (-not (Test-Path $zip) -or (Get-Item -LiteralPath $zip -ErrorAction SilentlyContinue).Length -eq 0) {
+        Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+        Say '!The download did not arrive whole. Nothing was kept - run this again for a fresh copy.' $C.Bad
+        Pause-Key; return
+    }
     $out = Join-Path $tmp 'unpack'
     if (Test-Path $out) { Remove-Item -LiteralPath $out -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $out | Out-Null
     Say 'Unpacking ...' $C.Text
-    Expand-Archive -LiteralPath $zip -DestinationPath $out -Force
+    try { Expand-Archive -LiteralPath $zip -DestinationPath $out -Force }
+    catch {
+        Say '!The download is damaged - Windows could not unpack it. It has been deleted; run this again for a fresh copy.' $C.Bad
+        Write-Log "unpack failed: $($_.Exception.Message)"
+        Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
+        Pause-Key; return
+    }
     # The release zip is a whole package now, so mod.json sits several folders
     # deep (Quality Of Life Mod T6 ZM x.y.z\Mod Files\zm_qol\). Find it wherever
     # it is rather than guessing at a layout.
@@ -3443,7 +3550,25 @@ function Act-CheckUpdate {
         if (-not (Test-Path (Join-Path $srcDir $f))) { Say "Incomplete download - missing $f" $C.Bad; Pause-Key; return }
     }
     if (-not (Test-Path $MODDIR)) { New-Item -ItemType Directory -Force -Path $MODDIR | Out-Null }
-    foreach ($f in $MODFILES) { Copy-Item -LiteralPath (Join-Path $srcDir $f) -Destination (Join-Path $MODDIR $f) -Force; Say $f $C.Text }
+    $ok = $true
+    foreach ($f in $MODFILES) {
+        try { Copy-Item -LiteralPath (Join-Path $srcDir $f) -Destination (Join-Path $MODDIR $f) -Force; Say $f $C.Text }
+        catch { Say "FAILED to copy $f - is Plutonium running?" $C.Bad; $ok = $false }
+    }
+    #  2026-09-29 - same readback as Act-InstallMod: what landed on disk must
+    #  match what came down, byte count for byte count.
+    foreach ($f in $MODFILES) {
+        $dstFile = Join-Path $MODDIR $f
+        if (-not (Test-Path -LiteralPath $dstFile)) { Say "!$f did not land in the mod folder - the update is incomplete." $C.Bad; $ok = $false; continue }
+        $srcLen = (Get-Item -LiteralPath (Join-Path $srcDir $f)).Length
+        $dstLen = (Get-Item -LiteralPath $dstFile).Length
+        if ($dstLen -ne $srcLen) { Say "!$f is $dstLen bytes on disk but $srcLen in the download - update it again with Plutonium closed." $C.Bad; $ok = $false }
+    }
+    if (-not $ok) {
+        Write-Log 'update: incomplete after readback'
+        Say '!The update did NOT finish. Close Plutonium completely and run this again.' $C.Bad
+        Pause-Key; return
+    }
     Write-Host ''
     Say "✅  $tag installed. Your settings were kept." $C.Good
     Pause-Key
@@ -3870,6 +3995,17 @@ function Main-Menu {
     }
 }
 
+#  🛑 2026-09-29 - THE WHOLE RUN IS INSIDE ONE try/catch.
+#
+#  $ErrorActionPreference is Stop for the entire script, so a single throw
+#  anywhere used to kill the console with no message and no log line - the
+#  player saw the window vanish (or, run from the .bat, an error box at best)
+#  and reported "no log at all". Now any unexpected error lands in
+#  installer.log, stays on screen, and exits 1 so the .bat's own advice shows.
+#  Anything the installer had already copied stays as it is; the readbacks and
+#  the Plutonium-running refusal are what keep a partial run from looking
+#  finished.
+try {
 Write-Log "--- installer started (dryrun=$DryRun) ---"
 Enable-Vt
 Move-OldBackups
@@ -3910,3 +4046,15 @@ Write-Host ''
 Write-Host '     Launch Plutonium T6  →  Zombies  →  Mods  →  Quality Of Life' -ForegroundColor $C.Good
 Write-Host ''
 Start-Sleep -Milliseconds 600
+} catch {
+    Write-Log "UNEXPECTED ERROR: $($_.Exception.GetType().FullName): $($_.Exception.Message)" 'error'
+    if ($_.ScriptStackTrace) { Write-Log $_.ScriptStackTrace 'error' }
+    Write-Host ''
+    Write-Host '!⚠️   THE INSTALLER STOPPED ON AN UNEXPECTED ERROR.' -ForegroundColor $C.Bad
+    Write-Host "     $($_.Exception.Message)" -ForegroundColor $C.Bad
+    Write-Host '!     Anything already copied stays as it is. Close Plutonium completely' -ForegroundColor $C.Dim
+    Write-Host '!     and run this again to finish the job.' -ForegroundColor $C.Dim
+    Write-Host "!     The full detail went to: $LOGFILE" -ForegroundColor $C.Dim
+    if (-not $NoStdin) { [void](Read-Host '     Press Enter to close') }
+    exit 1
+}
