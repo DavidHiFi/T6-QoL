@@ -126,9 +126,17 @@ zmqol_pd_player_watch()
     self endon( "disconnect" );
     level endon( "end_game" );
 
+    //  "death" has to be in the list, not just handled. waittill_any_return()
+    //  calls self endon( "death" ) unless "death" is one of its named events
+    //  (common_scripts/utility.gsc:477-478 in the stock decompile), which
+    //  would kill this thread permanently on the player's first death and
+    //  leave every later spawn and down without its cleanup: a Death Machine
+    //  picked up after that death would stay active through the holder's next
+    //  last stand, and has_powerup_weapon would keep the holder from reviving
+    //  anyone.
     for ( ;; )
     {
-        str_event = self waittill_any_return( "spawned_player", "player_downed" );
+        str_event = self waittill_any_return( "spawned_player", "player_downed", "death" );
 
         if ( is_true( self.deathmachine_active ) )
         {
