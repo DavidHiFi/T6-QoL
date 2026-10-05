@@ -12,10 +12,13 @@
 -- ============================================================================
 -- ============================================================================
 --  zm_qol - LUI EVENT GUARD INSTALLER. The full explanation is at the top of
---  ui\t6\codroot.lua. The engine requires codroot.lua at boot, before this
---  mod is mounted, and this file is reloaded after loadmod, so this copy is
---  the one that normally installs the guard. "[zm_qol] LUI event guard
---  installed" in the console log is the evidence that it ran.
+--  ui\t6\codroot.lua. Measured 2026-10-05: the engine loads codroot.lua AND
+--  this file at boot UI init and again after loadmod, codroot.lua first in
+--  both sets, so codroot's copy installs and this copy re-points the same
+--  table and stays silent. If an engine change ever stops reloading
+--  codroot.lua, this copy still installs the guard on its own. "[zm_qol]
+--  LUI event guard installed" reaches console_zm.log through the set +
+--  bare-dvar-name channel described in the guard block.
 -- ============================================================================
 -- zm_qol LUI EVENT GUARD BEGIN (identical in ui\t6\codroot.lua and ui\t6\mainlobby.lua;
 -- tools\check-lui-guard.ps1 fails the build if the two copies differ)
@@ -28,6 +31,18 @@ if ZmQolLuiGuardModActive == nil then
 		Value = string.lower(Value)
 		return Value == "mods/zm_qol" or Value == "zm_qol"
 	end
+end
+
+-- The one text channel that provably reaches console_zm.log from LUI in this
+-- build (measured 2026-10-05): set a dvar to the line, then send the dvar's
+-- bare name. The engine answers in console_zm.log with
+--     "zmqol_lui_guard" is: "<value>^7" default: "^7"
+-- The old channels are measured dead in this build: an Engine.Exec "echo ..."
+-- comes back as `Unknown command "echo"` with the payload discarded, and
+-- DebugPrint produces no console_zm.log line at all.
+local ZmQolGuardSay = function (Dvar, Value)
+	pcall(Engine.Exec, 0, "set " .. Dvar .. " \"" .. Value .. "\"")
+	pcall(Engine.Exec, 0, Dvar)
 end
 
 if LUI ~= nil and LUI.CoDRoot ~= nil and ZmQolLuiGuardModActive() then
@@ -43,9 +58,10 @@ if LUI ~= nil and LUI.CoDRoot ~= nil and ZmQolLuiGuardModActive() then
 				Name = tostring(Event.name)
 			end
 			local Line = "[zm_qol] LUI GUARD: event '" .. Name .. "' handler failed: " .. tostring(Err)
-			pcall(DebugPrint, Line)
-			local Echo = string.gsub(string.gsub(Line, "[\r\n]", " "), "\"", "'")
-			pcall(Engine.Exec, 0, "echo " .. Echo)
+			-- Newlines, double quotes and semicolons would break the one-line
+			-- console set; flatten them before it goes through.
+			local Safe = string.gsub(string.gsub(string.gsub(Line, "[\r\n]", " "), "\"", "'"), ";", " ")
+			ZmQolGuardSay("zmqol_lui_guard_last", Safe)
 		end
 
 		-- Ends the PIX scope and hands back every value the handler returned,
@@ -84,8 +100,18 @@ if LUI ~= nil and LUI.CoDRoot ~= nil and ZmQolLuiGuardModActive() then
 
 	if LUI.CoDRoot.ZmQolGuardDispatch ~= nil then
 		LUI.CoDRoot.ProcessEventNow = LUI.CoDRoot.ZmQolGuardDispatch
-		pcall(DebugPrint, "[zm_qol] LUI event guard installed")
-		pcall(Engine.Exec, 0, "echo [zm_qol] LUI event guard installed")
+		-- Announce exactly once per process. The stored dvar value is the
+		-- idempotency marker: it survives this file being re-executed (which
+		-- re-creates LUI.CoDRoot and, with it, the dispatcher) and survives a
+		-- UI VM rebuild, which a Lua global would not. Guard catches on the
+		-- same boot go to zmqol_lui_guard_last and never disturb this marker.
+		local Announced = false
+		pcall(function ()
+			Announced = UIExpression.DvarString(nil, "zmqol_lui_guard") == "[zm_qol] LUI event guard installed"
+		end)
+		if not Announced then
+			ZmQolGuardSay("zmqol_lui_guard", "[zm_qol] LUI event guard installed")
+		end
 	end
 end
 -- zm_qol LUI EVENT GUARD END
