@@ -323,6 +323,19 @@ barrier(model, origin, angles, disconnect_paths = 0)
 	barrier.angles = angles;
 	barrier setModel(model);
 
+	//  2026-10-05 (A13): stock collision clip models use the invisible material
+	//  (mc/global_invisible). The BSP never draws it, but a dynamically spawned
+	//  script_model can render it as unlit black - the black slab at the
+	//  Excavation Site centre was a dynamically spawned
+	//  collision_wall_128x128x10_standard. hide() stops rendering only: the
+	//  clip above and the disconnectPaths() below stay. Gated on the model
+	//  name, so dressing walls (the Origins wood wall, barbed wire, crates,
+	//  gates) stay visible.
+	if (issubstr(model, "collision_"))
+	{
+		barrier hide();
+	}
+
 	if (disconnect_paths)
 	{
 		barrier disconnectPaths();
