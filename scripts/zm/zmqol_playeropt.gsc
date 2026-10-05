@@ -112,6 +112,7 @@ zmqol_popt_default( str_name )
         case "hud_all":
         case "hud_zone":
         case "hud_compass":
+        case "hud_subtitles":
         case "third_person":
         case "velocity":
             return 0;
@@ -133,22 +134,56 @@ zmqol_popt_default( str_name )
 
 //  Commands that only touch the speaker's own view stay open to everyone.
 //  Everything else changes the match or the player's power and is host-only.
+//  The split starts from the reference co-op branch (fix/mp-character-and-cornfield,
+//  zmqol_popt_cmd_is_self), and every entry was re-verified against its handler
+//  (2026-10-05): give/giveweapon/gun, pack/unpack, giveperks/removeperks and
+//  reload all act on the CALLER's own weapons, perks or ammo (reload is
+//  zmqol_fill_all_ammo() on self - never lobby-wide); p adds to the caller's
+//  score; pay is a bounded transfer that charges the caller first, refuses
+//  self-payment and refuses amounts above their score, so it cannot mint
+//  points; movespeed is setmovespeedscale() on the caller; character/char,
+//  hud, velocity/vel/speed and my/popt/mine write per-player overrides through
+//  zmqol_popt_store(); and help, where and powerups only print.
+//  Two deliberate removals from the reference list, each because the command's
+//  STATE IS ONE SHARED SERVER DVAR or a level-wide effect, so a remote player
+//  running it would move it for the whole lobby:
+//    .fly          zmqol_fly_dvar_watch() drives EVERY player from the one
+//                  "fly" dvar - a remote's toggle would fly the host too.
+//    .boxhere      moves the mystery box for the whole match.
+//  .wallhere STAYS open: it is a measurement probe only - it traces the wall
+//  face and prints numbers (zmqol_cp_wall_here), and nothing moves live.
+//  `hud` and `powerups` are additions to the reference list: .hud is the
+//  speaker's own HUD switch (popt_store keeps it personal) and .powerups only
+//  PRINTS the registered table.
 zmqol_popt_cmd_open( cmd )
 {
     switch ( cmd )
     {
-        case "help":
-        case "where":
-        case "powerups":
+        case "give":
+        case "giveweapon":
+        case "gun":
+        case "pack":
+        case "unpack":
+        case "p":
+        case "pay":
         case "character":
         case "char":
-        case "hud":
+        case "help":
+        case "where":
+        case "wallhere":
+        case "reload":
+        case "giveperks":
+        case "removeperks":
+        case "movespeed":
         case "velocity":
         case "vel":
         case "speed":
+        case "afk":
         case "my":
         case "popt":
         case "mine":
+        case "hud":
+        case "powerups":
             return 1;
     }
 
@@ -329,13 +364,16 @@ zmqol_console_command_watcher()
             continue;
 
         //  The console belongs to the host, so the host is who the command runs
-        //  as. Slot 0 is not guaranteed to be the host; gethostplayer() asks the
-        //  engine. A dedicated server has no host player, and its console falls
-        //  back to slot 0 as before.
+        //  as. Slot 0 is not the host; gethostplayer() asks the engine. If the
+        //  host is not known yet, SKIP this pass - attributing a match command
+        //  to the wrong player is worse than delaying it by 0.25s. On a
+        //  dedicated server there is never a host player, so its console
+        //  commands stay inert: that is the fail-closed answer, the same rule
+        //  the chat listener below applies.
         e_host = gethostplayer();
 
         if ( !isdefined( e_host ) )
-            e_host = a_players[0];
+            continue;
 
         str_line = getdvar( "qol" );
 
@@ -408,8 +446,11 @@ zmqol_dev_command_listener()
         cmd = getsubstr( tokens[0], 1 );
 
         //  Co-op: only the host may change the match or give power. A remote
-        //  player keeps the commands that touch their own view.
-        if ( !zmqol_popt_cmd_open( cmd ) && !player zmqol_popt_is_host() )
+        //  player keeps the commands that touch their own view. The test is
+        //  self == gethostplayer() exactly, not the popt_is_host() helper: an
+        //  unknown host must FAIL CLOSED here (nobody runs match commands),
+        //  while the dvar readers fail open to the shipped defaults instead.
+        if ( !zmqol_popt_cmd_open( cmd ) && player != gethostplayer() )
         {
             player iprintln( "^1[zm_qol] ^7." + cmd + " ^1is host only" );
             continue;
