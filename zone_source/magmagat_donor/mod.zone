@@ -1,0 +1,36 @@
+// Call Of Duty: Black Ops II
+>game,T6
+
+// magmagat_donor - the MagmaGat and Magmus Operandi as T6 assets, carved out of
+// luckass's T6 MotD MagmaGat mod v1.0.5 (https://github.com/lborruto/t6_motd_magmagat,
+// release mod.ff, used with credit). Only the weapon's own art is listed: the two
+// BO4 gun model pairs, the blob model, the three BO4-foley view anims and the eight
+// mg/ effects the defs and the weapon script name. Everything else in his 616-asset
+// fastfile (his zm_prison quest props, the stock-named xanims and techsets his build
+// inherited) stays out, so this donor can only ever add names, never re-own one.
+// See how_this_was_built.zone.txt beside this file.
+
+// the gun: BO4 view/world pairs; the far world LODs and the lava-tank material ride
+// along as the xmodel's own dependencies
+xmodel,mg_magmagat_view
+xmodel,mg_magmagat_world
+xmodel,mg_magmus_view
+xmodel,mg_magmus_world
+// the lava blob projectile model (the blob def's projectileModel)
+xmodel,mg_magma_blob
+
+// the three copied Blundergat anims that carry BO4's reload/cock foley notetracks
+xanim,mg_viewmodel_magmagat_first_raise
+xanim,mg_viewmodel_magmagat_reload
+xanim,mg_viewmodel_magmagat_reload_empty
+
+// both defs' muzzle flashes (Harry's fire-coloured copies of the Acid Gat's, under
+// his mg/ namespace) and the effects the weapon script loadfx's by name
+fx,mg/fx_blundersplat_muzzleflash
+fx,mg/fx_blundersplat_muzzleflash_3p
+fx,mg/fx_blundersplat_muzzleflash_ug
+fx,mg/fx_blundersplat_muzzleflash_ug_3p
+fx,mg/fx_magmagat_trail_bolt
+fx,mg/fx_magmagat_impact
+fx,mg/fx_magmagat_explode
+fx,mg/fx_prison_magmagat_aoe

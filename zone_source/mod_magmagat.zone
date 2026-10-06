@@ -1,0 +1,115 @@
+// ============================================================================
+//  mod_magmagat.zone  -  THE MAGMAGAT AND MAGMUS OPERANDI, ON EVERY MAP (2026-10-07)
+//
+//  Port of luckass's MagmaGat (the Black Ops 4 Mob of the Dead remaster weapon,
+//  github lborruto/t6_motd_magmagat v1.0.5, MIT) into zm_qol, fourteenth gun in,
+//  following mod_blundergat.zone line for line. The art comes from this mod's own
+//  carve of his built fastfile: zone_source\magmagat_donor\mod.ff, --load'ed LAST
+//  in build_ff.bat, so every name below that the donor carries resolves there and
+//  every stock name below resolves from the zombies fastfiles above it.
+//
+//  SOURCE NOTES, all verified against the Unlinker dump of his 1.0.5 mod.ff:
+//    - The gun is the Acid Gat mechanism with fire: both forms fire a harmless
+//      shot (shotCount 1, no tracer, impactType none) and the script lobs the
+//      blob with magicgrenadetype("mg_magma_blob_zm", ...) - there is no
+//      magicGrenadeType field in either def. mg_weapon.gsc does the rest.
+//    - The three custom view anims (mg_viewmodel_magmagat_reload, _reload_empty,
+//      _first_raise) are copies of the Blundergat's own with the notetracks
+//      rewritten to BO4's foley (mg_reload_open/insert/close, mg_raise_cock).
+//      Everything else stays the Blundergat's, declared below.
+//    - The muzzle flashes are his fire-coloured copies of the Acid Gat's under
+//      his mg/ namespace, NOT the stock weapon/blundersplat ones.
+//    - The blob def is stock zm_prison's blundersplat_explosive_dart_zm with the
+//      model, trail, damage and explosion stripped (all of that is scripted); it
+//      keeps the dart's german-grenade view anims, declared below. Nobody holds
+//      it, so they are def validity only.
+//
+//  🛑 THE WEAPON DEFS ARE NOT DECLARED HERE, same rule as every other ported
+//  gun: they ship raw in weapons\zm\ - magmagat_zm 19,829 B,
+//  magmagat_upgraded_zm 19,878 B, mg_magma_blob_zm 20,371 B, all under the
+//  20,480-byte runtime-loader ceiling with no trims needed.
+//
+//  📝 CAMO. His mod recolours with the stock camo_870mcs table, whose slots 3
+//  and 12 do not map a MagmaGat material on our model set; zm_qol's own
+//  camo_qol_magmagat (zone_assets\camo\, built from the blundergat/gallo
+//  pattern) maps every model material except the two BO4 armour-kit materials,
+//  which the Blundergat precedent leaves uncamo'd too. Both gun defs name it;
+//  the blob is an offhand projectile nobody holds and keeps the dart's empty
+//  camo field.
+// ============================================================================
+
+// the two BO4 gun pairs and the blob model; the far LODs, the lava-tank material
+// and the _pap PaP materials ride along as the xmodels' own dependencies
+xmodel,mg_magmagat_view
+xmodel,mg_magmagat_world
+xmodel,mg_magmus_view
+xmodel,mg_magmus_world
+xmodel,mg_magma_blob
+
+// both defs' muzzle flashes and every effect the weapon script loadfx's by name
+// (mg_fx_init in scripts\zm\magmagat.gsc; the burn/blob_fire/burst_fire paths are
+// zm_prison/zm_transit stock paths, resolvable from the --load list)
+fx,mg/fx_blundersplat_muzzleflash
+fx,mg/fx_blundersplat_muzzleflash_3p
+fx,mg/fx_blundersplat_muzzleflash_ug
+fx,mg/fx_blundersplat_muzzleflash_ug_3p
+fx,mg/fx_magmagat_trail_bolt
+fx,mg/fx_magmagat_impact
+fx,mg/fx_magmagat_explode
+fx,mg/fx_prison_magmagat_aoe
+
+// zm_qol's own PaP camo table for the gun (both defs)
+camo,camo_qol_magmagat
+
+// the three BO4-foley anims, out of the donor
+xanim,mg_viewmodel_magmagat_first_raise
+xanim,mg_viewmodel_magmagat_reload
+xanim,mg_viewmodel_magmagat_reload_empty
+
+// all 38 Blundergat view anims both defs name (zm_prison.ff carries them; the
+// donor also inherited copies, and first-load-wins keeps the zombies ones)
+xanim,viewmodel_blundergat_ads_down
+xanim,viewmodel_blundergat_ads_fire
+xanim,viewmodel_blundergat_ads_lastshot
+xanim,viewmodel_blundergat_ads_up
+xanim,viewmodel_blundergat_crawl_back
+xanim,viewmodel_blundergat_crawl_back_empty
+xanim,viewmodel_blundergat_crawl_forward
+xanim,viewmodel_blundergat_crawl_forward_empty
+xanim,viewmodel_blundergat_crawl_in
+xanim,viewmodel_blundergat_crawl_in_empty
+xanim,viewmodel_blundergat_crawl_left
+xanim,viewmodel_blundergat_crawl_left_empty
+xanim,viewmodel_blundergat_crawl_out
+xanim,viewmodel_blundergat_crawl_out_empty
+xanim,viewmodel_blundergat_crawl_right
+xanim,viewmodel_blundergat_crawl_right_empty
+xanim,viewmodel_blundergat_d2p_in
+xanim,viewmodel_blundergat_d2p_in_empty
+xanim,viewmodel_blundergat_d2p_loop
+xanim,viewmodel_blundergat_d2p_loop_empty
+xanim,viewmodel_blundergat_d2p_out
+xanim,viewmodel_blundergat_d2p_out_empty
+xanim,viewmodel_blundergat_fire
+xanim,viewmodel_blundergat_idle
+xanim,viewmodel_blundergat_idle_empty
+xanim,viewmodel_blundergat_lastshot
+xanim,viewmodel_blundergat_pullout
+xanim,viewmodel_blundergat_pullout_empty
+xanim,viewmodel_blundergat_pullout_quick
+xanim,viewmodel_blundergat_putaway
+xanim,viewmodel_blundergat_putaway_empty
+xanim,viewmodel_blundergat_putaway_quick
+xanim,viewmodel_blundergat_sprint_in
+xanim,viewmodel_blundergat_sprint_in_empty
+xanim,viewmodel_blundergat_sprint_loop
+xanim,viewmodel_blundergat_sprint_loop_empty
+xanim,viewmodel_blundergat_sprint_out
+xanim,viewmodel_blundergat_sprint_out_empty
+
+// the blob def's german-grenade view anims (def validity only - the blob is an
+// offhand projectile nobody holds; zm_prison.ff carries all four)
+xanim,viewmodel_germangrenade_idle
+xanim,viewmodel_germangrenade_pullpin
+xanim,viewmodel_germangrenade_throw
+xanim,viewmodel_germangrenade_tossback_stick
