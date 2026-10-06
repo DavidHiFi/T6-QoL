@@ -331,4 +331,13 @@ LANG_ENGLISH        "Scavenger"
 REFERENCE           ZMWEAPON_SCAVENGER_UPGRADED
 LANG_ENGLISH        "Hyena Infra-dead"
 
+// magmagat - luckass's BO4 Mob of the Dead remaster weapon (github
+// lborruto/t6_motd_magmagat v1.0.5, MIT). PaP name per BO4: the Magmus
+// Operandi.
+REFERENCE           ZMWEAPON_MAGMAGAT
+LANG_ENGLISH        "Magmagat"
+
+REFERENCE           ZMWEAPON_MAGMAGAT_UPGRADED
+LANG_ENGLISH        "Magmus Operandi"
+
 ENDMARKER

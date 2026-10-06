@@ -281,7 +281,7 @@ def readback_pass(port, forms, errors, linked, everywhere):
                           f"does not carry it; run build_ff.bat")
 
 
-def pixel_pass(port, unlinker, bo2, errors):
+def pixel_pass(port, unlinker, bo2, errors, linked=None):
     """Images the port's xmodels pull in must have pixels in a startup bank."""
     name = port["name"]
     banks = set()
@@ -297,6 +297,7 @@ def pixel_pass(port, unlinker, bo2, errors):
     loose = {p.stem.lower() for p in (ROOT / "images").glob("*.iwi")}
     loose |= {p.stem.lower() for p in (ROOT / "zone_assets" / "images").glob("*.iwi")}
     donor, match = port.get("donorZone"), port.get("imageMatch", [])
+    donor_ff = port.get("donorFF")
     raw_prefix = port.get("rawMaterials")
     if raw_prefix:
         # A port built from raw source has no donor zone: its images are the
@@ -307,6 +308,34 @@ def pixel_pass(port, unlinker, bo2, errors):
             images |= {t["image"] for t in material.get("textures", [])}
         if not images:
             errors.append(f"{name}: no zone_assets/materials/{raw_prefix}*.json; fix rawMaterials")
+    elif donor_ff:
+        # A port carved from a donor MOD fastfile (build_ff.bat --loads it
+        # last): its art ships inside that fastfile - luckass's mod carries
+        # no ipak, the pixels are ff-embedded - so a startup-bank check is
+        # the wrong shape. What can go wrong is the carve: an image the
+        # donor owns that the linked mod.ff does not own has lost its pixels
+        # and draws black. unlinker_list skips bare references, so what it
+        # returns are data-carrying images; imageMatch keeps generic
+        # stock-shared names (camo_zmb_dlc2_*, glowcycle, ...) out - those
+        # are meant to resolve from the stock banks, not from this donor.
+        if not (ROOT / donor_ff).is_file():
+            errors.append(f"{name}: --pixels needs the donor fastfile {donor_ff}")
+            return
+        owned = {n for k, n in unlinker_list(unlinker, ROOT / donor_ff)
+                 if k == "image" and any(m in n for m in match)}
+        if not owned:
+            errors.append(f"{name}: {donor_ff} owns no image matching {match}; fix imageMatch")
+            return
+        if linked is None:
+            print(f"[weapon-port] {name}: donor-ff carve check skipped (no linked mod.ff read)")
+            return
+        lost = sorted(i for i in owned if ("image", i) not in linked)
+        for image in lost:
+            errors.append(f"{name}: image {image} is owned by {donor_ff} but the linked mod.ff "
+                          f"does not carry it; its pixels did not survive the carve and it will draw black")
+        print(f"[weapon-port] {name}: {len(owned)} donor image(s) checked against the carve "
+              f"({len(lost)} lost)")
+        return
     elif not donor or not match:
         errors.append(f"{name}: --pixels needs donorZone and imageMatch, or rawMaterials, in the contract")
         return
@@ -437,7 +466,7 @@ def main():
         if linked is not None:
             readback_pass(port, forms, errors, linked, everywhere)
         if args.pixels and oat and bo2:
-            pixel_pass(port, oat / "Unlinker.exe", bo2, errors)
+            pixel_pass(port, oat / "Unlinker.exe", bo2, errors, linked)
         passes = "source + readback" if linked is not None else "source"
         print(f"[weapon-port] checked {port['name']} ({passes}): {len(forms)} forms, "
               f"camo slots {port['camoSlots']}")

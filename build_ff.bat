@@ -484,12 +484,25 @@ REM  three of which exist in NO retail fastfile at all. Being last, first-load-
 REM  wins means it can only supply a name that nothing above it offers, so no
 REM  shared asset changes owner. A/B the asset list if this ever moves.
 REM
-REM  🌟 zone_source\oldschool_donor\mod.ff (2026-09-26) is now the true tail: the
+REM  (2026-10-07: magmagat_donor below is now the true tail.)
+REM  🌟 zone_source\oldschool_donor\mod.ff (2026-09-26): the
 REM  MM1 grenade launcher's models, anims, icon and trail fx (out of retail
 REM  angola.ff) and the Browning HP's two left-hand models (out of Mario Woopsie's
 REM  MOTD Old School Weapons). 53 assets; the names mod_oldschool.zone declares
 REM  exist in no zombies fastfile above, so from the last slot it can only add.
 REM  Recipe: zone_source\oldschool_donor\how_this_was_built.zone.txt.
+REM
+REM  🌟 zone_source\magmagat_donor\mod.ff (2026-10-07) is the new true tail: luckass's
+REM  MagmaGat (BO4 Mob-of-the-Dead-remaster weapon for T6, github lborruto/
+REM  t6_motd_magmagat v1.0.5, MIT, credited in README) carved to the weapon's own
+REM  art - 5 xmodels, 3 BO4-foley xanims, 10 fx (the two magma-splat models/effects
+REM  are his impact effect's own dependencies) plus their closure: 164 assets,
+REM  38.7 MB. The names are new on every loaded fastfile, so at the tail this
+REM  donor can only add; its generic-named dependences (physpreset "weapon",
+REM  camo_zmb_dlc2_* images, distortion/glow images, mc_lit_sm techsets) resolve
+REM  from the owners above and drop out of mod.ff. Recipe:
+REM  zone_source\magmagat_donor\how_this_was_built.zone.txt. A/B the asset list
+REM  if this moves.
 REM
 REM  🛑 Do NOT put REM lines between the caret-continued --load arguments below.
 REM  cmd does not treat them as comments there - they are passed to the Linker as
@@ -533,6 +546,7 @@ REM  target "REM".
   --load "%BO2_DIR%\zone\all\dlc1_load_zm.ff" ^
   --load "%PROJ%\zone_source\refreshed_donor\mod.ff" ^
   --load "%PROJ%\zone_source\oldschool_donor\mod.ff" ^
+  --load "%PROJ%\zone_source\magmagat_donor\mod.ff" ^
   --base-folder "%PROJ%" ^
   --add-asset-search-path "%PROJ%\zone_assets" ^
   --add-source-search-path "%PROJ%\zone_source" ^

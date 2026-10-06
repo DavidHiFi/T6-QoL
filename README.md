@@ -305,6 +305,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 | **Synarxis** — *Inspiration* | This project wouldn't exist without their kindness & support. |
 | **sehteria** — *T6-ZM-Expanded* | The mod this one grew out of — extra weapons & perks on all maps. |
 | **SadSlothXL** — [t6-ports](https://github.com/SadSlothXL/t6-ports) | The Death Machine power-up — the drop, the weapon swap and its sounds — and the Blast-O-Matic port: its models, animations, textures, sounds and camo table. |
+| **luckass** — [t6_motd_magmagat](https://github.com/lborruto/t6_motd_magmagat) (MIT, used with permission) | The MagmaGat and Magmus Operandi port from the Black Ops 4 Mob of the Dead remaster: the models, animations, effects, sounds and weapon behaviour. |
 | **VenomModding** — [T5-MissingAssets](https://github.com/VenomModding/T5-MissingAssets) | The Scavenger's Black Ops 1 effects: muzzle flash, bolt trail, explosion and death mist. |
 | **Mario Woopsie** — MOTD Old School Weapons (Nexus Mods) | The MM1 and Browning HP Dual Wield ports: the zombies weapon definitions, the Browning's left-hand models and both Pack-a-Punch names. |
 | **Halo / SickoHours** — [plutonium-agent-toolkit](https://github.com/SickoHours/plutonium-agent-toolkit) | The Bloodhound and Meat Wagon port from Black Ops III: the models, textures, animations, weapon definitions and sound-alias chain. |

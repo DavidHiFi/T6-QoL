@@ -69,6 +69,33 @@
       "camoSlots": [3, 8, 12],
       "soundPrefixes": ["scav_", "sca_"],
       "rawMaterials": "mc/mtl_t5_weapon_zom_sniper"
+    },
+    {
+      "name": "Magmagat",
+      "zone": "zone_source/mod_magmagat.zone",
+      "weapons": ["magmagat_zm", "magmagat_upgraded_zm", "mg_magma_blob_zm"],
+      "camo": "camo_qol_magmagat",
+      "camoBaseMaterials": [
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_receiver",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_frame",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_barrel",
+        "mc/mtl_mg_magmagat",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_receiver_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_frame_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_barrel_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock_details",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock_details_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_magma",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_magma_barrel",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_magma_details",
+        "mc/mtl_mg_magmagat_tank"
+      ],
+      "camoSlots": [3, 8, 12],
+      "soundPrefixes": ["mg_"],
+      "donorFF": "zone_source/magmagat_donor/mod.ff",
+      "imageMatch": ["mg_"]
     }
   ]
 }
