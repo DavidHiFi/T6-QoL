@@ -282,9 +282,9 @@ zmqol_subs_playvox( prefix, index, sound_to_play, waittime, category, type, over
         return;
     }
 
-    if ( !zmqol_subs_enabled() )
-        return;
-
+    //  The enabled gate is NOT read here: this runs on the SPEAKER, and the
+    //  decision belongs to whoever the caption is drawn for. zmqol_subs_show()
+    //  gates per viewer.
     str_alias = prefix + sound_to_play;
 
     //  v2.14.31 - an NPC speaker (the bus is the one stock registers): its
@@ -333,7 +333,10 @@ zmqol_subs_caption( str_alias, str_name, e_listener )
         if ( e_listener == self )
             str_kind = "own";
 
-        e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_ms * 0.001, str_kind );
+        //  The prefix is read on the LISTENER: names-on is per viewer, so a
+        //  player with hud_subtitles 2 sees names while their team-mate with 1
+        //  does not, from the same line.
+        e_listener thread zmqol_subs_show( str_text, e_listener zmqol_subs_prefix( str_name ), n_ms * 0.001, str_kind );
         return;
     }
 
@@ -353,9 +356,6 @@ zmqol_subs_raw_line( str_alias, e_listener )
         return;
 
     if ( !isdefined( self ) || !isplayer( self ) )
-        return;
-
-    if ( !zmqol_subs_enabled() )
         return;
 
     self zmqol_subs_caption( str_alias, zmqol_subs_speaker_name( zmqol_subs_index_from_alias( str_alias ) ), e_listener );
@@ -385,9 +385,6 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
         return;
 
     if ( !isdefined( str_alias ) || str_alias == "" )
-        return;
-
-    if ( !zmqol_subs_enabled() )
         return;
 
     if ( str_alias.size > 8 && getsubstr( str_alias, 0, 8 ) == "vox_plr_" )
@@ -449,7 +446,7 @@ zmqol_subs_npc( str_alias, e_source, v_pos, e_listener )
         }
 
         println( "[zm_qol] subtitles: " + str_alias + " (" + str_name + ") -> shown for " + n_secs + "s to one player" );
-        e_listener thread zmqol_subs_show( str_text, zmqol_subs_prefix( str_name ), n_secs, "other" );
+        e_listener thread zmqol_subs_show( str_text, e_listener zmqol_subs_prefix( str_name ), n_secs, "other" );
         return;
     }
 
@@ -528,8 +525,7 @@ zmqol_subs_music( str_alias )
         {
             println( "[zm_qol] subtitles: song " + str_alias + " -> " + a_lyrics.size + " timed lyric lines" );
 
-            if ( zmqol_subs_enabled() )
-                level thread zmqol_subs_broadcast( undefined, "", str_text, 3, undefined, 0 );
+            level thread zmqol_subs_broadcast( undefined, "", str_text, 3, undefined, 0 );
 
             //  🛑 v2.17.43 - THE LYRIC CLOCK IS THE SONG'S START, NOT ITS LENGTH.
             //  soundgetplaybacktime() answered 78 s for Carrion on Town, a song
@@ -560,15 +556,12 @@ zmqol_subs_music( str_alias )
                 if ( n_show < 0.5 )
                     continue;
 
-                if ( zmqol_subs_enabled() )
-                {
-                    str_line = a_fields[2];
+                str_line = a_fields[2];
 
-                    if ( !getdvarintdefault( "cg_allow_mature", 1 ) && a_fields.size > 3 )
-                        str_line = a_fields[3];
+                if ( !getdvarintdefault( "cg_allow_mature", 1 ) && a_fields.size > 3 )
+                    str_line = a_fields[3];
 
-                    level thread zmqol_subs_broadcast( undefined, "", "[Music] " + str_line, n_show, undefined, 0, "music" );
-                }
+                level thread zmqol_subs_broadcast( undefined, "", "[Music] " + str_line, n_show, undefined, 0, "music" );
             }
 
             return;
@@ -577,8 +570,7 @@ zmqol_subs_music( str_alias )
 
     for ( ;; )
     {
-        if ( zmqol_subs_enabled() )
-            level thread zmqol_subs_broadcast( undefined, "", str_text, 8, undefined, 0 );
+        level thread zmqol_subs_broadcast( undefined, "", str_text, 8, undefined, 0 );
 
         if ( n_end - gettime() < 90000 )
             return;
@@ -728,21 +720,25 @@ zmqol_subs_index_from_alias( str_alias )
     return undefined;
 }
 
-//  The host's HUD switches: the master, then ALL or this row. Read per line,
-//  so the row toggles live like every other HUD row.
+//  Each VIEWER's own HUD switches: the master, then ALL or this row. Read on
+//  self, and the only remaining caller is the show path, where self IS the
+//  player being captioned - so a remote player's row decides their own
+//  captions (their override arrives through the say-channel .my), while the
+//  host and a solo player keep reading the server dvar exactly as before.
 zmqol_subs_enabled()
 {
-    if ( !getdvarintdefault( "hud_master", 1 ) )
+    if ( !self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_master", 1 ) )
         return 0;
 
-    return getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_subtitles", 0 );
+    return self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_all", 0 ) || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_subtitles", 0 );
 }
 
 //  hud_subtitles: 0 OFF, 1 SUBTITLES, 2 SUBTITLES + NAMES (v2.14.24). Only 2
-//  puts a name in front; hud_all turns the text on but adds no names.
+//  puts a name in front; hud_all turns the text on but adds no names. Per
+//  viewer, like zmqol_subs_enabled() above.
 zmqol_subs_names_on()
 {
-    return getdvarintdefault( "hud_subtitles", 0 ) == 2;
+    return self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_subtitles", 0 ) == 2;
 }
 
 //  "[Name] " when names are on and there is a name, else nothing.
@@ -793,9 +789,6 @@ zmqol_subs_prefix( str_name )
 zmqol_subs_from_position( str_alias, str_name, v_pos, n_range )
 {
     if ( !isdefined( level.zmqol_subs_table ) )
-        return;
-
-    if ( !zmqol_subs_enabled() )
         return;
 
     n_ms = soundgetplaybacktime( str_alias );
@@ -943,7 +936,6 @@ zmqol_subs_speaker_name( n_index )
 zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq, str_kind )
 {
     a_players = get_players();
-    str_prefix = zmqol_subs_prefix( str_name );
 
     if ( !isdefined( str_kind ) )
         str_kind = "other";
@@ -954,6 +946,11 @@ zmqol_subs_broadcast( e_speaker, str_name, str_text, n_secs, v_pos, n_range_sq, 
 
         if ( !isdefined( e_player ) )
             continue;
+
+        //  The prefix is read on the VIEWER: names-on is per viewer. It is
+        //  computed before the distance test so a player who is out of range
+        //  costs one dvar read, not a hudelem.
+        str_prefix = e_player zmqol_subs_prefix( str_name );
 
         if ( isdefined( e_speaker ) && e_player == e_speaker )
         {
@@ -1226,6 +1223,16 @@ zmqol_subs_redraw()
 zmqol_subs_show( str_text, str_prefix, n_secs, str_kind )
 {
     self endon( "disconnect" );
+
+    //  🛑 THE VIEWER'S OWN SWITCH, READ ON THE VIEWER. This thread always runs
+    //  on the player being captioned, so this one check is what makes the
+    //  subtitle rows per player: their hud_master / hud_all / hud_subtitles
+    //  decide, their override arrives through the say-channel .my, and the
+    //  host's settings stop deciding for the whole lobby. Before the
+    //  ensure_hud() below, so a viewer with the rows off never builds the
+    //  elements or holds client HUD slots.
+    if ( !self zmqol_subs_enabled() )
+        return;
 
     if ( !isdefined( str_kind ) )
         str_kind = "own";
