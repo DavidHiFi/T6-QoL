@@ -345,11 +345,12 @@ zmqol_mp_weapons_init()
 	//  THE MAGMAGAT AND THE MAGMUS OPERANDI, luckass's BO4 Mob-of-the-Dead
 	//  remaster weapon (github lborruto/t6_motd_magmagat v1.0.5, MIT).
 	//  Server twin is scripts\zm\magmagat.gsc (same test: Buried classic and
-	//  Maze, Docks survival - the maps with room for its 2 slots in the
-	//  253-weapon table); mod_magmagat.zone has the assets. The third slot,
-	//  the blob grenade mg_magma_blob_zm, is never in the box, so it has no
-	//  include here (stock includes no projectile def either: zm_prison.csc
-	//  lists the Blundergat, not its blundersplat dart).
+	//  Maze, Docks survival - the maps with room for its 3 slots in the
+	//  253-weapon table: the gun pair plus the blob grenade the server
+	//  precaches); mod_magmagat.zone has the assets. The blob's def is never
+	//  in the box, so it has no include here (stock includes no projectile
+	//  def either: zm_prison.csc lists the Blundergat, not its blundersplat
+	//  dart).
 	//  ============================================================
 	magmagat_map = getdvar( "mapname" );
 	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
