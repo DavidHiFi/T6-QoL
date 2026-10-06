@@ -28,16 +28,8 @@ main()
     replaceFunc( maps\mp\zm_transit_lava::zombie_exploding_death, ::zombie_exploding_death );
     replaceFunc( maps\mp\zm_transit_lava::lava_damage_init, ::qol_lava_damage_init );
 
-    //  v2.9.9 - JET GUN AS A REAL WEAPON, part 2 of the give routing (part 1 is
-    //  the onbought hook in zmqol_jetgun_real_slot()). This catches every OTHER
-    //  route that would hand the jet gun out as equipment: _zm_weapons::
-    //  weapon_give() calls equipment_give QUALIFIED at :2344 (so .give and any
-    //  scripted give land here), and so does the wallbuy path at :2080. The
-    //  crafting-table claim does NOT reach equipment_give through a catchable
-    //  call (equipment_buy calls it unqualified, same file - replaceFunc
-    //  failure mode 1), which is exactly why the claim is intercepted at the
-    //  buildable's own .onbought hook instead, one level higher.
-    replaceFunc( maps\mp\zombies\_zm_equipment::equipment_give, ::zmqol_equipment_give );
+    // The shared equipment module calls this map-owned helper for primary Jetguns.
+    level.zmqol_jetgun_primary_give = ::zmqol_jetgun_give_as_primary;
 
     //  v2.11.26 - part 3 of the jet gun slot work, and the half that was still
     //  missing: what happens when a player HOLDING the jet gun is handed some
@@ -550,6 +542,12 @@ zmqol_weapon_give( weapon, is_upgrade, magic_box, nosound )
 
 zmqol_jetgun_give_as_primary()
 {
+    if ( weaponinventorytype( "jetgun_zm" ) != "primary" )
+    {
+        self maps\mp\zombies\_zm_equipment::equipment_give( "jetgun_zm" );
+        return;
+    }
+
     if ( self hasweapon( "jetgun_zm" ) )
         return;
 
@@ -588,14 +586,8 @@ zmqol_jetgun_give_as_primary()
     maps\mp\zombies\_zm_weapons::acquire_weapon_toggle( "jetgun_zm", self );
     self setweaponammoclip( "jetgun_zm", weaponclipsize( "jetgun_zm" ) );
 
-    //  🛑 v2.9.16, user request: no action-slot bind, because that is what drew
-    //  the equipment HUD widget and its key prompt. It survives only as the
-    //  fallback for the one state where it is load-bearing - if the raw def
-    //  ever fails to load (the 20,480 B ceiling, ERROR_CATALOGUE 36) the map's
-    //  own "item" def is back and slot 1 is the only way to select the gun.
-    //  Checked at runtime, not assumed.
-    if ( weaponinventorytype( "jetgun_zm" ) != "primary" )
-        self setactionslot( 1, "weapon", "jetgun_zm" );
+    // Primary Jetguns cycle with weapons. Item fallback uses the equipment module.
+
 }
 
 //  The crafting-table claim. self = the buildable's unitrigger (stock calls
@@ -612,21 +604,6 @@ zmqol_jetgun_claimed( player )
     //  above zmqol_jetgun_give_as_primary(). This used to be a bare giveweapon,
     //  which is why a player at the Mule Kick cap ended up carrying four guns.
     player zmqol_jetgun_give_as_primary();
-    //  🛑 v2.9.16 - NO ACTION-SLOT BIND ANY MORE, user request 2026-08-31:
-    //  "remove the Jet Gun equipment HUD element/icon on the right side of the
-    //  screen [and] the dedicated equipment hotkey prompt (e.g. key 8)". The
-    //  old comment here called the slot-1 bind "redundant but harmless" with
-    //  the primary def - the harm is exactly that engine-drawn equipment
-    //  widget and its key prompt (slot 1 = DPAD_UP = key 8, read from the
-    //  user's own bindings_zm.bdg). The v2.9.11 boot MEASURED the raw def
-    //  loading as inventoryType "primary" in the running game, so the gun
-    //  cycles with the weapon-switch key like any rifle and needs no slot.
-    //  The bind survives only as a fallback for the one state where it is
-    //  load-bearing: if the raw def ever fails to load (the 20,480 B loader
-    //  ceiling) the map's own "item" def is back and slot 1 is the only way
-    //  to select the gun at all. Checked at runtime, not assumed.
-    if ( weaponinventorytype( "jetgun_zm" ) != "primary" )
-        player setactionslot( 1, "weapon", "jetgun_zm" );
     player switchtoweapon( "jetgun_zm" );
 
     self.stub.cursor_hint = "HINT_NOICON";
@@ -640,52 +617,6 @@ zmqol_jetgun_claimed( player )
 
     self sethintstring( self.stub.hint_string );
     player maps\mp\zombies\_zm_buildables::track_buildables_pickedup( "jetgun_zm" );
-}
-
-//  Stock _zm_equipment::equipment_give() with ONE added branch at the top.
-//  The body below the branch is stock's, verbatim (_zm_equipment.gsc:247-277),
-//  with the same-file helper calls qualified so they resolve from this file -
-//  behaviour for the shield and every other piece of equipment is unchanged.
-zmqol_equipment_give( equipment )
-{
-    if ( !isdefined( equipment ) )
-        return;
-
-    //  --- the jet gun is a weapon now, not equipment ---
-    if ( equipment == "jetgun_zm" )
-    {
-        //  v2.11.14 - through the shared slot-aware give, so every route that
-        //  is NOT the crafting table obeys the primary limit as well: .give,
-        //  any script hand-over, and weapon_give()'s own is_equipment() detour
-        //  at _zm_weapons.gsc:2343. This was a bare giveweapon, which is half
-        //  of why a full loadout ended up with four guns.
-        self zmqol_jetgun_give_as_primary();
-        return;
-    }
-
-    //  --- stock body, verbatim ---
-    if ( !isdefined( level.zombie_equipment[equipment] ) )
-        return;
-
-    if ( self maps\mp\zombies\_zm_utility::has_player_equipment( equipment ) )
-        return;
-
-    curr_weapon = self getcurrentweapon();
-    curr_weapon_was_curr_equipment = self maps\mp\zombies\_zm_utility::is_player_equipment( curr_weapon );
-    self maps\mp\zombies\_zm_equipment::equipment_take();
-    self maps\mp\zombies\_zm_utility::set_player_equipment( equipment );
-    self giveweapon( equipment );
-    self setweaponammoclip( equipment, 1 );
-    self thread maps\mp\zombies\_zm_equipment::show_equipment_hint( equipment );
-    self notify( equipment + "_given" );
-    self maps\mp\zombies\_zm_equipment::set_equipment_invisibility_to_player( equipment, 1 );
-    self setactionslot( 1, "weapon", equipment );
-
-    if ( isdefined( level.zombie_equipment[equipment].watcher_thread ) )
-        self thread [[ level.zombie_equipment[equipment].watcher_thread ]]();
-
-    self thread maps\mp\zombies\_zm_equipment::equipment_slot_watcher( equipment );
-    self maps\mp\zombies\_zm_audio::create_and_play_dialog( "weapon_pickup", level.zombie_equipment[equipment].vox );
 }
 
 // ============================================================================

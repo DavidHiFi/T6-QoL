@@ -8364,9 +8364,7 @@ zmqol_kill_all_zombies()
 //  The map's own buildable shield, straight to the shield slot.
 //  🛑 Named by string, and the map test is a level VARIABLE - no map-specific
 //  function is referenced, so this is safe in a root script.
-//  Action slot 3 is stock's own shield slot (`_zm_equipment` uses slot 1 for
-//  equipment; the shield is separate), which is why it does not collide with
-//  the jet gun / turbine.
+//  Use native ownership, health reset, watchers and cleanup for debug grants.
 zmqol_give_shield()
 {
     str_shield = "";
@@ -8375,7 +8373,7 @@ zmqol_give_shield()
         str_shield = "tomb_shield_zm";
     else if ( level.script == "zm_prison" )
         str_shield = "alcatraz_shield_zm";
-    else if ( level.script == "zm_transit" || level.script == "zm_nuked" )
+    else if ( level.script == "zm_transit" )
         str_shield = "riotshield_zm";
 
     if ( str_shield == "" )
@@ -8390,8 +8388,7 @@ zmqol_give_shield()
         return;
     }
 
-    self giveweapon( str_shield );
-    self setactionslot( 3, "weapon", str_shield );
+    self maps\mp\zombies\_zm_equipment::equipment_buy( str_shield );
     zmqol_iprintln_safe( self, "^2[zm_qol] shield equipped" );
 }
 
