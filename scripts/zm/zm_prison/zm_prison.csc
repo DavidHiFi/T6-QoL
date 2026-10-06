@@ -72,7 +72,24 @@ include_weapons()
     include_weapon( "judge_upgraded_zm", 0 );
     include_weapon( "fiveseven_zm", 0 ); //
     include_weapon( "fiveseven_upgraded_zm", 0 );
-    include_weapon( "beretta93r_zm", 0 );
+    //  🛑 v2.18.1 - THE DOCKS CLIENT TWIN for
+    //  scripts\zm\locs\zm_prison_loc_docks.gsc::set_box_weapons(), which puts
+    //  the Beretta INTO the box when the docks location runs (zstandard AND
+    //  zgrief - the loc main is registered for both). Stock includes it with
+    //  the box flag 0 everywhere (zm_prison.gsc:808), so on Docks the server
+    //  awarded a Beretta the client's display list did not carry - the box
+    //  handed out a weapon while showing nothing, the exact failure mode the
+    //  banner on boxfix.gsc documents for a server/client list divergence.
+    //  ui_zm_mapstartlocation is read at the same stage and in the same way as
+    //  the Diner shield twin in zm_transit.csc::zmqol_diner_shield_enabled().
+    if ( getdvar( "ui_zm_mapstartlocation" ) == "docks" )
+    {
+        include_weapon( "beretta93r_zm" );
+    }
+    else
+    {
+        include_weapon( "beretta93r_zm", 0 );
+    }
     include_weapon( "beretta93r_upgraded_zm", 0 );
     include_weapon( "fivesevendw_zm", 0 ); //
     include_weapon( "fivesevendw_upgraded_zm", 0 );
@@ -86,6 +103,15 @@ include_weapons()
     {
         include_weapon( "thompson_zm", 0 );
         include_weapon( "870mcs_zm", 0 );
+    }
+    else if ( getdvar( "ui_zm_mapstartlocation" ) == "docks" )
+    {
+        //  🛑 v2.18.1 - docks set_box_weapons() takes the Thompson OUT of the
+        //  box, so the client's display list must not carry it there either.
+        //  Everywhere else the stock split stands: non-classic Mob keeps the
+        //  Thompson in the box (zm_prison.gsc:822-826).
+        include_weapon( "870mcs_zm" );
+        include_weapon( "thompson_zm", 0 );
     }
     else
     {

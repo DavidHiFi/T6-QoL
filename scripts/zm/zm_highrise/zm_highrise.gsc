@@ -51,13 +51,26 @@ main()
 //  Versions/bit counts/types copied verbatim from the stock registrations -
 //  they MUST match the client exactly or the mismatch simply changes shape.
 //
-//  🛑 KNOWN INCOMPLETE: the log also reports
+//  🛑 KNOWN INCOMPLETE, RESOLVED 2026-10-06 (issue 9 / audit row A05). This
+//  note used to report
 //      Clientfield buildable in set [toplayer] is not registered on the client
-//  which is the opposite direction (server has it, client does not) and is NOT
-//  fixed here. Server and client both pick between a per-slot registration and a
-//  single "buildable" field based on level.buildable_slot_count
-//  (_zm_buildables.gsc:170-180 vs _zm_buildables.csc:40-50); on Die Rise survival
-//  those two counts disagree. Until that is resolved Die Rise may still mismatch.
+//  (server has it, client does not) and said Die Rise survival may still
+//  mismatch. The client half SHIPPED in v2.10.0: zm_highrise.csc:57-63 points
+//  the three survival locations at zm_highrise_classic's client functions,
+//  whose premain runs clientscripts\mp\zm_highrise_buildables::include_
+//  buildables() + init_buildables() - so the client now registers the same
+//  single "buildable" toplayer field the server does, both at
+//  getminbitcountfornum( 13 ) = 4 bits (level.buildable_piece_count = 13 in
+//  BOTH zm_highrise_buildables.gsc:12 and .csc:5; the per-slot branch of
+//  register_clientfields() is Buried-only - buildable_slot_count is assigned
+//  nowhere else in the stock dump). The client's include list carries only
+//  springpad_zm + keys_zm, but registration fires on the FIRST add, which is
+//  springpad on both sides, so the two sets agree. The remaining open question
+//  for issue 9 is the reporter's own crash (Mob + Die Rise, Connection
+//  Interrupted during buildable/box use, round ~3; the Trample Steam table
+//  works on their Mob but the mystery box also drops them) - no offline-provable
+//  cause remains in this mod's record, and the live repro plan lives in
+//  modding-jobs\overnight-orchestration-001\REMAINING-AUDIT.md §A05.
 // ============================================================================
 zmqol_register_survival_clientfields()
 {
