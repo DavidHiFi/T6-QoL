@@ -10,6 +10,112 @@
 --  path with raw\ at rank 3. The gate below is belt-and-braces for anyone whose
 --  raw\ folder still holds a copy from an older build.
 -- ============================================================================
+-- ============================================================================
+--  zm_qol - LUI EVENT GUARD INSTALLER. The full explanation is at the top of
+--  ui\t6\codroot.lua. Measured 2026-10-05: the engine loads codroot.lua AND
+--  this file at boot UI init and again after loadmod, codroot.lua first in
+--  both sets, so codroot's copy installs and this copy re-points the same
+--  table and stays silent. If an engine change ever stops reloading
+--  codroot.lua, this copy still installs the guard on its own. "[zm_qol]
+--  LUI event guard installed" reaches console_zm.log through the set +
+--  bare-dvar-name channel described in the guard block.
+-- ============================================================================
+-- zm_qol LUI EVENT GUARD BEGIN (identical in ui\t6\codroot.lua and ui\t6\mainlobby.lua;
+-- tools\check-lui-guard.ps1 fails the build if the two copies differ)
+if ZmQolLuiGuardModActive == nil then
+	ZmQolLuiGuardModActive = function ()
+		local Ok, Value = pcall(function () return Dvar.fs_game:get() end)
+		if not Ok or type(Value) ~= "string" then
+			return false
+		end
+		Value = string.lower(Value)
+		return Value == "mods/zm_qol" or Value == "zm_qol"
+	end
+end
+
+-- The one text channel that provably reaches console_zm.log from LUI in this
+-- build (measured 2026-10-05): set a dvar to the line, then send the dvar's
+-- bare name. The engine answers in console_zm.log with
+--     "zmqol_lui_guard" is: "<value>^7" default: "^7"
+-- The old channels are measured dead in this build: an Engine.Exec "echo ..."
+-- comes back as `Unknown command "echo"` with the payload discarded, and
+-- DebugPrint produces no console_zm.log line at all.
+local ZmQolGuardSay = function (Dvar, Value)
+	pcall(Engine.Exec, 0, "set " .. Dvar .. " \"" .. Value .. "\"")
+	pcall(Engine.Exec, 0, Dvar)
+end
+
+if LUI ~= nil and LUI.CoDRoot ~= nil and ZmQolLuiGuardModActive() then
+	if LUI.CoDRoot.ZmQolGuardDispatch == nil and type(LUI.CoDRoot.ProcessEventNow) == "function" then
+		-- The function being replaced. Kept so the guard can step aside when
+		-- another mod is loaded, and never wrapped twice: a later run of this
+		-- block finds ZmQolGuardDispatch set and only re-points the table entry.
+		local Stock = LUI.CoDRoot.ProcessEventNow
+
+		local Report = function (Event, Err)
+			local Name = "nil"
+			if type(Event) == "table" then
+				Name = tostring(Event.name)
+			end
+			local Line = "[zm_qol] LUI GUARD: event '" .. Name .. "' handler failed: " .. tostring(Err)
+			-- Newlines, double quotes and semicolons would break the one-line
+			-- console set; flatten them before it goes through.
+			local Safe = string.gsub(string.gsub(string.gsub(Line, "[\r\n]", " "), "\"", "'"), ";", " ")
+			ZmQolGuardSay("zmqol_lui_guard_last", Safe)
+		end
+
+		-- Ends the PIX scope and hands back every value the handler returned,
+		-- trailing nils included. A failed handler returns nil, as an
+		-- unhandled event does.
+		local Finish = function (Event, Ok, ...)
+			Engine.PIXEndEvent()
+			if not Ok then
+				Report(Event, ...)
+				return nil
+			end
+			return ...
+		end
+
+		LUI.CoDRoot.ZmQolGuardStock = Stock
+		LUI.CoDRoot.ZmQolGuardDispatch = function (Root, Event)
+			if not ZmQolLuiGuardModActive() then
+				return Stock(Root, Event)
+			end
+			if Event == nil then
+				Report(Event, "nil event dropped")
+				return nil
+			end
+			-- Stock order: EventProcessed, propagate, PIX begin, handler, PIX end.
+			if Event.name ~= "process_events" then
+				Engine.EventProcessed()
+			end
+			local PropagateOk, PropagateErr = pcall(Root.propagateEvent, Root, Event)
+			if not PropagateOk then
+				Report(Event, PropagateErr)
+			end
+			Engine.PIXBeginEvent(Event.name)
+			return Finish(Event, pcall(LUI.UIElement.processEvent, Root, Event))
+		end
+	end
+
+	if LUI.CoDRoot.ZmQolGuardDispatch ~= nil then
+		LUI.CoDRoot.ProcessEventNow = LUI.CoDRoot.ZmQolGuardDispatch
+		-- Announce exactly once per process. The stored dvar value is the
+		-- idempotency marker: it survives this file being re-executed (which
+		-- re-creates LUI.CoDRoot and, with it, the dispatcher) and survives a
+		-- UI VM rebuild, which a Lua global would not. Guard catches on the
+		-- same boot go to zmqol_lui_guard_last and never disturb this marker.
+		local Announced = false
+		pcall(function ()
+			Announced = UIExpression.DvarString(nil, "zmqol_lui_guard") == "[zm_qol] LUI event guard installed"
+		end)
+		if not Announced then
+			ZmQolGuardSay("zmqol_lui_guard", "[zm_qol] LUI event guard installed")
+		end
+	end
+end
+-- zm_qol LUI EVENT GUARD END
+
 function ZmQolLobbyModLoaded()
 	local Ok, Value = pcall(function () return Dvar.fs_game:get() end)
 
