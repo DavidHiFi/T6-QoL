@@ -552,6 +552,12 @@ REM stamp all 5 with the current time - paths passed via env vars so any
 REM username/path (spaces, apostrophes, etc.) is safe
 set "STAMP_DIR=%DEST%"
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$t=Get-Date; foreach($f in $env:STAMP_FILES.Split(' ')){ $p=Join-Path $env:STAMP_DIR $f; if(Test-Path -LiteralPath $p){ (Get-Item -LiteralPath $p).LastWriteTime=$t } }" 2>nul
+REM A18 provenance stamp: rewrite ONLY the deployed copy's mod.json version to
+REM "<orig> <sha> <date>" (Plutonium Mods menu shows the source tree). The repo
+REM mod.json is never modified; the script is silent-fail-safe (exit 0).
+set "STAMP_JSON_DEST=%DEST%\mod.json"
+set "STAMP_JSON_REPO=%~dp0mod.json"
+"%PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\stamp-mod-json.ps1" 2>nul
 exit /b 0
 
 :packfail
