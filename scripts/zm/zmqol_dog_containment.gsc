@@ -63,7 +63,6 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
-#include maps\mp\zombies\_zm_zonemgr;
 #include maps\mp\zombies\_zm_ai_dogs;
 
 main()
@@ -95,6 +94,24 @@ zmqol_dog_containment_watch()
         if ( !isdefined( level.zombie_team ) )
             continue;
 
+        //  TEMPORARY DIAGNOSTIC (2026-10-07 live test): one line every 10s
+        //  saying the thread is alive and what each enumeration API sees.
+        //  Gated on zmqol_dog_heartbeat (default 0 = silent). Remove once the
+        //  containment is live-verified.
+        if ( getdvarint( "zmqol_dog_heartbeat" ) )
+        {
+            i_hb_ai = 0;
+            i_hb_sp = 0;
+
+            if ( isdefined( getaiarray( level.zombie_team ) ) )
+                i_hb_ai = getaiarray( level.zombie_team ).size;
+
+            if ( isdefined( getaispeciesarray( level.zombie_team, "all" ) ) )
+                i_hb_sp = getaispeciesarray( level.zombie_team, "all" ).size;
+
+            println( "[zm_qol] hellhounds: heartbeat ai=" + i_hb_ai + " species=" + i_hb_sp );
+        }
+
         //  A location script that owns this map's dogs (currently Diner)
         //  ships its own repair, containment and last-dog timeout keyed to
         //  its own snapshot. Two watchdogs teleporting the same dog would
@@ -102,7 +119,27 @@ zmqol_dog_containment_watch()
         if ( isdefined( level.zmqol_diner_dog_locs ) && level.zmqol_diner_dog_locs.size > 0 )
             continue;
 
-        a_ai = getaiarray( level.zombie_team );
+        //  ?? getaiarray() CANNOT SEE THE DOGS ON THIS MAP - MEASURED LIVE
+        //  2026-10-07 (Bus Depot, zm_qol + probes): with two live hellhounds on
+        //  the field, getaiarray( level.zombie_team ) returned 0 while
+        //  getaispeciesarray( level.zombie_team, "all" ) returned 2. The map's
+        //  only dog spawner (actor_zombie_dog, so_zsurvival_zm_transit.mapents)
+        //  carries no team key, and the generic zombie spawn init that writes
+        //  self.team = level.zombie_team (_zm_spawner.gsc:270) is not part of
+        //  the dog spawner's spawn chain - so the dogs never enter the team
+        //  bucket every stock getaiarray call filters by. The species array is
+        //  what stock's own round bookkeeping uses (get_round_enemy_array,
+        //  _zm_utility.gsc:135), and it includes corpses, so filter to alive
+        //  here: the last-dog timeout below must count only living actors.
+        a_all = getaispeciesarray( level.zombie_team, "all" );
+
+        a_ai = [];
+
+        for ( i_hb = 0; i_hb < a_all.size; i_hb++ )
+        {
+            if ( isdefined( a_all[i_hb] ) && isalive( a_all[i_hb] ) )
+                a_ai[a_ai.size] = a_all[i_hb];
+        }
 
         for ( i = 0; i < a_ai.size; i++ )
         {
@@ -206,20 +243,30 @@ zmqol_dog_containment_watch()
             }
 
             //  ------------------------------------------------  runaway rescue
-            //  Two tests, same as the Diner containment:
-            //    1. distance. Stock's own spawn logic refuses any dog spot
-            //       further than 1150 units from a player
-            //       (dog_spawn_transit_logic, dist_squared > 1322500). A dog
-            //       more than 2500 units from EVERY player is far outside
-            //       anything stock would have placed. Cheap pre-filter so the
-            //       zone test below runs on almost nothing.
-            //    2. the zone. get_zone_from_position() returns undefined when
-            //       a position is inside no ENABLED zone - stock's own "is
-            //       this spot part of the arena" question, and what actually
-            //       authorises the teleport.
-            //  Five consecutive seconds, not one: a dog crossing a gap
-            //  between zone volumes for a frame must never be teleported.
-            //  The counter resets the moment the dog is near a player again.
+            //  One test, measured, stock-aligned: a dog more than 2500 units
+            //  from EVERY player for five consecutive seconds is outside
+            //  anything stock would ever have placed. Stock's own dog spawn
+            //  refuses any spot further than 1150 units from a player
+            //  (dog_spawn_transit_logic, dist_squared > 1322500), so 2500 has
+            //  generous headroom, and a dog near ONE player in a split co-op
+            //  never trips it (the test requires far from EVERY player).
+            //
+            //  ?? v2 (2026-10-07 live test, Bus Depot): the first version also
+            //  required get_zone_from_position() to return undefined, and THAT
+            //  VETO BLINDED THE RESCUE TO THE EXACT REPORTED BUG. The probe
+            //  teleported a dog to the cornfield (9593.5,-173.5,-207.3) - the
+            //  kind of place the owner's round-35 runaway ends up - and the
+            //  rescue never fired: that position sits inside a TranZit zone
+            //  volume (zone_trans_cornfield), so the "no enabled zone" test
+            //  passed and the dog was left outside. Measured, not inferred:
+            //  heartbeat lines showed the thread alive and seeing both dogs
+            //  (species=2) while the cornfield dog sat there for the whole 25s
+            //  window. The distance test alone is the stock-aligned question;
+            //  the zone veto is gone.
+            //
+            //  Five consecutive seconds, not one: a dog chasing a player
+            //  across a gap between spawn locations must never be teleported.
+            //  The counter resets the moment the dog is near any player again.
             b_far = 1;
 
             foreach ( player in get_players() )
@@ -242,11 +289,7 @@ zmqol_dog_containment_watch()
                 if ( ai.zmqol_dog_far_ticks >= 5 )
                 {
                     ai.zmqol_dog_far_ticks = 0;
-
-                    if ( !isdefined( get_zone_from_position( ai.origin ) ) )
-                    {
-                        zmqol_dog_containment_return( ai, "RUNAWAY DOG was in no enabled zone and more than 2500 units from every player for 5s - returned to the arena" );
-                    }
+                    zmqol_dog_containment_return( ai, "RUNAWAY DOG was more than 2500 units from every player for 5s - returned to the arena" );
                 }
             }
 
