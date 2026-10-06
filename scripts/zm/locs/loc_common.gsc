@@ -364,11 +364,42 @@ find_bench(bench_name)
 
 swap_buildable_fields(stub1, stub2)
 {
+	//  🛑 v2.18.1 - GUARD THE STUBS. Both arguments arrive as
+	//  level.buildable_stubs[0] / [1] (zm_highrise_loc_sweatshop.gsc:149), an
+	//  array _zm_buildables fills lazily - one entry per bench whose
+	//  triggerthink actually ran and found its trigger entity in the location.
+	//  A location whose second bench never registered (trigger missing, or the
+	//  swap thread losing the race against think_buildables) handed undefined
+	//  into stub2.buildablezone and script-errored the server -
+	//  SV_Shutdown, everyone dropped with Connection Interrupted, the issue 9
+	//  symptom class on the exact map the report names. Skip and say so
+	//  instead; the tables then simply keep their stock positions.
+	if ( !isdefined( level.buildable_stubs ) || !isdefined( stub1 ) || !isdefined( stub2 ) )
+	{
+		println( "[zm_qol] locs: swap_buildable_fields skipped - a buildable stub is missing" );
+
+		if ( isdefined( level.buildable_stubs ) )
+			println( "[zm_qol] locs: buildable_stubs.size = " + level.buildable_stubs.size );
+
+		return;
+	}
+
 	temp = stub2.buildablezone;
 	stub2.buildablezone = stub1.buildablezone;
-	stub2.buildablezone.stub = stub2;
+
+	//  🛑 v2.18.1 - the .stub backpointer write is the only field-of-field
+	//  assignment here; on a zone-less stub it is what actually errors.
+	//  buildablezone is set late ( _zm_buildables.gsc:1411, inside
+	//  setup_unitrigger_buildable ), so the race the guard above describes can
+	//  also land as a defined stub with no zone yet.
+	if ( isdefined( stub2.buildablezone ) )
+		stub2.buildablezone.stub = stub2;
+
 	stub1.buildablezone = temp;
-	stub1.buildablezone.stub = stub1;
+
+	if ( isdefined( stub1.buildablezone ) )
+		stub1.buildablezone.stub = stub1;
+
 	temp = stub2.buildablestruct;
 	stub2.buildablestruct = stub1.buildablestruct;
 	stub1.buildablestruct = temp;
@@ -412,7 +443,11 @@ swap_buildable_fields(stub1, stub2)
 	bench2 = undefined;
 	transfer_pos_as_is = 1;
 
-	if (isdefined(stub1.model.target) && isdefined(stub2.model.target))
+	//  🛑 v2.18.1 - .model IS OPTIONAL on a stub. Reading .target through an
+	//  undefined .model errors before isdefined() gets a say, so the models
+	//  themselves are part of the test (the tail swap below is happy with
+	//  undefined on both sides - it just swaps nothing).
+	if (isdefined(stub1.model) && isdefined(stub2.model) && isdefined(stub1.model.target) && isdefined(stub2.model.target))
 	{
 		bench1 = find_bench(stub1.model.target);
 		bench2 = find_bench(stub2.model.target);
@@ -440,7 +475,7 @@ swap_buildable_fields(stub1, stub2)
 	stub2.model = stub1.model;
 	stub1.model = temp;
 
-	if (transfer_pos_as_is)
+	if (transfer_pos_as_is && isdefined(stub1.model) && isdefined(stub2.model))
 	{
 		temp = [];
 		temp[0] = stub2.model.origin;
