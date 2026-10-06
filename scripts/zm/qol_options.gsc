@@ -1281,11 +1281,25 @@ qol_opt_night_mode()
     self endon( "disconnect" );
     level endon( "end_game" );
 
+    //  🛑 THE DEFAULTS OUTLIVE THE LEVEL. The three lighting dvars survive
+    //  fast_restart and map_restart, so with NIGHT MODE on at a restart a fresh
+    //  read here caught the NIGHT values as "defaults", and switching the row
+    //  off afterwards put the night lighting straight back. The clean values are
+    //  kept in dvars, which outlive the level the same way, and are re-read
+    //  from the live lighting only while night mode is off or nothing has been
+    //  kept yet in this game process.
     if ( !isdefined( level.qol_default_exposure ) )
     {
-        level.qol_default_exposure = getdvar( "r_exposureValue" );
-        level.qol_default_sunlight = getdvar( "r_lightTweakSunLight" );
-        level.qol_default_skyfactor = getdvar( "r_sky_intensity_factor0" );
+        if ( getdvar( "zmqol_night_def_exp" ) == "" || !getdvarintdefault( "night_mode", 0 ) )
+        {
+            setdvar( "zmqol_night_def_exp", getdvar( "r_exposureValue" ) );
+            setdvar( "zmqol_night_def_sun", getdvar( "r_lightTweakSunLight" ) );
+            setdvar( "zmqol_night_def_sky", getdvar( "r_sky_intensity_factor0" ) );
+        }
+
+        level.qol_default_exposure = getdvar( "zmqol_night_def_exp" );
+        level.qol_default_sunlight = getdvar( "zmqol_night_def_sun" );
+        level.qol_default_skyfactor = getdvar( "zmqol_night_def_sky" );
     }
 
     b_on = 0;
