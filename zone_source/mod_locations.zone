@@ -1035,10 +1035,10 @@ camo,camo_sig556
 camo,camo_vector
 
 // ============================================================================
-//  v2.9.27 - THE SPAS ICON. The one gun whose hudIcon/killIcon/ammoCounterIcon
+//  v2.9.27 - THE SPAS ICON (restored 2026-10-07, round 2: the gun is back to
+//  replace the stock S12). The one gun whose hudIcon/killIcon/ammoCounterIcon
 //  resolve from NO loaded fastfile (SPAS is a campaign gun; its icon ships only
-//  in frontend.ff, which zombies never loads) - the sole weapon-icon
-//  "Could not load material" on the v2.9.26 Diner boot log. Treyarch ships a
+//  in frontend.ff, which zombies never loads). Treyarch ships a
 //  menu_mp_weapons_* icon with every stock zm gun, so the SPAS carries its own:
 //  material JSON + iwi dumped verbatim from retail frontend.ff into
 //  zone_assets\ (raw beats every --load; the --load list is untouched).

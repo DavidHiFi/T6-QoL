@@ -70,8 +70,8 @@ include_weapons()
     include_weapon( "m1911_upgraded_zm", 0 );
     include_weapon( "judge_zm", 0 ); //
     include_weapon( "judge_upgraded_zm", 0 );
-    include_weapon( "fiveseven_zm", 0 ); //
-    include_weapon( "fiveseven_upgraded_zm", 0 );
+    //  fiveseven_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and browninghp_zm (same root list) takes the slots.
     //  🛑 v2.18.1 - THE DOCKS CLIENT TWIN for
     //  scripts\zm\locs\zm_prison_loc_docks.gsc::set_box_weapons(), which puts
     //  the Beretta INTO the box when the docks location runs (zstandard AND
@@ -91,8 +91,9 @@ include_weapons()
         include_weapon( "beretta93r_zm", 0 );
     }
     include_weapon( "beretta93r_upgraded_zm", 0 );
-    include_weapon( "fivesevendw_zm", 0 ); //
-    include_weapon( "fivesevendw_upgraded_zm", 0 );
+    //  fivesevendw_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans
+    //  the stock pair and browninghpdw_zm (oldschool.gsc, all six maps now)
+    //  takes the slots.
     include_weapon( "uzi_zm", 0 );
     include_weapon( "uzi_upgraded_zm", 0 );
     include_weapon( "thompson_upgraded_zm", 0 );
@@ -122,8 +123,9 @@ include_weapons()
     include_weapon( "pdw57_zm", 0 ); //
     include_weapon( "pdw57_upgraded_zm", 0 );
     include_weapon( "870mcs_upgraded_zm", 0 );
-    include_weapon( "saiga12_zm", 0 ); //
-    include_weapon( "saiga12_upgraded_zm", 0 );
+    //  saiga12_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and spas_zm (the restored SPAS-12, same root list) takes
+    //  the slots.
     include_weapon( "rottweil72_zm", 0 );
     include_weapon( "rottweil72_upgraded_zm", 0 );
     include_weapon( "m14_zm", 0 );
@@ -138,14 +140,14 @@ include_weapons()
     include_weapon( "fnfal_upgraded_zm", 0 );
     include_weapon( "dsr50_zm", 0 ); //
     include_weapon( "dsr50_upgraded_zm", 0 );
-    include_weapon( "barretm82_zm", 0 ); //
-    include_weapon( "barretm82_upgraded_zm", 0 );
+    //  barretm82_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and dragunov_zm (zm_expanded.csc root list) takes the slots.
     include_weapon( "minigun_alcatraz_zm" );
     include_weapon( "minigun_alcatraz_upgraded_zm", 0 );
     include_weapon( "lsat_zm" );
     include_weapon( "lsat_upgraded_zm", 0 );
-    include_weapon( "usrpg_zm", 0 ); //
-    include_weapon( "usrpg_upgraded_zm", 0 );
+    //  usrpg_zm pair swapped out 2026-10-07: gunswap.gsc bans the stock pair
+    //  from registration and rpg_zm (BO1 RPG-7) takes the slots.
     include_weapon( "ray_gun_zm" );
     include_weapon( "ray_gun_upgraded_zm", 0 );
     include_weapon( "bouncing_tomahawk_zm", 0 );
@@ -196,16 +198,15 @@ include_weapons()
     include_weapon( "xm8_upgraded_zm", 0 );
     include_weapon( "srm1216_zm" );
     include_weapon( "srm1216_upgraded_zm", 0 );
-    include_weapon( "rpd_zm" );
-    include_weapon( "rpd_upgraded_zm", 0 );
-    include_weapon( "hamr_zm" );
-    include_weapon( "hamr_upgraded_zm", 0 );
+    //  rpd_zm and hamr_zm pairs (the mod's own additions) came out 2026-10-07
+    //  round 2: gunswap.gsc bans the stock pairs too and m60_zm / mk48_zm
+    //  (zm_expanded.csc root list) take the slots.
     include_weapon( "python_zm" );
     include_weapon( "python_upgraded_zm", 0 );
     include_weapon( "kard_zm" );
     include_weapon( "kard_upgraded_zm", 0 );
-    include_weapon( "m32_zm" );
-    include_weapon( "m32_upgraded_zm", 0 );
+    //  m32_zm pair (the War Machine) came out 2026-10-07: the MM1 covers the
+    //  launcher slot in both Mob modes now (oldschool.gsc).
 
     if ( isdefined( level.raygun2_included ) && level.raygun2_included && !isdemoplaying() )
     {
