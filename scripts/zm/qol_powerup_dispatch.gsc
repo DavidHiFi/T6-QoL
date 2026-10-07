@@ -65,6 +65,32 @@ zmqol_pd_hook_watch()
 
         if ( zmqol_pd_hook() )
             println( "[zm_qol] power-up dispatch: level._zombiemode_powerup_grab was replaced - hook re-installed, previous handler chained" );
+
+        //  v2.15.42 - per-player watcher re-arm. The watcher is armed from
+        //  level "connected" only, and the A04 probe cycle (2026-10-07,
+        //  modding-jobs\merge-a04-pipeline-001) measured that player entity
+        //  fields reset and script threads die across an engine restart while
+        //  init() re-runs - so a Death Machine picked up after a restart
+        //  could lose its downed quiet-end: the switch watcher returns
+        //  silently in last stand and can_revive() stays refusing until the
+        //  holder bleeds out. Walk the players here and arm any that carry
+        //  no marker. Safe under all three cases: fields persist (marker
+        //  set, no re-arm), fields reset + threads die (marker cleared,
+        //  re-arms), fields reset + threads survive (re-arms once; the end
+        //  notify and the clear are idempotent).
+        a_players = get_players();
+
+        if ( !isdefined( a_players ) )
+            continue;
+
+        for ( i = 0; i < a_players.size; i++ )
+        {
+            if ( !isdefined( a_players[i] ) || isdefined( a_players[i].zmqol_pd_watching ) )
+                continue;
+
+            a_players[i].zmqol_pd_watching = 1;
+            a_players[i] thread zmqol_pd_player_watch();
+        }
     }
 }
 
@@ -117,7 +143,15 @@ zmqol_pd_onplayerconnect()
     for ( ;; )
     {
         level waittill( "connected", player );
-        player thread zmqol_pd_player_watch();
+
+        //  v2.15.42 - the marker check is shared with zmqol_pd_hook_watch()'s
+        //  re-arm walk, so whichever path reaches the player first arms the
+        //  watcher and the other is a no-op.
+        if ( !isdefined( player.zmqol_pd_watching ) )
+        {
+            player.zmqol_pd_watching = 1;
+            player thread zmqol_pd_player_watch();
+        }
     }
 }
 
