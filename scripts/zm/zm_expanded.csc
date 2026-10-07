@@ -2595,17 +2595,15 @@ zmqol_enable_electric_cherry()
 {
 	map = getDvar( "mapname" );
 
-	//  🛑 v2.9.30 - zm_buried REMOVED, in the same edit as the server's list in
-	//  quality_of_life.gsc::zmqol_enable_electric_cherry(). Buried failed to
-	//  load at 71/63 toplayer bits; the two lists must stay identical or it is
-	//  EXE_CLIENT_FIELD_MISMATCH before the map starts.
+	//  Buried trades the PhD purchase field for Cherry's field. The server
+	//  uses the same map list and clientfield filter.
 	//  v2.10.7 - zm_prison NON-CLASSIC (Cell Block survival) added, EXACT
 	//  TWIN of quality_of_life.gsc::zmqol_enable_electric_cherry(). is_classic()
 	//  reads the ui_zm_gamemodegroup dvar on both sides (_zm_utility.csc:392),
 	//  so the two evaluate one value. Precedent: BO2-Reimagined
 	//  zm_prison_reimagined.csc:22-25. Standard (classic) Mob is native and
 	//  untouched; registering it twice there would be fatal.
-	if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && !( map == "zm_prison" && !is_classic() ) )
+	if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && map != "zm_buried" && !( map == "zm_prison" && !is_classic() ) )
 		return;
 
 	if ( isDefined( level._custom_perks ) && isDefined( level._custom_perks[ "specialty_grenadepulldeath" ] ) )
@@ -2812,6 +2810,18 @@ perks_register_clientfield()
 		a_keys = getarraykeys(level._custom_perks);
 		for (i = 0; i < a_keys.size; i++)
 		{
+			//  Buried: Electric Cherry replaced the PhD machine (2026-09-28), and
+			//  perk_dive_to_nuke's bit pays for perk_electric_cherry's in a set
+			//  that is full at 63. EXACT TWIN of the same skip in
+			//  quality_of_life.gsc::perks_register_clientfield(). The code
+			//  callback is cleared too, so perk_init_code_callbacks() never
+			//  names a field this side did not register. The perma-Flopper uses
+			//  phd_flopper_effects, which Buried registers itself.
+			if (getDvar("mapname") == "zm_buried" && a_keys[i] == "specialty_flakjacket")
+			{
+				level._custom_perks[a_keys[i]].clientfield_code_callback = undefined;
+				continue;
+			}
 			if (isdefined(level._custom_perks[a_keys[i]].clientfield_register))
 			{
 				level [[level._custom_perks[a_keys[i]].clientfield_register]]();

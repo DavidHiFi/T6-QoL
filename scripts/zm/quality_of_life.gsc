@@ -1362,7 +1362,6 @@ init()
     level thread zmqol_no_walkers_watch();               // NO WALKERS, user request 2026-08-30
     level thread zmqol_no_denizens_watch();              // NO DENIZENS, user request 2026-09-05
     level thread zmqol_no_limited_weapons_watch();        // NO BOX LIMITS reaches the ported wonder weapons (v2.9.15)
-    level thread zmqol_dim_cherry_arcs();                // Electric Cherry kill arc -> secondary (v2.9.30)
 
     // --- zm_expanded: weapon precache + weapon-limit monitor hook ---
     precacheitem( "uzi_zm" );
@@ -6000,6 +5999,8 @@ zmqol_map_perks()
 
         for ( i = 0; i < a_keys.size; i++ )
         {
+            if ( getDvar( "mapname" ) == "zm_buried" && a_keys[i] == "specialty_flakjacket" )
+                continue;
             if ( !isinarray( a_perks, a_keys[i] ) )
                 a_perks[a_perks.size] = a_keys[i];
         }
@@ -11903,11 +11904,9 @@ perks()
         //  Origins 2026-09-01). So ALL FIVE of the mod's Buried bits go, and
         //  Buried returns to its stock toplayer roster exactly.
         //
-        //  What Buried loses: Deadshot + Electric Cherry from the Wunderfizz
-        //  (it keeps its native seven perks incl. Vulture Aid), Tombstone
-        //  (was co-op-only anyway), and the Zombie Blood box powerup. If a
-        //  boot ever proves the ceiling is 64 or 65, Electric Cherry (+1) and
-        //  then Deadshot (+2) are the restoration order.
+        //  Buried still omits Deadshot, Tombstone and Zombie Blood. Cherry now
+        //  replaces PhD's purchasable clientfield, so its toplayer total stays
+        //  at 63. The permanent Flopper uses its separate effects field.
         //
         //  🛑 The client twin is zm_expanded.csc::perks() and MUST carry the
         //  identical exclusions, or the toplayer set differs in width between
@@ -15635,13 +15634,11 @@ zmqol_enable_electric_cherry()
 {
     map = getDvar( "mapname" );
 
-    //  🛑 v2.9.30 - zm_buried REMOVED from this list. Buried classic failed to
-    //  load at 71 toplayer bits vs the 63 stock spends (the fullest map in the
-    //  game); perk_electric_cherry's 1 bit is part of the 8 cut. Full
-    //  arithmetic in the Deadshot block inside perks(). The client twin's list
-    //  in zm_expanded.csc::zmqol_enable_electric_cherry() changed in the same
-    //  edit and MUST stay identical - one side wider is
-    //  EXE_CLIENT_FIELD_MISMATCH before the map starts.
+    //  Buried trades its purchasable PhD clientfield for Cherry. The permanent
+    //  Flopper upgrade uses phd_flopper_effects and the dive visionset, not
+    //  perk_dive_to_nuke. Keep the client twin and field filter in sync.
+    //  Buried's client twin uses the same map list. Its PhD purchase field is
+    //  omitted on both sides to pay for Cherry's field.
     //  v2.10.7 - MOB OF THE DEAD, NON-CLASSIC (Cell Block survival). User,
     //  2026-09-02: *"Guarantee Electric Cherry remains present and fully
     //  functional on Mob of the Dead (both standard Mob of the Dead and Cell
@@ -15677,7 +15674,7 @@ zmqol_enable_electric_cherry()
     //  (_zm_utility.gsc:23-27 / _zm_utility.csc:392-396), so the client twin
     //  in zm_expanded.csc::zmqol_enable_electric_cherry() evaluates the same
     //  condition from the same dvar. Change neither without the other.
-    if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && !( map == "zm_prison" && !is_classic() ) )
+    if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && map != "zm_buried" && !( map == "zm_prison" && !is_classic() ) )
         return;
 
     //  Stock's classic branch sets this beside the enable; _zm_ai_brutus reads
@@ -15736,54 +15733,6 @@ zmqol_enable_electric_cherry()
     // whose first line calls init_electric_cherry() a second time. See above.
     if ( isdefined( level._custom_perks[ "specialty_grenadepulldeath" ] ) )
         level._custom_perks[ "specialty_grenadepulldeath" ].perk_machine_thread = undefined;
-}
-
-// ============================================================================
-//  zmqol_dim_cherry_arcs  -  Electric Cherry's kill arc uses the SECONDARY
-//  tesla shock (v2.9.30)
-//
-//  User, 2026-09-01: electrified zombies cause blinding screen flashes. Stock's
-//  electric_cherry_death_fx() plays level._effect["tesla_shock"] on every
-//  zombie the reload shock KILLS - at an empty clip that is every zombie
-//  within 128 units, each one a 13-element / 10-sprite flash (measured from
-//  BO1's raw .efx sources, which this T6 family derives from; peak sprite
-//  size 525). Stock's own STUN arc, fx_zombie_tesla_shock_secondary, is the
-//  same family at 7 elements / 5 sprites / peak 425 - Treyarch's lighter arc.
-//
-//  THE MECHANISM: repoint the _effect key, not replaceFunc. The only reader
-//  of level._effect["tesla_shock"] in all 2,093 stock scripts is
-//  electric_cherry_death_fx() (grepped, not assumed), and it is called
-//  UNQUALIFIED from electric_cherry_reload_attack() in the same file - which
-//  is replaceFunc failure mode #1 (dev CLAUDE.md §4): a replace would
-//  silently not take for those calls. The key repoint reaches every caller.
-//
-//  No loadfx here - both handles are loaded by stock init_electric_cherry()
-//  (lines 44-45), so this only copies an already-loaded handle and cannot hit
-//  the loadfx-after-init window. The wait exists because cherry's init timing
-//  differs between the ported maps (our perks(), main window) and its native
-//  maps (Mob/Origins, machine think inside _zm_perks::init()); nobody can
-//  drink the perk within the first seconds, so the poll always wins the race
-//  that matters. If cherry is not on this map the keys never appear and this
-//  exits after ~10s having touched nothing.
-//
-//  📝 Server-side only ON PURPOSE: network_safe_play_fx_on_tag() sends the fx
-//  handle the server chose, and the zombie-attached arcs are all
-//  server-played. No clientfield, no client twin, no symmetry risk.
-// ============================================================================
-zmqol_dim_cherry_arcs()
-{
-    for ( i = 0; i < 200; i++ )
-    {
-        if ( isdefined( level._effect ) &&
-             isdefined( level._effect[ "tesla_shock" ] ) &&
-             isdefined( level._effect[ "tesla_shock_secondary" ] ) )
-        {
-            level._effect[ "tesla_shock" ] = level._effect[ "tesla_shock_secondary" ];
-            return;
-        }
-
-        wait 0.05;
-    }
 }
 
 perks_register_clientfield()
@@ -15870,6 +15819,13 @@ perks_register_clientfield()
 		a_keys = getarraykeys(level._custom_perks);
 		for (i = 0; i < a_keys.size; i++)
 		{
+			//  Buried: Electric Cherry took the PhD machine's place (2026-09-28).
+			//  perk_dive_to_nuke's 1 bit pays for perk_electric_cherry's 1 in
+			//  a toplayer set that is full at 63. The client twin in
+			//  zm_expanded.csc skips the same field. The perma-Flopper never
+			//  used it: it drives phd_flopper_effects, which Buried registers.
+			if (getDvar("mapname") == "zm_buried" && a_keys[i] == "specialty_flakjacket")
+				continue;
 			if (isdefined(level._custom_perks[a_keys[i]].clientfield_register))
 			{
 				level [[level._custom_perks[a_keys[i]].clientfield_register]]();

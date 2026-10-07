@@ -329,6 +329,45 @@ rawfile,animtrees/fxanim_props.atr
 // soundbank,zmb_tomb.all
 
 // ============================================================================
+//  ELECTRIC CHERRY STUN  -  the reload shock's stun anim on the four maps
+//  that never shipped it  (2026-09-28, user: "zombies take damage without the
+//  stun animation. Make it exactly Mob/Origins").
+// ----------------------------------------------------------------------------
+//  Stock's core _zm_perk_electric_cherry::electric_cherry_stun() animscripted()
+//  state zm_afterlife_stun, which only zm_prison_basic.asd and zm_tomb_basic.asd
+//  carry natively. On TranZit, Nuketown, Die Rise and Buried the state did not
+//  exist, so the zombie took the damage and never played a clip.
+//
+//  THE THREE FILES PER TREE (v2.17.43's measured shape, kept):
+//      the .asd  gains the zm_afterlife_stun state      (zone_assets\animstatedefs)
+//      the .atr  gains the five ai_zombie_afterlife_stun_* names
+//                                                        (zone_assets\animtrees)
+//      the aitype overrides gain the five dummy_anim_ref lines - the parser
+//      checks the anim list COMPILED into the aitype, so an .asd naming anims
+//      no aitype carries is exactly the BG_AnimStateDef_Parse fatal the
+//      wonder-weapon block documents (aitype\*.gsc + clientscripts, server and
+//      client). Transit/Nuketown/Highrise already shipped overrides; Buried's
+//      nine basic aitype/csc pairs are NEW to aitype\ in this edit and ship raw
+//      out of mod.iwd (the 09-10 measured route, live on Town at 80dc533).
+//
+//  The five clips resolve from zm_prison.ff at link time (stock xanim block,
+//  zm_prison.zone 1823-1827; build_ff.bat --loads it). The images above them
+//  prove the fallback works: both tesla shock textures came out of zm_prison
+//  the same way.
+//
+//  Buried's asd/atr previously resolved stock from so_zclassic_zm_buried (the
+//  disabled_ww_animtrees README's fall-through). With the aitype overrides
+//  carrying the refs, the wall is gone and zone_assets\ copies now ship for
+//  Buried too - STOCK content plus only the stun state and its five names,
+//  +0/-0 removed like every other tree's additive edits.
+// ============================================================================
+xanim,ai_zombie_afterlife_stun_a
+xanim,ai_zombie_afterlife_stun_b
+xanim,ai_zombie_afterlife_stun_c
+xanim,ai_zombie_afterlife_stun_d
+xanim,ai_zombie_afterlife_stun_e
+
+// ============================================================================
 //  ELECTRIC CHERRY  -  the 9th perk, on the maps that never shipped it
 // ----------------------------------------------------------------------------
 //  Wunderfizz can only hand out perks the map has REGISTERED - getPerks() reads

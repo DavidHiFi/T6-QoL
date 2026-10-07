@@ -125,6 +125,54 @@ zm_move_stumpy : missing_legs notify move_anim
 	ai_zombie_walk_on_hands_b
 }
 
+zm_move_slide_fall : restart notify slide_fall_anim
+{
+	ai_zombie_slipslide_collapse
+}
+
+zm_move_walk_slide : notify move_anim
+{
+	ai_zombie_walk_slipslide
+	ai_zombie_walk_slipslide_a
+}
+
+zm_move_walk_slide_crawl : missing_legs notify move_anim
+{
+	ai_zombie_crawl_slipslide_slow
+}
+
+zm_move_run_slide : notify move_anim
+{
+	ai_zombie_run_slipslide
+	ai_zombie_run_slipslide_a
+}
+
+zm_move_run_slide_crawl : missing_legs notify move_anim
+{
+	ai_zombie_crawl_slipslide_slow
+}
+
+zm_move_sprint_slide : notify move_anim
+{
+	ai_zombie_sprint_slipslide
+	ai_zombie_sprint_slipslide_a
+}
+
+zm_move_sprint_slide_crawl : missing_legs notify move_anim
+{
+	ai_zombie_crawl_slipslide_fast
+}
+
+zm_move_slide_recover : restart notify slide_recover_anim
+{
+	ai_zombie_stand_slipslide_recover
+}
+
+zm_move_slide_recover_crawl : restart missing_legs notify slide_recover_anim
+{
+	ai_zombie_crawl_slipslide_recover
+}
+
 zm_step_left : restart notify step_anim
 {
 	ai_zombie_spets_sidestep_left_a
@@ -342,7 +390,7 @@ zm_window_melee : restart notify window_melee_anim
 zm_rise : restart notify rise_anim
 {
 	ai_zombie_traverse_ground_v1_walk
-	ai_zombie_traverse_ground_v2_walk_altA
+	ai_zombie_traverse_ground_v1_walk
 	ai_zombie_traverse_ground_v1_run
 	ai_zombie_traverse_ground_climbout_fast
 }
@@ -414,7 +462,22 @@ zm_traverse_barrier : aliased restart notify traverse_anim
 	barrier_sprint	ai_zombie_traverse_v7
 }
 
+zm_traverse_barrier_no_restart : aliased notify traverse_anim
+{
+	barrier_walk	ai_zombie_traverse_v1
+	barrier_walk	ai_zombie_traverse_v2
+	barrier_run		ai_zombie_traverse_v5
+	barrier_sprint	ai_zombie_traverse_v6
+	barrier_sprint	ai_zombie_traverse_v7
+}
+
 zm_traverse_barrier_crawl : aliased restart missing_legs notify traverse_anim
+{
+	barrier_crawl	ai_zombie_traverse_crawl_v1
+	barrier_crawl	ai_zombie_traverse_v4
+}
+
+zm_traverse_barrier_crawl_no_restart : aliased missing_legs notify traverse_anim
 {
 	barrier_crawl	ai_zombie_traverse_crawl_v1
 	barrier_crawl	ai_zombie_traverse_v4
@@ -453,114 +516,321 @@ zm_barricade_enter_crawl : aliased restart missing_legs notify barricade_enter_a
 	barrier_sprint_l	ai_zombie_crawl_barricade_enter_sprint_l
 }
 
-////traverse anims, not all necessarily used on every level
+//traverse anims, not all necessarily used on every level
 zm_traverse : aliased restart notify traverse_anim
 {
-	jump_down_40					ai_zombie_jump_down_40
-	jump_down_fast_40				ai_zombie_jump_down_fast_40
-//	jump_down_48					ai_zombie_jump_down_48
+	jump_across_120					ai_zombie_jump_across_120
+//	jump_down_40					ai_zombie_jump_down_40
+	jump_down_48					ai_zombie_jump_down_48
 	jump_down_72					ai_zombie_jump_down_72
 	jump_down_96					ai_zombie_jump_down_96
 //	jump_down_120					ai_zombie_jump_down_120
 	jump_down_127					ai_zombie_jump_down_127
-//	jump_down_184					ai_zombie_jump_down_184
 	jump_down_176					ai_zombie_jump_down_176
-//	jump_down_190					ai_zombie_jump_down_190
-//	jump_down_222					ai_zombie_jump_down_222
-//	jump_down_240					ai_zombie_jump_down_240
+//	jump_down_184					ai_zombie_jump_down_184
+	jump_down_190					ai_zombie_jump_down_190
+	jump_down_222					ai_zombie_jump_down_222
+	jump_down_240					ai_zombie_jump_down_240
 //	jump_down_286					ai_zombie_jump_down_286
 //	jump_down_386					ai_zombie_jump_down_386
-	jump_up_72						ai_zombie_jump_up_72
 	jump_up_96						ai_zombie_jump_up_96
-	jump_up_154						ai_zombie_jump_up_154
 	jump_up_127						ai_zombie_jump_up_127
+	jump_up_154						ai_zombie_jump_up_154
 	jump_up_222						ai_zombie_jump_up_222
-	jump_up_to_climb				ai_zombie_jump_up_2_climb
+//	jump_up_to_climb				ai_zombie_jump_up_2_climb
 //	jump_up_to_climb_coast			ai_zombie_jump_up_2_climb_coast
-//	mantle_over_40_hurdle			ai_zombie_traverse_v6
-	traverse_garage_door			ai_zombie_traverse_garage_roll	
+//	mantle_over_40_hurdle	ai_zombie_traverse_v6
+	jump_up_startrailing						ai_zombie_jump_up_startrailing
+	jump_down_startrailing						ai_zombie_jump_down_startrailing
+
+	jump_up_grabbed_48				ai_zombie_jump_up_grabbed_48
+	traverse_48						ai_zombie_traverse_48
+}
+
+zm_traverse_no_restart : aliased notify traverse_anim
+{
+	jump_across_120					ai_zombie_jump_across_120
+//	jump_down_40					ai_zombie_jump_down_40
+	jump_down_48					ai_zombie_jump_down_48
+	jump_down_72					ai_zombie_jump_down_72
+	jump_down_96					ai_zombie_jump_down_96
+//	jump_down_120					ai_zombie_jump_down_120 
+	jump_down_127					ai_zombie_jump_down_127
+	jump_down_176					ai_zombie_jump_down_176
+//	jump_down_184					ai_zombie_jump_down_184
+	jump_down_190					ai_zombie_jump_down_190
+	jump_down_222					ai_zombie_jump_down_222
+	jump_down_240					ai_zombie_jump_down_240
+//	jump_down_286					ai_zombie_jump_down_286
+//	jump_down_386					ai_zombie_jump_down_386
+	jump_up_96						ai_zombie_jump_up_96
+	jump_up_127						ai_zombie_jump_up_127
+	jump_up_154						ai_zombie_jump_up_154
+	jump_up_222						ai_zombie_jump_up_222
+//	jump_up_to_climb				ai_zombie_jump_up_2_climb
+//	jump_up_to_climb_coast			ai_zombie_jump_up_2_climb_coast
+//	mantle_over_40_hurdle	ai_zombie_traverse_v6
+	jump_up_startrailing						ai_zombie_jump_up_startrailing
+	jump_down_startrailing						ai_zombie_jump_down_startrailing
+
+	jump_up_grabbed_48				ai_zombie_jump_up_grabbed_48
+	traverse_48						ai_zombie_traverse_48
 }
 //
-////traverse anims, not all necessarily used on every level
+//traverse anims, not all necessarily used on every level
 zm_traverse_crawl : aliased restart missing_legs notify traverse_anim
 {
-	jump_down_40_crawl				ai_zombie_crawl_jump_down_40
-	jump_down_fast_40_crawl			ai_zombie_crawl_jump_down_40
-//	jump_down_48_crawl				ai_zombie_crawl_jump_down_48
+	jump_across_120_crawl			ai_zombie_crawl_jump_across_120
+//	jump_down_40_crawl				ai_zombie_crawl_jump_down_40
+	jump_down_48_crawl				ai_zombie_crawl_jump_down_48
 	jump_down_72_crawl				ai_zombie_crawl_jump_down_72
 	jump_down_96_crawl				ai_zombie_crawl_jump_down_96
 //	jump_down_120_crawl				ai_zombie_crawl_jump_down_120
 	jump_down_127_crawl				ai_zombie_crawl_jump_down_127
 	jump_down_176_crawl				ai_zombie_crawl_jump_down_176
 //	jump_down_184_crawl				ai_zombie_crawl_jump_down_184
-//	jump_down_190_crawl				ai_zombie_crawl_jump_down_189
-//	jump_down_222_crawl				ai_zombie_crawl_jump_down_222
-//	jump_down_240_crawl				ai_zombie_crawl_jump_down_240
+	jump_down_190_crawl				ai_zombie_crawl_jump_down_189
+	jump_down_222_crawl				ai_zombie_crawl_jump_down_222
+	jump_down_240_crawl				ai_zombie_crawl_jump_down_240
 //	jump_down_286_crawl				ai_zombie_crawl_jump_down_286
 //	jump_down_386_crawl				ai_zombie_crawl_jump_down_386
-	jump_up_72_crawl				ai_zombie_crawl_jump_up_72
 	jump_up_96_crawl				ai_zombie_crawl_jump_up_96
-	jump_up_154_crawl				ai_zombie_crawl_jump_up_154
 	jump_up_127_crawl				ai_zombie_crawl_jump_up_127
+	jump_up_154_crawl				ai_zombie_crawl_jump_up_154
 	jump_up_222_crawl				ai_zombie_crawl_jump_up_222
-	jump_up_to_climb_crawl			ai_zombie_crawl_jump_up_2_climb
+//	jump_up_to_climb_crawl			ai_zombie_crawl_jump_up_2_climb
 //	jump_up_to_climb_coast_crawl	ai_zombie_crawl_jump_up_2_climb_coast
 //	mantle_over_40_hurdle_crawl		ai_zombie_traverse_crawl_v1
-	traverse_garage_door_crawl		ai_zombie_crawl
+	jump_up_startrailing_crawl						ai_zombie_crawl_jump_up_startrailing
+	jump_down_startrailing_crawl						ai_zombie_crawl_jump_down_startrailing
+
+	jump_up_grabbed_48_crawl					ai_zombie_crawl_jump_up_grabbed_48
+	traverse_48_crawl				ai_zombie_crawl_traverse_48
 }
 
-
-
-// DLC5 Moon Wave Gun sizzle deaths
-zm_death_sizzle : restart notify death_anim
+//
+//traverse anims, not all necessarily used on every level
+zm_traverse_crawl_no_restart : aliased missing_legs notify traverse_anim
 {
-	ai_zombie_microwave_death_a
-	ai_zombie_microwave_death_b
-	ai_zombie_microwave_death_c
-	ai_zombie_microwave_death_walking_a
-	ai_zombie_microwave_death_walking_b
-	ai_zombie_microwave_death_walking_c
+	jump_across_120_crawl			ai_zombie_crawl_jump_across_120
+//	jump_down_40_crawl				ai_zombie_crawl_jump_down_40
+	jump_down_48_crawl				ai_zombie_crawl_jump_down_48
+	jump_down_72_crawl				ai_zombie_crawl_jump_down_72
+	jump_down_96_crawl				ai_zombie_crawl_jump_down_96
+//	jump_down_120_crawl				ai_zombie_crawl_jump_down_120
+	jump_down_127_crawl				ai_zombie_crawl_jump_down_127
+	jump_down_176_crawl				ai_zombie_crawl_jump_down_176
+//	jump_down_184_crawl				ai_zombie_crawl_jump_down_184
+	jump_down_190_crawl				ai_zombie_crawl_jump_down_189
+	jump_down_222_crawl				ai_zombie_crawl_jump_down_222
+	jump_down_240_crawl				ai_zombie_crawl_jump_down_240
+//	jump_down_286_crawl				ai_zombie_crawl_jump_down_286
+//	jump_down_386_crawl				ai_zombie_crawl_jump_down_386
+	jump_up_96_crawl				ai_zombie_crawl_jump_up_96
+	jump_up_127_crawl				ai_zombie_crawl_jump_up_127
+	jump_up_154_crawl				ai_zombie_crawl_jump_up_154
+	jump_up_222_crawl				ai_zombie_crawl_jump_up_222
+//	jump_up_to_climb_crawl			ai_zombie_crawl_jump_up_2_climb
+//	jump_up_to_climb_coast_crawl	ai_zombie_crawl_jump_up_2_climb_coast
+//	mantle_over_40_hurdle_crawl		ai_zombie_traverse_crawl_v1
+	jump_up_startrailing_crawl						ai_zombie_crawl_jump_up_startrailing
+	jump_down_startrailing_crawl						ai_zombie_crawl_jump_down_startrailing
+
+	jump_up_grabbed_48_crawl					ai_zombie_crawl_jump_up_grabbed_48
+	traverse_48_crawl				ai_zombie_crawl_traverse_48
 }
 
-zm_death_sizzle_crawl : restart missing_legs notify death_anim
+
+// zombies coming from elevator door openings
+//zm_traverse_elevator_shaft : notify move_anim
+//{
+//	ai_zombie_riser_elevator_from_floor
+//	ai_zombie_riser_elevator_from_ceiling
+//}
+
+zm_subwoofer_fall_front : restart notify subwoofer_fall_anim
 {
-	ai_zombie_crawl_microwave_death_a
-	ai_zombie_crawl_microwave_death_b
-	ai_zombie_crawl_microwave_death_c
-	ai_zombie_crawl_microwave_death_walking_a
-	ai_zombie_crawl_microwave_death_walking_b
-	ai_zombie_crawl_microwave_death_walking_c
+	ai_zombie_thundergun_hit_deadfallknee
+	ai_zombie_thundergun_hit_faceplant
+	ai_zombie_thundergun_hit_forwardtoface
+	ai_zombie_thundergun_hit_jackiespin_left
+	ai_zombie_thundergun_hit_jackiespin_right
 }
 
-// T5 Winter's Howl freeze deaths (SRS donor - the state names the mod's
-// _zm_weap_freezegun.gsc already checks with HasAnimStateFromASD)
-zm_death_freeze_t5 : restart notify death_anim
+zm_subwoofer_fall_left : restart notify subwoofer_fall_anim
 {
-	ai_zombie_freeze_death_a
-	ai_zombie_freeze_death_b
-	ai_zombie_freeze_death_c
-	ai_zombie_freeze_death_d
-	ai_zombie_freeze_death_e
+	ai_zombie_thundergun_hit_legsout_right
 }
 
-zm_death_freeze_crawl_t5 : restart missing_legs notify death_anim
+zm_subwoofer_fall_right : restart notify subwoofer_fall_anim
 {
-	ai_zombie_crawl_freeze_death_01
-	ai_zombie_crawl_freeze_death_02
+	ai_zombie_thundergun_hit_legsout_left
 }
+	
+zm_subwoofer_fall_back : restart notify subwoofer_fall_anim
+{
+	ai_zombie_thundergun_hit
+	ai_zombie_thundergun_hit_armslegsforward
+	ai_zombie_thundergun_hit_doublebounce
+	ai_zombie_thundergun_hit_flatonback
+	ai_zombie_thundergun_hit_jackiespin_vertical
+	ai_zombie_thundergun_hit_stumblefall
+	ai_zombie_thundergun_hit_upontoback
+}
+
+zm_subwoofer_getup_back_default : restart notify subwoofer_getup_anim
+{
+	ai_zombie_thundergun_getup
+}
+
+zm_subwoofer_getup_back_early : restart notify subwoofer_getup_anim
+{
+	ai_zombie_thundergun_getup_quick_b
+	ai_zombie_thundergun_getup_quick_c
+}
+	
+zm_subwoofer_getup_back_late : restart notify subwoofer_getup_anim
+{
+	ai_zombie_thundergun_getup
+	ai_zombie_thundergun_getup_b
+	ai_zombie_thundergun_getup_c
+}
+
+zm_subwoofer_getup_belly_default : restart notify subwoofer_getup_anim
+{
+	ai_zombie_thundergun_getup_a
+}
+
+zm_subwoofer_getup_belly_early : restart notify subwoofer_getup_anim
+{
+	ai_zombie_thundergun_getup_quick_a
+}
+	
+zm_subwoofer_getup_belly_late : restart notify subwoofer_getup_anim
+{
+	ai_zombie_thundergun_getup_a
+}
+
+zm_rise_hedge : restart notify rise_anim
+{
+	ai_zombie_hedgemaze_emerge_slow
+	ai_zombie_hedgemaze_emerge_fast
+}
+
+zm_crawler_crawlerhold_idle : notify crawler_crawlerhold_idle_anim
+{
+	ai_zombie_crawler_crawlerhold_idle
+}
+
+zm_crawler_crawlerhold_walk : notify crawler_crawlerhold_walk_anim
+{
+	ai_zombie_crawler_crawlerhold_walk
+}
+
+zm_crawler_pickup_by_sloth : notify crawler_pickup_by_sloth_anim
+{
+	ai_zombie_crawler_pickup_by_sloth
+}
+
+zm_crawler_putdown_by_sloth : notify crawler_putdown_by_sloth_anim
+{
+	ai_zombie_crawler_putdown_by_sloth
+}
+
+zm_crawler_slothkill_stomp : notify crawler_slothkill_stomp_anim
+{
+	ai_zombie_crawler_slothkill_stomp
+}
+
+zm_crawler_slothkill_suplex : notify crawler_slothkill_suplex_anim
+{
+	ai_zombie_crawler_slothkill_suplex
+}
+
+zm_crawler_sloth_crawlerhold_sling : notify crawler_sloth_crawlerhold_sling_anim
+{
+	ai_zombie_crawler_sloth_crawlerhold_sling
+}
+
+zm_crawler_sloth_crawlerhold_slung_idle : notify crawler_sloth_crawlerhold_slung_idle_anim
+{
+	ai_zombie_crawler_sloth_crawlerhold_slung_idle
+}
+
+zm_crawler_sloth_crawlerhold_unsling : notify crawler_sloth_crawlerhold_unsling_anim
+{
+	ai_zombie_crawler_sloth_crawlerhold_unsling
+}
+
+zm_crawler_crawlerhold_idle_hunched : notify crawler_crawlerhold_idle_anim
+{
+	ai_zombie_crawler_crawlerhold_idle_hunched
+}
+
+zm_crawler_crawlerhold_walk_hunched : notify crawler_crawlerhold_walk_anim
+{
+	ai_zombie_crawler_crawlerhold_walk_hunched
+}
+
+zm_crawler_pickup_by_sloth_hunched : notify crawler_pickup_by_sloth_anim
+{
+	ai_zombie_crawler_pickup_by_sloth_hunched
+}
+
+zm_crawler_putdown_by_sloth_hunched : notify crawler_putdown_by_sloth_anim
+{
+	ai_zombie_crawler_putdown_by_sloth_hunched
+}
+
+zm_crawler_slothkill_stomp_hunched : notify crawler_slothkill_stomp_anim
+{
+	ai_zombie_crawler_slothkill_stomp_hunched
+}
+
+zm_crawler_slothkill_suplex_hunched : notify crawler_slothkill_suplex_anim
+{
+	ai_zombie_crawler_slothkill_suplex_hunched
+}
+
+zm_crawler_sloth_crawlerhold_sling_hunched : notify crawler_sloth_crawlerhold_sling_anim
+{
+	ai_zombie_crawler_sloth_crawlerhold_sling_hunched
+}
+
+zm_crawler_sloth_crawlerhold_unsling_hunched : notify crawler_sloth_crawlerhold_unsling_anim
+{
+	ai_zombie_crawler_sloth_crawlerhold_unsling_hunched
+}
+
+zm_crawler_crawlerhold_walk_turn_180 : restart notify crawler_turn_180_anim
+{
+	ai_zombie_crawler_crawlerhold_walk_turn_180
+}
+
+zm_crawler_crawlerhold_walk_hunched_turn_180 : restart notify crawler_turn_180_anim
+{
+	ai_zombie_crawler_crawlerhold_walk_hunched_turn_180
+}
+
+
+
 
 
 // Electric Cherry stun (2026-09-28): stock's core _zm_perk_electric_cherry::
 // electric_cherry_stun() animscripted() this state on every zombie the reload
 // shock does not kill. Mob/Origins carry it natively (zm_prison_basic 707,
-// zm_tomb_basic 699); the other three maps and Buried never shipped it, so
-// those zombies took the damage without playing the stun (user, 2026-09-28).
+// zm_tomb_basic 699); Buried never shipped it, so its zombies took the damage
+// without playing the stun (user, 2026-09-28).
 // State and anim names copied verbatim from zm_prison_basic.asd 707-714 - the
-// five anims ship in the same edit (mod_locations.zone, xanim block).
-// The aitype overrides in aitype\\ gained the five dummy_anim_ref lines in the
-// same edit: the parser checks the anim list COMPILED into the aitype, so an
-// .asd state naming anims the tree lacks is exactly the BG_AnimStateDef_Parse
-// fatal the wonder-weapon block above documents.
+// five anims ship in the same edit (mod_locations.zone, xanim block), and the
+// nine raw aitype overrides in aitype\\ gained the five dummy_anim_ref lines:
+// the parser checks the anim list COMPILED into the aitype, so an .asd state
+// naming anims the tree lacks is exactly the BG_AnimStateDef_Parse fatal the
+// zone_source\\disabled_ww_animtrees README documents.
+// This file MUST keep shipping: the parser verifies state names against the
+// anim list baked into the AITYPE (recorded 2026-09-28 in the check-gate), and
+// without the state block stock's parse of aitype override trees would fail
+// with 'state zm_afterlife_stun not found in its animtree' on every boot.
 zm_afterlife_stun : restart notify stunned
 {
 	ai_zombie_afterlife_stun_a
