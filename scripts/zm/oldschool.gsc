@@ -69,6 +69,16 @@ init()
         vox_dw = "wpck_dual";
     }
 
+    if ( level.script == "zm_tomb" )
+    {
+        //  Origins' own banks voice the dual-pistol class as wpck_duel (the
+        //  stock Five-seveN DW's key there, zm_tomb.gsc:978) and the M32 as
+        //  wpck_crappy (zm_tomb.gsc:979). Copied from the map's own
+        //  registrations, never invented - the round-2 gunswap note covers it.
+        vox_mm1 = "wpck_crappy";
+        vox_dw = "wpck_duel";
+    }
+
     if ( mm1 )
     {
         precacheitem( "mm1_zm" );
@@ -116,5 +126,12 @@ oldschool_dw_enabled( map, mode )
     if ( mode != "zclassic" && mode != "zsurvival" )
         return 0;
 
-    return map == "zm_nuked" || map == "zm_buried";
+    //  Round 2 of the gunswap, 2026-10-07: the Five-seveN DW the Browning HP
+    //  DW replaces was boxed on every map in both modes (stock include lists),
+    //  and the same round's bans freed real slots everywhere - so the gate is
+    //  all six maps now, not just the two it booted on. Grief/turned keep
+    //  their gate: their weapon budget was never measured, and the FSDW dies
+    //  there too (the cost of the swap in the unmeasured modes).
+    return map == "zm_nuked" || map == "zm_buried" || map == "zm_highrise" ||
+           map == "zm_transit" || map == "zm_prison" || map == "zm_tomb";
 }

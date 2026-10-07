@@ -51,6 +51,28 @@
 //  ("warmachine") was deleted, both in quality_of_life.gsc. Nothing here
 //  un-registers anything at runtime, so there is no re-assert race to poll
 //  against - the boxfix poller pattern is for flags, not for registrations.
+//
+//  ROUND 2, SAME DAY. Five more stock pairs out, each replaced by a gun that
+//  was already in the box as an addition:
+//      RPD         -> M60 (m60_zm, the BO1 gun; the RPD was also mod-added on
+//                     Buried/Mob/Origins - those three blocks came out too)
+//      HAMR        -> MK48 (mk48_zm, already a mod gun everywhere)
+//      Barrett M82 -> Dragunov (dragunov_zm, already a mod gun everywhere)
+//      S12/Saiga-12 -> SPAS-12 (spas_zm, restored this round from the base)
+//      Five-seveN pair -> Browning HP and Browning HP Dual Wield (the DW via
+//                     oldschool.gsc, whose DW gate is now all six maps)
+//  The stock guns stay banned even where their replacements arrive by other
+//  routes - the point is the slots, everywhere, on every mode.
+//
+//  THE FIVE-SEVEN EXCEPTION. On Origins the Five-seveN single is a WALL BUY
+//  (stock zm_tomb.gsc:975, cost 1100) and stock includes it there with
+//  in_box 0 - the wall's trigger and its floating gun model are welded into
+//  the BSP, so no script swap can re-point it, and banning the name would
+//  leave a wall selling a weapon nothing registered. So on zm_tomb the
+//  single STAYS registered, the wall keeps selling it, and because its
+//  include is in_box 0 the Origins box never offered it anyway - the box
+//  side of the swap is exact there too. The Dual Wield is box-only (cost 50)
+//  and is banned on Origins like everywhere else.
 // ============================================================================
 
 #include maps\mp\_utility;
@@ -64,11 +86,13 @@
 init()
 {
     replaceFunc( maps\mp\zombies\_zm_utility::include_weapon, ::zmqol_gunswap_include_weapon );
-    println( "[zm_qol] gunswap: usrpg_zm and m32_zm pairs banned from registration on " + getdvar( "mapname" ) );
+    println( "[zm_qol] gunswap: swapped-out stock pairs banned from registration on " + getdvar( "mapname" ) );
 }
 
 //  Named separately from the wrapper so the next swap is a two-line change.
-//  The client list in zm_expanded.csc must match this one exactly.
+//  The client list in zm_expanded.csc must match this one exactly - including
+//  the Five-seveN exception, which there keys off getdvar("mapname") because
+//  the client has no level.script.
 zmqol_gunswap_banned_names()
 {
     a = [];
@@ -76,6 +100,24 @@ zmqol_gunswap_banned_names()
     a[a.size] = "usrpg_upgraded_zm";    //  its PaP half; the RPG-7 already PaPs into Rocket Propelled Grievance
     a[a.size] = "m32_zm";               //  the War Machine - replaced by mm1_zm (MM1)
     a[a.size] = "m32_upgraded_zm";
+    a[a.size] = "rpd_zm";               //  the RPD - replaced by m60_zm (BO1 M60)
+    a[a.size] = "rpd_upgraded_zm";
+    a[a.size] = "hamr_zm";              //  the HAMR - replaced by mk48_zm
+    a[a.size] = "hamr_upgraded_zm";
+    a[a.size] = "barretm82_zm";         //  the Barrett M82 - replaced by dragunov_zm
+    a[a.size] = "barretm82_upgraded_zm";
+    a[a.size] = "saiga12_zm";           //  the S12 - replaced by spas_zm (the restored SPAS-12)
+    a[a.size] = "saiga12_upgraded_zm";
+    a[a.size] = "fivesevendw_zm";       //  the Five-seveN DW - replaced by browninghpdw_zm
+    a[a.size] = "fivesevendw_upgraded_zm";
+    //  The Five-seveN single stays registered on Origins: its 1100-point wall
+    //  buy is BSP-welded there and stock includes it with in_box 0, so the
+    //  wall sells it and the box never offers it. Everywhere else, out.
+    if ( level.script != "zm_tomb" )
+    {
+        a[a.size] = "fiveseven_zm";         //  the Five-seveN - replaced by browninghp_zm
+        a[a.size] = "fiveseven_upgraded_zm";
+    }
     return a;
 }
 

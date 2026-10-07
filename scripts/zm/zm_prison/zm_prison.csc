@@ -70,12 +70,13 @@ include_weapons()
     include_weapon( "m1911_upgraded_zm", 0 );
     include_weapon( "judge_zm", 0 ); //
     include_weapon( "judge_upgraded_zm", 0 );
-    include_weapon( "fiveseven_zm", 0 ); //
-    include_weapon( "fiveseven_upgraded_zm", 0 );
+    //  fiveseven_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and browninghp_zm (same root list) takes the slots.
     include_weapon( "beretta93r_zm", 0 );
     include_weapon( "beretta93r_upgraded_zm", 0 );
-    include_weapon( "fivesevendw_zm", 0 ); //
-    include_weapon( "fivesevendw_upgraded_zm", 0 );
+    //  fivesevendw_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans
+    //  the stock pair and browninghpdw_zm (oldschool.gsc, all six maps now)
+    //  takes the slots.
     include_weapon( "uzi_zm", 0 );
     include_weapon( "uzi_upgraded_zm", 0 );
     include_weapon( "thompson_upgraded_zm", 0 );
@@ -96,8 +97,9 @@ include_weapons()
     include_weapon( "pdw57_zm", 0 ); //
     include_weapon( "pdw57_upgraded_zm", 0 );
     include_weapon( "870mcs_upgraded_zm", 0 );
-    include_weapon( "saiga12_zm", 0 ); //
-    include_weapon( "saiga12_upgraded_zm", 0 );
+    //  saiga12_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and spas_zm (the restored SPAS-12, same root list) takes
+    //  the slots.
     include_weapon( "rottweil72_zm", 0 );
     include_weapon( "rottweil72_upgraded_zm", 0 );
     include_weapon( "m14_zm", 0 );
@@ -112,8 +114,8 @@ include_weapons()
     include_weapon( "fnfal_upgraded_zm", 0 );
     include_weapon( "dsr50_zm", 0 ); //
     include_weapon( "dsr50_upgraded_zm", 0 );
-    include_weapon( "barretm82_zm", 0 ); //
-    include_weapon( "barretm82_upgraded_zm", 0 );
+    //  barretm82_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and dragunov_zm (zm_expanded.csc root list) takes the slots.
     include_weapon( "minigun_alcatraz_zm" );
     include_weapon( "minigun_alcatraz_upgraded_zm", 0 );
     include_weapon( "lsat_zm" );
@@ -170,10 +172,9 @@ include_weapons()
     include_weapon( "xm8_upgraded_zm", 0 );
     include_weapon( "srm1216_zm" );
     include_weapon( "srm1216_upgraded_zm", 0 );
-    include_weapon( "rpd_zm" );
-    include_weapon( "rpd_upgraded_zm", 0 );
-    include_weapon( "hamr_zm" );
-    include_weapon( "hamr_upgraded_zm", 0 );
+    //  rpd_zm and hamr_zm pairs (the mod's own additions) came out 2026-10-07
+    //  round 2: gunswap.gsc bans the stock pairs too and m60_zm / mk48_zm
+    //  (zm_expanded.csc root list) take the slots.
     include_weapon( "python_zm" );
     include_weapon( "python_upgraded_zm", 0 );
     include_weapon( "kard_zm" );

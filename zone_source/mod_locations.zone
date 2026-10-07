@@ -1021,9 +1021,18 @@ camo,camo_sa58
 camo,camo_sig556
 camo,camo_vector
 
-//  The v2.9.27 SPAS icon block (material,image,menu_mp_weapons_spas) came
-//  out 2026-10-07 with the SPAS itself; the stock zm guns keep Treyarch's own
-//  menu_mp_weapons_* icons.
+// ============================================================================
+//  v2.9.27 - THE SPAS ICON (restored 2026-10-07, round 2: the gun is back to
+//  replace the stock S12). The one gun whose hudIcon/killIcon/ammoCounterIcon
+//  resolve from NO loaded fastfile (SPAS is a campaign gun; its icon ships only
+//  in frontend.ff, which zombies never loads). Treyarch ships a
+//  menu_mp_weapons_* icon with every stock zm gun, so the SPAS carries its own:
+//  material JSON + iwi dumped verbatim from retail frontend.ff into
+//  zone_assets\ (raw beats every --load; the --load list is untouched).
+//  The _big variant is create-a-class-only and stays out.
+// ============================================================================
+material,menu_mp_weapons_spas
+image,menu_mp_weapons_spas
 
 // ============================================================================
 //  v2.9.15 - THE SEVEN GREEN RUN GUNS THAT COULD NOT ANIMATE.

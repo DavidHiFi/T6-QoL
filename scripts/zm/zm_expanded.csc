@@ -61,7 +61,7 @@ main()
 	replaceFunc( clientscripts\mp\_utility_code::struct_class_init, ::struct_class_init );
 
 	// CLIENT HALF OF THE GUNSWAP (server twin: scripts\zm\gunswap.gsc). The
-	// stock per-map .csc scripts include the usrpg_zm and m32_zm pairs
+	// stock per-map .csc scripts include the swapped-out stock pairs
 	// client-side; without this the client would precache and display weapons
 	// the server never registers - the v2.14.27 Betty crash class. The banned
 	// list in zmqol_gunswap_include_weapon_client below must match
@@ -173,11 +173,12 @@ zmqol_mp_weapons_init()
 	//  def exists on EVERY map - the as50/Origins crash class (ERROR_CATALOGUE
 	//  paragraph 37) cannot apply and no map gate is needed.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "dragunov_zm" );
-	//  v2.9.18 SPAS-12 REMOVED 2026-10-07 (user: "get rid of the Spas 12 and
-	//  replace it with the blastomatic"). The Blastomatic two blocks down was
-	//  already in the box on every map but Origins; Origins keeps the two
-	//  freed slots as spare. The raw defs, mod_spas.zone and the menu icon
-	//  went with it.
+	//  v2.9.18 SPAS-12, restored 2026-10-07 round 2: the gun is back, taking
+	//  the stock S12's slots (saiga12_zm is banned - gunswap.gsc). The raw
+	//  defs ride in mod.iwd, so the def exists on every map and no gate is
+	//  needed. It first shipped as v2.9.18, came out the same day round 1 of
+	//  the gunswap deleted it, and this line is its old include restored.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "spas_zm" );
 	//  v2.12.7 - the campaign STORM PSR. Raw def in mod.iwd like the Dragunov
 	//  and the SPAS, so the def exists on every map and no map gate is needed.
 	//  Server twin: zmqol_add_mp_weapon( "metalstorm_mms_zm", ... ).
@@ -202,7 +203,7 @@ zmqol_mp_weapons_init()
 	//  and a client include with no server twin is the v2.14.27 Betty crash.
 	//
 	//  🛑 v2.17.37 - THE L96A1 IS NOW ON ORIGINS TOO, TRADED 1:1 FOR THE
-	//  XPR-50; the other three stay held back here to match the server.
+	//  XPR-50; round 2 of the gunswap put the M60 and the Browning HP there
 	//  quality_of_life.gsc carries the evidence: the M60 and Browning HP drag
 	//  attachment permutations the precache table pays for, so a "pair" is not
 	//  a fixed price and a net-zero swap of all four still overflowed Origins.
@@ -210,10 +211,18 @@ zmqol_mp_weapons_init()
 	//  test is getdvar( "mapname" ) - the same one the EMP gate below uses.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
 
+	//  Round 2, 2026-10-07: the M60 and the Browning HP are registered on
+	//  Origins too (their defs read back attachments:''), so the client twin
+	//  includes them un-gated here, exactly like the L96A1 above.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
+
+	//  Round 2, 2026-10-07: the M60 and the Browning HP are on Origins now -
+	//  the defs read back attachments:'' (a fixed 2 slots each), and the same
+	//  day's bans freed the map six slots (see the server banner in
+	//  quality_of_life.gsc for the arithmetic). The RPG-7 stays held back.
 	if ( getdvar( "mapname" ) != "zm_tomb" )
 	{
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
 	}
 
@@ -307,8 +316,13 @@ zmqol_mp_weapons_init()
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_upgraded_zm", 0 );
 	}
-	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
-	     ( oldschool_map == "zm_nuked" || oldschool_map == "zm_buried" ) )
+	//  Round 2, 2026-10-07: the DW's gate is all six maps now. The Five-seveN
+	//  DW it replaces was boxed on every map in both modes (stock), so the
+	//  replacement covers the same ground; see oldschool_dw_enabled() in
+	//  oldschool.gsc for the server half. Vox note: the per-map pickup voice
+	//  is stock's own key for the dual-pistol class on each map (the tomb case
+	//  is handled in oldschool.gsc's init).
+	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
@@ -3527,16 +3541,26 @@ zmqol_metalstorm_chargeshot_stop()
 // ============================================================================
 //  zmqol_gunswap_include_weapon_client  (server twin: scripts\zm\gunswap.gsc)
 //
-//  The ban half of the gunswap. The four names below must match
+//  The ban half of the gunswap. The names below must match
 //  gunswap.gsc's zmqol_gunswap_banned_names() exactly: the server refuses to
 //  register them and this refuses to precache or display them, so neither
 //  half of the game ever hears about a weapon the other half dropped.
+//  Same Five-seveN exception as the server: on Origins the single stays
+//  registered for its BSP-welded wall buy, keyed off getdvar("mapname")
+//  because the client has no level.script.
 // ============================================================================
 zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 {
 	if ( !isdefined( level.zmqol_gunswap_banned ) )
 	{
-		level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm" ];
+		if ( getdvar( "mapname" ) == "zm_tomb" )
+		{
+			level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
+		}
+		else
+		{
+			level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fiveseven_zm", "fiveseven_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
+		}
 	}
 
 	for ( i = 0; i < level.zmqol_gunswap_banned.size; i++ )

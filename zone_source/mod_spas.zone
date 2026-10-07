@@ -1,0 +1,56 @@
+// ============================================================================
+//  mod_spas.zone  -  the campaign SPAS-12, v2.9.18 (user request 2026-08-31)
+// ----------------------------------------------------------------------------
+//  Every asset here resolves from nicaragua.ff, which build_ff.bat has always
+//  --load'ed LAST - so by first-load-wins nothing shared can change owner; the
+//  only names taken from it are ones no zombies fastfile carries at all. The
+//  defs are raw runtime files in weapons\zm (spas_zm 17,533 B / spas_upgraded_zm
+//  17,543 B, both under the 20,480 ceiling after the tar21qol/fiveseven trims);
+//  camo_spas ships as a raw 13-slot JSON (the SP asset is 4-slot - the exact
+//  Green Run animated-camo failure - extended with camo_870mcs's slots 5-13
+//  over the spas's own three camo-able materials).
+//
+//  Sounds need NOTHING shipped: the campaign gun's own fire audio is the
+//  srm1216 payload (measured - wpn_spas_fire_plr's FileSource in the SP bank
+//  is wpn\shotgun\srm1216\plr\shot\wpn_srm1216_fire), and the srm1216
+//  aliases are resident on all six zombies maps, so the defs name those and
+//  the audio is byte-identical to the campaign gun everywhere - the user's
+//  sound pack keeps authority. The fly_spas_* reload foley in the notetracks
+//  is resident on five maps; on Origins the reload is quiet, the same class
+//  of gap the README already documents for stock's own claymore plant.
+//
+//  menu_mp_weapons_spas (the def's hudIcon) is deliberately NOT shipped -
+//  mod_locations.zone's own note: create-a-class icons that zombies never
+//  draws.
+// ============================================================================
+xmodel,t6_wpn_shotty_spas_view
+xmodel,t6_wpn_shotty_spas_world
+material,mc/mtl_t6_wpn_shotty_spas_camo1
+material,mc/mtl_t6_wpn_shotty_spas_camo2
+material,mc/mtl_t6_wpn_shotty_spas_detail
+camo,camo_spas
+xanim,viewmodel_spas12_t6_idle
+xanim,viewmodel_spas12_t6_fire
+xanim,viewmodel_spas12_t6_reload_loop
+xanim,viewmodel_spas12_t6_reload_in
+xanim,viewmodel_spas12_t6_reload_out
+xanim,viewmodel_spas12_t6_pullout
+xanim,viewmodel_spas12_t6_first_raise
+xanim,viewmodel_spas12_t6_putaway
+xanim,viewmodel_spas12_t6_pullout_quick
+xanim,viewmodel_spas12_t6_putaway_quick
+xanim,viewmodel_spas12_t6_sprint_in
+xanim,viewmodel_spas12_t6_sprint_loop
+xanim,viewmodel_spas12_t6_sprint_out
+xanim,viewmodel_spas12_t6_crawl_in
+xanim,viewmodel_spas12_t6_crawl_forward
+xanim,viewmodel_spas12_t6_crawl_back
+xanim,viewmodel_spas12_t6_crawl_right
+xanim,viewmodel_spas12_t6_crawl_left
+xanim,viewmodel_spas12_t6_crawl_out
+xanim,viewmodel_spas12_t6_ads_fire
+xanim,viewmodel_spas12_t6_d2p_in
+xanim,viewmodel_spas12_t6_d2p_loop
+xanim,viewmodel_spas12_t6_d2p_out
+xanim,viewmodel_spas12_t6_ads_up
+xanim,viewmodel_spas12_t6_ads_down

@@ -1691,9 +1691,10 @@ added_weapons()
         include_weapon( "xm8_upgraded_zm", 0 );
         add_zombie_weapon( "xm8_zm", "xm8_upgraded_zm", &"ZOMBIE_WEAPON_XM8", 50, "wpck_m8a1", "", undefined, 1 );
 
-        include_weapon( "rpd_zm" );
-        include_weapon( "rpd_upgraded_zm", 0 );
-        add_zombie_weapon( "rpd_zm", "rpd_upgraded_zm", &"ZOMBIE_WEAPON_RPD", 50, "wpck_rpd", "", undefined, 1 );
+        //  rpd_zm pair (the mod's own addition here) came out 2026-10-07 round
+        //  2 of the gunswap: gunswap.gsc bans the stock pair and m60_zm takes
+        //  the slots - it is registered on Origins now (quality_of_life.gsc,
+        //  round 2 note in the BO1 block).
 
       // ======================================================================
       //  🛑 v2.14.4 - THESE SEVEN PAIRS ARE HELD BACK ON ALL OF ORIGINS

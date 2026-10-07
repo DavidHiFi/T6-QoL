@@ -1420,8 +1420,6 @@ init()
     precacheitem( "xm8_zm" );
     precacheitem( "xm8_upgraded_zm" );
     precacheitem( "gl_xm8_zm" );
-    precacheitem( "rpd_zm" );
-    precacheitem( "rpd_upgraded_zm" );
     precacheitem( "python_zm" );
     precacheitem( "python_upgraded_zm" );
     precacheitem( "saritch_zm" );
@@ -1432,15 +1430,13 @@ init()
     precacheitem( "gl_m16_upgraded_zm" );
     precacheitem( "srm1216_zm" );
     precacheitem( "srm1216_upgraded_zm" );
-    precacheitem( "hamr_zm" );
-    precacheitem( "hamr_upgraded_zm" );
     precacheitem( "kard_zm" );
     precacheitem( "kard_upgraded_zm" );
     //  m32_zm/_upgraded came out with the War Machine swap (gunswap.gsc,
     //  2026-10-07): a precache here would have kept both slots spent on every
-    //  map, include_weapon ban or not.
-    precacheitem( "barretm82_zm" );
-    precacheitem( "barretm82_upgraded_zm" );
+    //  map, include_weapon ban or not. The rpd, hamr and barretm82 pairs joined
+    //  them the same day (round 2: the M60, MK48 and Dragunov take their slots,
+    //  and the stock saiga12/fiveseven pairs were never precached here).
     precacheitem( "m1911_zm" );
     precacheitem( "m1911_upgraded_zm" );
     precacheitem( "m1911lh_upgraded_zm" );
@@ -10730,10 +10726,11 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "ak74u_extclip_zm", "ak74uext",    "ak74uextclip 74u" );
     a[a.size] = zmqol_give_name_row( "an94_zm",          "an94",        "" );
     a[a.size] = zmqol_give_name_row( "as50_zm",          "xpr50",       "xpr as50" );
-    a[a.size] = zmqol_give_name_row( "dragunov_zm",      "dragunov",    "svd" );
+    //  v?? / 2026-10-07 round 2 - the stock Barrett pair came out (gunswap.gsc),
+    //  the Dragunov takes its slots and inherits its names.
+    a[a.size] = zmqol_give_name_row( "dragunov_zm",      "dragunov",    "svd barrett m82 m82a1 barret" );
     a[a.size] = zmqol_give_name_row( "bouncingbetty_zm", "betty",       "betties bouncingbetty" );
     a[a.size] = zmqol_give_name_row( "ballista_zm",      "ballista",    "" );
-    a[a.size] = zmqol_give_name_row( "barretm82_zm",     "barrett",     "m82 m82a1 barret" );
     a[a.size] = zmqol_give_name_row( "beacon_zm",        "beacon",      "homingbeacon artillerybeacon" );
     a[a.size] = zmqol_give_name_row( "beretta93r_zm",    "b23r",        "beretta beretta93r 93r" );
     a[a.size] = zmqol_give_name_row( "blundergat_zm",    "blundergat",  "sweeper" );
@@ -10746,8 +10743,10 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "dsr50_zm",         "dsr50",       "dsr" );
     a[a.size] = zmqol_give_name_row( "emp_grenade_zm",   "emp",         "empgrenade" );
     a[a.size] = zmqol_give_name_row( "evoskorpion_zm",   "skorpion",    "skorpionevo evo" );
-    a[a.size] = zmqol_give_name_row( "fiveseven_zm",     "fiveseven",   "57" );
-    a[a.size] = zmqol_give_name_row( "fivesevendw_zm",   "fivesevendw", "57dw dualfiveseven" );
+    //  2026-10-07 round 2 - the Five-seveN pair came out (gunswap.gsc) for the
+    //  Browning HP and its dual wield. `fiveseven`/`57` reach the Browning row
+    //  below; the DW's names died with it - the Browning HP DW has no give row,
+    //  box-only like the MM1 and the Betties.
     a[a.size] = zmqol_give_name_row( "fnfal_zm",         "fal",         "fnfal fn-fal" );
     a[a.size] = zmqol_give_name_row( "fnp45_zm",         "tac45",       "tac fnp45 fnp" );
     a[a.size] = zmqol_give_name_row( "frag_grenade_zm",  "frag",        "frags grenade grenades" );
@@ -10756,7 +10755,8 @@ zmqol_give_names_table()
     //  usual _zm swap; the combined gun rides along as the alt fire.
     a[a.size] = zmqol_give_name_row( "microwavegundw_zm", "wavegun",    "zapgun zapguns microwave mgun microwavegun" );
     a[a.size] = zmqol_give_name_row( "galil_zm",         "galil",       "" );
-    a[a.size] = zmqol_give_name_row( "hamr_zm",          "hamr",        "" );
+    //  2026-10-07 round 2 - the HAMR pair came out (gunswap.gsc); the MK48
+    //  takes its slots and inherits its name (mk48 row below).
     a[a.size] = zmqol_give_name_row( "hk416_zm",         "m27",         "hk416" );
     a[a.size] = zmqol_give_name_row( "insas_zm",         "msmc",        "insas" );
     a[a.size] = zmqol_give_name_row( "jetgun_zm",        "jetgun",      "jet thrustodyne" );
@@ -10773,7 +10773,7 @@ zmqol_give_names_table()
     //  2026-10-07); the MM1 is box-only and has no give row, like the Betties.
     a[a.size] = zmqol_give_name_row( "metalstorm_mms_zm", "stormpsr",   "storm psr metalstorm" );
     a[a.size] = zmqol_give_name_row( "mg08_zm",          "mg08",        "mg0815 magnacollider" );
-    a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "" );
+    a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "hamr" );
     a[a.size] = zmqol_give_name_row( "mp40_zm",          "mp40",        "" );
     a[a.size] = zmqol_give_name_row( "mp40_stalker_zm",  "mp40stalker", "" );
     a[a.size] = zmqol_give_name_row( "mp44_zm",          "stg44",       "stg mp44" );
@@ -10789,14 +10789,23 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "riotshield_zm",    "zombieshield", "shield riotshield" );
     a[a.size] = zmqol_give_name_row( "rnma_zm",          "rnma",        "newmodelarmy nma sassafras" );
     a[a.size] = zmqol_give_name_row( "rottweil72_zm",    "olympia",     "rottweil rottweil72" );
-    a[a.size] = zmqol_give_name_row( "rpd_zm",           "rpd",         "" );
+    //  2026-10-07 round 2 - the RPD pair came out (gunswap.gsc); the M60 takes
+    //  its slots and its name reached the M60 row in the BO1 block below.
     a[a.size] = zmqol_give_name_row( "sa58_zm",          "falosw",      "osw sa58 fal-osw" );
-    a[a.size] = zmqol_give_name_row( "saiga12_zm",       "s12",         "saiga saiga12" );
+    //  2026-10-07 round 2 - the stock S12 row came out with the gun itself
+    //  (gunswap.gsc). The SPAS-12 takes its slots and its names - the restored
+    //  row is below, after slowgun.
     a[a.size] = zmqol_give_name_row( "saritch_zm",       "saritch",     "toz tozsaritch" );
     a[a.size] = zmqol_give_name_row( "scar_zm",          "scarh",       "scar" );
     a[a.size] = zmqol_give_name_row( "sig556_zm",        "swat",        "swat556 sig556 sig" );
     a[a.size] = zmqol_give_name_row( "slipgun_zm",       "sliquifier",  "sliq slipgun" );
     a[a.size] = zmqol_give_name_row( "slowgun_zm",       "paralyzer",   "slowgun petrifier" );
+    //  v2.9.18 SPAS-12 give row, restored 2026-10-07 round 2 (the gun is back,
+    //  replacing the stock S12 - gunswap.gsc). It inherits the S12's names;
+    //  `spaz24` is the PaP name's plain form. The Origins copy rows further
+    //  down (saiga12qol_zm) stay: that pair has been held back on Origins
+    //  since v2.14.4, so the rows never resolve and the S12 names land here.
+    a[a.size] = zmqol_give_name_row( "spas_zm",          "spas12",      "spas spas-12 spaz24 spaz-24 s12 saiga saiga12" );
     a[a.size] = zmqol_give_name_row( "srm1216_zm",       "m1216",       "1216 srm1216 srm" );
     a[a.size] = zmqol_give_name_row( "staff_air_zm",     "windstaff",   "staffofwind staffwind wind air" );
     a[a.size] = zmqol_give_name_row( "staff_fire_zm",    "firestaff",   "staffoffire stafffire fire" );
@@ -10823,10 +10832,14 @@ zmqol_give_names_table()
     //  v2.15.0 - the four Black Ops 1 guns. The stock RPG came out with the
     //  2026-10-07 gunswap (usrpg_zm is banned from registration), so the
     //  RPG-7 inherited its `rpg` and `usrpg` aliases as well as `rpg7`.
+    //  Round 2, same day: the M60 takes the RPD's slots and `rpd`, the
+    //  Browning HP takes the Five-seveN's `fiveseven`/`57` - and both are
+    //  registered on Origins now too (the tomb hold-back below is down to
+    //  the RPG-7 alone).
     // ------------------------------------------------------------------
-    a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig" );
+    a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig rpd" );
     a[a.size] = zmqol_give_name_row( "t5_l96a1_zm",      "l96",         "l96a1 l115 isolator" );
-    a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap" );
+    a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap fiveseven 57" );
     a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg rpg usrpg" );
 
     // ------------------------------------------------------------------
@@ -11615,10 +11628,22 @@ zmqol_mp_weapons_init()
     if ( !isdefined( level.script ) || level.script != "zm_tomb" )
         zmqol_add_mp_weapon( "as50_zm",        "as50_upgraded_zm",        &"WEAPON_AS50",               1000, "sniper" );
 
-    //  v2.9.18 SPAS-12 REMOVED 2026-10-07 (user: "get rid of the Spas 12 and
-    //  replace it with the blastomatic"). The Blastomatic was already boxed on
-    //  every map but Origins, whose two freed slots stay spare. The raw defs,
-    //  mod_spas.zone and the menu icon went with it.
+    //  v2.9.18 - the campaign SPAS-12, user request 2026-08-31 ("SPAS-12 ...
+    //  into the Mystery Box on all Zombie maps ... official BO1 Pack-a-Punch
+    //  name"). Same delivery as the Dragunov: raw defs in weapons\zm (so the
+    //  def exists on every map and the as50/Origins missing-def class cannot
+    //  apply), art from nicaragua.ff via mod_spas.zone, numbers from BO1's own
+    //  raw\weapons\sp\spas_zm (clip 8/32, damage 160; SPAZ-24 24/72, 300).
+    //  Cost 500 is the Olympia's - stock's other box shotgun of this class -
+    //  and "shotgun" is stock's own vox key (the rottweil72 row above uses it).
+    //  No pap_attach row needed: the upgraded def ships with NO
+    //  attachments field, the mk48/insas/crossbow case.
+    //
+    //  The gun came out 2026-10-07 (user: "get rid of the Spas 12 and replace
+    //  it with the blastomatic") and came back the same day, round 2 of the
+    //  gunswap: it takes the stock S12's slots everywhere (saiga12_zm is
+    //  banned from registration - gunswap.gsc). The row is verbatim v2.9.18.
+    zmqol_add_mp_weapon( "spas_zm",        "spas_upgraded_zm",        &"WEAPON_SPAS",               500, "shotgun" );
 
     //  v2.9.9 - the campaign Dragunov, weapon 13 (user task 1, 2026-08-30).
     //
@@ -11823,15 +11848,36 @@ zmqol_mp_weapons_init()
     //  the XPR-50 it replaces is also a sniper, so the box keeps its shape.
     //  Origins' real headroom stays 0-1 slots; this trade does not touch it.
     //
-    //  🛑 zm_expanded.csc HOLDS BACK THE SAME THREE, on the same map test, and
-    //  zm_tomb.csc drops the as50qol twin. Change one list, change all of them.
+    //  2026-10-07 ROUND 2 OF THE GUNSWAP CHANGES THE ARITHMETIC, IN THE MOD'S
+    //  FAVOUR. The au_* lookups above are from the defs as they shipped THEN;
+    //  the mod's m60/browninghp copies now ship with the attachments field
+    //  EMPTY (both defs read back attachments:'', the mk48/insas class), so
+    //  each is a fixed 2 slots again - measured on the defs, not assumed. And
+    //  the same day's swaps freed Origins real slots: the mod-added RPD block
+    //  came out of zm_tomb.gsc (-2), the stock HAMR pair is banned (-2), the
+    //  stock Five-seveN DW pair is banned (-2). What Origins now pays for, on
+    //  every location: the SPAS-12 restored (+2, standing in for the S12 the
+    //  box lost at v2.14.4), the M60 (+2, standing in for that RPD), the
+    //  Browning HP (+2, standing in for the Five-seveN whose wall buy keeps
+    //  its own registration) and the Browning HP Dual Wield (+4: both hands of
+    //  both tiers - browninghpdw, its upgrade and the two left-hand halves,
+    //  all four defs attachments-cleared; oldschool.gsc's DW gate is now all
+    //  six maps). Net +4, 248 -> 252 of 253, ONE slot spare. Derived, not
+    //  booted - verify live before adding anything else to this map.
+    //
+    //  zm_expanded.csc holds back the RPG-7 the same way, on the same map
+    //  test, and zm_tomb.csc drops the as50qol twin. Change one list, change
+    //  all of them.
     // ========================================================================
     zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
 
+    zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
+    zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+
+    //  Round 2, 2026-10-07: the M60 and the Browning HP are on Origins now.
+    //  The RPG-7 stays held back - nothing paid for it there.
     if ( !isdefined( level.script ) || level.script != "zm_tomb" )
     {
-        zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
         zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
     }
 
