@@ -340,4 +340,14 @@ LANG_ENGLISH        "Magmagat"
 REFERENCE           ZMWEAPON_MAGMAGAT_UPGRADED
 LANG_ENGLISH        "Magmus Operandi"
 
+// v2.15.43 - the Tempered Blundergat pair. Keys and texts are luckass's own,
+// Unlinker-dumped from his mod.ff localize asset (judge-sourced, not invented);
+// the upgraded tempered gun is named after its BO4 family name, the same way a
+// Sweeper forgemates to a Magmus Operandi.
+REFERENCE           ZMWEAPON_MG_TEMPERED
+LANG_ENGLISH        "Tempered Blundergat"
+
+REFERENCE           ZMWEAPON_MG_TEMPERED_UPGRADED
+LANG_ENGLISH        "Tempered Sweeper"
+
 ENDMARKER

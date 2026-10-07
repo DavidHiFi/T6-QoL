@@ -239,7 +239,17 @@ def source_pass(port, errors, all_zones, sound_aliases):
                         errors.append(f"{name}: slot {index} uses unlinked {override['camoMaterial']}")
 
     forms = {}
+    donor_defs = set(port.get("donorDefs", []))
+    if donor_defs and not port.get("donorFF"):
+        errors.append(f"{name}: donorDefs set but the contract has no donorFF")
     for weapon in port["weapons"]:
+        if weapon in donor_defs:
+            # A def that ships as the donor's own compiled weapon asset (the
+            # Magmagat's Tempered pair: his 22 KB+ defs are over the 20480-byte
+            # rawfile ceiling, so they do not exist in weapons\zm\). The
+            # readback verifies the donor's (weapon, name) pairs and this
+            # zone's weapon declarations against the linked mod.ff instead.
+            continue
         path = ROOT / "weapons" / "zm" / weapon
         if not path.is_file():
             errors.append(f"{name}: missing weapon {weapon}")
@@ -312,6 +322,14 @@ def readback_pass(port, forms, errors, linked, everywhere):
     """Every asset a def names must be in mod.ff, on every stock map, or (fx only)
     ship raw in mod.iwd with a server loadfx."""
     name = port["name"]
+    # Donor-carried weapon assets ship as their own compiled rows in mod.ff; the
+    # rawfile-based field checks below cannot see them, so assert their presence
+    # by (weapon, name) pair and let the zone-declaration check further down
+    # catch a zone that promises one the link did not deliver.
+    donor_defs = set(port.get("donorDefs", []))
+    for weapon in sorted(donor_defs):
+        if ("weapon", weapon) not in linked:
+            errors.append(f"{name}: donor weapon {weapon} is not carried by the linked mod.ff")
     # A stock gun the mod overrides only appears on the maps that own it; its
     # contract names those maps ("stockMaps") and their stock zones count as
     # providers for that def's references.
@@ -348,7 +366,7 @@ def readback_pass(port, forms, errors, linked, everywhere):
                               + (" or ship fx/<name>.efx with a server loadfx" if kind == "fx" else ""))
     zone = zone_declarations(ROOT / port["zone"])
     for kind, asset in sorted(zone):
-        if kind in ("xmodel", "xanim", "fx", "camo", "material") and (kind, asset) not in linked:
+        if kind in ("xmodel", "xanim", "fx", "camo", "material", "weapon") and (kind, asset) not in linked:
             if (kind, asset) in everywhere:
                 # A stock shared zone owns it; the runtime resolves it there and
                 # the Linker may emit a reference instead of a copy.

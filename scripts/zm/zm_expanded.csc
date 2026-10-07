@@ -342,24 +342,12 @@ zmqol_mp_weapons_init()
 	}
 
 	//  ============================================================
-	//  THE MAGMAGAT AND THE MAGMUS OPERANDI, luckass's BO4 Mob-of-the-Dead
-	//  remaster weapon (github lborruto/t6_motd_magmagat v1.0.5, MIT).
-	//  Server twin is scripts\zm\magmagat.gsc (same test: Buried classic and
-	//  Maze, Docks survival - the maps with room for its 3 slots in the
-	//  253-weapon table: the gun pair plus the blob grenade the server
-	//  precaches); mod_magmagat.zone has the assets. The blob's def is never
-	//  in the box, so it has no include here (stock includes no projectile
-	//  def either: zm_prison.csc lists the Blundergat, not its blundersplat
-	//  dart).
+	//  v2.15.43 - THE OLD MAGMAGAT CLIENT TWIN IS GONE. The weapon's acquire
+	//  path is luckass's own zm_prison quest again (scripts\zm\zm_prison\
+	//  zm_prison_magmagat.gsc): every map but Mob of the Dead returns from his
+	//  init, so no client include belongs here any more. His own
+	//  zm_prison_magmagat.csc carries the tempered gun's muzzle flame.
 	//  ============================================================
-	magmagat_map = getdvar( "mapname" );
-	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( magmagat_map == "zm_prison" && magmagat_mode == "zsurvival" ||
-	     magmagat_map == "zm_buried" && ( magmagat_mode == "zclassic" || magmagat_mode == "zsurvival" ) )
-	{
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );
-	}
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
