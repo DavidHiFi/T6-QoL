@@ -125,10 +125,8 @@ include_weapons()
     include_weapon( "hamr_upgraded_zm", 0 );
     include_weapon( "pdw57_zm", 0 );
     include_weapon( "pdw57_upgraded_zm", 0 );
-    include_weapon( "usrpg_zm" );
-    include_weapon( "usrpg_upgraded_zm", 0 );
-    include_weapon( "m32_zm" );
-    include_weapon( "m32_upgraded_zm", 0 );
+    //  usrpg_zm / m32_zm pairs swapped out 2026-10-07: gunswap.gsc bans the
+    //  stock pairs from registration and rpg_zm / mm1_zm take the slots.
     include_weapon( "an94_zm", 0 );
     include_weapon( "cymbal_monkey_zm" );
     include_weapon( "ray_gun_zm" );

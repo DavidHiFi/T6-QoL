@@ -118,8 +118,8 @@ include_weapons()
     include_weapon( "minigun_alcatraz_upgraded_zm", 0 );
     include_weapon( "lsat_zm" );
     include_weapon( "lsat_upgraded_zm", 0 );
-    include_weapon( "usrpg_zm", 0 ); //
-    include_weapon( "usrpg_upgraded_zm", 0 );
+    //  usrpg_zm pair swapped out 2026-10-07: gunswap.gsc bans the stock pair
+    //  from registration and rpg_zm (BO1 RPG-7) takes the slots.
     include_weapon( "ray_gun_zm" );
     include_weapon( "ray_gun_upgraded_zm", 0 );
     include_weapon( "bouncing_tomahawk_zm", 0 );
@@ -178,8 +178,8 @@ include_weapons()
     include_weapon( "python_upgraded_zm", 0 );
     include_weapon( "kard_zm" );
     include_weapon( "kard_upgraded_zm", 0 );
-    include_weapon( "m32_zm" );
-    include_weapon( "m32_upgraded_zm", 0 );
+    //  m32_zm pair (the War Machine) came out 2026-10-07: the MM1 covers the
+    //  launcher slot in both Mob modes now (oldschool.gsc).
 
     if ( isdefined( level.raygun2_included ) && level.raygun2_included && !isdemoplaying() )
     {

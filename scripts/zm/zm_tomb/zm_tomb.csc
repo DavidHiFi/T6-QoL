@@ -336,8 +336,8 @@ include_weapons()
     include_weapon( "c96_upgraded_zm", 0 );
     include_weapon( "fivesevendw_zm" );
     include_weapon( "fivesevendw_upgraded_zm", 0 );
-    include_weapon( "m32_zm" );
-    include_weapon( "m32_upgraded_zm", 0 );
+    //  m32_zm pair (the War Machine) swapped out 2026-10-07: gunswap.gsc bans
+    //  the stock pair from registration and mm1_zm takes the slots.
     include_weapon( "beacon_zm", 0 );
     include_weapon( "tomb_shield_zm", 0 );
     include_weapon( "claymore_zm", 0 );
