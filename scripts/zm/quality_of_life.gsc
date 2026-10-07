@@ -10726,9 +10726,11 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "ak74u_extclip_zm", "ak74uext",    "ak74uextclip 74u" );
     a[a.size] = zmqol_give_name_row( "an94_zm",          "an94",        "" );
     a[a.size] = zmqol_give_name_row( "as50_zm",          "xpr50",       "xpr as50" );
-    //  v?? / 2026-10-07 round 2 - the stock Barrett pair came out (gunswap.gsc),
-    //  the Dragunov takes its slots and inherits its names.
-    a[a.size] = zmqol_give_name_row( "dragunov_zm",      "dragunov",    "svd barrett m82 m82a1 barret" );
+    //  2026-10-07 round 2 - the stock Barrett pair came out (gunswap.gsc),
+    //  the Dragunov takes its slots. The Barrett's names were briefly added
+    //  here and came back out by user order (see the real-name policy in the
+    //  BO1 block below).
+    a[a.size] = zmqol_give_name_row( "dragunov_zm",      "dragunov",    "svd" );
     a[a.size] = zmqol_give_name_row( "bouncingbetty_zm", "betty",       "betties bouncingbetty" );
     a[a.size] = zmqol_give_name_row( "ballista_zm",      "ballista",    "" );
     a[a.size] = zmqol_give_name_row( "beacon_zm",        "beacon",      "homingbeacon artillerybeacon" );
@@ -10744,9 +10746,11 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "emp_grenade_zm",   "emp",         "empgrenade" );
     a[a.size] = zmqol_give_name_row( "evoskorpion_zm",   "skorpion",    "skorpionevo evo" );
     //  2026-10-07 round 2 - the Five-seveN pair came out (gunswap.gsc) for the
-    //  Browning HP and its dual wield. `fiveseven`/`57` reach the Browning row
-    //  below; the DW's names died with it - the Browning HP DW has no give row,
-    //  box-only like the MM1 and the Betties.
+    //  Browning HP and its dual wield. The Browning row below answers to
+    //  `browning` only - the Five-seveN's names came out by user order
+    //  (see the real-name policy in the BO1 block below), and the DW's names
+    //  died with it - the Browning HP DW has no give row, box-only like the
+    //  MM1 and the Betties.
     a[a.size] = zmqol_give_name_row( "fnfal_zm",         "fal",         "fnfal fn-fal" );
     a[a.size] = zmqol_give_name_row( "fnp45_zm",         "tac45",       "tac fnp45 fnp" );
     a[a.size] = zmqol_give_name_row( "frag_grenade_zm",  "frag",        "frags grenade grenades" );
@@ -10773,7 +10777,7 @@ zmqol_give_names_table()
     //  2026-10-07); the MM1 is box-only and has no give row, like the Betties.
     a[a.size] = zmqol_give_name_row( "metalstorm_mms_zm", "stormpsr",   "storm psr metalstorm" );
     a[a.size] = zmqol_give_name_row( "mg08_zm",          "mg08",        "mg0815 magnacollider" );
-    a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "hamr" );
+    a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "" );
     a[a.size] = zmqol_give_name_row( "mp40_zm",          "mp40",        "" );
     a[a.size] = zmqol_give_name_row( "mp40_stalker_zm",  "mp40stalker", "" );
     a[a.size] = zmqol_give_name_row( "mp44_zm",          "stg44",       "stg mp44" );
@@ -10789,23 +10793,25 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "riotshield_zm",    "zombieshield", "shield riotshield" );
     a[a.size] = zmqol_give_name_row( "rnma_zm",          "rnma",        "newmodelarmy nma sassafras" );
     a[a.size] = zmqol_give_name_row( "rottweil72_zm",    "olympia",     "rottweil rottweil72" );
-    //  2026-10-07 round 2 - the RPD pair came out (gunswap.gsc); the M60 takes
-    //  its slots and its name reached the M60 row in the BO1 block below.
+    //  2026-10-07 round 2 - the RPD pair came out (gunswap.gsc); the M60
+    //  (the BO1 block below) takes its slots. nothing answers to "rpd".
     a[a.size] = zmqol_give_name_row( "sa58_zm",          "falosw",      "osw sa58 fal-osw" );
     //  2026-10-07 round 2 - the stock S12 row came out with the gun itself
-    //  (gunswap.gsc). The SPAS-12 takes its slots and its names - the restored
-    //  row is below, after slowgun.
+    //  (gunswap.gsc). The SPAS-12 takes its slots - its restored row is
+    //  after slowgun, answering to spas12 only by user order.
     a[a.size] = zmqol_give_name_row( "saritch_zm",       "saritch",     "toz tozsaritch" );
     a[a.size] = zmqol_give_name_row( "scar_zm",          "scarh",       "scar" );
     a[a.size] = zmqol_give_name_row( "sig556_zm",        "swat",        "swat556 sig556 sig" );
     a[a.size] = zmqol_give_name_row( "slipgun_zm",       "sliquifier",  "sliq slipgun" );
     a[a.size] = zmqol_give_name_row( "slowgun_zm",       "paralyzer",   "slowgun petrifier" );
     //  v2.9.18 SPAS-12 give row, restored 2026-10-07 round 2 (the gun is back,
-    //  replacing the stock S12 - gunswap.gsc). It inherits the S12's names;
-    //  `spaz24` is the PaP name's plain form. The Origins copy rows further
-    //  down (saiga12qol_zm) stay: that pair has been held back on Origins
-    //  since v2.14.4, so the rows never resolve and the S12 names land here.
-    a[a.size] = zmqol_give_name_row( "spas_zm",          "spas12",      "spas spas-12 spaz24 spaz-24 s12 saiga saiga12" );
+    //  replacing the stock S12 - gunswap.gsc). The S12's names (s12/saiga)
+    //  were inherited for a few hours and came back OUT by user order: .give
+    //  answers to the real gun's name, never a dead gun's. `spaz24` is the
+    //  PaP name's plain form. The Origins copy rows further down
+    //  (saiga12qol_zm) stay: that pair has been held back on Origins
+    //  since v2.14.4, so those rows never resolve anywhere.
+    a[a.size] = zmqol_give_name_row( "spas_zm",          "spas12",      "spas spas-12 spaz24 spaz-24" );
     a[a.size] = zmqol_give_name_row( "srm1216_zm",       "m1216",       "1216 srm1216 srm" );
     a[a.size] = zmqol_give_name_row( "staff_air_zm",     "windstaff",   "staffofwind staffwind wind air" );
     a[a.size] = zmqol_give_name_row( "staff_fire_zm",    "firestaff",   "staffoffire stafffire fire" );
@@ -10832,14 +10838,19 @@ zmqol_give_names_table()
     //  v2.15.0 - the four Black Ops 1 guns. The stock RPG came out with the
     //  2026-10-07 gunswap (usrpg_zm is banned from registration), so the
     //  RPG-7 inherited its `rpg` and `usrpg` aliases as well as `rpg7`.
-    //  Round 2, same day: the M60 takes the RPD's slots and `rpd`, the
-    //  Browning HP takes the Five-seveN's `fiveseven`/`57` - and both are
-    //  registered on Origins now too (the tomb hold-back below is down to
-    //  the RPG-7 alone).
+    //  Round 2, same day: the M60 takes the RPD's slots and the Browning HP
+    //  takes the Five-seveN's, and both are registered on Origins now too
+    //  (the tomb hold-back below is down to the RPG-7 alone).
+    //
+    //  POLICY, USER, SAME DAY, twice in one hour so it is law: ".give is
+    //  by the real gun's name only." The dead stock guns' names (rpd, hamr,
+    //  barrett, s12, fiveseven, 57) were briefly inherited by their
+    //  replacements and came back OUT by user order - those commands resolve
+    //  to nothing now, and that is the intended state, not an oversight.
     // ------------------------------------------------------------------
-    a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig rpd" );
+    a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig" );
     a[a.size] = zmqol_give_name_row( "t5_l96a1_zm",      "l96",         "l96a1 l115 isolator" );
-    a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap fiveseven 57" );
+    a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap" );
     a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg rpg usrpg" );
 
     // ------------------------------------------------------------------
