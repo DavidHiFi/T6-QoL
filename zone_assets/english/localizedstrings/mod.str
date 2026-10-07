@@ -206,6 +206,29 @@ REFERENCE           ZOMBIE_SPAS_UPGRADED
 LANG_ENGLISH        "SPAZ-24"
 
 // ============================================================================
+//  2026-10-07 round 2 - THE ORIGINS FIVE-SEVEN WALL READS BROWNING HP (user:
+//  "make it a browning buy - make it say buy browning for the same points,
+//  you can keep the 57 for now").
+//
+//  ZOMBIE_WEAPON_FIVESEVEN is STOCK'S OWN wall-hint key: the third parameter
+//  of add_zombie_weapon is what a wall buy displays (_zm_weapons.gsc:478,
+//  struct.hint = hint at :512; get_weapon_hint() returns exactly that field,
+//  :1436), and stock zm_tomb.gsc:975 registers the Origins wall as
+//  (&"ZOMBIE_WEAPON_FIVESEVEN", 1100). Binding the key here rewrites its
+//  text. The cost is appended by setHintString(hint, cost) and is untouched,
+//  and the gun behind the wall stays the Five-seveN - only the LABEL
+//  changes, which is exactly what was asked.
+//
+//  SCOPE. The key shows nowhere else that matters: the Five-seveN single is
+//  banned on the other five maps (gunswap.gsc), so no struct = no hint, and
+//  on Origins it is in_box 0 (stock zm_tomb.gsc:1057), so the box never
+//  drew its name either. The remaining contexts are the wall itself and its
+//  ammo repurchase prompt, which share the key - both now read Browning HP.
+
+REFERENCE           ZOMBIE_WEAPON_FIVESEVEN
+LANG_ENGLISH        "Browning HP"
+
+// ============================================================================
 //  v2.12.7 - THE THREE ZOMBIES CONTROL-BIND LABELS (user, 2026-09-06).
 //
 //  These three rows in the CONTROLS list are multiplayer leftovers: Zombies has
