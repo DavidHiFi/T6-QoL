@@ -135,7 +135,6 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Campaign and Multiplayer guns/equipment in the box:**
   * Storm PSR
   * Dragunov
-  * SPAS-12
   * SWAT-556
   * FAL OSW
   * Mk 48
@@ -180,10 +179,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
   * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
-  * Both appear on Nuketown and Buried, including Buried Maze. The MM1 also appears on Die Rise, Origins, and the TranZit and Mob of the Dead survival maps. TranZit classic and Mob classic have no safe room in the weapon table for either gun.
+  * Both appear on Nuketown and Buried, including Buried Maze. The MM1 also appears on Die Rise, Origins, and the TranZit survival maps, and on Mob in both modes - it took over the War Machine's slot there when the stock one came out.
 
 * **Reloads that don't waste your time:**
-  * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
   * The Python loads all six rounds at once, the way its Pack-a-Punched version always has.
 
 * **Bouncing Betties:**

@@ -1436,8 +1436,9 @@ init()
     precacheitem( "hamr_upgraded_zm" );
     precacheitem( "kard_zm" );
     precacheitem( "kard_upgraded_zm" );
-    precacheitem( "m32_zm" );
-    precacheitem( "m32_upgraded_zm" );
+    //  m32_zm/_upgraded came out with the War Machine swap (gunswap.gsc,
+    //  2026-10-07): a precache here would have kept both slots spent on every
+    //  map, include_weapon ban or not.
     precacheitem( "barretm82_zm" );
     precacheitem( "barretm82_upgraded_zm" );
     precacheitem( "m1911_zm" );
@@ -10768,7 +10769,8 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "m14_zm",           "m14",         "" );
     a[a.size] = zmqol_give_name_row( "m16_zm",           "m16",         "m16a1 m16a2 colt" );
     a[a.size] = zmqol_give_name_row( "m1911_zm",         "m1911",       "1911 ms mustang sally" );
-    a[a.size] = zmqol_give_name_row( "m32_zm",           "warmachine",  "m32" );
+    //  m32_zm/"warmachine" row came out with the War Machine swap (gunswap.gsc,
+    //  2026-10-07); the MM1 is box-only and has no give row, like the Betties.
     a[a.size] = zmqol_give_name_row( "metalstorm_mms_zm", "stormpsr",   "storm psr metalstorm" );
     a[a.size] = zmqol_give_name_row( "mg08_zm",          "mg08",        "mg0815 magnacollider" );
     a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "" );
@@ -10812,20 +10814,20 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "titus6_zm",        "titus6",      "titus dart flechette" );
     a[a.size] = zmqol_give_name_row( "type95_zm",        "type25",      "type95 type" );
     a[a.size] = zmqol_give_name_row( "upgraded_tomahawk_zm", "redeemer", "hellsredeemer upgradedtomahawk" );
-    a[a.size] = zmqol_give_name_row( "usrpg_zm",         "rpg",         "usrpg" );
     a[a.size] = zmqol_give_name_row( "uzi_zm",           "uzi",         "" );
     a[a.size] = zmqol_give_name_row( "vector_zm",        "vector",      "k10 vectork10" );
     a[a.size] = zmqol_give_name_row( "willy_pete_zm",    "smoke",       "smokegrenade willypete" );
     a[a.size] = zmqol_give_name_row( "xm8_zm",           "m8a1",        "m8 xm8" );
 
     // ------------------------------------------------------------------
-    //  v2.15.0 - the four Black Ops 1 guns. `rpg` is already taken by
-    //  stock's own usrpg_zm two rows up, so the RPG-7 answers to `rpg7`.
+    //  v2.15.0 - the four Black Ops 1 guns. The stock RPG came out with the
+    //  2026-10-07 gunswap (usrpg_zm is banned from registration), so the
+    //  RPG-7 inherited its `rpg` and `usrpg` aliases as well as `rpg7`.
     // ------------------------------------------------------------------
     a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig" );
     a[a.size] = zmqol_give_name_row( "t5_l96a1_zm",      "l96",         "l96a1 l115 isolator" );
     a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap" );
-    a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg" );
+    a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg rpg usrpg" );
 
     // ------------------------------------------------------------------
     //  v2.9.1 - THE NINE ORIGINS COPIES. Same friendly names as the guns
@@ -11613,17 +11615,10 @@ zmqol_mp_weapons_init()
     if ( !isdefined( level.script ) || level.script != "zm_tomb" )
         zmqol_add_mp_weapon( "as50_zm",        "as50_upgraded_zm",        &"WEAPON_AS50",               1000, "sniper" );
 
-    //  v2.9.18 - the campaign SPAS-12, user request 2026-08-31 ("SPAS-12 ...
-    //  into the Mystery Box on all Zombie maps ... official BO1 Pack-a-Punch
-    //  name"). Same delivery as the Dragunov: raw defs in weapons\zm (so the
-    //  def exists on every map and the as50/Origins missing-def class cannot
-    //  apply), art from nicaragua.ff via mod_spas.zone, numbers from BO1's own
-    //  raw\weapons\sp\spas_zm (clip 8/32, damage 160; SPAZ-24 24/72, 300).
-    //  Cost 500 is the Olympia's - stock's other box shotgun of this class -
-    //  and "shotgun" is stock's own vox key (the rottweil72 row above uses it).
-    //  📝 No pap_attach row needed: the upgraded def ships with NO
-    //  attachments field, the mk48/insas/crossbow case.
-    zmqol_add_mp_weapon( "spas_zm",        "spas_upgraded_zm",        &"WEAPON_SPAS",               500, "shotgun" );
+    //  v2.9.18 SPAS-12 REMOVED 2026-10-07 (user: "get rid of the Spas 12 and
+    //  replace it with the blastomatic"). The Blastomatic was already boxed on
+    //  every map but Origins, whose two freed slots stay spare. The raw defs,
+    //  mod_spas.zone and the menu icon went with it.
 
     //  v2.9.9 - the campaign Dragunov, weapon 13 (user task 1, 2026-08-30).
     //

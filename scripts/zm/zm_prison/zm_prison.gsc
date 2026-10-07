@@ -619,9 +619,9 @@ added_weapons()
         include_weapon( "kard_upgraded_zm", 0 );
         add_zombie_weapon_prison( "kard_zm", "kard_upgraded_zm", &"ZOMBIE_WEAPON_KARD", 50, "wpck_kap", "", undefined, 1 );
 
-        include_weapon( "m32_zm" );
-        include_weapon( "m32_upgraded_zm", 0 );
-        add_zombie_weapon_prison( "m32_zm", "m32_upgraded_zm", &"ZOMBIE_WEAPON_M32", 50, "wpck_m32", "", undefined, 1 );
+        //  m32_zm/_upgraded (the War Machine) came out 2026-10-07 (user:
+        //  replace it with the MM1). gunswap.gsc bans the stock pair from
+        //  registration and the MM1 now covers both Mob modes (oldschool.gsc).
     }
 }
 

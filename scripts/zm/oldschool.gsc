@@ -97,7 +97,15 @@ oldschool_mm1_enabled( map, mode )
     if ( mode != "zclassic" && mode != "zsurvival" )
         return 0;
 
-    if ( map == "zm_transit" || map == "zm_prison" )
+    //  zm_prison: the mod's own War Machine block came out of added_weapons()
+    //  (gunswap 2026-10-07), so the MM1 takes the launcher slot in both modes.
+    //  zm_transit: stock's m32 there was include_weapon'd with in_box 0 -
+    //  precached, never offered - so there is no box launcher to replace and
+    //  survival keeps the gate it always had.
+    if ( map == "zm_prison" )
+        return 1;
+
+    if ( map == "zm_transit" )
         return mode == "zsurvival";
 
     return map == "zm_nuked" || map == "zm_highrise" || map == "zm_buried" || map == "zm_tomb";

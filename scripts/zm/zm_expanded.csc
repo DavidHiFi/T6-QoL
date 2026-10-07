@@ -60,6 +60,14 @@ main()
 	// EXE_CLIENT_FIELD_MISMATCH before the map starts.
 	replaceFunc( clientscripts\mp\_utility_code::struct_class_init, ::struct_class_init );
 
+	// CLIENT HALF OF THE GUNSWAP (server twin: scripts\zm\gunswap.gsc). The
+	// stock per-map .csc scripts include the usrpg_zm and m32_zm pairs
+	// client-side; without this the client would precache and display weapons
+	// the server never registers - the v2.14.27 Betty crash class. The banned
+	// list in zmqol_gunswap_include_weapon_client below must match
+	// gunswap.gsc's exactly.
+	replaceFunc( clientscripts\mp\zombies\_zm_weapons::include_weapon, ::zmqol_gunswap_include_weapon_client );
+
 	// CLIENT HALF OF FIRE SALE. Missing since v1.54.0 - see the block below.
 	zmqol_enable_fire_sale();
 
@@ -165,9 +173,11 @@ zmqol_mp_weapons_init()
 	//  def exists on EVERY map - the as50/Origins crash class (ERROR_CATALOGUE
 	//  paragraph 37) cannot apply and no map gate is needed.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "dragunov_zm" );
-	//  v2.9.18 - the campaign SPAS-12. Raw def in mod.iwd like the Dragunov, so
-	//  no map gate is needed; server twin is zmqol_add_mp_weapon( "spas_zm" ... ).
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "spas_zm" );
+	//  v2.9.18 SPAS-12 REMOVED 2026-10-07 (user: "get rid of the Spas 12 and
+	//  replace it with the blastomatic"). The Blastomatic two blocks down was
+	//  already in the box on every map but Origins; Origins keeps the two
+	//  freed slots as spare. The raw defs, mod_spas.zone and the menu icon
+	//  went with it.
 	//  v2.12.7 - the campaign STORM PSR. Raw def in mod.iwd like the Dragunov
 	//  and the SPAS, so the def exists on every map and no map gate is needed.
 	//  Server twin: zmqol_add_mp_weapon( "metalstorm_mms_zm", ... ).
@@ -290,7 +300,8 @@ zmqol_mp_weapons_init()
 	oldschool_map = getdvar( "mapname" );
 	oldschool_mode = getdvar( "ui_zm_gamemodegroup" );
 	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
-	     ( ( oldschool_map == "zm_transit" || oldschool_map == "zm_prison" ) && oldschool_mode == "zsurvival" ||
+	     ( oldschool_map == "zm_prison" ||
+	       ( oldschool_map == "zm_transit" && oldschool_mode == "zsurvival" ) ||
 	       oldschool_map == "zm_nuked" || oldschool_map == "zm_highrise" || oldschool_map == "zm_buried" || oldschool_map == "zm_tomb" ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_zm" );
@@ -3511,4 +3522,56 @@ zmqol_metalstorm_chargeshot_stop()
 	self.zmqol_ms_loopent stoploopsound();
 	self.zmqol_ms_charge = 0;
 	self.zmqol_ms_lastcharge = undefined;
+}
+
+// ============================================================================
+//  zmqol_gunswap_include_weapon_client  (server twin: scripts\zm\gunswap.gsc)
+//
+//  The ban half of the gunswap. The four names below must match
+//  gunswap.gsc's zmqol_gunswap_banned_names() exactly: the server refuses to
+//  register them and this refuses to precache or display them, so neither
+//  half of the game ever hears about a weapon the other half dropped.
+// ============================================================================
+zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
+{
+	if ( !isdefined( level.zmqol_gunswap_banned ) )
+	{
+		level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm" ];
+	}
+
+	for ( i = 0; i < level.zmqol_gunswap_banned.size; i++ )
+	{
+		if ( weapon == level.zmqol_gunswap_banned[ i ] )
+		{
+			return;
+		}
+	}
+
+	//  Faithful copy of clientscripts\mp\zombies\_zm_weapons::include_weapon
+	//  from here down (decompile verbatim; the two script helpers it calls are
+	//  qualified because this copy lives in this file, not theirs).
+	if(!isDefined(level._included_weapons)) {
+		level._included_weapons = [];
+	}
+
+	level._included_weapons[level._included_weapons.size] = weapon;
+
+	if(!isDefined(level._display_box_weapons)) {
+		level._display_box_weapons = [];
+	}
+
+	if(!isDefined(display_in_box)) {
+		display_in_box = 1;
+	}
+
+	if(!display_in_box) {
+		return;
+	}
+	if(!isDefined(level._resetzombieboxweapons)) {
+		level._resetzombieboxweapons = 1;
+		clientscripts\mp\zombies\_zm_weapons::resetzombieboxweapons();
+	}
+
+	addzombieboxweapon(weapon, getweaponmodel(weapon), clientscripts\mp\zombies\_zm_weapons::weapon_is_dual_wield(weapon));
+	level._display_box_weapons[level._display_box_weapons.size] = weapon;
 }
