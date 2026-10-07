@@ -64,15 +64,19 @@
 //  The stock guns stay banned even where their replacements arrive by other
 //  routes - the point is the slots, everywhere, on every mode.
 //
-//  THE FIVE-SEVEN EXCEPTION. On Origins the Five-seveN single is a WALL BUY
-//  (stock zm_tomb.gsc:975, cost 1100) and stock includes it there with
-//  in_box 0 - the wall's trigger and its floating gun model are welded into
-//  the BSP, so no script swap can re-point it, and banning the name would
-//  leave a wall selling a weapon nothing registered. So on zm_tomb the
-//  single STAYS registered, the wall keeps selling it, and because its
-//  include is in_box 0 the Origins box never offered it anyway - the box
-//  side of the swap is exact there too. The Dual Wield is box-only (cost 50)
-//  and is banned on Origins like everywhere else.
+//  THE FIVE-SEVEN EXCEPTION, OPENED THEN CLOSED. Round 2 first KEPT the
+//  single registered on Origins (its 1100-point wall buy is BSP-welded and
+//  stock includes it with in_box 0), and relabelled the wall via a mod.str
+//  key override - asking the label to say Browning while the wall kept
+//  handing out the Five-seveN. User, same hour, plainly: that is nonsense,
+//  the wall should sell a Browning and the Five-seveN is meant to be gone
+//  entirely - the slots are the point. SO THE PAIR IS BANNED EVERYWHERE, and
+//  the wall is re-pointed instead (zmqol_gunswap_wall_repoint below): stock's
+//  wall stub init would assert on the now-missing struct, so the two struct
+//  getters it calls run this file's copies with one fallback, and a frame
+//  after init the wall's stub is swapped over. The wall sells the Browning
+//  HP at its old price for real; only the gun model bolted into the BSP
+//  stays what it is.
 // ============================================================================
 
 #include maps\mp\_utility;
@@ -86,6 +90,9 @@
 init()
 {
     replaceFunc( maps\mp\zombies\_zm_utility::include_weapon, ::zmqol_gunswap_include_weapon );
+    replaceFunc( maps\mp\zombies\_zm_weapons::get_weapon_cost, ::zmqol_gunswap_get_weapon_cost );
+    replaceFunc( maps\mp\zombies\_zm_weapons::get_weapon_hint, ::zmqol_gunswap_get_weapon_hint );
+    level thread zmqol_gunswap_wall_repoint();
     println( "[zm_qol] gunswap: swapped-out stock pairs banned from registration on " + getdvar( "mapname" ) );
 }
 
@@ -108,16 +115,10 @@ zmqol_gunswap_banned_names()
     a[a.size] = "barretm82_upgraded_zm";
     a[a.size] = "saiga12_zm";           //  the S12 - replaced by spas_zm (the restored SPAS-12)
     a[a.size] = "saiga12_upgraded_zm";
+    a[a.size] = "fiveseven_zm";         //  the Five-seveN - replaced by browninghp_zm, EVERYWHERE incl Origins (user reversal)
+    a[a.size] = "fiveseven_upgraded_zm";
     a[a.size] = "fivesevendw_zm";       //  the Five-seveN DW - replaced by browninghpdw_zm
     a[a.size] = "fivesevendw_upgraded_zm";
-    //  The Five-seveN single stays registered on Origins: its 1100-point wall
-    //  buy is BSP-welded there and stock includes it with in_box 0, so the
-    //  wall sells it and the box never offers it. Everywhere else, out.
-    if ( level.script != "zm_tomb" )
-    {
-        a[a.size] = "fiveseven_zm";         //  the Five-seveN - replaced by browninghp_zm
-        a[a.size] = "fiveseven_upgraded_zm";
-    }
     return a;
 }
 
@@ -152,4 +153,97 @@ zmqol_gunswap_include_weapon( weapon_name, in_box, collector, weighting_func )
     }
 
     maps\mp\zombies\_zm_weapons::include_zombie_weapon(weapon_name, in_box, collector, weighting_func);
+}
+
+// ============================================================================
+//  THE ORIGINS WALL RE-POINT   (round 2 follow-up, user reversal)
+// ----------------------------------------------------------------------------
+//  Stock zm_tomb.gsc:975 registers the Origins Five-seveN wall as a BSP
+//  struct whose zombie_weapon_upgrade is "fiveseven_zm"; the wall's price,
+//  hint and delivery all flow from level.zombie_weapons through the stub that
+//  _zm_weapons.gsc::init_spawnable_weapon_upgrade() builds from that struct
+//  (:891 cost, :894 hint, :916 weapon_upgrade). With the Five-seveN pair
+//  banned, that struct never registers - so the two getters the init calls
+//  are replaced by the copies below (one fallback each, exact otherwise, the
+//  mod's standing copy-not-precall pattern), and a frame after init the wall
+//  stub's name fields are swapped to browninghp_zm. From then on the prompt,
+//  the price and the delivery all read the Browning HP's own struct.
+//
+//  The gun model bolted into the BSP is what it is - script cannot re-model
+//  a map entity. The REPLACEMENTS's model is rendered client-side
+//  (zm_expanded.csc's twin of the player-connect model spawn resolves it
+//  from the weapon), so the shelf shows a Browning and the prompt agrees.
+// ============================================================================
+
+zmqol_gunswap_get_weapon_cost( weapon_name )
+{
+    //  Copy of _zm_weapons.gsc:1441-1444. The fallback answers the one weapon
+    //  this file can leave unregistered: the re-pointed Origins wall's BSP
+    //  name during stub init, before the swap below lands. The replacement's
+    //  registered cost (1100 on Origins - quality_of_life.gsc) is what the
+    //  wall keeps charging once the swap has landed.
+    if ( isdefined( level.zombie_weapons[ weapon_name ] ) )
+        return level.zombie_weapons[ weapon_name ].cost;
+
+    if ( level.script == "zm_tomb" && weapon_name == "fiveseven_zm" && isdefined( level.zombie_weapons[ "browninghp_zm" ] ) )
+        return level.zombie_weapons[ "browninghp_zm" ].cost;
+
+    assert(isDefined(level.zombie_weapons[weapon_name]), weapon_name + " was not included or is not part of the zombie weapon list.");
+    return level.zombie_weapons[weapon_name].cost;
+}
+
+zmqol_gunswap_get_weapon_hint( weapon_name )
+{
+    //  Copy of _zm_weapons.gsc:1436-1439, same single fallback as above.
+    if ( isdefined( level.zombie_weapons[ weapon_name ] ) )
+        return level.zombie_weapons[ weapon_name ].hint;
+
+    if ( level.script == "zm_tomb" && weapon_name == "fiveseven_zm" && isdefined( level.zombie_weapons[ "browninghp_zm" ] ) )
+        return level.zombie_weapons[ "browninghp_zm" ].hint;
+
+    assert(isDefined(level.zombie_weapons[weapon_name]), weapon_name + " was not included or is not part of the zombie weapon list.");
+    return level.zombie_weapons[weapon_name].hint;
+}
+
+zmqol_gunswap_wall_repoint()
+{
+    level endon( "end_game" );
+
+    //  Same contract zmqol_wallbuy_box_reassert() has run on for a year:
+    //  one frame after init every map's init has certainly run.
+    n = 0;
+
+    while ( !isdefined( level._spawned_wallbuys ) && n < 20 )
+    {
+        wait 0.05;
+        n++;
+    }
+
+    if ( !isdefined( level._spawned_wallbuys ) )
+    {
+        println( "[zm_qol] gunswap: wall repoint gave up - level._spawned_wallbuys never appeared" );
+        return;
+    }
+
+    for ( i = 0; i < level._spawned_wallbuys.size; i++ )
+    {
+        struct = level._spawned_wallbuys[ i ];
+
+        if ( !isdefined( struct.zombie_weapon_upgrade ) || struct.zombie_weapon_upgrade != "fiveseven_zm" )
+            continue;
+
+        struct.zombie_weapon_upgrade = "browninghp_zm";
+        stub = struct.trigger_stub;
+
+        if ( isdefined( stub ) )
+        {
+            stub.zombie_weapon_upgrade = "browninghp_zm";
+            stub.weapon_upgrade = "browninghp_zm";
+            stub.cost = maps\mp\zombies\_zm_weapons::get_weapon_cost( "browninghp_zm" );
+            stub.hint_parm1 = stub.cost;
+            stub.hint_string = maps\mp\zombies\_zm_weapons::get_weapon_hint( "browninghp_zm" );
+        }
+
+        println( "[zm_qol] gunswap: fiveseven wall repointed to browninghp_zm (" + getdvar( "mapname" ) + ")" );
+    }
 }

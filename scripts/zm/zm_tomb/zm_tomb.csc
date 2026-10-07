@@ -328,17 +328,17 @@ include_weapons()
     include_weapon( "beretta93r_extclip_upgraded_zm", 0 );
     include_weapon( "kard_zm", 0 ); //
     include_weapon( "kard_upgraded_zm", 0 );
-    include_weapon( "fiveseven_zm", 0 );
-    include_weapon( "fiveseven_upgraded_zm", 0 );
+    //  fiveseven_zm pair (the Origins wall buy's own registration) came out
+    //  2026-10-07 round 2 follow-up: the wall is re-pointed to browninghp_zm
+    //  server-side (gunswap.gsc's wall section), and its shelf model follows
+    //  via zm_expanded.csc's connect-time model swap.
     include_weapon( "python_zm", 0 ); //
     include_weapon( "python_upgraded_zm", 0 );
     include_weapon( "c96_zm", 0 );
     include_weapon( "c96_upgraded_zm", 0 );
     //  fivesevendw_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans
     //  the stock pair and browninghpdw_zm takes the slots (oldschool.gsc's
-    //  DW gate is all six maps now). The Five-seveN SINGLE above (lines 331-332)
-    //  STAYS: its 1100-point wall buy is BSP-welded and stock includes it with
-    //  in_box 0, so the wall sells it and the box never offered it.
+    //  DW gate is all six maps now).
     //  m32_zm pair (the War Machine) swapped out 2026-10-07: gunswap.gsc bans
     //  the stock pair from registration and mm1_zm takes the slots.
     include_weapon( "beacon_zm", 0 );

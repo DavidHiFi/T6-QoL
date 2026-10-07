@@ -67,6 +67,8 @@ main()
 	// list in zmqol_gunswap_include_weapon_client below must match
 	// gunswap.gsc's exactly.
 	replaceFunc( clientscripts\mp\zombies\_zm_weapons::include_weapon, ::zmqol_gunswap_include_weapon_client );
+	replaceFunc( clientscripts\mp\zombies\_zm_weapons::wallbuy_player_connect, ::zmqol_gunswap_wallbuy_player_connect );
+	level thread zmqol_gunswap_wall_repoint_client();
 
 	// CLIENT HALF OF FIRE SALE. Missing since v1.54.0 - see the block below.
 	zmqol_enable_fire_sale();
@@ -3553,14 +3555,11 @@ zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 {
 	if ( !isdefined( level.zmqol_gunswap_banned ) )
 	{
-		if ( getdvar( "mapname" ) == "zm_tomb" )
-		{
-			level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
-		}
-		else
-		{
-			level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fiveseven_zm", "fiveseven_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
-		}
+		//  One flat list: the Five-seveN is banned on Origins too now - its
+		//  wall is re-pointed to the Browning HP server-side (gunswap.gsc's
+		//  wall section), and the label override that stood in for it came
+		//  out of mod.str.
+		level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fiveseven_zm", "fiveseven_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
 	}
 
 	for ( i = 0; i < level.zmqol_gunswap_banned.size; i++ )
@@ -3598,4 +3597,103 @@ zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 
 	addzombieboxweapon(weapon, getweaponmodel(weapon), clientscripts\mp\zombies\_zm_weapons::weapon_is_dual_wield(weapon));
 	level._display_box_weapons[level._display_box_weapons.size] = weapon;
+}
+
+// ============================================================================
+//  THE CLIENT HALF OF THE WALL RE-POINT   (server half: gunswap.gsc)
+// ----------------------------------------------------------------------------
+//  Stock spawns every wall shelf's gun model on player connect
+//  (stock _zm_weapons.csc:253) from the BSP's model struct, dressed with the
+//  stub's weapon data. After the gunswap re-point the shelf must SHOW a
+//  Browning with Browning data, and useweaponmodel() pairs weapon and model
+//  - a weapon/model mismatch from one source is what the copy exists to
+//  avoid'. So the re-pointed wall resolves its model FROM the weapon
+//  (spawn_weapon_model's undefined-model path, stock _zm_utility.csc:251);
+//  every other wall is stock verbatim. The marker is set in
+//  zmqol_gunswap_wall_repoint_client() below, which also carries ONE keepalive
+//  difference: it runs ahead of every wallbuy_player_connect call.
+// ============================================================================
+
+zmqol_gunswap_wall_repoint_client()
+{
+	//  stock's _zm_weapons.csc::init() builds level._active_wallbuys well
+	//  before any player joins. Wait for it, bounded, then swap - ahead of
+	//  every connect-time model spawn.
+	n = 0;
+
+	while ( !isdefined( level._active_wallbuys ) && n < 20 )
+	{
+		wait 0.05;
+		n++;
+	}
+
+	if ( !isdefined( level._active_wallbuys ) )
+	{
+		println( "CLIENT zm_qol gunswap: wall repoint gave up - level._active_wallbuys never appeared" );
+		return;
+	}
+
+	if ( getdvar( "mapname" ) != "zm_tomb" )
+	{
+		return;
+	}
+
+	keys = getarraykeys( level._active_wallbuys );
+
+	for ( i = 0; i < keys.size; i++ )
+	{
+		wallbuy = level._active_wallbuys[ keys[i] ];
+
+		if ( !isdefined( wallbuy.zombie_weapon_upgrade ) || wallbuy.zombie_weapon_upgrade != "fiveseven_zm" )
+		{
+			continue;
+		}
+
+		wallbuy.zombie_weapon_upgrade = "browninghp_zm";
+		wallbuy.zmqol_wall_replacement = 1;
+		println( "CLIENT zm_qol gunswap: fiveseven wall repointed to browninghp_zm" );
+	}
+}
+
+zmqol_gunswap_wallbuy_player_connect( localclientnum )
+{
+	keys = getarraykeys(level._active_wallbuys);
+
+	println("Wallbuy connect cb : " + localclientnum);
+
+	if(isDefined(level.createfx_enabled) && level.createfx_enabled) {
+		return;
+	}
+	for(i = 0; i < keys.size; i++) {
+		wallbuy = level._active_wallbuys[keys[i]];
+
+		//  THE ONE DIFFERENCE: a repointed wall's model resolves from the
+		//  WEAPON (the Browning HP's world model, already precached by the
+		//  root include list) instead of the BSP's Five-seveN model struct -
+		//  letting useweaponmodel() pair the two would be a foreign pair.
+		wallmodel = undefined;
+
+		if ( !isdefined( wallbuy.zmqol_wall_replacement ) ) {
+			target_struct_early = getStruct(wallbuy.target, "targetname");
+			wallmodel = target_struct_early.model;
+		}
+		fx = level._effect["m14_zm_fx"];
+
+		if(wallbuy.targetname == "buildable_wallbuy") {
+			fx = level._effect["dynamic_wallbuy_fx"];
+		} else if(isDefined(level._effect[wallbuy.zombie_weapon_upgrade + "_fx"])) {
+			fx = level._effect[wallbuy.zombie_weapon_upgrade + "_fx"];
+		}
+
+		wallbuy.fx[localclientnum] = playFX(localclientnum, fx, wallbuy.origin, anglesToForward(wallbuy.angles), anglestoup(wallbuy.angles), 0.1);
+		target_struct = getStruct(wallbuy.target, "targetname");
+
+		if(wallbuy.targetname == "buildable_wallbuy") {
+			continue;
+		}
+		target_model = spawn_weapon_model(localclientnum, wallbuy.zombie_weapon_upgrade, wallmodel, target_struct.origin, target_struct.angles);
+		target_model hide();
+		target_model.parent_struct = target_struct;
+		wallbuy.models[localclientnum] = target_model;
+	}
 }
