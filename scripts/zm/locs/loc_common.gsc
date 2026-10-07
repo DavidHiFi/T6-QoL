@@ -340,6 +340,145 @@ barrier(model, origin, angles, disconnect_paths = 0)
 	{
 		barrier disconnectPaths();
 	}
+
+	//  v2.15.51 - return the entity so its caller can dress it further
+	//  (vehicle_carapace on the veh_ dressing spawns).
+	return barrier;
+}
+
+// ============================================================================
+//  vehicle_carapace  -  an invisible clip shell that makes a script-spawned
+//  DR vehicle actually stop players.                                    (v2.15.51)
+// ----------------------------------------------------------------------------
+//  User, 2026-10-07 (Tunnel survival round 21, screenshot, .where x -11342
+//  y -704 z 192): walked straight through the two dressing cars at the
+//  tunnel's north barrier line and out of the map. Root-caused and measured
+//  over seven live probes (job tunnel-car-collision-001, PLAN.md + the
+//  zzz_carcol* verdict receipts) and the answer turned out to be two-part:
+//
+//  1. A veh_* script_model spawned WITH the collision flag (spawn(...,1)) is
+//     bullettrace-visible but NOT player-solid - seven drop tests through
+//     them all read the road floor (v3: 3 falls, v4: 3 falls, v5: 2 falls).
+//     The player's movement clip does not come from these models at all;
+//     pass-the-flag never made them solid and never will.
+//  2. collision_geo_* clip models ARE player-solid when spawned with the
+//     flag, BUT ONLY IF THE MODEL WAS PRECACHED AT LOAD. The Mystery Box's
+//     own clips work because the tunnel's precache() loads
+//     collision_geo_32x32x32_standard; the first probe that spawned a
+//     64-unit cube without a precache line loaded inconsistently (v5's
+//     truck carapace held, the same construct fell through on v6's rerun),
+//     and with precachemodel("collision_geo_64x64x64_standard") moved to
+//     main() the identical construct held on every car in one run
+//     (v6-final: coupe delta 60, wagon delta 122, truck delta 183, CONTROL
+//     delta 44, siblings landed).
+//
+//  So this helper does NOT attempt to make the vehicle solid. It spawns a
+//  carapace of ghosted collision_geo_64x64x64_standard cubes around it - a
+//  player walking into the car from any side stops on the carapace and the
+//  car reads solid everywhere a body can reach.
+//
+//  THE EXTENTS COME FROM THE MODEL DUMPS, not from eyeing the wreck:
+//  Unlinker GLB exports of the four stock models from zm_transit.ff
+//  (model-dump\assets under the job folder; glTF is Y-up: its y is game up,
+//  x the length axis along the model's forward - the forward SIGN cross-
+//  checked in game against a measured hull scan on the truck, whose length
+//  is far from symmetric):
+//      60s coupe    x -108..+99.8   y -3..+55.6    z -45.7..+40.8
+//      small wagon  x  -79..+73.6   y -0.2..+71.1  z -37.9..+48.2
+//      truck cab    x -60.4..+213.8 y -64.3..+80.5 z -69.7..+69.7 (mesh
+//                   floor 64 BELOW the origin; the tunnel loc spawns it
+//                   63 up so the base beds into the road - same below)
+//      microbus     x -94.3..+101.2 y -0.3..+83.2  z -44..+49.5
+//  Each axis gets a 6-unit margin and cube centres walk face-to-face on a
+//  62 pitch (64-unit cubes with a 2-unit overlap at every seam, nothing a
+//  player capsule can thread). This placement is the same discipline the
+//  box clips use: dump the model, hardcode the extents.
+//
+//  🛑 CALLER CONTEXT: the caller spawns the vehicle via barrier(..., 1) and
+//  passes THIS helper the returned entity. The carapace does not move the
+//  vehicle or interfere with the flag's own traceable hull (measured: new
+//  cubes over a flag-1 car hold the player with the hull still there).
+//
+//  🛑 PRECACHE THE CUBE MODEL FIRST. This file cannot do it for a location,
+//  because precache only runs in each loc's precache() phase: every caller
+//  adds precachemodel("collision_geo_64x64x64_standard") to its own
+//  precache(). Spawning the cube without that line is the v4-v6 trap and
+//  the carapace will read as pass-through on some boots.
+// ============================================================================
+
+vehicle_carapace( e_ent )
+{
+	if ( !isdefined( e_ent ) )
+		return;
+
+	v_org = e_ent.origin;
+	v_fwd = anglestoforward( e_ent.angles );
+	v_rgt = anglestoright( e_ent.angles );
+
+	a_d = vehicle_carapace_dims( e_ent.model );
+
+	if ( !isdefined( a_d ) )
+	{
+		println( "[zm_qol] vehicle_carapace: no dims for model " + e_ent.model + " - skipped" );
+		return;
+	}
+
+	n_built = 0;
+	n_floor = v_org[2] + a_d[5];
+	n_roof = n_floor + a_d[4];
+
+	for ( c_f = a_d[1] - 32; c_f >= a_d[0] - 2; c_f -= 62 )
+	{
+		for ( c_r = a_d[3] - 32; c_r >= a_d[2] - 2; c_r -= 62 )
+		{
+			for ( n_z = n_floor + 28; ; n_z += 62 )
+			{
+				cube = spawn( "script_model", v_org + ( v_fwd[0] * c_f, v_fwd[1] * c_f, 0 ) + ( v_rgt[0] * c_r, v_rgt[1] * c_r, 0 ) + ( 0, 0, n_z - v_org[2] ), 1 );
+				cube.angles = ( 0, e_ent.angles[1], 0 );
+				cube setmodel( "collision_geo_64x64x64_standard" );
+				cube ghost();
+				cube disconnectpaths();
+				cube.script_noteworthy = "zmqol_vehicle_carapace_cube";
+				n_built++;
+
+				if ( n_z + 32 >= n_roof )
+					break;
+			}
+		}
+	}
+
+	println( "[zm_qol] vehicle_carapace: " + e_ent.model + " carapace = " + n_built + " cubes" );
+}
+
+//  Per-model extents: fwd min/max, right min/max, height above the mesh
+//  floor, mesh-floor offset below the spawn origin. Derivations in the
+//  banner above.
+vehicle_carapace_dims( s_model )
+{
+	a_d = [];
+
+	if ( s_model == "veh_t6_civ_60s_coupe_dead" )
+	{
+		a_d[0] = -114; a_d[1] = 105.8; a_d[2] = -51.7; a_d[3] = 46.8; a_d[4] = 55.6; a_d[5] = 0;
+	}
+	else if ( s_model == "veh_t6_civ_smallwagon_dead" )
+	{
+		a_d[0] = -85; a_d[1] = 79.6; a_d[2] = -43.9; a_d[3] = 54.2; a_d[4] = 71.1; a_d[5] = 0;
+	}
+	else if ( s_model == "veh_t6_civ_movingtrk_cab_dead" )
+	{
+		a_d[0] = -66.4; a_d[1] = 219.8; a_d[2] = -75.7; a_d[3] = 75.7; a_d[4] = 144.9; a_d[5] = -64;
+	}
+	else if ( s_model == "veh_t6_civ_microbus_dead" )
+	{
+		a_d[0] = -100.3; a_d[1] = 107.2; a_d[2] = -50; a_d[3] = 55.5; a_d[4] = 83.2; a_d[5] = 0;
+	}
+	else
+	{
+		return undefined;
+	}
+
+	return a_d;
 }
 // ============================================================================
 //  Buildable-stub swapping - used by zm_highrise_loc_sweatshop.

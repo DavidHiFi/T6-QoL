@@ -88,6 +88,11 @@ precache()
 	precachemodel( "veh_t6_civ_60s_coupe_dead" );
 	precachemodel( "veh_t6_civ_microbus_dead" );
 	precachemodel( "zm_collision_perks1" );   // loc_common::increase_pap_collision
+
+	//  v2.15.51 - the vehicle carapaces (vehicle_carapace) NEED this loaded
+	//  before init_barriers() spawns them. Spawning it cold is the v4-v6
+	//  trap: the carapace reads as pass-through on some boots.
+	precachemodel( "collision_geo_64x64x64_standard" );
 }
 
 main()
@@ -115,9 +120,12 @@ treasure_chest_init()
 
 init_barriers()
 {
-	//  🛑 Power's dressing vehicles now carry the collision flag too, same as
-	//  the walls they dress (v2.15.50): barrier()'s 4th argument is what makes
-	//  a spawn solid, and these two were walk-through at the fog line - the
+	//  🛑 Power's dressing vehicles now get an invisible clip carapace around
+	//  them (v2.15.51) so they stay where the walls they dress are - walk a
+	//  player into any of them and they stop. banner reason: spawn flag 1
+	//  alone does NOT make a veh_* script_model player-solid (seven live
+	//  drop tests in job modding-jobs/tunnel-car-collision-001); what stops a
+	//  player is vehicle_carapace()'s precached collision_geo_64 cubes. The
 	//  same defect the user walked out of the map through on Tunnel survival
 	//  (2026-10-07), fixed across all three locations in one commit. Diner's
 	//  veh_ setModel calls are map-placed and are not touched.
@@ -126,8 +134,10 @@ init_barriers()
 	origin = (10215, 7275, -570);
 	angles = (0, 5, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_microbus_dead", origin + (anglesToForward(angles) * 90) + (anglesToRight(angles) * 48), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * -105) + (anglesToRight(angles) * 48), angles, 1);
+	car = scripts\zm\locs\loc_common::barrier("veh_t6_civ_microbus_dead", origin + (anglesToForward(angles) * 90) + (anglesToRight(angles) * 48), angles, 1);
+	scripts\zm\locs\loc_common::vehicle_carapace( car );
+	car = scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * -105) + (anglesToRight(angles) * 48), angles, 1);
+	scripts\zm\locs\loc_common::vehicle_carapace( car );
 
 	// fog after power station
 	origin = (10215, 8720, -579);

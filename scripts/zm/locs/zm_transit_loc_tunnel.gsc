@@ -83,17 +83,16 @@ precache()
 	precachemodel( "veh_t6_civ_smallwagon_dead" );
 	precachemodel( "zm_collision_perks1" );   // loc_common::increase_pap_collision
 
-	//  v2.14.30 - the moved box's own collision (zmqol_tunnel_box_collision).
-	//  common_zm.ff carries the model (parsed\retail_lists\common_zm.list.txt,
-	//  Unlinker --list), so it is loaded on every zombies map.
+	//  v2.15.30-32 box assets (collision_geo_32x32x32_standard for the moved
+	//  box's clips, p_glo_cinder_block under it). Nothing added to mod.ff:
+	//  both are zm_transit.ff / common_zm.ff stock.
 	precachemodel( "collision_geo_32x32x32_standard" );
-
-	//  v2.14.32 - what the box STANDS on (zmqol_tunnel_box_bricks). zm_transit.ff
-	//  OWNS this model - parsed\retail_lists\zm_transit.list.txt line 3792,
-	//  "xmodel, p_glo_cinder_block" with no leading comma, the same form as
-	//  veh_t6_civ_60s_coupe_dead two lines below it, which this precache has
-	//  been asking for since the location shipped. Nothing added to mod.ff.
 	precachemodel( "p_glo_cinder_block" );
+
+	//  v2.15.51 - the vehicle carapaces (vehicle_carapace) NEED this loaded
+	//  before init_barriers() spawns them. Spawning it cold is the v4-v6
+	//  trap: the carapace reads as pass-through on some boots.
+	precachemodel( "collision_geo_64x64x64_standard" );
 }
 
 main()
@@ -481,22 +480,26 @@ zmqol_tunnel_box_here( player )
 }
 
 // ============================================================================
-//  init_barriers  -  the tunnel's play-area edge dressing.                 (v2.15.50)
+//  init_barriers  -  the tunnel's play-area edge dressing.                 (v2.15.51)
 // ----------------------------------------------------------------------------
-//  🛑 EVERY spawn here carries the collision flag, the vehicles included.
-//  loc_common::barrier()'s 4th argument is what makes a spawn solid
-//  (spawn(...,1)) and cuts AI paths; without it a script_model is dressing
-//  the player walks through. The two invisible walls always had it; the
-//  three vehicles never did, so the 60s coupe and the small wagon at the
-//  north line could be walked straight through and out of the map
-//  (user, 2026-10-07, Tunnel survival round 21: *"i was for some reason able
-//  to walk completely through these two cars and get outside the map"*).
-//  Their .where at the cars (x -11342 y -704 z 192) sits just past the wall
-//  panel's east end (-11354.8, -762.9), so the cars were the visible seal
-//  over that stretch of the boundary and they leaked. The truck cab at the
-//  south line had the same defect and is fixed in the same commit. Power
-//  Station and Cornfield carried the identical flag-less vehicle dressing
-//  and are fixed the same way; Diner is NOT touched - its setModel("veh_")
+//  🛑 EVERY spawn here carries the collision flag, the vehicles included -
+//  but the flag alone DOES NOT make a veh_* script_model player-solid:
+//  seven live drop tests through spawned dressing cars read the road floor
+//  (v2.15.50 shipped the flag and the user's route stayed open through the
+//  cars, v3-v6 probes). What stops a player is the invisible clip carapace
+//  this build now spawns AROUND each vehicle: vehicle_carapace() lays
+//  precached collision_geo_64x64x64_standard cubes (spawn flag 1, ghost(),
+//  disconnectpaths()) over each car's measured footprint. Full root cause,
+//  GLB extents and the seven-probe receipt chain: loc_common::
+//  vehicle_carapace's banner and job modding-jobs\tunnel-car-collision-001.
+//
+//  User report, 2026-10-07, Tunnel survival round 21: *"i was for some
+//  reason able to walk completely through these two cars and get outside
+//  the map"*. Their .where at the cars (x -11342 y -704 z 192) sits just
+//  past the wall panel's east end, so the cars were the visible seal over
+//  that stretch and they leaked. The truck cab at the south line and the
+//  Power Station / Cornfield dressing vehicles carried the identical defect
+//  and are carapaced the same way. Diner is NOT touched - its setModel
 //  calls reskin map-placed script_models that keep their own BSP collision.
 // ============================================================================
 init_barriers()
@@ -504,13 +507,16 @@ init_barriers()
 	origin = (-11270, -500, 192);
 	angles = (0, 195, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToForward(angles) * 150) + (anglesToRight(angles) * -24) + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * 125) + (anglesToRight(angles) * 25), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin + (anglesToForward(angles) * -30) + (anglesToRight(angles) * 50), angles + (0, -90, 0), 1);
+	car = scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * 125) + (anglesToRight(angles) * 25), angles, 1);
+	scripts\zm\locs\loc_common::vehicle_carapace( car );
+	car = scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin + (anglesToForward(angles) * -30) + (anglesToRight(angles) * 50), angles + (0, -90, 0), 1);
+	scripts\zm\locs\loc_common::vehicle_carapace( car );
 
 	origin = (-10750, -3275, 192);
 	angles = (0, 195, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToRight(angles) * 59) + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_movingtrk_cab_dead", origin + (anglesToUp(angles) * 63), angles, 1);
+	car = scripts\zm\locs\loc_common::barrier("veh_t6_civ_movingtrk_cab_dead", origin + (anglesToUp(angles) * 63), angles, 1);
+	scripts\zm\locs\loc_common::vehicle_carapace( car );
 }
 
 disable_zombie_spawn_locations()
