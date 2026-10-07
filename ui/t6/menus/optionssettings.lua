@@ -88,23 +88,269 @@ end
 --  already there. pcall'd because a failed require hard-crashes LUI, and a
 --  left-aligned heading is a cosmetic loss rather than a broken menu.
 -- ============================================================================
+-- ============================================================================
+--  zm_qol v2.17.0 - THE UTILITY TAB ON CONTROLS, AND THE THIRD PERSON BIND.
+--
+--  User, 2026-10-07, with the stock controls-menu screenshot: *"add a new
+--  category for the controls called extra or utility, whatever one works ...
+--  just a new thing next to gamepad, make sure to adjust the left and right
+--  facing arrows positions to account for this new menu ... in this new tab,
+--  there's going to be some quality of life key bind options ... we'll start
+--  off simple with third person. so you can go to that new utility tab and
+--  click and assign a key the same way you would on any of all those other
+--  tabs ... on your controller or your keyboard, and then tap one button and
+--  go in third person and toggle back out."*
+--
+--  ?? IT IS A WRAPPER, NOT A SHIPPED optionscontrols.lua. Same rule as the
+--  v1.99.74 AIM ASSIST row: shipping our own optionscontrols.lua would shadow
+--  Plutonium's patched one, which is what deleted RAW INPUT, MOUSE
+--  ACCELERATION and FIX HIGH POLL RATE LAG once already (checkpoint 48 s4).
+--  The tab is added by intercepting CoD.Options.SetupTabManager for the
+--  duration of the stock constructor - the same temporary-override trick the
+--  GAMEPAD tab's CreateButtonList patch uses - and adding our tab the same
+--  way stock adds its own: StockAddTab(clientIndex, "UTILITY", creator), the
+--  moment the GAMEPAD addTab call goes through. The tab header then lands
+--  after GAMEPAD in the same MFTabManager.tabsList, and the header pane is a
+--  centred UIHorizontalList, so it re-lays-out around all six labels on its
+--  own. Everything is restored the instant the stock constructor returns, so
+--  no other menu in the game sees a patched SetupTabManager.
+--
+--  ?? THE ARROWS RIDE THE CONTAINER EDGES, SO THE CONTAINER IS WIDENED.
+--  CoD.MFTabManager anchors its left/right arrow prompts to its own left and
+--  right edges and the tab header pane is inset from them, so the one
+--  setLeftRight call moves the arrows - this is exactly what the v1.99.73
+--  fix below already did for five tabs (-270, 270). Six labels
+--  (LOOK MOVE COMBAT INTERACT GAMEPAD UTILITY = 36 glyphs) at the settings
+--  menu's measured ~18 px per glyph and the controls tab spacing of 20 units
+--  put the strip near 424 units, so -320, 320 (640) leaves over 100 units of
+--  margin per side - the same air the accepted five-tab look had. Biased
+--  wide on purpose: too narrow is the REPORTED bug class (v1.93.0, v1.95.0,
+--  v2.0.2), too wide has never been reported. MEASURED against the live
+--  screenshot after the first build; nudge the number, do not guess.
+--
+--  ?? THE KEYBOARD ROW IS THE STOCK BIND EDITOR, VERBATIM. The rows on
+--  LOOK/MOVE/COMBAT are CoD.OptionsControls.AddKeyBindingElements over
+--  buttonList:addKeyBindSelector, and the selector binds ANY command string
+--  - stock's own INTERACT tab binds "+actionslot 3", a command WITH an
+--  argument - and displays the current key through
+--  Engine.GetKeyBindingLocalizedString(controller, command, bindIndex),
+--  a pure command-string lookup. Click the row, press a key, the engine
+--  writes `bind <key> "+actionslot 5"` into the per-mod bindings file - it
+--  persists, and the stock key-capture UI does the whole job including
+--  "replaces that key's old binding".
+--
+--  ?? THE GAMEPAD ROW CANNOT BE THE SAME EDITOR, MEASURED OUT OF THE
+--  BYTECODE. CoD.KeyBindSelector.ButtonAction runs Engine.BindCommand ONLY
+--  `if not Engine.LastInput_Gamepad()` - with a pad as the last input the
+--  stock bind row is a silent no-op, because stock BO2 never binds pad
+--  buttons per action, only through BUTTON LAYOUT presets. So the pad gets
+--  the TAP TO INTERACT mechanism instead (v2.9.33/v2.10.2): a left/right
+--  choice row over the proven bind-writing pattern, Engine.Exec
+--  "bind BUTTON_X ..." - pad bind names read straight out of this install's
+--  bindings_zm.bdg (BUTTON_A BUTTON_B BUTTON_X BUTTON_Y BUTTON_LSHLDR
+--  BUTTON_RSHLDR BUTTON_LTRIG BUTTON_RTRIG BUTTON_LSTICK BUTTON_RSTICK
+--  DPAD_UP DPAD_DOWN DPAD_LEFT DPAD_RIGHT). Assigning a button REPLACES
+--  what it was bound to - the same thing the stock bind editor does to a
+--  keyboard key - and the choice is stored in the zmqol_tp_pad dvar and
+--  re-applied from it on every map load (loading.lua), because a BUTTON
+--  LAYOUT change or EXEC CONTROLLER BINDINGS rewrites every pad bind and
+--  would silently drop ours. Unassign (NONE) unbinds the button we bound.
+--
+--  ?? BOTH ROWS CONVERGE ON ONE COMMAND: "+actionslot 5". The .fly bind
+--  (quality_of_life.gsc v1.59.3) established why: GSC cannot register a
+--  console command and the cg_* switches are cheat-protected - a
+--  `bind x "toggle cg_thirdPerson 0 1"` is refused outside a cheat server.
+--  "+actionslot N" is the engine's own always-accepted subscribable
+--  command; fly took slot 7, this takes slot 5, which no stock zombies
+--  binding and no other part of this mod touches. One
+--  notifyonplayercommand registration (scripts/zm/zmqol_thirdperson.gsc)
+--  covers both devices and flips the same `third_person` preference the
+--  GAME 3 tab's row writes, so the camera mode, angle and FOV recovery all
+--  stay owned by that one pass (qol_options.gsc, also v2.17.0).
+-- ============================================================================
+
+ZmQolTpPadChoices = {
+	{ label = "NONE",          value = "NONE" },
+	{ label = "DPAD UP",       value = "DPAD_UP" },
+	{ label = "DPAD DOWN",     value = "DPAD_DOWN" },
+	{ label = "DPAD LEFT",     value = "DPAD_LEFT" },
+	{ label = "DPAD RIGHT",    value = "DPAD_RIGHT" },
+	{ label = "A",             value = "BUTTON_A" },
+	{ label = "B",             value = "BUTTON_B" },
+	{ label = "X",             value = "BUTTON_X" },
+	{ label = "Y",             value = "BUTTON_Y" },
+	{ label = "LEFT BUMPER",   value = "BUTTON_LSHLDR" },
+	{ label = "RIGHT BUMPER",  value = "BUTTON_RSHLDR" },
+	{ label = "LEFT TRIGGER",  value = "BUTTON_LTRIG" },
+	{ label = "RIGHT TRIGGER", value = "BUTTON_RTRIG" },
+	{ label = "LEFT STICK",    value = "BUTTON_LSTICK" },
+	{ label = "RIGHT STICK",   value = "BUTTON_RSTICK" }
+}
+
+if ZmQolApplyTpPad == nil then
+	ZmQolApplyTpPad = function (ClientIndex, Previous, Current, Source)
+		if ClientIndex == nil then
+			ClientIndex = 0
+		end
+		Previous = tostring(Previous or "NONE")
+		Current = tostring(Current or "NONE")
+		if Previous ~= "NONE" and Previous ~= "" and Previous ~= Current then
+			Engine.Exec(ClientIndex, "unbind " .. Previous)
+		end
+		if Current ~= "NONE" and Current ~= "" then
+			Engine.Exec(ClientIndex, "bind " .. Current .. " \"+actionslot 5\"")
+			Engine.Exec(ClientIndex, "echo [zm_qol] third person: " .. Current .. " toggles the camera - source " .. tostring(Source))
+		else
+			Engine.Exec(ClientIndex, "echo [zm_qol] third person pad bind cleared - source " .. tostring(Source))
+		end
+	end
+end
+
+if ZmQolApplyTpPadFromDvar == nil then
+	ZmQolApplyTpPadFromDvar = function (ClientIndex, Source)
+		pcall(function ()
+			local Value = UIExpression.DvarString(nil, "zmqol_tp_pad")
+			if Value ~= nil and Value ~= "" and Value ~= "NONE" then
+				ZmQolApplyTpPad(ClientIndex, Value, Value, Source)
+			else
+				Engine.Exec(ClientIndex, "echo [zm_qol] third person pad bind is unset or NONE - binds left alone - source " .. tostring(Source))
+			end
+		end)
+	end
+end
+
+ZmQolCreateUtilityTab = function (utilityTab, localClientIndex)
+	local utilityTabContainer = LUI.UIContainer.new()
+	local utilityTabButtonList = CoD.Options.CreateButtonList()
+	utilityTab.buttonList = utilityTabButtonList
+	utilityTabContainer:addElement(utilityTabButtonList)
+
+	-- Seed the dvar so the selector shows NONE instead of a blank on the
+	-- very first open, before the GSC watcher has ever run.
+	pcall(function ()
+		local Current = UIExpression.DvarString(nil, "zmqol_tp_pad")
+		if Current == nil or Current == "" then
+			Engine.SetDvar("zmqol_tp_pad", "NONE")
+		end
+	end)
+
+	-- KEYBOARD: the same bind editor every other tab uses. The command is
+	-- "+actionslot 5": subscribable through notifyonplayercommand, unused by
+	-- stock zombies and the rest of this mod (fly took slot 7), so the key
+	-- fires the mod's own toggle in scripts/zm/zmqol_thirdperson.gsc. A
+	-- cheat-protected cg_* dvar bind would be refused outside a cheat
+	-- server - the .fly bind's own finding.
+	CoD.OptionsControls.AddKeyBindingElements(localClientIndex, utilityTabButtonList, {
+		{
+			command = "+actionslot 5",
+			label = "THIRD PERSON",
+			hint = "Bind a key to toggle the third person camera."
+		}
+	})
+
+	utilityTabButtonList:addSpacer(CoD.CoD9Button.Height / 2)
+
+	-- GAMEPAD: the TAP TO INTERACT mechanism, a choice row that writes binds.
+	local PadSelector = utilityTabButtonList:addDvarLeftRightSelector(
+		localClientIndex,
+		Engine.Localize("THIRD PERSON BUTTON"),
+		"zmqol_tp_pad",
+		Engine.Localize("Puts the third person toggle on a controller button. Replaces that button's current binding. Re-applied on every map load.")
+	)
+	for ChoiceIndex = 1, #ZmQolTpPadChoices do
+		local Choice = ZmQolTpPadChoices[ChoiceIndex]
+		PadSelector:addChoice(localClientIndex, Engine.Localize(Choice.label), Choice.value, nil, function (Params, UserRequested)
+			-- The 5th-argument callback replaces the default Engine.SetDvar
+			-- write (v2.10.2 finding), so the PREVIOUS value is still in the
+			-- dvar when this runs - read it before writing the new one, then
+			-- move the bind.
+			local Previous = nil
+			pcall(function ()
+				Previous = UIExpression.DvarString(nil, "zmqol_tp_pad")
+			end)
+			Engine.SetDvar(Params.parentSelectorButton.m_dvarName, Params.value)
+			ZmQolApplyTpPad(localClientIndex, Previous, Params.value, "menu")
+		end)
+	end
+
+	return utilityTabContainer
+end
+
 pcall(require, "T6.menus.optionscontrols")
 
 if ZmQolModLoaded() and LUI and LUI.createMenu and LUI.createMenu.OptionsControlsMenu then
 	local ZmQolStockControlsMenu = LUI.createMenu.OptionsControlsMenu
 
 	LUI.createMenu.OptionsControlsMenu = function (localClientIndex)
-		local controlsWidget = ZmQolStockControlsMenu(localClientIndex)
+		-- A remembered tab index from an older session can point past the six
+		-- tabs that now exist; stock hands it straight to loadTab. Clamp it
+		-- BEFORE the constructor runs, not after.
+		if CoD.OptionsControls and CoD.OptionsControls.CurrentTabIndex and CoD.OptionsControls.CurrentTabIndex > 6 then
+			CoD.OptionsControls.CurrentTabIndex = 1
+		end
+
+		-- Add the UTILITY tab from inside the stock constructor: temporary
+		-- override of CoD.Options.SetupTabManager, restored the moment the
+		-- constructor returns, whatever happened to it.
+		local StockSetupTabManager = nil
+		if CoD.Options and CoD.Options.SetupTabManager then
+			StockSetupTabManager = CoD.Options.SetupTabManager
+			CoD.Options.SetupTabManager = function (widget, width)
+				local Manager = StockSetupTabManager(widget, width)
+				if Manager and Manager.addTab then
+					local StockAddTab = Manager.addTab
+					Manager.addTab = function (self, clientIndex, labelKey, creatorFn, extra)
+						StockAddTab(self, clientIndex, labelKey, creatorFn, extra)
+						if labelKey == "PLATFORM_GAMEPAD_CAPS" then
+							StockAddTab(self, clientIndex, "UTILITY", ZmQolCreateUtilityTab)
+						end
+					end
+				end
+				return Manager
+			end
+		end
+
+		local OkControls, controlsWidget = pcall(ZmQolStockControlsMenu, localClientIndex)
+
+		if StockSetupTabManager then
+			CoD.Options.SetupTabManager = StockSetupTabManager
+		end
+
+		if not OkControls then
+			-- The stock constructor threw; behave exactly like the unwrapped
+			-- call would have - surface the error.
+			error(controlsWidget)
+		end
+
+		-- Fallback: if the interception never fired (label renamed upstream),
+		-- append the tab after the fact. The header pane re-centres on its
+		-- own, and the tab's content loads the first time it is selected.
+		if controlsWidget and controlsWidget.tabManager and controlsWidget.tabManager.addTab and controlsWidget.tabManager.tabsList then
+			local UtilityMissing = true
+			for TabIndex = 1, #controlsWidget.tabManager.tabsList do
+				if controlsWidget.tabManager.tabsList[TabIndex].tabCreatorFn == ZmQolCreateUtilityTab then
+					UtilityMissing = false
+					break
+				end
+			end
+			if UtilityMissing then
+				pcall(function ()
+					controlsWidget.tabManager:addTab(localClientIndex, "UTILITY", ZmQolCreateUtilityTab)
+				end)
+			end
+		end
 
 		if controlsWidget and controlsWidget.titleElement then
 			controlsWidget.titleElement:setAlignment(LUI.Alignment.Center)
 		end
 
-		-- Plutonium's five control tabs occupy about 500 LUI units, but its
-		-- container is much wider. Keep a small margin outside LOOK and GAMEPAD
-		-- so the navigation arrows stay next to the labels.
+		-- Plutonium's five control tabs occupied about 500 LUI units in a much
+		-- wider container; the v1.99.73 fix narrowed it to 540 so the arrows
+		-- stayed next to LOOK and GAMEPAD. The sixth tab (UTILITY) widens the
+		-- label strip, so the container widens with it - see the width note in
+		-- the v2.17.0 header above.
 		if controlsWidget and controlsWidget.tabManager then
-			controlsWidget.tabManager:setLeftRight(false, false, -270, 270)
+			controlsWidget.tabManager:setLeftRight(false, false, -320, 320)
 		end
 
 		return controlsWidget

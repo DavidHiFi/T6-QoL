@@ -56,7 +56,8 @@
     { "file": "scripts/zm/quality_of_life.gsc", "function": "fade_out_intro_screen_zm_instant", "var": "level.introscreen", "group": "server", "life": "transient", "count": 1, "what": "intro black screen, destroyed when it lifts" },
     { "file": "scripts/zm/bleedout_bar.gsc", "function": "bleedout_bar", "var": "self.ProcessBar2", "group": "archived", "life": "transient", "count": 3, "what": "bleedout bar (createbar: fill, frame, background) while downed" },
     { "file": "scripts/zm/bleedout_bar.gsc", "function": "bleedout_bar", "var": "self.Bleedout_text", "group": "archived", "life": "transient", "count": 1, "what": "bleedout countdown text while downed" },
-    { "file": "scripts/zm/qol_dev_overlay.gsc", "function": "zmqol_dev_overlay_line", "var": "hud", "group": "archived", "life": "dev", "count": 7, "what": "developer overlay, only while zmqol_dev_overlay is 1" }
+    { "file": "scripts/zm/qol_dev_overlay.gsc", "function": "zmqol_dev_overlay_line", "var": "hud", "group": "archived", "life": "dev", "count": 7, "what": "developer overlay, only while zmqol_dev_overlay is 1" },
+    { "file": "scripts/zm/zm_prison/zm_prison_magmagat.gsc", "function": "mg_text_elem", "var": "hud", "group": "archived", "life": "ondemand", "count": 1, "what": "magma gat use prompt (returned to mg_prompt_hud), destroyed on hide and at end game" }
   ],
   "forbid": [
     { "file": "scripts/zm/qol_dev_overlay.gsc", "function": "zmqol_dev_overlay_for_player", "pattern": "\\.alpha\\s*=\\s*n_alpha", "why": "the developer overlay must be destroyed when off, not faded - hidden elements still take archived slots" }

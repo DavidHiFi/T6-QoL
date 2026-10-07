@@ -68,6 +68,10 @@ xmodel,mg_ghoul2
 xanim,mg_ghoul_smelter_1
 xanim,mg_ghoul_smelter_2
 rawfile,animtrees/fxanim_props.atr
+// this decl KEEPS the atr in the donor's own ff. It does NOT make the MAIN
+// build carry it: common_zm.ff is --load'd before this donor and wins the
+// pool, so the main build's copy comes from the magmagat_quest_donor
+// (mod_locations.zone declares it with luckass's superset bytes there).
 
 // the quest's own flame/forge flames (his mg/ namespace; the stock Alcatraz fx his
 // script also loads resolve from zm_prison's zones at runtime)
