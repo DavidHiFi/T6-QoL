@@ -132,52 +132,24 @@ CoD.Class.ZmQolRestartPressed = function (IngameMenuWidget, ClientInstance)
 	Engine.Exec(ClientInstance.controller, "map_restart")
 end
 
--- v2.15.12 - FAST RESTART, re-added after a LIVE re-test. User, 2026-09-09.
+-- v2.15.41 - THE FAST RESTART ROW AND HANDLER ARE GONE, AND THEY STAY GONE.
 --
--- 🛑 THIS WAS REMOVED IN v2.2.6 BECAUSE fast_restart CRASHED 3/3 - and that
--- removal was correct FOR THAT BUILD. It is re-added now only because the
--- command was re-tested on Plutonium r5346 on 2026-09-09 and did NOT crash:
--- sent once from the CLI into a live TranZit match, the game stayed on the same
--- pid, reloaded the zones and came back with sv_running 1 and no crash dump and
--- no console error. Plutonium fixed the engine bug the old note's minidump
--- described (null read at 0x4) some time after 2026-08-23. Same shape as
--- RESTART GAME above: one Engine.Exec of one command, no popup, no busy-block -
--- the popup + busy-block was the OTHER half of the old freeze and stays gone.
+-- The v2.15.12 re-add rested on the 2026-09-09 clean console re-test on
+-- r5346. On 2026-10-07 (r5354) that conclusion is falsified: three fresh
+-- minidumps (2026-10-07 09-01-14, 11-49-41, 12-40-02) all show 0xC0000005 at
+-- plutonium_bootstrapper_win32+0x1dd7ed about 2 s after a fast_restart
+-- re-init, every one sent from the CLI with no menu involved - the same null
+-- word read at address 0x4 the v2.2.6-era minidump recorded. A probe that
+-- enumerated nine entity classnames at every game init
+-- (modding-jobs\merge-a04-pipeline-001) found nothing script-visible holding
+-- the stale binding: the dying entity is engine-internal (code-placed map
+-- fx), so no row, handler or script can dodge the crash - only not calling
+-- fast_restart can. The engine's own entity world is rebuilt identically on
+-- re-init (script_model 133 -> 133), and level script variables do not
+-- survive the restart, which also retires the v2.15-era tracking idea.
 --
--- 📝 If a future Plutonium update reintroduces the crash, this is the row to
--- pull again; map_restart (RESTART GAME) is the crash-free full-reload fallback.
-CoD.Class.ZmQolFastRestartPressed = function (IngameMenuWidget, ClientInstance)
-	-- ========================================================================
-	-- 🛑 v2.15.40 - BACK TO ONE EXEC AND NOTHING ELSE (the v2.15.12 shape).
-	-- The v2.15.37 story below is kept for the record, but its premise was
-	-- wrong and its fix did not hold.
-	--
-	-- What happened on 2026-09-11: FAST RESTART pressed from this row on
-	-- Nuketown survival round 3 hard-crashed the process with an access
-	-- violation (0xC0000005; last GSC pos maps/mp/_visionset_mgr::monitor,
-	-- 'type undefined is not an int' - teardown fallout, not the cause).
-	-- No LUI_ERROR dialog, no later INSTANT EXIT involved: the row itself
-	-- kills the game.
-	--
-	-- That refutes v2.15.37's core premise, stated below, that Engine.Exec
-	-- QUEUES the restart to end of frame: if the teardown really ran after
-	-- the close had finished, there would be nothing left to race. The
-	-- restart evidently tears the level down synchronously enough that the
-	-- menu close in the same handler runs on a dying UI - the same
-	-- same-frame teardown+UI race as v2.15.36 (orphaned transition) and
-	-- v2.15.34 (CloseAllInGameMenus freeze), third verse. The 2026-09-09
-	-- clean re-test is consistent with it: that restart was sent from the
-	-- console with NO menu open at all, so there was nothing to race.
-	--
-	-- So per v2.15.37's own fallback instruction, the processEvent close is
-	-- deleted. The pause menu stays open over the restarting match; one
-	-- back-press closes it once the restart has completed. One extra click,
-	-- zero same-frame races - and this is a previously SHIPPED shape
-	-- (v2.15.12), not a new invention. (v2.15.36/37's full notes live in
-	-- git history, not here.)
-	-- ========================================================================
-	Engine.Exec(ClientInstance.controller, "fast_restart")
-end
+-- RESTART GAME above is the restart. It runs `map_restart`, the crash-free
+-- full reload the user named on 2026-08-20, unchanged since v1.99.91.
 
 CoD.Class.ZmQolInstantExitPressed = function (IngameMenuWidget, ClientInstance)
 	-- ========================================================================
@@ -266,11 +238,8 @@ CoD.Class.PrepareClassButtonList = function (LocalClientIndex, IngameMenuWidget)
 			-- the popup are both stock; see restartgamepopupzombie.lua for the
 			-- two lines that had to change in the popup itself.
 			CoD.Class.AddButton(IngameMenuWidget, Engine.Localize("MENU_RESTART_LEVEL_CAPS"), "zmqol_restart_game")
-			-- v2.15.12 - FAST RESTART, directly under RESTART GAME. Re-added after
-			-- the 2026-09-09 live re-test proved fast_restart no longer crashes on
-			-- r5346 (see the handler banner above). Engine.Localize returns the key
-			-- itself when a string is absent, so the literal reads as the row text.
-			CoD.Class.AddButton(IngameMenuWidget, Engine.Localize("FAST RESTART"), "zmqol_fast_restart")
+			-- v2.15.41 - the FAST RESTART row is gone again; see the handler site
+			-- above. RESTART GAME (map_restart, full reload) is the restart.
 			-- 🛑 v2.2.6 - THE FAST RESTART ROW IS GONE, AND THE ROW WAS NEVER THE BUG.
 			-- The user reproduced the crash by typing `fast_restart` into the console
 			-- with no menu involved (2026-08-23), which retires every theory that
@@ -369,7 +338,6 @@ LUI.createMenu.class = function (LocalClientIndex)
 		IngameMenuWidget:registerEventHandler("close_all_ingame_menus", CoD.InGameMenu.CloseAllInGameMenus)
 	end
 	IngameMenuWidget:registerEventHandler("zmqol_restart_game", CoD.Class.ZmQolRestartPressed)
-	IngameMenuWidget:registerEventHandler("zmqol_fast_restart", CoD.Class.ZmQolFastRestartPressed)
 	IngameMenuWidget:registerEventHandler("zmqol_instant_exit", CoD.Class.ZmQolInstantExitPressed)
 	IngameMenuWidget:registerEventHandler("zmqol_quit_desktop", CoD.Class.ZmQolQuitToDesktopPressed)
 	if CoD.isZombie == true then
