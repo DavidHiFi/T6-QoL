@@ -33,6 +33,12 @@
 
 init()
 {
+    //  overnight-20261008-001: host-console off switch for the F1-off live
+    //  A/B test. Default (unset) is ON; `set zmqol_fx_survivors 0` skips the
+    //  sweep so the stale-binding crash can be reproduced on demand.
+    if ( getdvar( "zmqol_fx_survivors" ) == "0" )
+        return;
+
     if ( isdefined( level.zmqol_spawnfx_entities ) )
     {
         foreach ( ent in level.zmqol_spawnfx_entities )
