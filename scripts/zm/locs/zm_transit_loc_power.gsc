@@ -115,12 +115,19 @@ treasure_chest_init()
 
 init_barriers()
 {
+	//  🛑 Power's dressing vehicles now carry the collision flag too, same as
+	//  the walls they dress (v2.15.50): barrier()'s 4th argument is what makes
+	//  a spawn solid, and these two were walk-through at the fog line - the
+	//  same defect the user walked out of the map through on Tunnel survival
+	//  (2026-10-07), fixed across all three locations in one commit. Diner's
+	//  veh_ setModel calls are map-placed and are not touched.
+
 	// fog before power station
 	origin = (10215, 7275, -570);
 	angles = (0, 5, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_microbus_dead", origin + (anglesToForward(angles) * 90) + (anglesToRight(angles) * 48), angles);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * -105) + (anglesToRight(angles) * 48), angles);
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_microbus_dead", origin + (anglesToForward(angles) * 90) + (anglesToRight(angles) * 48), angles, 1);
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * -105) + (anglesToRight(angles) * 48), angles, 1);
 
 	// fog after power station
 	origin = (10215, 8720, -579);
