@@ -3572,7 +3572,7 @@ zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 		//  wall is re-pointed to the Browning HP server-side (gunswap.gsc's
 		//  wall section), and the label override that stood in for it came
 		//  out of mod.str.
-		level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fiveseven_zm", "fiveseven_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
+		level.zmqol_gunswap_banned = strtok( "usrpg_zm usrpg_upgraded_zm m32_zm m32_upgraded_zm rpd_zm rpd_upgraded_zm hamr_zm hamr_upgraded_zm barretm82_zm barretm82_upgraded_zm saiga12_zm saiga12_upgraded_zm fiveseven_zm fiveseven_upgraded_zm fivesevendw_zm fivesevendw_upgraded_zm", " " );
 	}
 
 	for ( i = 0; i < level.zmqol_gunswap_banned.size; i++ )
