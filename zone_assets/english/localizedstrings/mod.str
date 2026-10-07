@@ -190,11 +190,20 @@ LANG_ENGLISH        "Max Wave Gun"
 
 
 // ============================================================================
-//  v2.9.18 - THE CAMPAIGN SPAS-12 CAME OUT 2026-10-07 (user: "get rid of the
-//  Spas 12 and replace it with the blastomatic"). WEAPON_SPAS and
-//  ZOMBIE_SPAS_UPGRADED went with it; the Blastomatic's strings were already
-//  its own.
+//  v2.9.18 - THE CAMPAIGN SPAS-12 (restored 2026-10-07, round 2: the gun is
+//  back, replacing the stock S12). Both keys are Treyarch's own, read out of
+//  the defs: WEAPON_SPAS is the campaign def's displayName (its string lives
+//  only in SP language zones no zombies map loads), and ZOMBIE_SPAS_UPGRADED
+//  is BO1's key from raw\weapons\sp\spas_upgraded_zm. The Pack-a-Punch name
+//  is BO1's official one - the SPAZ-24 - which its 24-round clip in that same
+//  def corroborates.
 // ============================================================================
+
+REFERENCE           WEAPON_SPAS
+LANG_ENGLISH        "SPAS-12"
+
+REFERENCE           ZOMBIE_SPAS_UPGRADED
+LANG_ENGLISH        "SPAZ-24"
 
 // ============================================================================
 //  v2.12.7 - THE THREE ZOMBIES CONTROL-BIND LABELS (user, 2026-09-06).
