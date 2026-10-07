@@ -2633,7 +2633,7 @@ wunderfizz(origin, angles, model, cost, perks, trig, wunderfizzBottle )
 							rtime = 3;
 							wunderfx = undefined;
 								if( isdefined( level._effect[ "wunderfizz_loop" ] ) )
-									wunderfx = SpawnFX(level._effect["wunderfizz_loop"], self.origin,AnglesToForward(angles),AnglesToUp(angles));
+									wunderfx = scripts\zm\zmqol_fx_survivors::zmqol_track_spawnfx( SpawnFX(level._effect["wunderfizz_loop"], self.origin,AnglesToForward(angles),AnglesToUp(angles)) );
 							if( isdefined( wunderfx ) ) TriggerFX(wunderfx);
 							// Spin the ball while it picks a perk - stock's "in_use".
 							self zmqol_wf_anim( "in_use" );
@@ -3105,7 +3105,7 @@ zmqol_wf_glow_monitor()
 			if( !isdefined( v_ball ) )
 				v_ball = self.origin + ( 0, 0, 60 );
 
-			self.zmqol_wf_glow = SpawnFX( level._effect[ "perk_machine_light" ], v_ball, AnglesToForward( self.angles ), AnglesToUp( self.angles ) );
+			self.zmqol_wf_glow = scripts\zm\zmqol_fx_survivors::zmqol_track_spawnfx( SpawnFX( level._effect[ "perk_machine_light" ], v_ball, AnglesToForward( self.angles ), AnglesToUp( self.angles ) ) );
 			TriggerFX( self.zmqol_wf_glow );
 		}
 
