@@ -480,18 +480,37 @@ zmqol_tunnel_box_here( player )
 	println( "[zm_qol] BOXHERE zm_transit tunnel: box at (" + v_at[0] + ", " + v_at[1] + ", " + v_at[2] + ") yaw " + n_yaw + " - player stood at (" + int( player.origin[0] ) + "," + int( player.origin[1] ) + "," + int( player.origin[2] ) + ") facing " + n_face );
 }
 
+// ============================================================================
+//  init_barriers  -  the tunnel's play-area edge dressing.                 (v2.15.50)
+// ----------------------------------------------------------------------------
+//  🛑 EVERY spawn here carries the collision flag, the vehicles included.
+//  loc_common::barrier()'s 4th argument is what makes a spawn solid
+//  (spawn(...,1)) and cuts AI paths; without it a script_model is dressing
+//  the player walks through. The two invisible walls always had it; the
+//  three vehicles never did, so the 60s coupe and the small wagon at the
+//  north line could be walked straight through and out of the map
+//  (user, 2026-10-07, Tunnel survival round 21: *"i was for some reason able
+//  to walk completely through these two cars and get outside the map"*).
+//  Their .where at the cars (x -11342 y -704 z 192) sits just past the wall
+//  panel's east end (-11354.8, -762.9), so the cars were the visible seal
+//  over that stretch of the boundary and they leaked. The truck cab at the
+//  south line had the same defect and is fixed in the same commit. Power
+//  Station and Cornfield carried the identical flag-less vehicle dressing
+//  and are fixed the same way; Diner is NOT touched - its setModel("veh_")
+//  calls reskin map-placed script_models that keep their own BSP collision.
+// ============================================================================
 init_barriers()
 {
 	origin = (-11270, -500, 192);
 	angles = (0, 195, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToForward(angles) * 150) + (anglesToRight(angles) * -24) + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * 125) + (anglesToRight(angles) * 25), angles);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin + (anglesToForward(angles) * -30) + (anglesToRight(angles) * 50), angles + (0, -90, 0));
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_60s_coupe_dead", origin + (anglesToForward(angles) * 125) + (anglesToRight(angles) * 25), angles, 1);
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin + (anglesToForward(angles) * -30) + (anglesToRight(angles) * 50), angles + (0, -90, 0), 1);
 
 	origin = (-10750, -3275, 192);
 	angles = (0, 195, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToRight(angles) * 59) + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_movingtrk_cab_dead", origin + (anglesToUp(angles) * 63), angles);
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_movingtrk_cab_dead", origin + (anglesToUp(angles) * 63), angles, 1);
 }
 
 disable_zombie_spawn_locations()
