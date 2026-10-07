@@ -508,6 +508,9 @@ REM  🛑 Do NOT put REM lines between the caret-continued --load arguments belo
 REM  cmd does not treat them as comments there - they are passed to the Linker as
 REM  arguments, and it fails with: Could not find zone definition file for
 REM  target "REM".
+REM  v2.15.43 - magmagat_quest_donor (luckass superset fxanim_props.atr) loads
+REM  BEFORE common_zm, which owns the stock copy of that tree name;
+REM  first-load-wins otherwise drops the ghoul anims the quest needs.
 "%OAT_BASE%\Linker.exe" ^
   --load "%PROJ%\zone_source\wpnfix_donor\mod.ff" ^
   --load "%PROJ%\zone_source\base\mod.ff" ^
@@ -526,7 +529,11 @@ REM  target "REM".
   --load "%BO2_DIR%\zone\all\zm_transit.ff" ^
   --load "%BO2_DIR%\zone\all\so_zclassic_zm_transit.ff" ^
   --load "%PROJ%\zone_source\magmagat_quest_donor\mod.ff" ^
+<<<<<<< HEAD
 --load "%PROJ%\zone_source\ww_donor\mod.ff" ^
+=======
+  --load "%PROJ%\zone_source\ww_donor\mod.ff" ^
+>>>>>>> fix/magmagat-upstream-quest-current
   --load "%PROJ%\zone_source\pro7_donor\mod.ff" ^
   --load "%BO2_DIR%\zone\all\common_zm.ff" ^
   --load "%BO2_DIR%\zone\all\patch_zm.ff" ^

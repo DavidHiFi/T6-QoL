@@ -324,7 +324,12 @@ zmqol_mp_weapons_init()
 	//  oldschool.gsc for the server half. Vox note: the per-map pickup voice
 	//  is stock's own key for the dual-pistol class on each map (the tomb case
 	//  is handled in oldschool.gsc's init).
-	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) )
+	//  v2.15.43 - THE MAGMAGAT QUEST HOLDS THE DW BACK ON MOB CLASSIC ONLY: its
+	//  five slots only exist because this four-slot family steps aside there
+	//  (oldschool_dw_enabled() in scripts\zm\oldschool.gsc has the same guard
+	//  and the measured-budget note). Both Mob survival locations keep the DW.
+	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
+	     oldschool_map != "zm_prison" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
