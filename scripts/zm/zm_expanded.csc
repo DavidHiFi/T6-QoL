@@ -3615,7 +3615,7 @@ zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 	}
 	if(!isDefined(level._resetzombieboxweapons)) {
 		level._resetzombieboxweapons = 1;
-		clientscripts\mp\zombies\_zm_weapons::resetzombieboxweapons();
+		resetzombieboxweapons();
 	}
 
 	addzombieboxweapon(weapon, getweaponmodel(weapon), clientscripts\mp\zombies\_zm_weapons::weapon_is_dual_wield(weapon));
