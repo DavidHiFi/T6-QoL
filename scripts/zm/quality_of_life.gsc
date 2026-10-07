@@ -11883,7 +11883,21 @@ zmqol_mp_weapons_init()
     zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
 
     zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-    zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+
+    //  Round 2 follow-up: gunswap.gsc re-points the stock Origins Five-seveN
+    //  wall (zm_tomb.gsc:975) to the Browning HP, and the wall's price comes
+    //  from THIS struct (get_weapon_cost). User: same points as the 5.7 wall
+    //  charged, so the wall reads 1100 - the box is free, nothing else is
+    //  priced by it, and the wall's ammo re-buy is stock's usual half (550).
+    //  Everywhere else the Browning HP keeps the Tac-45-reasoned 500.
+    if ( level.script == "zm_tomb" )
+    {
+        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         1100, "" );
+    }
+    else
+    {
+        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+    }
 
     //  Round 2, 2026-10-07: the M60 and the Browning HP are on Origins now.
     //  The RPG-7 stays held back - nothing paid for it there.
