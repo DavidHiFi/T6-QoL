@@ -1,0 +1,41 @@
+magmagat_donor\mod.ff - HOW IT WAS BUILT (2026-10-07)
+
+Source:   luckass's "MagmaGat - Mob of the Dead Remaster Weapon" T6 port v1.0.5
+          (https://github.com/lborruto/t6_motd_magmagat, MIT, credit required), file
+          mods\zm_magmagat\mod.ff from the v1.0.5 release zip. It is a normal
+          OAT-built T6 fastfile (55,974,144 bytes, 616 assets), so the stock tool
+          reads it; no DLC5 patch needed.
+Tool:     H:\Plutonium\tools\oat-dlc5\Linker.exe (the same patched OpenAssetTools
+          build_ff.bat uses; v0.33 + local patches).
+Command (PowerShell):
+          & "H:\Plutonium\tools\oat-dlc5\Linker.exe" `
+            --load "<job>\source\rel-1.0.5\mods\zm_magmagat\mod.ff" `
+            --base-folder "<this folder>" --add-source-search-path "<this folder>" `
+            --output-folder "<this folder>\out" mod
+          then move out\mod.ff here. mod.zone beside this file is the exact
+          declaration list: 5 xmodels (the two BO4 gun pairs + the blob), the 3
+          view anims that carry BO4's reload/cock foley notetracks, and the 8 mg/
+          effects the defs and the weapon script name.
+Result:   164 assets (mod.ff.list.txt), 38,666,624 bytes. The extra 149 are the
+          Linker's dependency closure, all luckass's own: his mc/mg_bo4_* and
+          mc/mtl_mg_magmagat* materials, their *mg_* images and BO4 techsets, the
+          two mg_fx_magma_splat0*_mesh models and mg/fx_mp_magma_splat01/02 his
+          impact effect references, and mg/fx_alcatraz_magmagat_power's images.
+Why a donor and not --load of his mod.ff in build_ff.bat: his fastfile also
+          carries his whole zm_prison quest (press/forge/ghoul/skull models, 1,200+
+          sound payloads' worth of bank, camo_870mcs) and the stock-named assets
+          his build inherited (viewmodel_blundergat_* xanims, weapon/blundersplat/*
+          fx, physpreset "weapon", generic techsets) - loading it wholesale would
+          shadow shared names on every map. The carve is small and loaded LAST, so
+          it can only supply names nothing above it offers. A/B the asset list if
+          this entry moves.
+Residuals to watch in the A/B: physpreset "weapon", the camo_zmb_dlc2_* images the
+          _pap materials reference, c_gen_arm_rim_mask_c, global_normal_flat_16x16,
+          glowcycle_random_01_c and the mc_lit_sm_r0c0n0s0_zqq1fze7 techniqueset are
+          generic-named; where a stock zone or the base donor already owns them the
+          Linker resolves from THERE (first load wins) and the donor copy drops out
+          of mod.ff - verified in the A/B for this build.
+Sound:    none. His mod.all bank (87 alias rows, 86 payloads) goes through
+          soundbank\mod.all.aliases.additions.csv instead, the same route every
+          other custom sound in this mod takes; the payload tree ships under
+          sound\magmagat\ and build_ff.bat stages it into zone_assets.
