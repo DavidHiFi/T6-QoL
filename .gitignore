@@ -1,12 +1,21 @@
 # ============================================================================
 #  zm_qol — .gitignore
 #
-#  NOTE: the big binaries ARE tracked on purpose. mod.ff, mod.all.sabl/.sabs and
-#  deathmachine_zm.all.sabl have no source in this project and cannot be
-#  regenerated from anything here — losing them loses the mod. Same for
-#  zone_source/base/mod.ff, the donor fastfile every rebuild links from.
-#  A checkpoint you can't actually restore from isn't a checkpoint.
+#  ?? v2.18.1 (2026-10-08) - THE BUILT MOD IS NO LONGER TRACKED. GitHub rejects
+#  files over 100 MiB and mod.ff (113) + mod.all.sabl (117) grew past it; LFS's
+#  free 1 GiB storage fills after ~4 relinks at this repo's cadence, so LFS
+#  was ruled out (user decision, morning of 2026-10-08). The built mod ships
+#  through the installer bundle, the deployed install and release assets.
+#  mod.ff is relinked by build_ff.bat from the tracked zone recipes and donor
+#  fastfiles; mod.iwd is repacked by build.bat; the sound banks come out of the
+#  same relink. zone_source/*/mod.ff donor snapshots STAY tracked - they are
+#  build inputs and sit under the limit. Full pre-untrack binary history is
+#  kept locally on backup/main-pre-untrack and backup/overnight-20261008-full.
+#  A fresh clone can rebuild with build_ff.bat; releases carry the built files.
 # ============================================================================
+mod.ff
+mod.all.sabl
+mod.all.sabs
 
 # Runtime logs pulled off the game — noise, and regenerated every crash hunt.
 crashlogs/
@@ -60,10 +69,9 @@ zone_assets/sound/
 # BUILD OUTPUT and fully reproducible: build.bat regenerates it from the raw
 # folders (images/, scripts/, maps/, weapons/, ui_mp/, ...), all of which ARE
 # tracked. Nothing is lost that cannot be rebuilt.
-#
-# 🛑 The other five shipped files stay tracked on purpose - mod.ff,
-# mod.all.sabl, mod.all.sabs and deathmachine_zm.all.sabl have no source in
-# this project and CANNOT be regenerated. See CLAUDE.md section 5.
+# ?? v2.18.1 - mod.iwd was already ignored here; the policy now covers the
+# other built outputs too (see the block at the top of this file). The note
+# below was the pre-2026-10-08 record and is superseded by that block.
 mod.iwd
 
 # The upscaled / BO3-style texture pack (2,852 .iwi, ~2.1 GB) that ships inside
