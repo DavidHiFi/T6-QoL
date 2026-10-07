@@ -166,7 +166,6 @@ main()
     precachemodel( "zombie_teddybear" );
 
     // --- custom_summary ---
-    cs_boot();
 
     // --- instant_start ---
     // Both hooks are core _zm functions, identical on every map, so this applies
@@ -1022,13 +1021,11 @@ zmqol_powerup_timer_think()
         powerup_keys = getarraykeys( level.zombie_powerups );
         players = get_players();
 
-        b_on = getdvarintdefault( "hud_master", 1 ) &&
-               ( getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_powerup_timers", 1 ) );
-
         for ( p = 0; p < players.size; p++ )
         {
             player = players[p];
             str = "";
+            b_on = player scripts\zm\zmqol_playeropt::zmqol_popt_hud_on( "hud_powerup_timers", 1 );
 
             if ( b_on )
             {
@@ -1342,7 +1339,6 @@ init()
     zmqol_arm_divetonuke_explosion();   // v2.15.53 - PhD dive explodes without a machine
     zmqol_register_vulture_visionset();
     zmqol_register_zombie_blood_visionsets();
-    zmqol_dev_commands();
     zmqol_box_wonder_weapon_weights_init();
     zmqol_mp_weapons_init();
     zmqol_emp_grenade_init();   // v2.9.13 - EMP grenade in the box on every map
@@ -1419,8 +1415,6 @@ init()
     precacheitem( "xm8_zm" );
     precacheitem( "xm8_upgraded_zm" );
     precacheitem( "gl_xm8_zm" );
-    precacheitem( "rpd_zm" );
-    precacheitem( "rpd_upgraded_zm" );
     precacheitem( "python_zm" );
     precacheitem( "python_upgraded_zm" );
     precacheitem( "saritch_zm" );
@@ -1431,14 +1425,13 @@ init()
     precacheitem( "gl_m16_upgraded_zm" );
     precacheitem( "srm1216_zm" );
     precacheitem( "srm1216_upgraded_zm" );
-    precacheitem( "hamr_zm" );
-    precacheitem( "hamr_upgraded_zm" );
     precacheitem( "kard_zm" );
     precacheitem( "kard_upgraded_zm" );
-    precacheitem( "m32_zm" );
-    precacheitem( "m32_upgraded_zm" );
-    precacheitem( "barretm82_zm" );
-    precacheitem( "barretm82_upgraded_zm" );
+    //  m32_zm/_upgraded came out with the War Machine swap (gunswap.gsc,
+    //  2026-10-07): a precache here would have kept both slots spent on every
+    //  map, include_weapon ban or not. The rpd, hamr and barretm82 pairs joined
+    //  them the same day (round 2: the M60, MK48 and Dragunov take their slots,
+    //  and the stock saiga12/fiveseven pairs were never precached here).
     precacheitem( "m1911_zm" );
     precacheitem( "m1911_upgraded_zm" );
     precacheitem( "m1911lh_upgraded_zm" );
@@ -1487,7 +1480,8 @@ init()
     level thread counters_onplayerconnect();
 
     // --- deathmachine_powerup ---
-    level thread dm_onplayerconnect();
+    //  The pickup hook and the Death Machine run live in
+    //  scripts/zm/qol_powerup_dispatch.gsc, installed from its own init().
     precachemodel( "zombie_pickup_minigun" );
     precacheitem( "deathmachine_zm" );
     level.deathmachine_weapon = "deathmachine_zm";
@@ -1655,7 +1649,7 @@ bo4maxammo_onplayerspawned()
     {
         self waittill("spawned_player");
         //  ====================================================================
-        //  v2.13.0 - THE SAME CO-OP RACE AS dm_onplayerspawned(), SAME FIX:
+        //  v2.13.0 - THE SAME CO-OP RACE THE OLD DEATH MACHINE HOOK HAD, SAME FIX:
         //  claim the flag BEFORE the wait, not after it.
         //
         //  This is a per-player thread installing a level-wide replaceFunc.
@@ -3236,8 +3230,7 @@ first_spawn()
         //  v1.85.0 - hud_master (".hud off") is checked here too, and FIRST,
         //  because it must beat hud_all.
         if ( zmqol_perf_probe() ||
-             !getdvarintdefault( "hud_master", 1 ) ||
-             !( getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_health_bar", 1 ) ) )
+             !self scripts\zm\zmqol_playeropt::zmqol_popt_hud_on( "hud_health_bar", 1 ) )
         {
             self qol_health_hud_destroy();
             wait 0.25;
@@ -3595,8 +3588,7 @@ zombiecounter()
         //  have flashed it in exactly the same way on any build since the
         //  watcher existed. .hud off simply made it easy to hit.
         // ====================================================================
-        if ( !getdvarintdefault( "hud_master", 1 ) ||
-             !( getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_remaining", 1 ) ) )
+        if ( !self scripts\zm\zmqol_playeropt::zmqol_popt_hud_on( "hud_remaining", 1 ) )
         {
             self.zombietext.alpha = 0;
             wait 0.25;
@@ -3769,7 +3761,7 @@ shield_hud()
         //  dark backing plate fully opaque. Destroying is also what hands the
         //  slots back to the client's hudelem pool while the HUD is switched
         //  off, which is the right thing to do anyway.
-        if ( !getdvarintdefault( "hud_master", 1 ) )
+        if ( !self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_master", 1 ) )
         {
             self qol_shield_hud_destroy();
             wait 0.25;
@@ -3837,383 +3829,12 @@ shield_hud()
 //    set cs_seconds 10         // How long the summary stays visible (seconds)
 //    set cs_cooldown_ms 2500   // Minimum time between summaries (milliseconds)
 // ============================================================================
-cs_boot()
-{
-    // One instance only
-    if (isDefined(level.cs_loaded) && level.cs_loaded)
-        return;
-    level.cs_loaded = 1;
-
-    // Try to disable the older "CRS" script if it was installed before
-    setDvar("ct_round_summary", "0");
-    setDvar("ct_rs_show_session_best", "0");
-    setDvar("ct_rs_show_round_pb", "0");
-
-    // Defaults
-    if (getDvar("cs_enabled") == "") setDvar("cs_enabled", "1");
-    if (getDvar("cs_x") == "") setDvar("cs_x", "0");
-    if (getDvar("cs_y") == "") setDvar("cs_y", "-60");
-    if (getDvar("cs_seconds") == "") setDvar("cs_seconds", "10");
-    if (getDvar("cs_cooldown_ms") == "") setDvar("cs_cooldown_ms", "2500");
-
-    level thread cs_on_connect();
-}
-
-cs_on_connect()
-{
-    for (;;)
-    {
-        level waittill("connected", player);
-
-        // Best-effort: tell older scripts to stop their popup threads
-        player notify("crs_summary_kill");
-        player notify("cs_popup_kill");
-        player notify("cs_popup_kill2");
-
-        // Best-effort: destroy any old HUD elements the older scripts created
-        player thread cs_kill_legacy_hud();
-        player thread cs_player_thread();
-    }
-}
-
-cs_kill_legacy_hud()
-{
-    self endon("disconnect");
-
-    // Run a few times in case the old popup was mid-fade
-    for (i = 0; i < 10; i++)
-    {
-        if (isDefined(self.crs_title)) self.crs_title destroy();
-        if (isDefined(self.crs_line2)) self.crs_line2 destroy();
-        if (isDefined(self.crs_line3)) self.crs_line3 destroy();
-        if (isDefined(self.crs_line4)) self.crs_line4 destroy();
-        if (isDefined(self.cs_title_old)) self.cs_title_old destroy();
-        if (isDefined(self.cs_line2_old)) self.cs_line2_old destroy();
-        if (isDefined(self.cs_line3_old)) self.cs_line3_old destroy();
-        if (isDefined(self.cs_line4_old)) self.cs_line4_old destroy();
-        if (isDefined(self.crs_summary)) self.crs_summary destroy();
-        wait 0.1;
-    }
-}
-
-cs_player_thread()
-{
-    self endon("disconnect");
-
-    if (isDefined(self.cs_running) && self.cs_running)
-        return;
-    self.cs_running = 1;
-
-    flag_wait("initial_blackscreen_passed");
-
-    while (!isDefined(level.round_number))
-        wait 0.1;
-
-    self.cs_last_round = level.round_number;
-    self.cs_round_start_time = getTime();
-    self.cs_kills_start = cs_get_kills();
-
-    // Prevent instant spam during early init
-    self.cs_last_popup_time = getTime();
-
-    //  v2.17.41 - no spawn-time cs_hud_create() any more: cs_popup() builds
-    //  the card when a round ends and hands the slots back when it fades.
-
-    for (;;)
-    {
-        if (!getDvarInt("cs_enabled"))
-        {
-            wait 0.5;
-            continue;
-        }
-
-        r = level.round_number;
-        if (r != self.cs_last_round && r > 1)
-            cs_on_round_change(r);
-
-        wait 0.2;
-    }
-}
-
-cs_on_round_change(new_round)
-{
-    kills_now = cs_get_kills();
-    completed_round = self.cs_last_round;
-    round_time = int((getTime() - self.cs_round_start_time) / 1000);
-    if (round_time < 0) round_time = 0;
-
-    round_kills = kills_now - self.cs_kills_start;
-    if (round_kills < 0) round_kills = 0;
-
-    // Personal best per round (persist via seta)
-    pb_time_key = "cs_personal_best_time_round_" + completed_round;
-    pb_kills_key = "cs_personal_best_kills_round_" + completed_round;
-
-    old_pb_time = getDvarInt(pb_time_key);
-    old_pb_kills = getDvarInt(pb_kills_key);
-
-    new_pb_time = 0;
-    new_pb_kills = 0;
-
-    if (round_time > 0 && (old_pb_time <= 0 || round_time < old_pb_time))
-    {
-        old_pb_time = round_time;
-        setDvar(pb_time_key, round_time);
-        cmdexec("seta " + pb_time_key + " " + round_time + "\n");
-        new_pb_time = 1;
-    }
-
-    if (round_kills > old_pb_kills)
-    {
-        old_pb_kills = round_kills;
-        setDvar(pb_kills_key, round_kills);
-        cmdexec("seta " + pb_kills_key + " " + round_kills + "\n");
-        new_pb_kills = 1;
-    }
-
-    // Cooldown to stop rapid re-trigger / flicker
-    cooldown = getDvarInt("cs_cooldown_ms");
-    if (cooldown < 500) cooldown = 500;
-    if (cooldown > 10000) cooldown = 10000;
-
-    now = getTime();
-    if (isDefined(self.cs_last_popup_time) && (now - self.cs_last_popup_time) < cooldown)
-    {
-        self.cs_last_round = new_round;
-        self.cs_round_start_time = getTime();
-        self.cs_kills_start = kills_now;
-        return;
-    }
-
-    self.cs_last_popup_time = now;
-
-    //  v1.95.0 - `round_summary` console dvar / QUALITY OF LIFE menu row. User
-    //  request, 2026-08-14: "add an option to toggle the brief pop-up after each
-    //  completed wave/round that shows stats in the middle of the screen."
-    //
-    //  🛑 GATED AT THE POPUP, NOT AT THE TRACKER. Everything above this line
-    //  still runs - round time, kill count and both personal bests are recorded
-    //  and written to the profile exactly as before - so turning the popup off
-    //  loses no history and turning it back on shows correct numbers straight
-    //  away. The three bookkeeping writes below run either way for the same
-    //  reason.
-    if ( getdvarintdefault( "round_summary", 1 ) )
-    {
-        self notify("cs_popup_kill3");
-        self thread cs_popup(completed_round, round_time, round_kills, old_pb_time, old_pb_kills, new_pb_time, new_pb_kills);
-    }
-
-    self.cs_last_round = new_round;
-    self.cs_round_start_time = getTime();
-    self.cs_kills_start = kills_now;
-}
-
-cs_popup(round_num, round_time, round_kills, pb_time, pb_kills, new_pb_time, new_pb_kills)
-{
-    self endon("disconnect");
-    self endon("cs_popup_kill3");
-
-    cs_hud_create();
-
-    x = cs_clamp(getDvarInt("cs_x"), -300, 300);
-    y = cs_clamp(getDvarInt("cs_y"), -220, 160);
-
-    // Big spacing so it never mashes
-    self.cs_title setPoint("CENTER", "CENTER", x, y - 58);
-    self.cs_line2 setPoint("CENTER", "CENTER", x, y - 30);
-    self.cs_line3 setPoint("CENTER", "CENTER", x, y - 4);
-    self.cs_line4 setPoint("CENTER", "CENTER", x, y + 22);
-
-    time_str = cs_time(round_time);
-    pb_time_str = "Not Set";
-    if (pb_time > 0) pb_time_str = cs_time(pb_time);
-
-    status_str = cs_status(new_pb_time, new_pb_kills);
-
-    self.cs_title setText("^5ROUND " + round_num + " COMPLETE");
-    self.cs_line2 setText("^7Eliminations: ^5" + round_kills + " ^7| Round Time: ^5" + time_str);
-    self.cs_line3 setText("^7Personal Best Time: ^3" + pb_time_str + " ^7| Personal Best Eliminations: ^3" + pb_kills);
-    self.cs_line4 setText("^7Status: " + status_str);
-
-    // Hard reset alpha
-    self.cs_title.alpha = 0;
-    self.cs_line2.alpha = 0;
-    self.cs_line3.alpha = 0;
-    self.cs_line4.alpha = 0;
-
-    // Fade in
-    self.cs_title fadeOverTime(0.18); self.cs_title.alpha = 0.95;
-    self.cs_line2 fadeOverTime(0.18); self.cs_line2.alpha = 0.95;
-    self.cs_line3 fadeOverTime(0.18); self.cs_line3.alpha = 0.95;
-    self.cs_line4 fadeOverTime(0.18); self.cs_line4.alpha = 0.95;
-
-    show_for = cs_clamp(getDvarInt("cs_seconds"), 3, 30);
-    wait show_for;
-
-    // Fade out
-    self.cs_title fadeOverTime(0.28); self.cs_title.alpha = 0;
-    self.cs_line2 fadeOverTime(0.28); self.cs_line2.alpha = 0;
-    self.cs_line3 fadeOverTime(0.28); self.cs_line3.alpha = 0;
-    self.cs_line4 fadeOverTime(0.28); self.cs_line4.alpha = 0;
-
-    wait 0.28;
-
-    //  🛑 v2.17.41 - HAND THE FOUR SLOTS BACK AFTER EVERY CARD. They sat
-    //  allocated at alpha 0 for the whole match and counted against the 31
-    //  hudelems a client is sent per group - the buildable bar and the
-    //  subtitles lost to invisible elements. cs_hud_create() rebuilds them for
-    //  the next card; a card cut short by cs_popup_kill3 is always followed by
-    //  a new one, which reuses them before this runs.
-    if (isDefined(self.cs_title)) self.cs_title destroy();
-    if (isDefined(self.cs_line2)) self.cs_line2 destroy();
-    if (isDefined(self.cs_line3)) self.cs_line3 destroy();
-    if (isDefined(self.cs_line4)) self.cs_line4 destroy();
-    self.cs_title = undefined;
-    self.cs_line2 = undefined;
-    self.cs_line3 = undefined;
-    self.cs_line4 = undefined;
-}
-
-cs_hud_create()
-{
-    if (isDefined(self.cs_title) && isDefined(self.cs_line4))
-        return;
-
-    if (isDefined(self.cs_title)) self.cs_title destroy();
-    if (isDefined(self.cs_line2)) self.cs_line2 destroy();
-    if (isDefined(self.cs_line3)) self.cs_line3 destroy();
-    if (isDefined(self.cs_line4)) self.cs_line4 destroy();
-
-    self.cs_title = self createFontString("default", 1.55);
-    self.cs_title.sort = 25;
-    self.cs_title.alpha = 0;
-    self.cs_title.hideWhenInMenu = 1;
-
-    self.cs_line2 = self createFontString("default", 1.25);
-    self.cs_line2.sort = 25;
-    self.cs_line2.alpha = 0;
-    self.cs_line2.hideWhenInMenu = 1;
-
-    self.cs_line3 = self createFontString("default", 1.12);
-    self.cs_line3.sort = 25;
-    self.cs_line3.alpha = 0;
-    self.cs_line3.hideWhenInMenu = 1;
-
-    self.cs_line4 = self createFontString("default", 1.12);
-    self.cs_line4.sort = 25;
-    self.cs_line4.alpha = 0;
-    self.cs_line4.hideWhenInMenu = 1;
-}
-
-cs_get_kills()
-{
-    if (isDefined(self.kills))
-        return self.kills;
-    if (isDefined(self.pers) && isDefined(self.pers["kills"]))
-        return self.pers["kills"];
-    return 0;
-}
-
-cs_time(total)
-{
-    if (total < 0) total = 0;
-    m = int(total / 60);
-    s = int(total % 60);
-    if (s < 10)
-        return "" + m + ":0" + s;
-    return "" + m + ":" + s;
-}
-
-cs_status(new_time, new_kills)
-{
-    if (new_time && new_kills)
-        return "^2New Personal Best Time and New Personal Best Eliminations";
-    if (new_time)
-        return "^2New Personal Best Time";
-    if (new_kills)
-        return "^2New Personal Best Eliminations";
-    return "^7No New Personal Best";
-}
-
-cs_clamp(v, mn, mx)
-{
-    if (v < mn) return mn;
-    if (v > mx) return mx;
-    return v;
-}
-
 // ============================================================================
 //  deathmachine_powerup  (was deathmachine_powerup.gsc)
 // ============================================================================
-dm_onplayerconnect()
-{
-    for ( ;; )
-    {
-        level waittill( "connected", player );
-        player thread dm_onplayerspawned();
-    }
-}
-
-dm_onplayerspawned()
-{
-    self endon( "disconnect" );
-    level endon( "end_game" );
-    for ( ;; )
-    {
-        self waittill( "spawned_player" );
-        deathmachine_clear_powerup_state( self );
-        //  ====================================================================
-        //  🛑 v2.13.0 - THE CO-OP CRASH. THE FLAG IS CLAIMED *BEFORE* THE WAIT,
-        //  AND THAT ONE LINE IS THE WHOLE FIX.
-        //
-        //  This is a PER-PLAYER thread (dm_onplayerconnect threads one per
-        //  player), and it installed a LEVEL-WIDE hook. The guard tested
-        //  level.deathmachine_powerup_init_done and only set it AFTER `wait 2`,
-        //  so in co-op every player's thread passed the test inside the same
-        //  window - they all spawn together at match start - and every one of
-        //  them then ran the install block.
-        //
-        //  🌟 WHY THAT CRASHES, EXACTLY. The block saves the current handler and
-        //  then overwrites it:
-        //        level.original_deathmachine_powerup_grab = level._zombiemode_powerup_grab;
-        //        level._zombiemode_powerup_grab           = ::custom_powerup_grab;
-        //  The FIRST thread saves the real handler (stock's, or the map's own -
-        //  Origins' ::tomb_powerup_grab). The SECOND thread, resuming from its
-        //  own wait a frame later, saves what the first one just installed:
-        //  ::custom_powerup_grab ITSELF. So original == custom.
-        //
-        //  custom_powerup_grab()'s last line chains the saved handler:
-        //        level thread [[ level.original_deathmachine_powerup_grab ]]( ... );
-        //  which is now itself. Picking up ANY power-up that is not the Death
-        //  Machine or Zombie Blood - Max Ammo, Nuke, Insta-Kill, Carpenter,
-        //  Double Points, Fire Sale - therefore spawns a thread that spawns a
-        //  thread that spawns a thread, with no wait anywhere in the chain, and
-        //  the server dies on the spot. Two players is enough; solo can never
-        //  reach it because there is only ever one thread.
-        //
-        //  🌟 THE FIX IS ATOMIC BECAUSE GSC IS COOPERATIVE. There is no
-        //  preemption between the isDefined test and the assignment below - a
-        //  thread only yields at a wait - so exactly one player's thread can
-        //  ever win the claim, and the losers skip the block entirely. The
-        //  `wait 2` still happens inside the winner, so the map's own handler is
-        //  still in place before it is chained; only the bookkeeping moved.
-        //
-        //  📝 Same defect, same fix, in bo4maxammo_onplayerspawned() above.
-        //  ====================================================================
-        if ( !isDefined( level.deathmachine_powerup_init_done ) )
-        {
-            level.deathmachine_powerup_init_done = 1;
-            wait 2;
-            if ( isDefined( level._zombiemode_powerup_grab ) )
-            {
-                level.original_deathmachine_powerup_grab = level._zombiemode_powerup_grab;
-            }
-            level._zombiemode_powerup_grab = ::custom_powerup_grab;
-        }
-        self notify( "restart_deathmachine_test" );
-        //self thread powerup_test();
-    }
-}
+//  The level._zombiemode_powerup_grab hook and the Death Machine run moved
+//  to scripts/zm/qol_powerup_dispatch.gsc (issue 13). This file keeps the
+//  registration, the drop predicate, the damage callback and the state flags.
 
 drop_deathmachine()
 {
@@ -4301,262 +3922,6 @@ deathmachine_clear_powerup_state( player )
     player setclientdvar( "deathmachine_powerup_state", 0 );
 }
 
-custom_powerup_grab( s_powerup, e_player )
-{
-    if ( isDefined( s_powerup ) && isDefined( s_powerup.powerup_name ) && s_powerup.powerup_name == "deathmachine" )
-    {
-        level thread deathmachine_powerup( s_powerup, e_player );
-        return;
-    }
-    //  ZOMBIE BLOOD, v1.65.0. Core's powerup_grab() sends every power-up name it
-    //  does not handle itself down level._zombiemode_powerup_grab
-    //  (_zm_powerups.gsc:1072, the `default:` branch), and this function IS that
-    //  pointer on every map - the deathmachine module installs it and chains the
-    //  map's own previous handler below, so Origins' ::tomb_powerup_grab is still
-    //  reached there. That chaining is exactly why this branch is safe to add
-    //  here rather than needing a hook of its own.
-    //
-    //  🛑 THE MAP GATE IS NOT OPTIONAL AND IT IS THE WHOLE REASON ORIGINS STILL
-    //  WORKS. On zm_tomb the chained handler below IS ::tomb_powerup_grab, which
-    //  runs Treyarch's own zombie_blood_powerup(). Intercepting the name here
-    //  without the gate would run OUR copy on Origins instead - where
-    //  zmqol_enable_zombie_blood() deliberately registered nothing, so
-    //  level._effect["zombie_blood"] and level.a_zombie_blood_entities do not
-    //  exist and the power-up would break on the one map that ships it.
-    if ( zmqol_zombie_blood_enabled() && isDefined( s_powerup ) && isDefined( s_powerup.powerup_name ) && s_powerup.powerup_name == "zombie_blood" )
-    {
-        level thread zmqol_zb_powerup( s_powerup, e_player );
-        return;
-    }
-    if ( isDefined( level.original_deathmachine_powerup_grab ) )
-    {
-        level thread [[level.original_deathmachine_powerup_grab]]( s_powerup, e_player );
-    }
-}
-
-deathmachine_powerup( m_powerup, e_player )
-{
-    if ( !isDefined( e_player ) )
-    {
-        return;
-    }
-    if ( e_player maps\mp\zombies\_zm_laststand::player_is_in_laststand() )
-    {
-        return;
-    }
-    level.deathmachine_duration = getdvarintdefault( "sv_deathmachine_duration", 30 );
-
-    //  v2.9.9 - the announcer line, played the way BLOOD MONEY's is (v2.8.8):
-    //  directly through zmqol_play_announcer_line(), not via stock's
-    //  leaderdialog path. Stock's playleaderdialogonplayer() drops the line
-    //  outright when self.zmbdialogactive is already 1, and a Death Machine
-    //  grab always has competing dialog (the character's own pickup quip plus
-    //  the weapon-raise foley - the "gun-cock" the user reported was the ONLY
-    //  audible part). The payload itself was never wrong: the staged flac is
-    //  the same 48 kHz / ~114k-sample recording as BO1's own
-    //  english\sound\vox\scripted\zmb\announcer\death_machine.wav (measured
-    //  against the real BO1 file, localized_English_iw04.iwd) - Treyarch
-    //  carried the Samantha line forward into Die Rise's bank, which is where
-    //  this mod's copy came from. The createvox registration that used to
-    //  feed stock's route is REMOVED in the same change, for the same reason
-    //  Blood Money's was: with no vox registered for the key, stock's
-    //  leaderdialog on the grab returns before playing, so the line cannot
-    //  double-play.
-    level thread zmqol_play_announcer_line( "qol_powerup_death_machine" );
-
-    e_player notify( "end_deathmachine" );
-    wait 0.05;
-    //  v1.99.2: stamp when this run ends, for the power-up timer HUD.
-    //  notify_deathmachine_end() below starts its wait on the SAME dvar value in
-    //  this same frame, so this end time is what actually ends the power-up -
-    //  it is not a second, drifting countdown.
-    e_player.zmqol_deathmachine_end_time = gettime() + ( level.deathmachine_duration * 1000 );
-    e_player thread powerup_state_monitor();
-    e_player thread start_deathmachine();
-    e_player thread notify_deathmachine_end();
-}
-
-powerup_state_monitor()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    time_left = getdvarintdefault( "sv_deathmachine_duration", 30 );
-    self setclientdvar( "deathmachine_powerup_state", 1 );
-    while ( time_left > 10 )
-    {
-        wait 0.05;
-        time_left -= 0.05;
-    }
-    flash_on = 1;
-    while ( time_left > 0 )
-    {
-        if ( time_left <= 5 )
-        {
-            blink_time = 0.1;
-        }
-        else
-        {
-            blink_time = 0.2;
-        }
-        if ( flash_on )
-        {
-            self setclientdvar( "deathmachine_powerup_state", 3 );
-        }
-        else
-        {
-            self setclientdvar( "deathmachine_powerup_state", 2 );
-        }
-        flash_on = !flash_on;
-        wait blink_time;
-        time_left -= blink_time;
-    }
-    self setclientdvar( "deathmachine_powerup_state", 0 );
-}
-
-start_deathmachine()
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    weapon = get_deathmachine_weapon();
-    self.weapon_before_deathmachine = self getcurrentweapon();
-    self.deathmachine_had_weapon_before = self hasweapon( weapon );
-    set_powerup_state( self );
-    if ( !self.deathmachine_had_weapon_before )
-    {
-        self notify( "replace_weapon_powerup" );
-        self giveweapon( weapon );
-        wait 0.05;
-    }
-    self setweaponammoclip( weapon, 150 );
-    self setweaponammostock( weapon, 300 );
-    self switchtoweapon( weapon );
-    self thread deathmachine_infinite_ammo();
-    self thread end_deathmachine_powerup();
-    self thread end_deathmachine_on_weapon_switch( weapon );
-}
-
-deathmachine_infinite_ammo()
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    weapon = get_deathmachine_weapon();
-    for ( ;; )
-    {
-        if ( self hasweapon( weapon ) )
-        {
-            self setweaponammoclip( weapon, 150 );
-            self setweaponammostock( weapon, 300 );
-        }
-        wait 0.05;
-    }
-}
-
-end_deathmachine_powerup()
-{
-    level endon( "end_game" );
-    self waittill_any( "end_deathmachine", "disconnect", "death" );
-    weapon = get_deathmachine_weapon();
-    if ( !isDefined( self.deathmachine_had_weapon_before ) || !self.deathmachine_had_weapon_before )
-    {
-        if ( self hasweapon( weapon ) )
-        {
-            self takeweapon( weapon );
-        }
-        if ( isDefined( self.weapon_before_deathmachine ) )
-        {
-            player_weapons = self getweaponslistprimaries();
-            for ( i = 0; i < player_weapons.size; i++ )
-            {
-                if ( player_weapons[i] == self.weapon_before_deathmachine )
-                {
-                    self switchtoweapon( self.weapon_before_deathmachine );
-                    deathmachine_clear_powerup_state( self );
-                    clear_deathmachine_vars();
-                    return;
-                }
-            }
-        }
-        self switch_back_from_deathmachine();
-    }
-    else if ( self getcurrentweapon() == weapon && isDefined( self.weapon_before_deathmachine ) && self.weapon_before_deathmachine != "none" && self.weapon_before_deathmachine != weapon && self hasweapon( self.weapon_before_deathmachine ) )
-    {
-        self switchtoweapon( self.weapon_before_deathmachine );
-    }
-    deathmachine_clear_powerup_state( self );
-    clear_deathmachine_vars();
-}
-
-end_deathmachine_on_weapon_switch( weapon )
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    for ( ;; )
-    {
-        if ( self getcurrentweapon() == weapon )
-        {
-            break;
-        }
-        wait 0.05;
-    }
-    wait 0.1;
-    for ( ;; )
-    {
-        if ( !self hasweapon( weapon ) )
-        {
-            return;
-        }
-        if ( self getcurrentweapon() != weapon )
-        {
-            self notify( "end_deathmachine" );
-            return;
-        }
-        wait 0.05;
-    }
-}
-
-switch_back_from_deathmachine()
-{
-    wait 0.05;
-    if ( isDefined( self.weapon_before_deathmachine ) && self.weapon_before_deathmachine != "none" && self hasweapon( self.weapon_before_deathmachine ) )
-    {
-        self switchtoweapon( self.weapon_before_deathmachine );
-    }
-    else
-    {
-        primaryweapons = self getweaponslistprimaries();
-        if ( isDefined( primaryweapons ) && primaryweapons.size > 0 )
-        {
-            self switchtoweapon( primaryweapons[0] );
-        }
-        else
-        {
-            self maps\mp\zombies\_zm_weapons::give_fallback_weapon();
-        }
-    }
-}
-
-notify_deathmachine_end()
-{
-    level endon( "end_game" );
-    self endon( "disconnect" );
-    self endon( "death" );
-    self endon( "end_deathmachine" );
-    wait getdvarintdefault( "sv_deathmachine_duration", 30 );
-    self playsound( "zmb_insta_kill" );
-    self notify( "end_deathmachine" );
-}
-
 get_deathmachine_weapon()
 {
     if ( isDefined( level.deathmachine_weapon ) )
@@ -4564,12 +3929,6 @@ get_deathmachine_weapon()
         return level.deathmachine_weapon;
     }
     return "deathmachine_zm";
-}
-
-clear_deathmachine_vars()
-{
-    self.deathmachine_had_weapon_before = undefined;
-    self.weapon_before_deathmachine = undefined;
 }
 
 // ============================================================================
@@ -6292,6 +5651,9 @@ player_too_many_weapons_monitor()
 // ============================================================================
 //  zmqol_dev_commands  -  in-chat developer commands
 //
+//  📝 The code moved to scripts\zm\zmqol_playeropt.gsc (co-op host gate and
+//  the bytecode ceiling); this banner stays as its history.
+//
 //  Requested 2026-08-02 for dev testing, matching the setup the user's friend
 //  runs:
 //      !p <amount>   give yourself that many points (default 1000 if the amount
@@ -6525,1141 +5887,6 @@ zmqol_credits_banner_print()
     self iprintln( "^5...for every command in this mod. From the console: ^3help 1" );
 }
 
-zmqol_dev_commands()
-{
-    setdvar( "sv_cheats", 1 );
-    level thread zmqol_dev_command_listener();
-    level thread zmqol_console_command_watcher();
-}
-
-// ============================================================================
-//  CONSOLE TWINS FOR EVERY CHAT COMMAND                             (v1.86.0)
-//
-//  User, 2026-08-13: *"make all the chat commands available as console
-//  commands, not just chat commands example(s): .pack .round (without the . or
-//  ! prefix)."*
-//
-//  🌟 THE WATCHER DOES NOT REIMPLEMENT ANY COMMAND. It writes the line back
-//  through the SAME entry point chat uses -
-//        level notify( "say", message, player )
-//  which is exactly what zmqol_dev_command_listener() sits on
-//  (`level waittill( "say", message, player )`). So every command, every alias
-//  and every future addition is reachable from the console the moment it works
-//  in chat, and the two lists can never drift because there is only one list.
-//
-//  🛑 HOW YOU ACTUALLY TYPE IT, AND WHY. GSC cannot register a real console
-//  COMMAND - the only lever it has is a dvar. So each command name is registered
-//  as a dvar and ANY non-empty value fires it:
-//        round 100     ->  .round 100
-//        p 5000        ->  .p 5000
-//        pack 1        ->  .pack          (a value is required; bare `pack`
-//                                          just prints the dvar, as dvars do)
-//  This is the same shape as `fly`, which the user already uses, so it is the
-//  established pattern here rather than a new convention.
-//
-//  🛑 THE NAMES WERE CHECKED FOR COLLISIONS, NOT ASSUMED SAFE. Every command
-//  name below was diffed against the 3,210 dvars this install actually dumps
-//  into console_zm.log. Exactly one matched - `fly` - and that one is this mod's
-//  own, already registered by qol_options with its own watcher. It is therefore
-//  DELIBERATELY ABSENT from the list: clearing it to "" every pass would break
-//  the watcher that owns it. Everything else is a name the engine does not use.
-//
-//  📝 `qol` takes a whole command line, which covers the alias families that are
-//  matched by prefix rather than by name - the per-perk `.givejug` /
-//  `.removecherry` forms and the power-up aliases:
-//        qol "givejug"      qol "maxammo"      qol "powerup nuke"
-//
-//  ⚠️ Each pass reads one dvar per name, 4 times a second. That is ~150 hash
-//  lookups/sec and nothing else - no allocation, no per-player work. Listed here
-//  because this project has an open frametime question and every new periodic
-//  loop should say what it costs.
-// ============================================================================
-zmqol_console_command_names()
-{
-    a = [];
-
-    //  🛑 ADD NEW CHAT COMMANDS HERE TOO. This is the one list the console side
-    //  reads; a command missing from it still works in chat and silently has no
-    //  console twin. `fly` is intentionally omitted - see the note above.
-    a[a.size] = "p";            a[a.size] = "round";        a[a.size] = "setround";
-    a[a.size] = "god";          a[a.size] = "ghost";        a[a.size] = "afk";
-    a[a.size] = "hud";          a[a.size] = "help";         a[a.size] = "where";
-    a[a.size] = "boxhere";
-    a[a.size] = "wallhere";
-    a[a.size] = "fog";          a[a.size] = "night";        a[a.size] = "nightmode";
-    a[a.size] = "pack";         a[a.size] = "unpack";       a[a.size] = "reload";
-    a[a.size] = "infammo";      a[a.size] = "infiniteammo";
-    a[a.size] = "bclip";        a[a.size] = "bottomlessclip";
-    a[a.size] = "infsprint";    a[a.size] = "infinitesprint";
-    a[a.size] = "giveperks";    a[a.size] = "removeperks";  a[a.size] = "nozmspawns";
-    a[a.size] = "powerup";      a[a.size] = "powerups";     a[a.size] = "drop";
-    a[a.size] = "dm";           a[a.size] = "deathmachine";
-    a[a.size] = "tesla";        a[a.size] = "thundergun";   a[a.size] = "zeus";
-    a[a.size] = "freezegun";    a[a.size] = "winters";      a[a.size] = "wintershowl";
-    a[a.size] = "wunderwaffe";  a[a.size] = "dg2";
-    //  v2.10.14 - the Wave Gun (the box hands out the Zap Gun pair; the combined
-    //  gun is its alt fire), gated on zmqol_ww "5" like zapgun.gsc.
-    a[a.size] = "wavegun";      a[a.size] = "zapgun";       a[a.size] = "zapguns";
-    a[a.size] = "microwave";    a[a.size] = "mgun";
-    a[a.size] = "testsound";
-    //  v1.99.15 - .wwfx toggles the Who's Who downed-state overlay on demand, so
-    //  it can be checked in two seconds instead of by dying for it.
-    a[a.size] = "wwfx";
-    //  v1.99.57 - the console/bind twin of .bloodmoney, per the mod's standing
-    //  rule that every chat command is also a bindable console command.
-    a[a.size] = "bloodmoney";
-    //  v1.99.63 - the console/bind twin of .machines (Nuketown only).
-    a[a.size] = "machines";     a[a.size] = "dropmachines";
-    //  v2.9.34 - the Ray Gun hand-offset preset cycler (tuning tool).
-    a[a.size] = "rayhand";
-    //  v2.15.4 - the console/bind twin of .bonfiresale, the same call bloodmoney
-    //  got in v1.99.57 and for the same reason: the user asked for this power-up
-    //  by name. 📝 The other power-up short forms (.firesale, .zombieblood,
-    //  .bonfire) still have no dedicated dvar - they are reachable from the
-    //  console through the generic `qol` dvar, which forwards any chat command.
-    a[a.size] = "bonfiresale";
-
-    return a;
-}
-
-zmqol_console_command_watcher()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "game_ended" );
-
-    a_names = zmqol_console_command_names();
-
-    //  Seeded empty so a value left in the user's config from a previous session
-    //  does not fire a command the instant the map loads.
-    for ( i = 0; i < a_names.size; i++ )
-        setdvar( a_names[i], "" );
-
-    setdvar( "qol", "" );
-
-    for ( ;; )
-    {
-        wait 0.25;
-
-        a_players = get_players();
-
-        if ( a_players.size == 0 )
-            continue;
-
-        //  The console belongs to the host, so the host is who the command runs
-        //  as - the same player the chat path would have supplied.
-        e_host = a_players[0];
-
-        str_line = getdvar( "qol" );
-
-        if ( str_line != "" )
-        {
-            setdvar( "qol", "" );
-            level notify( "say", "." + str_line, e_host );
-        }
-
-        for ( i = 0; i < a_names.size; i++ )
-        {
-            str_val = getdvar( a_names[i] );
-
-            if ( str_val == "" )
-                continue;
-
-            //  Cleared BEFORE dispatching, so a command that waits internally
-            //  cannot be fired twice by the next pass.
-            setdvar( a_names[i], "" );
-
-            level notify( "say", "." + a_names[i] + " " + str_val, e_host );
-        }
-    }
-}
-
-zmqol_dev_command_listener()
-{
-    level endon( "game_ended" );
-
-    for ( ;; )
-    {
-        // 🛑 ARGUMENT ORDER IS ( message, player ) - NOT ( player, message ).
-        // v1.5.0 had these the wrong way round, which is why "!p 10000" silently
-        // did nothing: strtok() was being handed a player ENTITY. Confirmed
-        // against a working Plutonium T6 mod the user already runs,
-        // littlegods-mod\chat.gsc:21 - `level waittill("say", message,
-        // player)`. The BO2-GSC-Releases sample has them the other way round and
-        // is what led me wrong; trust the mod that actually runs on Plutonium.
-        level waittill( "say", message, player );
-
-        if ( !isdefined( player ) || !isdefined( message ) )
-            continue;
-
-        if ( isdefined( level.intermission ) && level.intermission )
-            continue;
-
-        message = tolower( message );
-
-        // Accept ALL THREE prefixes. The user asked for "!", but Plutonium appears
-        // to swallow a leading "!" as a console command - typing "!god" printed
-        // "unknown cmd" rather than reaching script - and the reference mod above
-        // uses ".". Supporting all of them means whichever survives to GSC works.
-        //
-        // "/" added 2026-08-03 at the user's request. Same caveat as "!": the
-        // client may treat a leading "/" in chat as a console command and never
-        // fire the "say" notify. "." is the one prefix proven to reach script, so
-        // that is what the help panel leads with.
-        if ( message.size < 2 )
-            continue;
-
-        if ( message[0] != "!" && message[0] != "." && message[0] != "/" )
-            continue;
-
-        tokens = strtok( message, " " );
-
-        if ( !isdefined( tokens ) || tokens.size == 0 )
-            continue;
-
-        // Strip the prefix character, leaving the bare command word.
-        cmd = getsubstr( tokens[0], 1 );
-
-        if ( cmd == "p" )
-        {
-            // int() of anything non-numeric is 0, so treat 0 as "no amount given"
-            // and fall back to a sensible default rather than doing nothing.
-            amount = 1000;
-
-            if ( tokens.size > 1 && int( tokens[1] ) != 0 )
-                amount = int( tokens[1] );
-
-            player maps\mp\zombies\_zm_score::add_to_player_score( amount, 1 );
-            player iprintln( "^2[zm_qol] ^7points ^2+" + amount );
-        }
-        else if ( cmd == "round" || cmd == "setround" )
-        {
-            //  User, 2026-08-12: ".round (number)". Console twin: set_round <n>.
-            if ( tokens.size < 2 || int( tokens[1] ) < 1 )
-            {
-                player iprintln( "^3[zm_qol] usage: ^7.round <number>  ^3(current: ^7" + level.round_number + "^3)" );
-                continue;
-            }
-
-            level thread zmqol_goto_round( int( tokens[1] ), player );
-        }
-        else if ( cmd == "endround" )
-        {
-            // ================================================================
-            //  .endround  -  end the CURRENT round and let it advance    (v2.3.4)
-            //
-            //  User, 2026-08-25: *"add /.!endround as a chat command so I can just
-            //  quickly open my chat in-game and do .endround and switch the round
-            //  over to the next one"*.
-            //
-            //  🛑 THIS IS NOT zmqol_goto_round( round + 1 ). That function JUMPS
-            //  to an arbitrary target round and re-derives everything for it
-            //  (see its own banner) - the right tool for ".round 30", the wrong
-            //  one for "just end this one". Ending a round is a narrower, already
-            //  -solved problem: zero what is still queued to spawn AND kill what
-            //  is already alive, then let stock's own round_think() close the
-            //  round and increment level.round_number normally - exactly what
-            //  the END ROUND cheats-tab row (end_round dvar,
-            //  zmqol_round_dvar_watch() above) already does, reusing
-            //  zmqol_kill_horde() and its magic-bullet-shield/negative-health
-            //  fixes rather than a second implementation of either.
-            //
-            //  🌟 REUSED, NOT REBUILT: setting the same dvar the existing
-            //  cheats-tab row uses is the whole command. zmqol_round_dvar_watch()
-            //  picks it up within 0.25s and does the real work; this only adds
-            //  the chat entry point and the player-facing confirmation, which
-            //  the dvar path (console-only, no player context) doesn't have.
-            // ================================================================
-            setdvar( "end_round", "1" );
-            player iprintln( "^2[zm_qol] ^7ending round ^2" + level.round_number );
-        }
-        else if ( cmd == "wwfx" )
-        {
-            //  Apply / clear the Who's Who screen effect without going down.
-            //
-            //  v1.99.19 - it now drives the REAL mechanism, which is the whole
-            //  point of a verification aid: stock's own visionset, activated
-            //  through _visionset_mgr exactly as
-            //  _zm_chugabud::activate_chugabud_effects_and_audio() does it, plus
-            //  the night-mode suspend that lets a visionset render at all.
-            //  Before this it only drove the dvar copy, so it could not have
-            //  distinguished "the visionset is broken" from "the copy is broken"
-            //  - and the copy was the thing that was broken.
-            //
-            //  It also reports whether the visionset is registered at all, which
-            //  separates "not registered" from "registered and not showing"
-            //  without costing a boot.
-            if ( isdefined( player.zmqol_wwfx ) && player.zmqol_wwfx )
-            {
-                player.zmqol_wwfx = 0;
-                player setclientfieldtoplayer( "clientfield_whos_who_filter", 0 );
-                maps\mp\_visionset_mgr::vsmgr_deactivate( "visionset", "zm_whos_who", player );
-                player zmqol_whoswho_overlay_off();
-                player iprintln( "^1[zm_qol] Who's Who overlay OFF" );
-            }
-            else
-            {
-                b_registered = isdefined( level.vsmgr ) &&
-                               isdefined( level.vsmgr[ "visionset" ] ) &&
-                               isdefined( level.vsmgr[ "visionset" ].info ) &&
-                               isdefined( level.vsmgr[ "visionset" ].info[ "zm_whos_who" ] );
-
-                if ( !b_registered )
-                {
-                    player iprintln( "^1[zm_qol] zm_whos_who visionset NOT registered - the grade cannot show" );
-                    println( "[zm_qol] wwfx: zm_whos_who visionset NOT registered on the server" );
-                    continue;
-                }
-
-                //  slot_index is assigned in finalize_type_clientfields(), which
-                //  returns early when only the default visionset exists - so an
-                //  undefined here means the grade has no clientfield to travel on.
-                str_slot = "UNASSIGNED";
-
-                if ( isdefined( level.vsmgr[ "visionset" ].info[ "zm_whos_who" ].slot_index ) )
-                    str_slot = "" + level.vsmgr[ "visionset" ].info[ "zm_whos_who" ].slot_index;
-
-                player.zmqol_wwfx = 1;
-                player zmqol_whoswho_overlay_on();
-
-                //  v1.99.20 - drive BOTH routes, exactly as stock does from the
-                //  same four lines of activate_chugabud_effects_and_audio():
-                //  the clientfield (which reaches our own client callback, and
-                //  is what actually applies the vision now) and the manager.
-                player setclientfieldtoplayer( "clientfield_whos_who_filter", 1 );
-                maps\mp\_visionset_mgr::vsmgr_activate( "visionset", "zm_whos_who", player );
-
-                player iprintln( "^2[zm_qol] Who's Who overlay ON (slot " + str_slot + ")" );
-                println( "[zm_qol] wwfx: zm_whos_who registered, slot_index " + str_slot );
-            }
-        }
-        else if ( cmd == "god" )
-        {
-            //  🛑 v1.95.0 - THE DVAR IS WRITTEN BACK. zmqol_toggle_dvar_watch()
-            //  treats `godmode` as the state, so a front-end that changes the
-            //  state without telling it gets its change undone 0.25s later -
-            //  which is precisely what .god did before this line existed. Same
-            //  contract as .fly, which has always written `fly` back.
-            if ( isdefined( player.zmqol_god ) && player.zmqol_god )
-            {
-                player.zmqol_god = 0;
-                player disableinvulnerability();
-                setdvar( "godmode", "0" );
-                player iprintln( "^1[zm_qol] godmode OFF" );
-            }
-            else
-            {
-                player.zmqol_god = 1;
-                player enableinvulnerability();
-                setdvar( "godmode", "1" );
-                player iprintln( "^2[zm_qol] godmode ON" );
-            }
-        }
-        else if ( cmd == "hud" )
-        {
-            // ================================================================
-            //  .hud on / .hud off  -  the master HUD switch          (v1.85.0)
-            //
-            //  Console twin: `hud_master 0|1`, registered in qol_options::init()
-            //  like every other command here - see the commands-are-dvars rule.
-            //  This branch only writes the dvar; qol_options::qol_opt_hud_watcher
-            //  is the single place that acts on it, so the chat command and the
-            //  console command cannot drift or fight each other.
-            //
-            //  Bare ".hud" toggles, which is what every other switch here does.
-            // ================================================================
-            b_on = !getdvarintdefault( "hud_master", 1 );
-
-            if ( tokens.size > 1 )
-            {
-                str_arg = tolower( tokens[1] );
-
-                if ( str_arg == "on" || str_arg == "1" )
-                    b_on = 1;
-                else if ( str_arg == "off" || str_arg == "0" )
-                    b_on = 0;
-                else
-                {
-                    player iprintln( "^3[zm_qol] usage: ^7.hud on ^3| ^7.hud off" );
-                    continue;
-                }
-            }
-
-            setdvar( "hud_master", b_on );
-
-            if ( b_on )
-                player iprintln( "^2[zm_qol] HUD ON" );
-            else
-                player iprintln( "^1[zm_qol] HUD OFF ^7- .hud on to bring it back" );
-        }
-        else if ( cmd == "ghost" )
-        {
-            // self.ignoreme is the stock "AI does not target me" flag - it is what
-            // maps\mp\zombies\_zm_spawner sets on a fresh zombie and what the
-            // afk_on_command_by_THS script uses for the same purpose.
-            //  v1.95.0 - writes `ghostmode` back for the same reason .god does.
-            if ( isdefined( player.zmqol_ghost ) && player.zmqol_ghost )
-            {
-                player.zmqol_ghost = 0;
-                player.ignoreme = 0;
-                setdvar( "ghostmode", "0" );
-                player iprintln( "^1[zm_qol] ghost OFF ^7- zombies can see you" );
-            }
-            else
-            {
-                player.zmqol_ghost = 1;
-                player.ignoreme = 1;
-                player thread zmqol_ghost_enforce();
-                setdvar( "ghostmode", "1" );
-                player iprintln( "^2[zm_qol] ghost ON ^7- zombies ignore you" );
-            }
-        }
-        else if ( cmd == "afk" )
-        {
-            // Ghost + godmode together, which is what the AFK script does. No
-            // 5-minute cap or 30-minute cooldown here: that exists upstream to stop
-            // abuse in public games, and this is a private-match QoL mod.
-            if ( isdefined( player.zmqol_afk ) && player.zmqol_afk )
-            {
-                player.zmqol_afk = 0;
-                player.ignoreme = 0;
-
-                if ( !isdefined( player.zmqol_god ) || !player.zmqol_god )
-                    player disableinvulnerability();
-
-                player iprintln( "^1[zm_qol] AFK OFF" );
-            }
-            else
-            {
-                player.zmqol_afk = 1;
-                player.ignoreme = 1;
-                player enableinvulnerability();
-                player thread zmqol_ghost_enforce();
-                player iprintln( "^2[zm_qol] AFK ON ^7- ignored and invulnerable" );
-            }
-        }
-        else if ( cmd == "character" || cmd == "char" )
-        {
-            //  ================================================================
-            //  🛑 v2.13.0 - THE PER-PLAYER CHARACTER PICK, AND THE REASON IT
-            //  HAS TO BE A CHAT COMMAND RATHER THAN A MENU ROW.
-            //
-            //  The menu row writes the `character` dvar. On the host that is the
-            //  server's dvar and it works; on anybody else it is their own local
-            //  copy and the server never reads it. There is no getclientdvar in
-            //  T6 and a client console command does not reach the server, so the
-            //  "say" notify - which carries the SPEAKING PLAYER - is the only
-            //  channel a non-host has. That is what this is.
-            //
-            //  qol_options::qol_opt_character() reads self.zmqol_char_want FIRST
-            //  and only falls back to the dvar, so the menu row still works as
-            //  the default for anyone who has not typed this, and solo behaves
-            //  exactly as it did before.
-            //
-            //  🛑 DELIBERATELY NOT ADDED TO zmqol_console_command_names(). That
-            //  watcher seeds every name in its list to "" and blanks it the
-            //  instant it sees a value - and `character` is an OWNED dvar with
-            //  its own watcher, exactly like `fly`, `god` and `ghost`. Putting
-            //  it in that list would wipe the menu row on every pass. The host
-            //  already has the console twin: the `character` dvar itself.
-            //  ================================================================
-            str_arg = "";
-
-            if ( tokens.size > 1 )
-                str_arg = tokens[1];
-
-            if ( str_arg == "" )
-            {
-                if ( isdefined( player.zmqol_char_want ) )
-                    player iprintln( "^3[zm_qol] ^7your character is set to ^3" + player.zmqol_char_want );
-                else
-                    player iprintln( "^3[zm_qol] ^7your character follows the menu (^3" + getdvarintdefault( "character", 0 ) + "^7)" );
-
-                player iprintln( "^5.character 1-4 ^7to choose, ^5.character 0 ^7for the map's own pick" );
-            }
-            else
-            {
-                n_pick = int( str_arg );
-
-                if ( n_pick < 0 || n_pick > 4 )
-                    player iprintln( "^1[zm_qol] character must be 0-4 ^7(0 = the map's own pick)" );
-                else
-                {
-                    //  0 means "go back to following the menu/lobby default",
-                    //  which is what an unset field already means - so clear it
-                    //  rather than storing a zero the resolver would honour.
-                    if ( n_pick == 0 )
-                    {
-                        player.zmqol_char_want = undefined;
-                        player iprintln( "^3[zm_qol] ^7character back to the map's own pick" );
-                    }
-                    else
-                    {
-                        player.zmqol_char_want = n_pick;
-                        player iprintln( "^2[zm_qol] ^7character ^3" + n_pick + " ^7- yours only" );
-                    }
-                }
-            }
-        }
-        else if ( cmd == "nightmode" || cmd == "night" )
-        {
-            //  v1.59.6 - chat front-end for the night_mode dvar.
-            //
-            //  Deliberately just sets the dvar rather than calling
-            //  qol_opt_night_on/off directly: qol_options.gsc::qol_opt_night_mode()
-            //  polls that dvar and owns the on/off transition, including
-            //  starting and stopping visual_fix. Driving the perk from two
-            //  places would let the two disagree - the dvar would read 0 while
-            //  the screen was dark, and the next poll would fight it.
-            //
-            //  One owner, two front-ends: console `night_mode 1` and this.
-            str_arg = "";
-
-            if ( tokens.size > 1 )
-                str_arg = tokens[1];
-
-            if ( str_arg == "off" || str_arg == "0" )
-            {
-                setdvar( "night_mode", "0" );
-                player iprintln( "^1[zm_qol] night mode OFF" );
-            }
-            else if ( str_arg == "on" || str_arg == "1" )
-            {
-                setdvar( "night_mode", "1" );
-                player iprintln( "^2[zm_qol] night mode ON" );
-            }
-            else
-            {
-                //  No argument = toggle, which is what a bind wants.
-                if ( getdvarintdefault( "night_mode", 0 ) )
-                {
-                    setdvar( "night_mode", "0" );
-                    player iprintln( "^1[zm_qol] night mode OFF" );
-                }
-                else
-                {
-                    setdvar( "night_mode", "1" );
-                    player iprintln( "^2[zm_qol] night mode ON" );
-                }
-            }
-        }
-        else if ( cmd == "fog" )
-        {
-            //  v1.59.2 - a plain on/off toggle, nothing else.
-            //
-            //  The v1.57.x ".fog <number>" is deliberately NOT back. Fog
-            //  DISTANCE cannot be changed on this build - checkpoint 20 §2 -
-            //  and a command that pretends otherwise cost several boots. This
-            //  only touches r_fog, which is the one fog control that is known
-            //  to work.
-            //
-            //  Default is ON (see nofog_onplayerconnect). The fog CLOUD sprites
-            //  stay suppressed on TranZit either way; that is FX registration in
-            //  disable_fog_transition.gsc and has nothing to do with this dvar.
-            str_arg = "";
-
-            if ( tokens.size > 1 )
-                str_arg = tokens[1];
-
-            //  v1.99.91 - both front-ends write fog_enabled, which the ADVANCED
-            //  tab's FOG row also drives and which zmqol_fog_dvar_watch()
-            //  carries to r_fog. One owner, so the chat command and the menu row
-            //  can never disagree, and .fog now survives a restart like the row.
-            if ( str_arg == "off" )
-            {
-                setdvar( "fog_enabled", "0" );
-                player iprintln( "^1[zm_qol] fog OFF ^7- the world edge will be visible" );
-            }
-            else if ( str_arg == "on" )
-            {
-                setdvar( "fog_enabled", "1" );
-                player iprintln( "^2[zm_qol] fog ON ^7(default)" );
-            }
-            else
-            {
-                player iprintln( "^3[zm_qol] ^3.fog on ^7or ^3.fog off ^8(on by default)" );
-            }
-        }
-        else if ( cmd == "rayhand" )
-        {
-            //  v2.9.34 - the controller-friendly front-end for the v2.9.31 Ray
-            //  Gun floating-left-hand tunable. The console route
-            //  (`zmqol_raygun_hand_ofs f r u`) went unused for two sessions -
-            //  typing vectors on a pad is why - so this walks a preset ladder
-            //  instead: hold the Ray Gun, type .rayhand to step through
-            //  candidate viewmodel shifts (right/down combinations that push
-            //  the floating hand toward the screen edge), stop on the one that
-            //  hides it and report the number - it then ships as the default.
-            //  .rayhand off resets; .rayhand <n> jumps; .rayhand f r u still
-            //  takes a custom triple. The offsets land through the existing
-            //  zmqol_raygun_hand_watch() poll (applies only while a Ray Gun is
-            //  held, resets on switch), so this branch only writes the dvar.
-            //  Deliberately NOT in .help - it is a tuning tool, gone once the
-            //  winning value is known.
-            a_presets = [];
-            a_presets[a_presets.size] = "0 1 -1";
-            a_presets[a_presets.size] = "0 2 -2";
-            a_presets[a_presets.size] = "0 3 -2";
-            a_presets[a_presets.size] = "0 4 -3";
-            a_presets[a_presets.size] = "1 2 -2";
-            a_presets[a_presets.size] = "2 3 -2";
-            a_presets[a_presets.size] = "0 2 0";
-            a_presets[a_presets.size] = "0 0 -3";
-
-            str_arg = "";
-
-            if ( tokens.size > 1 )
-                str_arg = tokens[1];
-
-            if ( tokens.size >= 4 )
-            {
-                str_set = tokens[1] + " " + tokens[2] + " " + tokens[3];
-                setdvar( "zmqol_raygun_hand_ofs", str_set );
-                level.zmqol_rayhand_idx = undefined;
-                player iprintln( "^2[zm_qol] Ray Gun hand offset ^7" + str_set + " ^8(custom - hold the Ray Gun)" );
-            }
-            else if ( str_arg == "off" || str_arg == "0" )
-            {
-                setdvar( "zmqol_raygun_hand_ofs", "0 0 0" );
-                level.zmqol_rayhand_idx = undefined;
-                player iprintln( "^1[zm_qol] Ray Gun hand offset OFF ^7(stock view)" );
-            }
-            else
-            {
-                if ( str_arg != "" && int( str_arg ) >= 1 && int( str_arg ) <= a_presets.size )
-                    n_idx = int( str_arg ) - 1;
-                else if ( isdefined( level.zmqol_rayhand_idx ) )
-                    n_idx = ( level.zmqol_rayhand_idx + 1 ) % a_presets.size;
-                else
-                    n_idx = 0;
-
-                level.zmqol_rayhand_idx = n_idx;
-                setdvar( "zmqol_raygun_hand_ofs", a_presets[n_idx] );
-                player iprintln( "^2[zm_qol] Ray Gun hand preset ^3" + ( n_idx + 1 ) + "^7/" + a_presets.size + " (" + a_presets[n_idx] + ")" );
-                player iprintln( "^8hold the Ray Gun - ^3.rayhand ^8again for next, ^3.rayhand off ^8to reset" );
-            }
-        }
-        else if ( cmd == "brutus" || cmd == "panzer" || cmd == "jumpingjacks" || cmd == "jacks" )
-        {
-            //  User, 2026-08-13: ".brutus (amount)" on Mob, ".panzer (amount)" on
-            //  Origins, ".jumpingjacks (amount)" on Die Rise, plus console dvars.
-            //
-            //  🛑 THIS BRANCH MAY NOT NAME A SINGLE BOSS FUNCTION. _zm_ai_brutus,
-            //  _zm_ai_mechz and _zm_ai_leaper are MAP-SPECIFIC scripts, and a
-            //  qualified reference to one resolves at SCRIPT LOAD time - so
-            //  naming any of them from this root file would throw "Unresolved
-            //  external" and crash every OTHER map, and a runtime
-            //  `if ( level.script == ... )` guard does not prevent it
-            //  (AI_CONTEXT rule 2). The call therefore goes through a pointer
-            //  that each map's own script installs in its init().
-            n_amount = 1;
-
-            if ( tokens.size > 1 && int( tokens[1] ) > 0 )
-                n_amount = int( tokens[1] );
-
-            player zmqol_boss_spawn_request( cmd, n_amount );
-        }
-        else if ( cmd == "machines" || cmd == "dropmachines" )
-        {
-            //  User, 2026-08-19: drop every remaining Nuketown perk machine and
-            //  the Pack-a-Punch on demand, "regardless of what option was set in
-            //  the pre-game lobby menu, for dev testing purposes mainly."
-            //
-            //  🛑 SAME RULE AS THE BOSS COMMANDS ABOVE - this branch may not name
-            //  maps\mp\zm_nuked_perks or anything else Nuketown-only. Such a
-            //  reference resolves at SCRIPT LOAD, and this file loads on every
-            //  map, so it would be an Unresolved external everywhere else and a
-            //  runtime level.script guard would not help (AI_CONTEXT rule 2).
-            //  scripts\zm\zm_nuked\zm_nuked.gsc installs the pointer in its
-            //  init(); on any other map it is simply undefined.
-            if ( !isdefined( level.zmqol_drop_all_machines_func ) )
-            {
-                player iprintln( "^1[zm_qol] ^7.machines ^1is Nuketown only" );
-                continue;
-            }
-
-            n_dropped = level [[ level.zmqol_drop_all_machines_func ]]();
-
-            if ( isdefined( n_dropped ) && n_dropped > 0 )
-                player iprintln( "^2[zm_qol] dropping the last ^7" + n_dropped + "^2 machine(s)" );
-            else
-                player iprintln( "^3[zm_qol] every machine is already down" );
-        }
-        else if ( cmd == "velocity" || cmd == "vel" || cmd == "speed" )
-        {
-            //  User, 2026-08-13, pointing at T6-B2OP-PATCH.
-            //
-            //  🛑 THE METER IS NOT IN THAT PATCH. b2op.gsc has no velocity meter;
-            //  its README only documents the stat slot that toggles B2FR's one,
-            //  and B2FR is a separate repo that is not in the workspace. So this
-            //  is written, not ported. What B2OP did supply is the HUD shape -
-            //  its coordinates readout (b2op.gsc:5279-5301) uses setvalue() on a
-            //  numeric hudelem rather than settext per tick, which is also this
-            //  project's own rule (settext every frame floods reliable commands
-            //  and throws EXE_SERVERCOMMANDOVERFLOW).
-            str_arg = "";
-
-            if ( tokens.size > 1 )
-                str_arg = tokens[1];
-
-            if ( str_arg == "off" )
-                player zmqol_velocity_set( 0 );
-            else if ( str_arg == "on" )
-                player zmqol_velocity_set( 1 );
-            else
-                player iprintln( "^3[zm_qol] ^3.velocity on ^7or ^3.velocity off ^8(off by default)" );
-        }
-        else if ( cmd == "fly" )
-        {
-            //  setdvar keeps the "fly" console dvar in step with reality -
-            //  zmqol_fly_dvar_watch() compares against the real state, so a
-            //  stale dvar here would have the next poll undo this toggle a
-            //  quarter-second later.
-            if ( isdefined( player.zmqol_fly ) && player.zmqol_fly )
-            {
-                player.zmqol_fly = 0;
-                player notify( "zmqol_fly_off" );
-                setdvar( "fly", "0" );
-                player iprintln( "^1[zm_qol] fly OFF" );
-            }
-            else
-            {
-                player.zmqol_fly = 1;
-                player thread zmqol_fly_think();
-                setdvar( "fly", "1" );
-                player iprintln( "^2[zm_qol] fly ON ^7- WASD to move, JUMP up, STANCE down, SPRINT boost" );
-            }
-        }
-        else if ( cmd == "bottomlessclip" || cmd == "bclip" )
-        {
-            //  🛑 v1.97.0 - THE DVAR IS WRITTEN BACK, AND WITHOUT THIS LINE THE
-            //  COMMAND CANNOT WORK AT ALL.
-            //
-            //  User, 2026-08-16: *"some chat commands aren't working, so far
-            //  it's only infammo because of the menu options"* - with a
-            //  screenshot showing "infinite ammo ON" immediately followed by
-            //  "infinite ammo OFF".
-            //
-            //  🌟 THE MECHANISM, EXACTLY. zmqol_toggle_dvar_watch() polls
-            //  `bottomless_clip` every 0.25s and drives self.zmqol_bclip from
-            //  it. This branch set the FIELD and never the DVAR, so the very
-            //  next poll saw want=0, is=1, and switched it straight back off -
-            //  printing the OFF line the user photographed. The menu row was
-            //  never the villain; it is simply the other writer of the one dvar
-            //  that is the state.
-            //
-            //  .god, .ghost and .hud were given this same line in v1.95.0 for
-            //  the identical reason. These two were missed. One owner (the
-            //  watcher), two front-ends (menu row and chat command).
-            //
-            //  📝 The dvar is global while the field is per-player, so in co-op
-            //  this turns it on for everyone - the same contract .god and
-            //  .ghost already have, and this mod is a private-match mod.
-            if ( isdefined( player.zmqol_bclip ) && player.zmqol_bclip )
-            {
-                player.zmqol_bclip = 0;
-                player notify( "zmqol_bclip_off" );
-                setdvar( "bottomless_clip", "0" );
-                player iprintln( "^1[zm_qol] bottomless clip OFF" );
-            }
-            else
-            {
-                player.zmqol_bclip = 1;
-                player thread zmqol_bottomless_clip_think();
-                setdvar( "bottomless_clip", "1" );
-                player iprintln( "^2[zm_qol] bottomless clip ON ^7- you never reload" );
-            }
-        }
-        else if ( cmd == "infiniteammo" || cmd == "infammo" )
-        {
-            //  v2.15.53 - the reserves-only half of the old .infammo. See the
-            //  note above zmqol_infinite_ammo_think() for why the two are
-            //  separate commands now. Same write-the-dvar-back rule as every
-            //  other toggle here.
-            if ( isdefined( player.zmqol_infammo ) && player.zmqol_infammo )
-            {
-                player.zmqol_infammo = 0;
-                player notify( "zmqol_infammo_off" );
-                setdvar( "infinite_ammo", "0" );
-                player iprintln( "^1[zm_qol] infinite ammo OFF" );
-            }
-            else
-            {
-                player.zmqol_infammo = 1;
-                player thread zmqol_infinite_ammo_think();
-                setdvar( "infinite_ammo", "1" );
-                player iprintln( "^2[zm_qol] infinite ammo ON ^7- reserves never empty, you still reload" );
-            }
-        }
-        else if ( cmd == "thundergun" || cmd == "zeus" )
-        {
-            player zmqol_give_wonder_weapon( "thundergun_zm", "2", "Thundergun" );
-        }
-        else if ( cmd == "wunderwaffe" || cmd == "dg2" || cmd == "tesla" )
-        {
-            player zmqol_give_wonder_weapon( "tesla_gun_zm", "3", "Wunderwaffe DG-2" );
-        }
-        else if ( cmd == "wintershowl" || cmd == "winters" || cmd == "freezegun" )
-        {
-            player zmqol_give_wonder_weapon( "freezegun_zm", "4", "Winter's Howl" );
-        }
-        else if ( cmd == "wavegun" || cmd == "zapgun" || cmd == "zapguns" || cmd == "microwave" || cmd == "mgun" )
-        {
-            //  v2.10.14 - the box weapon is the dual pair; the engine brings the
-            //  left-hand half and the combined Wave Gun with it off the def's
-            //  DualWieldWeapon / altWeapon fields (zapgun.gsc banner).
-            player zmqol_give_wonder_weapon( "microwavegundw_zm", "5", "Wave Gun" );
-        }
-        else if ( cmd == "testsound" )
-        {
-            //  B-RISERSOUND instrument (v1.99.8). The work happens CLIENT-side -
-            //  see zmqol_testsound_watch() at the bottom of zm_expanded.csc for
-            //  what it plays and how to read the result. All this does is hand
-            //  the alias name across.
-            //
-            //  🛑 setclientdvar, NOT setdvar. The riser sound is played by a
-            //  CLIENT script, so the test has to happen there to be a fair test;
-            //  a server dvar never reaches the client. One reliable command per
-            //  invocation, on demand only - ERROR_CATALOGUE §7b is about
-            //  sustained emitters, not one-shots.
-            //
-            //  The counter is what makes asking for the SAME alias twice work:
-            //  the watcher fires on a CHANGE, and "zmb_zombie_spawn" set twice
-            //  is not a change. The client takes token 0 and ignores the rest.
-            str_alias = "zmb_zombie_spawn";
-
-            if ( tokens.size > 1 )
-                str_alias = tokens[1];
-
-            if ( !isdefined( level.zmqol_testsound_n ) )
-                level.zmqol_testsound_n = 0;
-
-            level.zmqol_testsound_n++;
-
-            player setclientdvar( "zmqol_testsound", str_alias + " " + level.zmqol_testsound_n );
-            player iprintln( "^2[zm_qol] testsound ^7" + str_alias + " ^2-> 2D, then 3D, then the control" );
-        }
-        //  ====================================================================
-        //  v2.8.3 PROBE B - ".snd"  the SERVER half of the silent-gun question.
-        //
-        //  WHY THIS EXISTS. Every offline check says the sound chain is intact:
-        //  the shipped mod.all declares 581 aliases over 368 payloads, the count
-        //  the alias table needs is exactly 368, wpn_ak47_fire_plr is declared
-        //  WITH its audio in the bank, and the ak47_zm weapon asset inside
-        //  mod.ff references that exact alias string. Two theories were killed
-        //  by measurement (a filename-extension mismatch, and the shared duck) -
-        //  the known-WORKING Death Machine alias has the identical shape to the
-        //  silent AK-47. So the break is at runtime and cannot be reached from
-        //  disk.
-        //
-        //  .testsound already covers the CLIENT half. This is the server half,
-        //  plus the one fact no dump can give: which weapon def is actually in
-        //  the player's hands when the gun sounds silent.
-        //
-        //  HOW TO READ IT - run all three:
-        //      .snd                      -> names the gun you are holding
-        //      .snd wpn_vulcan_fire_loop_plr   (the CONTROL - known audible)
-        //      .snd wpn_ak47_fire_plr          (a silent gun)
-        //
-        //    control plays, ak47 silent  -> the alias does not resolve at
-        //        runtime even though it is in mod.all: a bank load-order or
-        //        shadowing problem, NOT the alias table.
-        //    both play                   -> the aliases are fine and the weapon
-        //        asset's own fireSound binding is what is broken.
-        //    neither plays               -> mod.all is not being loaded at all.
-        //
-        //  🛑 One-shot, on demand only - ERROR_CATALOGUE §7b is about sustained
-        //  emitters. Remove once the cause is named.
-        //  ====================================================================
-        else if ( cmd == "snd" )
-        {
-            str_cur = player getcurrentweapon();
-
-            if ( tokens.size < 2 )
-            {
-                player iprintln( "^3[zm_qol] holding: ^7" + str_cur );
-                player iprintln( "^3[zm_qol] usage ^7.snd <alias>  ^3control ^7.snd wpn_vulcan_fire_loop_plr" );
-            }
-            else
-            {
-                str_alias = tokens[1];
-
-                //  Both server routes, because they fail differently: playsound
-                //  is entity-attached and playsoundatposition is world-placed,
-                //  and an alias with a bad 3D curve can be inaudible on one and
-                //  fine on the other.
-                player playsound( str_alias );
-                playsoundatposition( str_alias, player.origin );
-
-                player iprintln( "^2[zm_qol] .snd ^7" + str_alias + "  ^2(holding ^7" + str_cur + "^2)" );
-                println( "[zm_qol] PROBE B .snd alias=" + str_alias + " holding=" + str_cur );
-            }
-        }
-        else if ( cmd == "give" || cmd == "giveweapon" || cmd == "gun" )
-        {
-            //  v1.93.0 - user, 2026-08-14: "make sure that all the added weapons
-            //  have console commands to give myself the weapons, so i can
-            //  instead of spamming the box for half an hour and praying i get
-            //  the weapon i wanna test, i can just give myself it".
-            //      .give swat        base
-            //      .give swat pap    Pack-a-Punched
-            //      .give list        every name it accepts
-            if ( tokens.size < 2 )
-            {
-                player iprintln( "^3[zm_qol] usage: ^7.give <weapon> [pap]   ^3try ^7.give list" );
-                continue;
-            }
-
-            b_pap = tokens.size > 2 && ( tokens[2] == "pap" || tokens[2] == "packed" || tokens[2] == "upgraded" );
-            player zmqol_give_named_weapon( tokens[1], b_pap );
-        }
-        else if ( cmd == "infinitesprint" || cmd == "infsprint" )
-        {
-            //  v1.97.0 - writes `infinite_sprint` back, same fix and the same
-            //  reason as .infammo / .bclip further up this listener. It had the
-            //  identical defect and would have been the next command reported.
-            if ( isdefined( player.zmqol_infsprint ) && player.zmqol_infsprint )
-            {
-                player.zmqol_infsprint = 0;
-                player notify( "zmqol_infsprint_off" );
-                player unsetperk( "specialty_unlimitedsprint" );
-                setdvar( "infinite_sprint", "0" );
-                player iprintln( "^1[zm_qol] infinite sprint OFF" );
-            }
-            else
-            {
-                player.zmqol_infsprint = 1;
-                player thread zmqol_infinite_sprint_think();
-                setdvar( "infinite_sprint", "1" );
-                player iprintln( "^2[zm_qol] infinite sprint ON" );
-            }
-        }
-        else if ( cmd == "reload" )
-        {
-            player zmqol_fill_all_ammo();
-            player iprintln( "^2[zm_qol] ^7all weapons and equipment refilled" );
-        }
-        else if ( cmd == "nozmspawns" )
-        {
-            //  "spawn_zombies" is the stock flag round_spawning() waits on, once
-            //  per spawn, at _zm.gsc:2973 - clearing it parks that loop before it
-            //  picks a spawn point. flag_init( "spawn_zombies", 1 ) is at :1135.
-            //
-            //  🛑 v2.11.0 - IT NOW TAKES AN EXPLICIT on/off, and that is the whole
-            //  of the 2026-09-03 "it didn't work" report. The log shows the
-            //  command was typed twice in a row - OFF, then straight back ON - so
-            //  the state the user was left in was ON, which is exactly what the
-            //  screenshot's red "zombie spawning ON" says. A bare toggle cannot
-            //  survive a double tap or a repeated bind, so both spellings exist:
-            //      .nozmspawns off / on     explicit, idempotent, always correct
-            //      .nozmspawns              flips, as before
-            //
-            //  And OFF now STAYS off: _hostmigration.gsc sets this flag again on
-            //  every migration, so a keeper thread re-clears it until the user
-            //  turns spawning back on.
-            b_want = !( isdefined( level.zmqol_nospawns ) && level.zmqol_nospawns );
-
-            if ( tokens.size > 1 )
-            {
-                if ( tokens[1] == "off" || tokens[1] == "0" || tokens[1] == "stop" )
-                    b_want = 1;
-                else if ( tokens[1] == "on" || tokens[1] == "1" || tokens[1] == "go" )
-                    b_want = 0;
-            }
-
-            if ( b_want )
-            {
-                level.zmqol_nospawns = 1;
-                flag_clear( "spawn_zombies" );
-                level thread zmqol_nospawns_keeper();
-                player iprintln( "^2[zm_qol] zombie spawning OFF ^7- existing zombies remain (^3.nozmspawns on^7)" );
-            }
-            else
-            {
-                level.zmqol_nospawns = 0;
-                level notify( "zmqol_nospawns_off" );
-                flag_set( "spawn_zombies" );
-                player iprintln( "^1[zm_qol] zombie spawning ON" );
-            }
-        }
-        else if ( cmd == "where" )
-        {
-            //  v1.40.1: reports YAW as well as position. A coordinate alone is
-            //  half an answer when the thing being placed is a machine - it has
-            //  to face out of the wall, and "back left corner" in a screenshot
-            //  cannot be resolved without knowing which way the camera was
-            //  pointing. Stand where you want it, face the way it should face,
-            //  and this one line is now the whole spec.
-            v_pos = player.origin;
-            v_ang = player getplayerangles();
-            n_yaw = int( v_ang[1] );
-
-            if ( n_yaw < 0 )
-                n_yaw += 360;
-
-            player iprintln( "^2[zm_qol] ^7x " + int( v_pos[0] ) + "  y " + int( v_pos[1] ) + "  z " + int( v_pos[2] ) + "  ^2yaw ^7" + n_yaw );
-            println( "[zm_qol] WHERE " + level.script + " (" + v_pos[0] + ", " + v_pos[1] + ", " + v_pos[2] + ") yaw " + n_yaw );
-        }
-        else if ( cmd == "boxhere" )
-        {
-            //  v2.14.25 - a placement probe for a location's moved mystery box:
-            //  stand where you would use it, face the wall, and the location's
-            //  own handler (level.zmqol_box_here_func, set by e.g.
-            //  scripts\zm\locs\zm_tomb_loc_crazy_place.gsc) moves the box there
-            //  and prints the numbers to bake. A level pointer, never a
-            //  qualified reference: this file loads on every map.
-            if ( isdefined( level.zmqol_box_here_func ) )
-                [[ level.zmqol_box_here_func ]]( player );
-            else
-                player iprintln( "^1[zm_qol] .boxhere ^7- nothing to move on this map/location" );
-        }
-        else if ( cmd == "wallhere" )
-        {
-            //  v2.15.42 - a measurement probe for a future wall-buy: stand
-            //  where you would buy it, face the wall at buy height, and the
-            //  location's own handler (level.zmqol_wall_here_func, set by e.g.
-            //  scripts\zm\locs\zm_tomb_loc_crazy_place.gsc) traces the face
-            //  and prints the numbers to bake. Measurement only - structs are
-            //  load-time, so nothing moves live. A level pointer, never a
-            //  qualified reference: this file loads on every map.
-            if ( isdefined( level.zmqol_wall_here_func ) )
-                [[ level.zmqol_wall_here_func ]]( player );
-            else
-                player iprintln( "^1[zm_qol] .wallhere ^7- no wall-buy probe on this map/location" );
-        }
-        else if ( cmd == "giveperks" )
-        {
-            n_given = player zmqol_give_all_perks();
-            player iprintln( "^2[zm_qol] ^7gave " + n_given + " perk(s)" );
-        }
-        else if ( cmd == "removeperks" )
-        {
-            n_taken = player zmqol_remove_all_perks();
-            player iprintln( "^1[zm_qol] ^7removed " + n_taken + " perk(s)" );
-        }
-        //  🛑 THESE TWO MUST STAY BELOW giveperks / removeperks. "giveperks"
-        //  starts with "give", so a prefix test placed above would swallow it
-        //  and never reach the all-perks handler. The else-if chain is the
-        //  ordering guarantee - do not reorder these four blocks.
-        else if ( cmd.size > 4 && getsubstr( cmd, 0, 4 ) == "give" && isdefined( zmqol_perk_from_alias( getsubstr( cmd, 4, cmd.size ) ) ) )
-        {
-            perk = zmqol_perk_from_alias( getsubstr( cmd, 4, cmd.size ) );
-            player zmqol_give_one_perk( perk );
-        }
-        else if ( cmd.size > 6 && getsubstr( cmd, 0, 6 ) == "remove" && isdefined( zmqol_perk_from_alias( getsubstr( cmd, 6, cmd.size ) ) ) )
-        {
-            perk = zmqol_perk_from_alias( getsubstr( cmd, 6, cmd.size ) );
-            player zmqol_remove_one_perk( perk );
-        }
-        //  ====================================================================
-        //  v1.99.25 - the six commands taken from the ezz_server release that
-        //  this mod did NOT already have. Everything else it offers was already
-        //  here under a different name and is deliberately NOT duplicated:
-        //    !help=.help  !pap=.pack  !round=.round  !god=.god  !ignore=.ghost
-        //    !points=.p   !ammo=.reload  !allperks/!perks=.giveperks
-        //    !drop=.drop/.powerup
-        //  and the six weapon commands (!galil !an94 !ms !monkeys !raygun !mk2)
-        //  became rows in zmqol_weapon_give_table() instead of six new commands.
-        //
-        //  🛑 `!speed` is NOT ported under that name. `.speed` is already taken
-        //  in this mod as an alias for the velocity HUD, and silently changing
-        //  what an existing command does is worse than not adding the new one.
-        //  It is `.movespeed` here.
-        //
-        //  🛑 Every reference below is either a builtin or a globally-safe
-        //  `maps\mp\zombies\_zm*` path, and every weapon is named by STRING.
-        //  Nothing map-specific is referenced by function, so AI_CONTEXT rule 2
-        //  cannot bite - this is a root script and a `maps\mp\zm_tomb::` style
-        //  reference here would crash every other map at load.
-        //  ====================================================================
-        else if ( cmd == "pay" )
-        {
-            if ( tokens.size < 3 )
-            {
-                player iprintln( "^3[zm_qol] usage: ^7.pay <player> <amount>" );
-                continue;
-            }
-
-            player zmqol_pay_points( tokens[1], int( tokens[2] ) );
-        }
-        else if ( cmd == "bring" )
-        {
-            player zmqol_bring_players();
-        }
-        else if ( cmd == "killall" )
-        {
-            player zmqol_kill_all_zombies();
-        }
-        else if ( cmd == "shield" )
-        {
-            player zmqol_give_shield();
-        }
-        else if ( cmd == "staff" )
-        {
-            player zmqol_give_staff( tokens );
-        }
-        else if ( cmd == "movespeed" )
-        {
-            player zmqol_toggle_movespeed();
-        }
-        else if ( cmd == "pack" )
-        {
-            player zmqol_pack( 1 );
-        }
-        else if ( cmd == "unpack" )
-        {
-            player zmqol_pack( 0 );
-        }
-        else if ( cmd == "help" )
-        {
-            player thread zmqol_print_help();
-        }
-        else if ( cmd == "powerups" )
-        {
-            player thread zmqol_list_powerups();
-        }
-        else if ( cmd == "powerup" || cmd == "drop" )
-        {
-            // Bare ".powerup" lists what this map actually registered, which is
-            // the only reliable way to know - the set differs per map.
-            if ( tokens.size < 2 )
-            {
-                player thread zmqol_list_powerups();
-                continue;
-            }
-
-            player zmqol_spawn_powerup( tokens[1] );
-        }
-        else
-        {
-            // Fall-through: short forms (".nuke", ".maxammo", ".dm") resolve
-            // through the same lookup, so there is exactly one spawn path.
-            str_powerup = zmqol_powerup_alias( cmd );
-
-            if ( isdefined( str_powerup ) )
-                player zmqol_spawn_powerup( str_powerup );
-            else
-            {
-                //  🛑 v2.11.0 - AN UNKNOWN COMMAND USED TO DO NOTHING AT ALL, AND
-                //  IT COST A BUG REPORT. The 2026-09-03 log has, in order:
-                //      DavidHiFi: .nozmpsawns      <- transposed, silently ignored
-                //      DavidHiFi: .killall
-                //      DavidHiFi: .nozmspawns      <- OFF
-                //      DavidHiFi: .nozmspawns      <- straight back ON
-                //  and the report that followed was ".nozmspawns didn't work,
-                //  zombies kept spawning in". A typo that prints nothing is
-                //  indistinguishable from a command that ran and failed, so every
-                //  unrecognised word now says so. Chat that merely starts with a
-                //  prefix character is not a command, so this only fires on a
-                //  single token of plausible command shape - no reply to "..." or
-                //  to a sentence.
-                if ( tokens.size == 1 && cmd.size >= 2 && cmd.size <= 20 )
-                    player iprintln( "^1[zm_qol] unknown command ^7." + cmd + "  ^7- type ^3.help" );
-            }
-        }
-    }
-}
 
 
 // ============================================================================
@@ -9447,13 +7674,18 @@ zmqol_fly_key_bind()
 
     self.zmqol_fly_key_bound = 1;
 
+    self thread zmqol_velocity_dvar_watch();
+
+    //  Co-op: these act on server dvars, so only the host's copy may run.
+    if ( !self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
+        return;
+
     self notifyonplayercommand( "zmqol_fly_key", "+actionslot 7" );
     self thread zmqol_fly_key_toggle();
     self thread zmqol_fly_dvar_watch();
     self thread zmqol_ww_give_dvar_watch();
     self thread zmqol_give_weapon_dvar_watch();   // v1.93.0 - give_weapon "<name> [pap]"
     self thread zmqol_toggle_dvar_watch();        // v1.94.0 - god/ghost/infinite_ammo/infinite_sprint
-    self thread zmqol_velocity_dvar_watch();
     self thread zmqol_boss_spawn_dvar_watch();
     self thread zmqol_set_points_watch();          // v1.99.93 - CHEATS > SET POINTS
     self thread zmqol_teleport_watch();            // v1.99.93 - CHEATS > TELEPORT
@@ -9670,7 +7902,6 @@ zmqol_velocity_set( b_on, b_quiet )
         self.zmqol_vel_hud setvalue( 0 );
 
         self thread zmqol_velocity_think();
-        setdvar( "velocity", "1" );
 
         if ( !b_quiet )
             self iprintln( "^2[zm_qol] velocity meter ON ^7- horizontal speed, ^2green ^7/ ^3330+ ^7/ ^1370+" );
@@ -9688,8 +7919,6 @@ zmqol_velocity_set( b_on, b_quiet )
         //  Cleared with the element it describes, so a later re-create cannot
         //  inherit a stale band and skip its first repaint.
         self.zmqol_vel_band = undefined;
-
-        setdvar( "velocity", "0" );
 
         if ( !b_quiet )
             self iprintln( "^1[zm_qol] velocity meter OFF" );
@@ -9756,8 +7985,9 @@ zmqol_velocity_think()
 //
 //  Same shape as zmqol_fly_dvar_watch(): compare against the REAL state (does
 //  the hudelem exist), never against the dvar's previous value, so the chat
-//  command and the dvar cannot fight each other. zmqol_velocity_set() writes the
-//  dvar back on every toggle, which keeps all front-ends in agreement.
+//  command and the dvar cannot fight each other. Co-op: this watcher is the only
+//  caller of zmqol_velocity_set(), and it reads zmqol_playeropt::zmqol_popt(),
+//  so `.velocity` is per player and the setter no longer writes the dvar back.
 // ============================================================================
 zmqol_velocity_dvar_watch()
 {
@@ -9801,8 +8031,8 @@ zmqol_velocity_dvar_watch()
         //  is left alone and only the ELEMENT comes and goes. Turn the HUD back
         //  on and the meter returns exactly as it was.
         // ====================================================================
-        b_master = getdvarintdefault( "hud_master", 1 );
-        b_want = getdvarintdefault( "velocity", 0 ) && b_master;
+        b_master = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_master", 1 );
+        b_want = self scripts\zm\zmqol_playeropt::zmqol_popt( "velocity", 0 ) && b_master;
         b_have = isdefined( self.zmqol_vel_hud );
 
         //  Silent when the change came from hud_master rather than from the user
@@ -10132,9 +8362,7 @@ zmqol_kill_all_zombies()
 //  The map's own buildable shield, straight to the shield slot.
 //  🛑 Named by string, and the map test is a level VARIABLE - no map-specific
 //  function is referenced, so this is safe in a root script.
-//  Action slot 3 is stock's own shield slot (`_zm_equipment` uses slot 1 for
-//  equipment; the shield is separate), which is why it does not collide with
-//  the jet gun / turbine.
+//  Use native ownership, health reset, watchers and cleanup for debug grants.
 zmqol_give_shield()
 {
     str_shield = "";
@@ -10143,7 +8371,7 @@ zmqol_give_shield()
         str_shield = "tomb_shield_zm";
     else if ( level.script == "zm_prison" )
         str_shield = "alcatraz_shield_zm";
-    else if ( level.script == "zm_transit" || level.script == "zm_nuked" )
+    else if ( level.script == "zm_transit" )
         str_shield = "riotshield_zm";
 
     if ( str_shield == "" )
@@ -10158,8 +8386,7 @@ zmqol_give_shield()
         return;
     }
 
-    self giveweapon( str_shield );
-    self setactionslot( 3, "weapon", str_shield );
+    self maps\mp\zombies\_zm_equipment::equipment_buy( str_shield );
     zmqol_iprintln_safe( self, "^2[zm_qol] shield equipped" );
 }
 
@@ -10730,10 +8957,13 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "ak74u_extclip_zm", "ak74uext",    "ak74uextclip 74u" );
     a[a.size] = zmqol_give_name_row( "an94_zm",          "an94",        "" );
     a[a.size] = zmqol_give_name_row( "as50_zm",          "xpr50",       "xpr as50" );
+    //  2026-10-07 round 2 - the stock Barrett pair came out (gunswap.gsc),
+    //  the Dragunov takes its slots. The Barrett's names were briefly added
+    //  here and came back out by user order (see the real-name policy in the
+    //  BO1 block below).
     a[a.size] = zmqol_give_name_row( "dragunov_zm",      "dragunov",    "svd" );
     a[a.size] = zmqol_give_name_row( "bouncingbetty_zm", "betty",       "betties bouncingbetty" );
     a[a.size] = zmqol_give_name_row( "ballista_zm",      "ballista",    "" );
-    a[a.size] = zmqol_give_name_row( "barretm82_zm",     "barrett",     "m82 m82a1 barret" );
     a[a.size] = zmqol_give_name_row( "beacon_zm",        "beacon",      "homingbeacon artillerybeacon" );
     a[a.size] = zmqol_give_name_row( "beretta93r_zm",    "b23r",        "beretta beretta93r 93r" );
     a[a.size] = zmqol_give_name_row( "blundergat_zm",    "blundergat",  "sweeper" );
@@ -10746,8 +8976,12 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "dsr50_zm",         "dsr50",       "dsr" );
     a[a.size] = zmqol_give_name_row( "emp_grenade_zm",   "emp",         "empgrenade" );
     a[a.size] = zmqol_give_name_row( "evoskorpion_zm",   "skorpion",    "skorpionevo evo" );
-    a[a.size] = zmqol_give_name_row( "fiveseven_zm",     "fiveseven",   "57" );
-    a[a.size] = zmqol_give_name_row( "fivesevendw_zm",   "fivesevendw", "57dw dualfiveseven" );
+    //  2026-10-07 round 2 - the Five-seveN pair came out (gunswap.gsc) for the
+    //  Browning HP and its dual wield. The Browning row below answers to
+    //  `browning` only - the Five-seveN's names came out by user order
+    //  (see the real-name policy in the BO1 block below), and the DW's names
+    //  died with it - the Browning HP DW has no give row, box-only like the
+    //  MM1 and the Betties.
     a[a.size] = zmqol_give_name_row( "fnfal_zm",         "fal",         "fnfal fn-fal" );
     a[a.size] = zmqol_give_name_row( "fnp45_zm",         "tac45",       "tac fnp45 fnp" );
     a[a.size] = zmqol_give_name_row( "frag_grenade_zm",  "frag",        "frags grenade grenades" );
@@ -10756,7 +8990,8 @@ zmqol_give_names_table()
     //  usual _zm swap; the combined gun rides along as the alt fire.
     a[a.size] = zmqol_give_name_row( "microwavegundw_zm", "wavegun",    "zapgun zapguns microwave mgun microwavegun" );
     a[a.size] = zmqol_give_name_row( "galil_zm",         "galil",       "" );
-    a[a.size] = zmqol_give_name_row( "hamr_zm",          "hamr",        "" );
+    //  2026-10-07 round 2 - the HAMR pair came out (gunswap.gsc); the MK48
+    //  takes its slots and inherits its name (mk48 row below).
     a[a.size] = zmqol_give_name_row( "hk416_zm",         "m27",         "hk416" );
     a[a.size] = zmqol_give_name_row( "insas_zm",         "msmc",        "insas" );
     a[a.size] = zmqol_give_name_row( "jetgun_zm",        "jetgun",      "jet thrustodyne" );
@@ -10769,7 +9004,8 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "m14_zm",           "m14",         "" );
     a[a.size] = zmqol_give_name_row( "m16_zm",           "m16",         "m16a1 m16a2 colt" );
     a[a.size] = zmqol_give_name_row( "m1911_zm",         "m1911",       "1911 ms mustang sally" );
-    a[a.size] = zmqol_give_name_row( "m32_zm",           "warmachine",  "m32" );
+    //  m32_zm/"warmachine" row came out with the War Machine swap (gunswap.gsc,
+    //  2026-10-07); the MM1 is box-only and has no give row, like the Betties.
     a[a.size] = zmqol_give_name_row( "metalstorm_mms_zm", "stormpsr",   "storm psr metalstorm" );
     a[a.size] = zmqol_give_name_row( "mg08_zm",          "mg08",        "mg0815 magnacollider" );
     a[a.size] = zmqol_give_name_row( "mk48_zm",          "mk48",        "" );
@@ -10788,14 +9024,25 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "riotshield_zm",    "zombieshield", "shield riotshield" );
     a[a.size] = zmqol_give_name_row( "rnma_zm",          "rnma",        "newmodelarmy nma sassafras" );
     a[a.size] = zmqol_give_name_row( "rottweil72_zm",    "olympia",     "rottweil rottweil72" );
-    a[a.size] = zmqol_give_name_row( "rpd_zm",           "rpd",         "" );
+    //  2026-10-07 round 2 - the RPD pair came out (gunswap.gsc); the M60
+    //  (the BO1 block below) takes its slots. nothing answers to "rpd".
     a[a.size] = zmqol_give_name_row( "sa58_zm",          "falosw",      "osw sa58 fal-osw" );
-    a[a.size] = zmqol_give_name_row( "saiga12_zm",       "s12",         "saiga saiga12" );
+    //  2026-10-07 round 2 - the stock S12 row came out with the gun itself
+    //  (gunswap.gsc). The SPAS-12 takes its slots - its restored row is
+    //  after slowgun, answering to spas12 only by user order.
     a[a.size] = zmqol_give_name_row( "saritch_zm",       "saritch",     "toz tozsaritch" );
     a[a.size] = zmqol_give_name_row( "scar_zm",          "scarh",       "scar" );
     a[a.size] = zmqol_give_name_row( "sig556_zm",        "swat",        "swat556 sig556 sig" );
     a[a.size] = zmqol_give_name_row( "slipgun_zm",       "sliquifier",  "sliq slipgun" );
     a[a.size] = zmqol_give_name_row( "slowgun_zm",       "paralyzer",   "slowgun petrifier" );
+    //  v2.9.18 SPAS-12 give row, restored 2026-10-07 round 2 (the gun is back,
+    //  replacing the stock S12 - gunswap.gsc). The S12's names (s12/saiga)
+    //  were inherited for a few hours and came back OUT by user order: .give
+    //  answers to the real gun's name, never a dead gun's. `spaz24` is the
+    //  PaP name's plain form. The Origins copy rows further down
+    //  (saiga12qol_zm) stay: that pair has been held back on Origins
+    //  since v2.14.4, so those rows never resolve anywhere.
+    a[a.size] = zmqol_give_name_row( "spas_zm",          "spas12",      "spas spas-12 spaz24 spaz-24" );
     a[a.size] = zmqol_give_name_row( "srm1216_zm",       "m1216",       "1216 srm1216 srm" );
     a[a.size] = zmqol_give_name_row( "staff_air_zm",     "windstaff",   "staffofwind staffwind wind air" );
     a[a.size] = zmqol_give_name_row( "staff_fire_zm",    "firestaff",   "staffoffire stafffire fire" );
@@ -10813,20 +9060,29 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "titus6_zm",        "titus6",      "titus dart flechette" );
     a[a.size] = zmqol_give_name_row( "type95_zm",        "type25",      "type95 type" );
     a[a.size] = zmqol_give_name_row( "upgraded_tomahawk_zm", "redeemer", "hellsredeemer upgradedtomahawk" );
-    a[a.size] = zmqol_give_name_row( "usrpg_zm",         "rpg",         "usrpg" );
     a[a.size] = zmqol_give_name_row( "uzi_zm",           "uzi",         "" );
     a[a.size] = zmqol_give_name_row( "vector_zm",        "vector",      "k10 vectork10" );
     a[a.size] = zmqol_give_name_row( "willy_pete_zm",    "smoke",       "smokegrenade willypete" );
     a[a.size] = zmqol_give_name_row( "xm8_zm",           "m8a1",        "m8 xm8" );
 
     // ------------------------------------------------------------------
-    //  v2.15.0 - the four Black Ops 1 guns. `rpg` is already taken by
-    //  stock's own usrpg_zm two rows up, so the RPG-7 answers to `rpg7`.
+    //  v2.15.0 - the four Black Ops 1 guns. The stock RPG came out with the
+    //  2026-10-07 gunswap (usrpg_zm is banned from registration), so the
+    //  RPG-7 inherited its `rpg` and `usrpg` aliases as well as `rpg7`.
+    //  Round 2, same day: the M60 takes the RPD's slots and the Browning HP
+    //  takes the Five-seveN's, and both are registered on Origins now too
+    //  (the tomb hold-back below is down to the RPG-7 alone).
+    //
+    //  POLICY, USER, SAME DAY, twice in one hour so it is law: ".give is
+    //  by the real gun's name only." The dead stock guns' names (rpd, hamr,
+    //  barrett, s12, fiveseven, 57) were briefly inherited by their
+    //  replacements and came back OUT by user order - those commands resolve
+    //  to nothing now, and that is the intended state, not an oversight.
     // ------------------------------------------------------------------
     a[a.size] = zmqol_give_name_row( "m60_zm",           "m60",         "thepig pig" );
     a[a.size] = zmqol_give_name_row( "t5_l96a1_zm",      "l96",         "l96a1 l115 isolator" );
     a[a.size] = zmqol_give_name_row( "browninghp_zm",    "browning",    "browninghp hipower bap" );
-    a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg" );
+    a[a.size] = zmqol_give_name_row( "rpg_zm",           "rpg7",        "rpg-7 bo1rpg rpg usrpg" );
 
     // ------------------------------------------------------------------
     //  v2.9.1 - THE NINE ORIGINS COPIES. Same friendly names as the guns
@@ -11622,8 +9878,13 @@ zmqol_mp_weapons_init()
     //  raw\weapons\sp\spas_zm (clip 8/32, damage 160; SPAZ-24 24/72, 300).
     //  Cost 500 is the Olympia's - stock's other box shotgun of this class -
     //  and "shotgun" is stock's own vox key (the rottweil72 row above uses it).
-    //  📝 No pap_attach row needed: the upgraded def ships with NO
+    //  No pap_attach row needed: the upgraded def ships with NO
     //  attachments field, the mk48/insas/crossbow case.
+    //
+    //  The gun came out 2026-10-07 (user: "get rid of the Spas 12 and replace
+    //  it with the blastomatic") and came back the same day, round 2 of the
+    //  gunswap: it takes the stock S12's slots everywhere (saiga12_zm is
+    //  banned from registration - gunswap.gsc). The row is verbatim v2.9.18.
     zmqol_add_mp_weapon( "spas_zm",        "spas_upgraded_zm",        &"WEAPON_SPAS",               500, "shotgun" );
 
     //  v2.9.9 - the campaign Dragunov, weapon 13 (user task 1, 2026-08-30).
@@ -11829,15 +10090,50 @@ zmqol_mp_weapons_init()
     //  the XPR-50 it replaces is also a sniper, so the box keeps its shape.
     //  Origins' real headroom stays 0-1 slots; this trade does not touch it.
     //
-    //  🛑 zm_expanded.csc HOLDS BACK THE SAME THREE, on the same map test, and
-    //  zm_tomb.csc drops the as50qol twin. Change one list, change all of them.
+    //  2026-10-07 ROUND 2 OF THE GUNSWAP CHANGES THE ARITHMETIC, IN THE MOD'S
+    //  FAVOUR. The au_* lookups above are from the defs as they shipped THEN;
+    //  the mod's m60/browninghp copies now ship with the attachments field
+    //  EMPTY (both defs read back attachments:'', the mk48/insas class), so
+    //  each is a fixed 2 slots again - measured on the defs, not assumed. And
+    //  the same day's swaps freed Origins real slots: the mod-added RPD block
+    //  came out of zm_tomb.gsc (-2), the stock HAMR pair is banned (-2), the
+    //  stock Five-seveN DW pair is banned (-2). What Origins now pays for, on
+    //  every location: the SPAS-12 restored (+2, standing in for the S12 the
+    //  box lost at v2.14.4), the M60 (+2, standing in for that RPD), the
+    //  Browning HP (+2, standing in for the Five-seveN whose wall buy keeps
+    //  its own registration) and the Browning HP Dual Wield (+4: both hands of
+    //  both tiers - browninghpdw, its upgrade and the two left-hand halves,
+    //  all four defs attachments-cleared; oldschool.gsc's DW gate is now all
+    //  six maps). Net +4, 248 -> 252 of 253, ONE slot spare. Derived, not
+    //  booted - verify live before adding anything else to this map.
+    //
+    //  zm_expanded.csc holds back the RPG-7 the same way, on the same map
+    //  test, and zm_tomb.csc drops the as50qol twin. Change one list, change
+    //  all of them.
     // ========================================================================
     zmqol_add_mp_weapon( "t5_l96a1_zm",    "t5_l96a1_upgraded_zm",    &"WEAPON_T5_L96A1",           1000, "sniper" );
 
+    zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
+
+    //  Round 2 follow-up: gunswap.gsc re-points the stock Origins Five-seveN
+    //  wall (zm_tomb.gsc:975) to the Browning HP, and the wall's price comes
+    //  from THIS struct (get_weapon_cost). User: same points as the 5.7 wall
+    //  charged, so the wall reads 1100 - the box is free, nothing else is
+    //  priced by it, and the wall's ammo re-buy is stock's usual half (550).
+    //  Everywhere else the Browning HP keeps the Tac-45-reasoned 500.
+    if ( level.script == "zm_tomb" )
+    {
+        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         1100, "" );
+    }
+    else
+    {
+        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
+    }
+
+    //  Round 2, 2026-10-07: the M60 and the Browning HP are on Origins now.
+    //  The RPG-7 stays held back - nothing paid for it there.
     if ( !isdefined( level.script ) || level.script != "zm_tomb" )
     {
-        zmqol_add_mp_weapon( "m60_zm",         "m60_upgraded_zm",         &"WEAPON_M60",                1100, "wpck_mg" );
-        zmqol_add_mp_weapon( "browninghp_zm",  "browninghp_upgraded_zm",  &"WEAPON_BROWNINGHP",         500,  "" );
         zmqol_add_mp_weapon( "rpg_zm",         "rpg_upgraded_zm",         &"WEAPON_RPG",                50,   "launcher" );
     }
 
@@ -15199,7 +13495,7 @@ zmqol_zb_init_player_vars()
 // ============================================================================
 //  zmqol_zb_powerup  -  _zm_powerup_zombie_blood::zombie_blood_powerup(), ported
 //
-//  Reached from custom_powerup_grab() (the deathmachine module's
+//  Reached from zmqol_pd_grab() in qol_powerup_dispatch.gsc (the
 //  level._zombiemode_powerup_grab hook), which is where core's powerup_grab()
 //  sends every power-up name it does not handle itself - _zm_powerups.gsc:1072,
 //  the `default:` branch.
@@ -18042,10 +16338,7 @@ perk_bought( perk )
     //
     //  Reads the same three dvars in the same order as the health bar, so ".hud
     //  off" hides it too and hud_all still forces it on.
-    if ( !getdvarintdefault( "hud_master", 1 ) )
-        return;
-
-    if ( !( getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_perk_popup", 1 ) ) )
+    if ( !self scripts\zm\zmqol_playeropt::zmqol_popt_hud_on( "hud_perk_popup", 1 ) )
         return;
 
     shader = getperkshader( perk );
@@ -18458,7 +16751,7 @@ updatedamagefeedback( mod, inflictor, death, crit )
     //  IS the hitmarker's own sound - that test lives in
     //  zmqol_play_feedback_sound(), so "hitmarkers 0" still silences it exactly
     //  as it did before.
-    b_markers = getdvarintdefault( "hitmarkers", 1 );
+    b_markers = self scripts\zm\zmqol_playeropt::zmqol_popt( "hitmarkers", 1 );
 
     if ( isdefined( mod ) && mod != "MOD_CRUSH" && ( mod != "MOD_GRENADE_SPLASH" && mod != "MOD_HIT_BY_OBJECT" ) )
     {
@@ -18484,7 +16777,7 @@ updatedamagefeedback( mod, inflictor, death, crit )
         if ( !b_markers )
             return 0;
 
-        if ( death && getdvarintdefault( "redhitmarkers", 1 ) )
+        if ( death && self scripts\zm\zmqol_playeropt::zmqol_popt( "redhitmarkers", 1 ) )
         {
             self.hud_damagefeedback_red setshader( "damage_feedback", 24, 48 );
             self.hud_damagefeedback_red.alpha = 1;
@@ -18972,7 +17265,7 @@ zmqol_play_feedback_sound( str_dvar, a_pack )
         //  four maps silent. Anyone who wants a different pack still picks 1..8
         //  from the SOUND tab exactly as before - only the untouched-row default
         //  moved.
-        if ( ( str_dvar == "hit_sound" || str_dvar == "kill_sound" ) && getdvarintdefault( "hitmarkers", 1 ) && isdefined( a_pack ) && isdefined( a_pack[1] ) )
+        if ( ( str_dvar == "hit_sound" || str_dvar == "kill_sound" ) && self scripts\zm\zmqol_playeropt::zmqol_popt( "hitmarkers", 1 ) && isdefined( a_pack ) && isdefined( a_pack[1] ) )
             self playlocalsound( a_pack[1] );
 
         return;
@@ -19147,7 +17440,7 @@ zonecheck()
         //  currentzone is still tracked while off, so re-enabling mid-game does
         //  not re-announce the zone you are already standing in.
         // ====================================================================
-        if ( !getdvarintdefault( "hud_zone", 0 ) )
+        if ( !self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_zone", 0 ) )
         {
             self.currentzone = self get_zone_name();
             wait 0.2;
@@ -21425,7 +19718,12 @@ zmqol_patches_watch()
     //  cached barrier range below is the real stock value, not undefined.
     flag_wait( "initial_blackscreen_passed" );
 
-    n_dt_stock = getdvarintdefault( "perk_weapRateEnhanced", 1 );
+    //  🛑 NOT READ FROM THE DVAR. Dvars outlive fast_restart, map_restart and a
+    //  map change, and this loop is the only writer of 0. With DOUBLE TAP 1.0 on
+    //  at a restart, the read cached 0 as "stock" and switching the row off left
+    //  Double Tap 2.0 disabled until the game was closed. 1 is the boot value
+    //  measured in the header above.
+    n_dt_stock = 1;
 
     n_barrier_stock = 109.8;
 

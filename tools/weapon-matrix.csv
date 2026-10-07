@@ -1,0 +1,210 @@
+def,location,family,kind,contract,camo,stock_zone,stock_dump,note
+870mcs_upgraded_zm,zm,870mcs,stock override,,camo_qol_870mcs,yes,yes,camo declared in mod_locations.zone
+as50_upgraded_zm,zm,as50,stock rebalance,,camo_xpr50,,,camo declared in mod_xpr50.zone
+as50_zm,zm,as50,stock rebalance,,camo_xpr50,,,camo declared in mod_xpr50.zone
+as50qol_upgraded_zm,zm,as50,stock rebalance,,camo_xpr50,,,camo declared in mod_xpr50.zone
+as50qol_zm,zm,as50,stock rebalance,,camo_xpr50,,,camo declared in mod_xpr50.zone
+barretm82qol_upgraded_zm,zm,barretm82,stock rebalance,,camo_qol_m82,,,camo declared in mod_locations.zone
+barretm82qol_zm,zm,barretm82,stock rebalance,,camo_m82,,,camo declared in mod_base.zone
+beretta93r_upgraded_zm,zm,beretta93r,stock override,,camo_qol_b23r,yes,yes,camo declared in mod_locations.zone
+blastomatic_upgraded_zm,zm,blastomatic,port,Blast-O-Matic,camo_qol_t9_gallo,,,camo declared in mod_blastomatic.zone
+blastomatic_zm,zm,blastomatic,port,Blast-O-Matic,camo_qol_t9_gallo,,,camo declared in mod_blastomatic.zone
+bloodhound_upgraded_zm,zm,bloodhound,port,Bloodhound,camo_qol_bloodhound,,,camo declared in mod_bloodhound.zone
+bloodhound_zm,zm,bloodhound,port,Bloodhound,camo_qol_bloodhound,,,camo declared in mod_bloodhound.zone
+bloodhoundlh_upgraded_zm,zm,bloodhoundlh,donor helper,Bloodhound,camo_qol_bloodhound,,,camo declared in mod_bloodhound.zone
+blundergat_upgraded_zm,zm,blundergat,stock override,Blundergat,camo_qol_blundergat,yes,yes,camo declared in mod_blundergat.zone
+blundergat_zm,zm,blundergat,stock override,Blundergat,camo_qol_blundergat,yes,yes,camo declared in mod_blundergat.zone
+bouncingbetty_zm,zm,bouncingbetty,stock rebalance,,,,,
+browninghp_upgraded_zm,zm,browninghp,port,,camo_browninghp,,,camo declared in mod_bo1guns.zone
+browninghp_zm,zm,browninghp,port,,camo_browninghp,,,camo declared in mod_bo1guns.zone
+browninghpdw_upgraded_zm,zm,browninghp,port,Browning HP Dual Wield,camo_qol_browninghpdw,,,camo declared in mod_oldschool.zone
+browninghpdw_zm,zm,browninghp,port,Browning HP Dual Wield,camo_qol_browninghpdw,,,camo declared in mod_oldschool.zone
+browninghplh_upgraded_zm,zm,browninghp,donor helper,Browning HP Dual Wield,camo_qol_browninghpdw,,,camo declared in mod_oldschool.zone
+browninghplh_zm,zm,browninghp,donor helper,Browning HP Dual Wield,camo_qol_browninghpdw,,,camo declared in mod_oldschool.zone
+crossbow_explosive_bolt_upgraded_zm,zm,crossbow_explosive_bolt,donor helper,Crossbow,,,,
+crossbow_explosive_bolt_zm,zm,crossbow_explosive_bolt,donor helper,Crossbow,,,,
+crossbow_upgraded_zm,zm,crossbow,port,Crossbow,camo_crossbow,,,camo declared in mod_locations.zone
+crossbow_zm,zm,crossbow,port,Crossbow,camo_crossbow,,,camo declared in mod_locations.zone
+dragunov_upgraded_zm,zm,dragunov,stock rebalance,,camo_dragunov,,,camo declared in mod_dragunov.zone
+dragunov_zm,zm,dragunov,stock rebalance,,camo_dragunov,,,camo declared in mod_dragunov.zone
+dsr50_upgraded_zm,zm,dsr50,stock override,,camo_qol_dsr50,yes,yes,camo declared in mod_locations.zone
+dsr50_zm,zm,dsr50,stock override,,camo_dsr50,yes,yes,camo declared in mod_locations.zone
+fiveseven_upgraded_zm,zm,fiveseven,stock override,,camo_qol_fiveseven,yes,yes,camo declared in mod_locations.zone
+fiveseven_zm,zm,fiveseven,stock override,,camo_fiveseven,yes,yes,camo declared in mod_locations.zone
+fivesevendw_upgraded_zm,zm,fiveseven,stock override,,camo_qol_fiveseven,yes,yes,camo declared in mod_locations.zone
+fivesevenlh_upgraded_zm,zm,fivesevenlh,stock override,,camo_qol_fiveseven,yes,yes,camo declared in mod_locations.zone
+fnfal_upgraded_zm,zm,fnfal,stock override,,camo_qol_fal,yes,yes,camo declared in mod_locations.zone
+fnp45_upgraded_zm,zm,fnp45,stock rebalance,,camo_fnp45,,,camo declared in mod_tac45.zone
+fnp45_zm,zm,fnp45,stock rebalance,,camo_fnp45,,,camo declared in mod_tac45.zone
+fnp45lh_upgraded_zm,zm,fnp45lh,donor helper,,camo_fnp45,,,camo declared in mod_tac45.zone
+freezegun_upgraded_zm,zm,freezegun,port,Winters Howl,camo_freezegun,,,camo declared in mod_wonderweapons.zone
+freezegun_zm,zm,freezegun,port,Winters Howl,camo_freezegun,,,camo declared in mod_wonderweapons.zone
+galil_upgraded_zm,zm,galil,stock override,,camo_qol_galil,yes,yes,camo declared in mod_locations.zone
+gl_sig556_upgraded_zm,zm,gl_sig556,stock rebalance,,camo_sig556,,,camo declared in mod_locations.zone
+insas_upgraded_zm,zm,insas,stock rebalance,,camo_msmc,,,camo declared in mod_locations.zone
+insas_zm,zm,insas,stock rebalance,,camo_msmc,,,camo declared in mod_locations.zone
+jetgun_upgraded_zm,zm,jetgun,stock override,Jet Gun,,yes,yes,
+jetgun_zm,zm,jetgun,stock override,Jet Gun,,yes,yes,
+judgeqol_upgraded_zm,zm,judge,stock rebalance,,camo_qol_judge,,,camo declared in mod_locations.zone
+judgeqol_zm,zm,judge,stock rebalance,,camo_judge,,,camo declared in mod_base.zone
+knife_ballistic_bowie_upgraded_zm,zm,knife_ballistic_bowie,stock override,,camo_qol_ballistic_knife_80s,yes,yes,camo declared in mod_locations.zone
+knife_ballistic_no_melee_upgraded_zm,zm,knife_ballistic_no_melee,stock override,,camo_qol_ballistic_knife_80s,yes,yes,camo declared in mod_locations.zone
+m14_upgraded_zm,zm,m14,stock override,,camo_qol_m14,yes,yes,camo declared in mod_locations.zone
+m16qol_upgraded_zm,zm,m16,stock rebalance,,camo_qol_m16,,,camo declared in mod_locations.zone
+m16qol_zm,zm,m16,stock rebalance,,camo_m16,,,camo declared in mod_base.zone
+m60_upgraded_zm,zm,m60,stock rebalance,,camo_m60,,,camo declared in mod_bo1guns.zone
+m60_zm,zm,m60,stock rebalance,,camo_m60,,,camo declared in mod_bo1guns.zone
+metalstorm2_mms_upgraded_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm2_mms_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm3_mms_upgraded_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm3_mms_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm4_mms_upgraded_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm4_mms_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm5_mms_upgraded_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm5_mms_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm_mms_upgraded_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+metalstorm_mms_zm,zm,metalstorm_mms,port,Storm PSR,camo_metalstorm,,,camo declared in mod_metalstorm.zone
+microwavegun_upgraded_zm,zm,microwavegun,port,Wave Gun,camo_microwavegun,,,camo declared in mod_wavegun.zone
+microwavegun_zm,zm,microwavegun,port,Wave Gun,camo_microwavegun,,,camo declared in mod_wavegun.zone
+microwavegundw_upgraded_zm,zm,microwavegun,port,Wave Gun,camo_microwavegun,,,camo declared in mod_wavegun.zone
+microwavegundw_zm,zm,microwavegun,port,Wave Gun,camo_microwavegun,,,camo declared in mod_wavegun.zone
+microwavegunlh_upgraded_zm,zm,microwavegun,donor helper,Wave Gun,camo_microwavegun,,,camo declared in mod_wavegun.zone
+microwavegunlh_zm,zm,microwavegun,donor helper,Wave Gun,camo_microwavegun,,,camo declared in mod_wavegun.zone
+mk48_upgraded_zm,zm,mk48,stock rebalance,,camo_mk48,,,camo declared in mod_locations.zone
+mk48_zm,zm,mk48,stock rebalance,,camo_mk48,,,camo declared in mod_locations.zone
+mk_titus6_upgraded_zm,zm,mk_titus6,port,Titus-6,camo_titus6,,,camo declared in mod_titus6.zone
+mk_titus6_zm,zm,mk_titus6,port,Titus-6,camo_titus6,,,camo declared in mod_titus6.zone
+mm1_upgraded_zm,zm,mm1,port,MM1,camo_qol_mm1,,,camo declared in mod_oldschool.zone
+mm1_zm,zm,mm1,port,MM1,camo_qol_mm1,,,camo declared in mod_oldschool.zone
+mp5kqol_upgraded_zm,zm,mp5k,stock rebalance,,camo_qol_mp5,,,camo declared in mod_locations.zone
+mp5kqol_zm,zm,mp5k,stock rebalance,,camo_mp5,,,camo declared in mod_base.zone
+mp7_upgraded_zm,zm,mp7,stock rebalance,,camo_mp7,,,camo declared in mod_locations.zone
+mp7_zm,zm,mp7,stock rebalance,,camo_mp7,,,camo declared in mod_locations.zone
+peacekeeper_upgraded_zm,zm,peacekeeper,port,Peacekeeper,camo_peacekeeper,,,camo declared in mod_locations.zone
+peacekeeper_zm,zm,peacekeeper,port,Peacekeeper,camo_peacekeeper,,,camo declared in mod_locations.zone
+python_zm,zm,python,stock override,,camo_python,yes,yes,camo declared in mod_base.zone
+qbb95_upgraded_zm,zm,qbb95,stock rebalance,,camo_qbb,,,camo declared in mod_locations.zone
+qbb95_zm,zm,qbb95,stock rebalance,,camo_qbb,,,camo declared in mod_locations.zone
+ray_gun_upgraded_zm,zm,ray_gun,stock override,,camo_qol_raygun,yes,yes,camo declared in mod_locations.zone
+ray_gun_zm,zm,ray_gun,stock override,,camo_raygun,yes,yes,camo declared in mod_locations.zone
+rottweil72qol_upgraded_zm,zm,rottweil72,stock rebalance,,camo_qol_olympia,,,camo declared in mod_locations.zone
+rottweil72qol_zm,zm,rottweil72,stock rebalance,,camo_olympia,,,camo declared in mod_base.zone
+rpg_upgraded_zm,zm,rpg,stock rebalance,,camo_rpg,,,camo declared in mod_bo1guns.zone
+rpg_zm,zm,rpg,stock rebalance,,camo_rpg,,,camo declared in mod_bo1guns.zone
+sa58_upgraded_zm,zm,sa58,stock rebalance,,camo_sa58,,,camo declared in mod_locations.zone
+sa58_zm,zm,sa58,stock rebalance,,camo_sa58,,,camo declared in mod_locations.zone
+saiga12qol_upgraded_zm,zm,saiga12,stock rebalance,,camo_qol_saiga,,,camo declared in mod_locations.zone
+saiga12qol_zm,zm,saiga12,stock rebalance,,camo_saiga,,,camo declared in mod_base.zone
+saritchqol_upgraded_zm,zm,saritch,stock rebalance,,camo_qol_saritch,,,camo declared in mod_locations.zone
+saritchqol_zm,zm,saritch,stock rebalance,,camo_saritch,,,camo declared in mod_base.zone
+scavenger_bolt_zm,zm,scavenger_bolt,donor helper,Scavenger,,,,
+scavenger_upgraded_zm,zm,scavenger,port,Scavenger,camo_qol_scavenger,,,camo declared in mod_scavenger.zone
+scavenger_zm,zm,scavenger,port,Scavenger,camo_qol_scavenger,,,camo declared in mod_scavenger.zone
+sf_sa58_upgraded_zm,zm,sf_sa58,stock rebalance,,camo_sa58,,,camo declared in mod_locations.zone
+sig556_upgraded_zm,zm,sig556,stock rebalance,,camo_sig556,,,camo declared in mod_locations.zone
+sig556_zm,zm,sig556,stock rebalance,,camo_sig556,,,camo declared in mod_locations.zone
+slipgun_upgraded_zm,zm,slipgun,stock override,Slipgun,camo_qol_slipgun,yes,yes,camo declared in mod_locations.zone
+slowgun_upgraded_zm,zm,slowgun,stock override,Paralyzer,camo_qol_slowgun,yes,yes,camo declared in mod_locations.zone
+spas_upgraded_zm,zm,spas,stock rebalance,,camo_spas,,,camo declared in mod_spas.zone
+spas_zm,zm,spas,stock rebalance,,camo_spas,,,camo declared in mod_spas.zone
+t5_l96a1_upgraded_zm,zm,t5_l96a1,stock rebalance,,camo_t5_l96a1,,,camo declared in mod_bo1guns.zone
+t5_l96a1_zm,zm,t5_l96a1,stock rebalance,,camo_t5_l96a1,,,camo declared in mod_bo1guns.zone
+tar21qol_upgraded_zm,zm,tar21,stock rebalance,,camo_qol_x95l,,,camo declared in mod_locations.zone
+tar21qol_zm,zm,tar21,stock rebalance,,camo_x95l,,,camo declared in mod_base.zone
+tesla_gun_upgraded_zm,zm,tesla_gun,port,Tesla Wunderwaffe,camo_tesla,,,camo declared in mod_wonderweapons.zone
+tesla_gun_zm,zm,tesla_gun,port,Tesla Wunderwaffe,,,,
+thundergun_upgraded_zm,zm,thundergun,port,Thundergun,camo_thundergun,,,camo declared in mod_wonderweapons.zone
+thundergun_zm,zm,thundergun,port,Thundergun,,,,
+titus6_explosive_dart_upgraded_zm,zm,titus6_explosive_dart,donor helper,Titus-6,,,,
+titus6_explosive_dart_zm,zm,titus6_explosive_dart,donor helper,Titus-6,,,,
+titus6_upgraded_zm,zm,titus6,port,Titus-6,camo_titus6,,,camo declared in mod_titus6.zone
+titus6_zm,zm,titus6,port,Titus-6,camo_titus6,,,camo declared in mod_titus6.zone
+vector_extclip_upgraded_zm,zm,vector,stock rebalance,,camo_vector,,,camo declared in mod_locations.zone
+vector_extclip_zm,zm,vector,stock rebalance,,camo_vector,,,camo declared in mod_locations.zone
+vector_upgraded_zm,zm,vector,stock rebalance,,camo_vector,,,camo declared in mod_locations.zone
+vector_zm,zm,vector,stock rebalance,,camo_vector,,,camo declared in mod_locations.zone
+ak47_upgraded_zm,root,ak47,stock copy,,camo_ak47,yes,yes,camo declared in mod_base.zone
+ak47_zm,root,ak47,stock copy,,camo_ak47,yes,yes,camo declared in mod_base.zone
+ak74u_extclip_upgraded_zm,root,ak74u,stock override,,camo_ak74u,yes,yes,camo declared in mod_base.zone
+ak74u_extclip_zm,root,ak74u,stock copy,,camo_ak74u,yes,yes,camo declared in mod_base.zone
+an94_upgraded_zm,root,an94,stock override,,camo_an94,yes,yes,camo declared in mod_base.zone
+an94_zm,root,an94,stock copy,,camo_an94,yes,yes,camo declared in mod_base.zone
+ballista_upgraded_zm,root,ballista,stock override,,camo_ballista,yes,yes,camo declared in mod_base.zone
+ballista_zm,root,ballista,stock copy,,camo_ballista,yes,yes,camo declared in mod_base.zone
+barretm82_upgraded_zm,root,barretm82,stock override,,camo_m82,yes,yes,camo declared in mod_base.zone
+barretm82_zm,root,barretm82,stock override,,camo_m82,yes,yes,camo declared in mod_base.zone
+beretta93r_extclip_upgraded_zm,root,beretta93r,stock override,,camo_b23r,yes,yes,camo declared in mod_base.zone
+beretta93r_extclip_zm,root,beretta93r,stock copy,,camo_b23r,yes,yes,camo declared in mod_base.zone
+c96_upgraded_zm,root,c96,stock copy,,camo_mc96,yes,yes,camo declared in mod_base.zone
+c96_zm,root,c96,stock copy,,camo_mc96,yes,yes,camo declared in mod_base.zone
+dualoptic_saritch_upgraded_zm,root,dualoptic_saritch,stock copy,,camo_saritch,yes,yes,camo declared in mod_base.zone
+evoskorpion_upgraded_zm,root,evoskorpion,stock override,,camo_scorpionevo,yes,yes,camo declared in mod_base.zone
+evoskorpion_zm,root,evoskorpion,stock copy,,camo_scorpionevo,yes,yes,camo declared in mod_base.zone
+gl_m16_upgraded_zm,root,gl_m16,stock copy,,camo_m16,yes,yes,camo declared in mod_base.zone
+gl_tar21_zm,root,gl_tar21,stock override,,camo_x95l,yes,yes,camo declared in mod_base.zone
+gl_type95_zm,root,gl_type95,stock override,,camo_type95,yes,yes,camo declared in mod_base.zone
+gl_xm8_zm,root,gl_xm8,stock override,,camo_xm8,yes,yes,camo declared in mod_base.zone
+hamr_upgraded_zm,root,hamr,stock override,,camo_hamr,yes,yes,camo declared in mod_base.zone
+hamr_zm,root,hamr,stock override,,camo_hamr,yes,yes,camo declared in mod_base.zone
+hk416_upgraded_zm,root,hk416,stock override,,camo_hk416,yes,yes,camo declared in mod_base.zone
+hk416_zm,root,hk416,stock override,,camo_hk416,yes,yes,camo declared in mod_base.zone
+judge_upgraded_zm,root,judge,stock override,,camo_judge,yes,yes,camo declared in mod_base.zone
+judge_zm,root,judge,stock copy,,camo_judge,yes,yes,camo declared in mod_base.zone
+kard_upgraded_zm,root,kard,stock override,,camo_kard,yes,yes,camo declared in mod_base.zone
+kard_zm,root,kard,stock copy,,camo_kard,yes,yes,camo declared in mod_base.zone
+ksg_upgraded_zm,root,ksg,stock override,,camo_ksg,yes,yes,camo declared in mod_base.zone
+ksg_zm,root,ksg,stock copy,,camo_ksg,yes,yes,camo declared in mod_base.zone
+lsat_upgraded_zm,root,lsat,stock override,,camo_lsat,yes,yes,camo declared in mod_base.zone
+lsat_zm,root,lsat,stock override,,camo_lsat,yes,yes,camo declared in mod_base.zone
+m16_gl_upgraded_zm,root,m16_gl,stock override,,camo_m16,yes,yes,camo declared in mod_base.zone
+m16_zm,root,m16,stock copy,,camo_m16,yes,yes,camo declared in mod_base.zone
+m1911_upgraded_zm,root,m1911,stock override,,camo_m1911,yes,yes,camo declared in mod_base.zone
+m1911_zm,root,m1911,stock copy,,camo_m1911,yes,yes,camo declared in mod_base.zone
+m1911lh_upgraded_zm,root,m1911lh,stock override,,camo_m1911,yes,yes,camo declared in mod_base.zone
+m32_upgraded_zm,root,m32,stock copy,,camo_m32,yes,yes,camo declared in mod_base.zone
+m32_zm,root,m32,stock copy,,camo_m32,yes,yes,camo declared in mod_base.zone
+mg08_upgraded_zm,root,mg08,stock copy,,camo_mg08,yes,yes,camo declared in mod_base.zone
+mg08_zm,root,mg08,stock copy,,camo_mg08,yes,yes,camo declared in mod_base.zone
+minigun_alcatraz_upgraded_zm,root,minigun_alcatraz,stock copy,,camo_minigun,yes,yes,camo declared in mod_base.zone
+minigun_alcatraz_zm,root,minigun_alcatraz,stock copy,,,yes,yes,
+mp40_stalker_upgraded_zm,root,mp40_stalker,stock copy,,camo_mp40,yes,yes,camo declared in mod_base.zone
+mp40_stalker_zm,root,mp40_stalker,stock copy,,camo_mp40,yes,yes,camo declared in mod_base.zone
+mp44_upgraded_zm,root,mp44,stock copy,,camo_stg44,yes,yes,camo declared in mod_base.zone
+mp44_zm,root,mp44,stock copy,,camo_stg44,yes,yes,camo declared in mod_base.zone
+mp5k_upgraded_zm,root,mp5k,stock override,,camo_mp5,yes,yes,camo declared in mod_base.zone
+mp5k_zm,root,mp5k,stock override,,camo_mp5,yes,yes,camo declared in mod_base.zone
+pdw57_upgraded_zm,root,pdw57,stock override,,camo_pdw57,yes,yes,camo declared in mod_base.zone
+pdw57_zm,root,pdw57,stock copy,,camo_pdw57,yes,yes,camo declared in mod_base.zone
+python_upgraded_zm,root,python,stock copy,,camo_python,yes,yes,camo declared in mod_base.zone
+python_zm,root,python,stock copy,,camo_python,yes,yes,camo declared in mod_base.zone
+qcw05_upgraded_zm,root,qcw05,stock override,,camo_chicom,yes,yes,camo declared in mod_base.zone
+qcw05_zm,root,qcw05,stock copy,,camo_chicom,yes,yes,camo declared in mod_base.zone
+rnma_upgraded_zm,root,rnma,stock copy,,camo_rnma,yes,yes,camo declared in mod_base.zone
+rnma_zm,root,rnma,stock copy,,camo_rnma,yes,yes,camo declared in mod_base.zone
+rottweil72_upgraded_zm,root,rottweil72,stock copy,,camo_olympia,yes,yes,camo declared in mod_base.zone
+rottweil72_zm,root,rottweil72,stock copy,,camo_olympia,yes,yes,camo declared in mod_base.zone
+rpd_upgraded_zm,root,rpd,stock override,,camo_rpd,yes,yes,camo declared in mod_base.zone
+rpd_zm,root,rpd,stock override,,camo_rpd,yes,yes,camo declared in mod_base.zone
+saiga12_upgraded_zm,root,saiga12,stock override,,camo_saiga,yes,yes,camo declared in mod_base.zone
+saiga12_zm,root,saiga12,stock override,,camo_saiga,yes,yes,camo declared in mod_base.zone
+saritch_upgraded_zm,root,saritch,stock override,,camo_saritch,yes,yes,camo declared in mod_base.zone
+saritch_zm,root,saritch,stock copy,,camo_saritch,yes,yes,camo declared in mod_base.zone
+scar_upgraded_zm,root,scar,stock override,,camo_scarh,yes,yes,camo declared in mod_base.zone
+scar_zm,root,scar,stock copy,,camo_scarh,yes,yes,camo declared in mod_base.zone
+sf_qcw05_upgraded_zm,root,sf_qcw05,stock override,,camo_chicom,yes,yes,camo declared in mod_base.zone
+srm1216_upgraded_zm,root,srm1216,stock override,,camo_srm1216,yes,yes,camo declared in mod_base.zone
+srm1216_zm,root,srm1216,stock copy,,camo_srm1216,yes,yes,camo declared in mod_base.zone
+svu_upgraded_zm,root,svu,stock override,,camo_svu,yes,yes,camo declared in mod_base.zone
+svu_zm,root,svu,stock copy,,camo_svu,yes,yes,camo declared in mod_base.zone
+tar21_upgraded_zm,root,tar21,stock override,,camo_x95l,yes,yes,camo declared in mod_base.zone
+tar21_zm,root,tar21,stock override,,camo_x95l,yes,yes,camo declared in mod_base.zone
+thompson_upgraded_zm,root,thompson,stock copy,,camo_thompson,yes,yes,camo declared in mod_base.zone
+thompson_zm,root,thompson,stock copy,,camo_thompson,yes,yes,camo declared in mod_base.zone
+type95_upgraded_zm,root,type95,stock override,,camo_type95,yes,yes,camo declared in mod_base.zone
+type95_zm,root,type95,stock override,,camo_type95,yes,yes,camo declared in mod_base.zone
+usrpg_upgraded_zm,root,usrpg,stock copy,,camo_usrpg,yes,yes,camo declared in mod_base.zone
+usrpg_zm,root,usrpg,stock copy,,camo_usrpg,yes,yes,camo declared in mod_base.zone
+uzi_upgraded_zm,root,uzi,stock override,,camo_uzi,yes,yes,camo declared in mod_base.zone
+uzi_zm,root,uzi,stock override,,camo_uzi,yes,yes,camo declared in mod_base.zone
+xm8_upgraded_zm,root,xm8,stock override,,camo_xm8,yes,yes,camo declared in mod_base.zone
+xm8_zm,root,xm8,stock override,,camo_xm8,yes,yes,camo declared in mod_base.zone

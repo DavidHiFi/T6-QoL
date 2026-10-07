@@ -709,6 +709,9 @@ zmqol_ring_hud_failsafe()
     self setclientuivisibilityflag( "hud_visible", 1 );
 }
 
+//  📝 NOT STARTED from init() - the capture re-declare loops were stopped on
+//  purpose (see the banner there). The shape is still kept correct so that
+//  re-enabling it cannot bring back the co-op bug below.
 zmqol_capture_objectives_on_connect()
 {
     level endon( "end_game" );
@@ -717,20 +720,31 @@ zmqol_capture_objectives_on_connect()
     {
         level waittill( "connected", player );
 
-        player waittill( "spawned_player" );
-        wait 0.05;
-
-        //  v1.90.7 - same guard as above. A co-op player connecting while someone
-        //  else is mid-capture must not blank that player's ring.
-        if ( zmqol_any_zone_capturing() )
-        {
-            println( "[zm_qol] capture objectives: connect re-declare SKIPPED - a capture is live" );
-            continue;
-        }
-
-        maps\mp\zm_tomb_capture_zones::declare_objectives();
-        println( "[zm_qol] capture objectives: re-declared for a connecting player" );
+        //  🛑 One worker per player. Waiting on spawned_player inside this loop
+        //  lost every connect that arrived meanwhile, and a player who dropped
+        //  before spawning parked the listener for the rest of the match.
+        player thread zmqol_capture_objectives_for_player();
     }
+}
+
+zmqol_capture_objectives_for_player()
+{
+    self endon( "disconnect" );
+    level endon( "end_game" );
+
+    self waittill( "spawned_player" );
+    wait 0.05;
+
+    //  v1.90.7 - same guard as above. A co-op player connecting while someone
+    //  else is mid-capture must not blank that player's ring.
+    if ( zmqol_any_zone_capturing() )
+    {
+        println( "[zm_qol] capture objectives: connect re-declare SKIPPED - a capture is live" );
+        return;
+    }
+
+    maps\mp\zm_tomb_capture_zones::declare_objectives();
+    println( "[zm_qol] capture objectives: re-declared for a connecting player" );
 }
 
 // ============================================================================
@@ -1691,9 +1705,10 @@ added_weapons()
         include_weapon( "xm8_upgraded_zm", 0 );
         add_zombie_weapon( "xm8_zm", "xm8_upgraded_zm", &"ZOMBIE_WEAPON_XM8", 50, "wpck_m8a1", "", undefined, 1 );
 
-        include_weapon( "rpd_zm" );
-        include_weapon( "rpd_upgraded_zm", 0 );
-        add_zombie_weapon( "rpd_zm", "rpd_upgraded_zm", &"ZOMBIE_WEAPON_RPD", 50, "wpck_rpd", "", undefined, 1 );
+        //  rpd_zm pair (the mod's own addition here) came out 2026-10-07 round
+        //  2 of the gunswap: gunswap.gsc bans the stock pair and m60_zm takes
+        //  the slots - it is registered on Origins now (quality_of_life.gsc,
+        //  round 2 note in the BO1 block).
 
       // ======================================================================
       //  🛑 v2.14.4 - THESE SEVEN PAIRS ARE HELD BACK ON ALL OF ORIGINS

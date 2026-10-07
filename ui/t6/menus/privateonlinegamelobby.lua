@@ -218,3 +218,10 @@ end
 -- the timer length once at frontend init rather than per match. Same two dvars,
 -- same call; there is no second mechanism here to confuse a bad boot with.
 zmQolInstantStart()
+
+-- optionssettings.lua can load while options.lua is still defining the stock
+-- parent Options menu. This file loads afterwards, so retry once the parent
+-- constructor and category builder exist.
+if ZmQolInstallParentOptionsMenu then
+	ZmQolInstallParentOptionsMenu()
+end

@@ -189,7 +189,7 @@ disable_doors()
 //  Trenches and Church.
 //
 //  activate_zone_nml covers 58 of the No Man's Land links and was already set,
-//  so most of this arena was fine. But valid_zones (below) also lists
+//  so most of this arena was fine. But valid_zones (below) also listed
 //  zone_nml_farm and zone_nml_farm_1, and every link to those is gated on
 //  activate_zone_farm:
 //      zone_nml_0    --activate_zone_farm--> zone_nml_farm
@@ -210,6 +210,17 @@ disable_doors()
 //  immediately afterwards - exactly the activate-then-disable shape that is
 //  suspected there. The two farm zones stay unreachable rather than risk the
 //  arena.
+// ============================================================================
+//  2026-10-05 (A16) - zone_nml_farm and zone_nml_farm_1 REMOVED from
+//  valid_zones below. They were enabled but unreachable: every graph link
+//  into the farm chain is gated on activate_zone_farm (stock zm_tomb.gsc
+//  1427, 1438, 1472, 1473, 1538, 1539), which is never set here, so the
+//  engine could still try to spawn into them and distance-clean the idle
+//  result. Out of valid_zones they now get is_enabled = 0 and
+//  is_spawning_allowed = 0 like every other out-of-arena zone.
+//  activate_zone_farm itself stays unset - do NOT restore it: the identical
+//  change on Trenches produced an instant "GAME OVER, Zombies: 0" at full
+//  health (v2.17.14 note above).
 enable_zones()
 {
 	flag_set("activate_zone_nml");
@@ -217,7 +228,7 @@ enable_zones()
 
 disable_zones()
 {
-	valid_zones = array("zone_nml_0", "zone_nml_1", "zone_nml_2", "zone_nml_2b", "zone_nml_3", "zone_nml_4", "zone_nml_5", "zone_nml_6", "zone_nml_7", "zone_nml_7a", "zone_nml_8", "zone_nml_9", "zone_nml_9a", "zone_nml_10", "zone_nml_10a", "zone_nml_11", "zone_nml_11a", "zone_nml_12", "zone_nml_12a", "zone_nml_13", "zone_nml_14", "zone_nml_15", "zone_nml_15a", "zone_nml_16", "zone_nml_16a", "zone_nml_17", "zone_nml_17a", "zone_nml_18", "zone_nml_20", "zone_nml_farm", "zone_nml_farm_1");
+	valid_zones = array("zone_nml_0", "zone_nml_1", "zone_nml_2", "zone_nml_2b", "zone_nml_3", "zone_nml_4", "zone_nml_5", "zone_nml_6", "zone_nml_7", "zone_nml_7a", "zone_nml_8", "zone_nml_9", "zone_nml_9a", "zone_nml_10", "zone_nml_10a", "zone_nml_11", "zone_nml_11a", "zone_nml_12", "zone_nml_12a", "zone_nml_13", "zone_nml_14", "zone_nml_15", "zone_nml_15a", "zone_nml_16", "zone_nml_16a", "zone_nml_17", "zone_nml_17a", "zone_nml_18", "zone_nml_20");
 	spawn_points = maps\mp\gametypes_zm\_zm_gametype::get_player_spawns_for_gametype();
 
 	foreach (index, zone in level.zones)

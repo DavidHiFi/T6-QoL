@@ -196,6 +196,19 @@ xanim,qolwf_diesel_turn_off
 xanim,qolwf_diesel_on_idle
 xanim,qolwf_diesel_ballspin_loop
 
+// ============================================================================
+//  v2.15.43 - THE MAGMAGAT QUEST'S ANIMTREE (owner, 2026-10-07: the gun comes
+//  through luckass's Mob of the Dead quest again). His own fxanim_props.atr
+//  is a SUPERSET of stock's: Unlinker-dumped from his mod.ff (33,455 B / 1089
+//  lines vs stock's 928), carries every stock entry plus his smelter ghouls'
+//  %mg_ghoul_smelter_1/_2 and the rest of his prop set. The 4 lines stock has
+//  that his lacks are comment drift only, so first-load-wins stays content-
+//  safe wherever a stock zone also carries the tree. THE DECL MUST SIT HERE
+//  (before the donor is --load'ed): last night's donor-carried decl lost the
+//  asset to the stock copy and the map died on the compile.
+// ============================================================================
+rawfile,animtrees/fxanim_props.atr
+
 // REMOVED v1.22.0 (owned Origins' assets): xmodel,p6_zm_vending_diesel_magic
 // REMOVED v1.22.0 (owned Origins' assets): xmodel,t6_wpn_zmb_perk_bottle_bear_world
 // REMOVED v1.22.0 (owned Origins' assets): fx,maps/zombie_tomb/fx_tomb_dieselmagic_on
@@ -1061,10 +1074,10 @@ camo,camo_sig556
 camo,camo_vector
 
 // ============================================================================
-//  v2.9.27 - THE SPAS ICON. The one gun whose hudIcon/killIcon/ammoCounterIcon
+//  v2.9.27 - THE SPAS ICON (restored 2026-10-07, round 2: the gun is back to
+//  replace the stock S12). The one gun whose hudIcon/killIcon/ammoCounterIcon
 //  resolve from NO loaded fastfile (SPAS is a campaign gun; its icon ships only
-//  in frontend.ff, which zombies never loads) - the sole weapon-icon
-//  "Could not load material" on the v2.9.26 Diner boot log. Treyarch ships a
+//  in frontend.ff, which zombies never loads). Treyarch ships a
 //  menu_mp_weapons_* icon with every stock zm gun, so the SPAS carries its own:
 //  material JSON + iwi dumped verbatim from retail frontend.ff into
 //  zone_assets\ (raw beats every --load; the --load list is untouched).

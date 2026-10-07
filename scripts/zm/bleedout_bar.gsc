@@ -162,8 +162,7 @@ bleedout_bar()
 
 	while ( self.bleeding_Out == true )
 	{
-		b_want = ( getdvarintdefault( "hud_master", 1 ) &&
-		           ( getdvarintdefault( "hud_all", 0 ) || getdvarintdefault( "hud_bleedout_bar", 1 ) ) );
+		b_want = self scripts\zm\zmqol_playeropt::zmqol_popt_hud_on( "hud_bleedout_bar", 1 );
 
 		if ( b_want && !isdefined( self.ProcessBar2 ) )
 		{

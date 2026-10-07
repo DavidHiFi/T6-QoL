@@ -164,7 +164,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * L96A1 — Pack-a-Punches into the **L115 Isolator**
   * Browning HP — Pack-a-Punches into **Bap**
   * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
-  * The L96A1 is on every map. The other three appear on every map except Origins, which lacks enough weapon precache slots.
+  * The L96A1 is on every map. The M60 and the Browning HP are on every map too since the 2026-10-07 gunswap round 2 - they took the stock RPD's and Five-seveN's slots on Origins. The RPG-7 stays off Origins, which has one slot left and nothing to pay for it with.
   * Scavenger, Call of the Dead's explosive sniper. Its bolt sticks, beeps and blows up three seconds later, and zombies it kills turn to mist. It Pack-a-Punches into the **Hyena Infra-dead**, with a bigger blast and an infrared scope. It has its own sounds, scopes, effects and animations, plus the stock and animated Pack-a-Punch camos.
   * The Scavenger appears on Buried, Maze and TranZit's survival maps, the maps with room left in the weapon table.
 
@@ -180,7 +180,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
   * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
-  * Both appear on Nuketown and Buried, including Buried Maze. The MM1 also appears on Die Rise, Origins, and the TranZit and Mob of the Dead survival maps. TranZit classic and Mob classic have no safe room in the weapon table for either gun.
+  * The Browning HP Dual Wield appears on every map in classic and survival, since the 2026-10-07 gunswap round 2 put it wherever the stock Five-seveN Dual Wield used to be. The MM1 appears on the same maps and modes except classic TranZit (survival only there) - it took over the War Machine's slot on Mob when the stock one came out. Neither appears in Grief or Turned.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
@@ -305,6 +305,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 | **Synarxis** — *Inspiration* | This project wouldn't exist without their kindness & support. |
 | **sehteria** — *T6-ZM-Expanded* | The mod this one grew out of — extra weapons & perks on all maps. |
 | **SadSlothXL** — [t6-ports](https://github.com/SadSlothXL/t6-ports) | The Death Machine power-up — the drop, the weapon swap and its sounds — and the Blast-O-Matic port: its models, animations, textures, sounds and camo table. |
+| **luckass** — [t6_motd_magmagat](https://github.com/lborruto/t6_motd_magmagat) (MIT, used with permission) | The MagmaGat and Magmus Operandi port from the Black Ops 4 Mob of the Dead remaster: the models, animations, effects, sounds and weapon behaviour. |
 | **VenomModding** — [T5-MissingAssets](https://github.com/VenomModding/T5-MissingAssets) | The Scavenger's Black Ops 1 effects: muzzle flash, bolt trail, explosion and death mist. |
 | **Mario Woopsie** — MOTD Old School Weapons (Nexus Mods) | The MM1 and Browning HP Dual Wield ports: the zombies weapon definitions, the Browning's left-hand models and both Pack-a-Punch names. |
 | **Halo / SickoHours** — [plutonium-agent-toolkit](https://github.com/SickoHours/plutonium-agent-toolkit) | The Bloodhound and Meat Wagon port from Black Ops III: the models, textures, animations, weapon definitions and sound-alias chain. |

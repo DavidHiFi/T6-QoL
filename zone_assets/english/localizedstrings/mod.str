@@ -190,13 +190,13 @@ LANG_ENGLISH        "Max Wave Gun"
 
 
 // ============================================================================
-//  v2.9.18 - THE CAMPAIGN SPAS-12. Both keys are Treyarch's own, read out of
+//  v2.9.18 - THE CAMPAIGN SPAS-12 (restored 2026-10-07, round 2: the gun is
+//  back, replacing the stock S12). Both keys are Treyarch's own, read out of
 //  the defs: WEAPON_SPAS is the campaign def's displayName (its string lives
 //  only in SP language zones no zombies map loads), and ZOMBIE_SPAS_UPGRADED
 //  is BO1's key from raw\weapons\sp\spas_upgraded_zm. The Pack-a-Punch name
 //  is BO1's official one - the SPAZ-24 - which its 24-round clip in that same
-//  def corroborates. The user's message wrote "SPA-Z"; "SPAZ-24" is what BO1
-//  actually called it, and "official BO1 name" was the instruction.
+//  def corroborates.
 // ============================================================================
 
 REFERENCE           WEAPON_SPAS
@@ -336,5 +336,24 @@ LANG_ENGLISH        "Scavenger"
 
 REFERENCE           ZMWEAPON_SCAVENGER_UPGRADED
 LANG_ENGLISH        "Hyena Infra-dead"
+
+// magmagat - luckass's BO4 Mob of the Dead remaster weapon (github
+// lborruto/t6_motd_magmagat v1.0.5, MIT). PaP name per BO4: the Magmus
+// Operandi.
+REFERENCE           ZMWEAPON_MAGMAGAT
+LANG_ENGLISH        "Magmagat"
+
+REFERENCE           ZMWEAPON_MAGMAGAT_UPGRADED
+LANG_ENGLISH        "Magmus Operandi"
+
+// v2.15.43 - the Tempered Blundergat pair. Keys and texts are luckass's own,
+// Unlinker-dumped from his mod.ff localize asset (judge-sourced, not invented);
+// the upgraded tempered gun is named after its BO4 family name, the same way a
+// Sweeper forgemates to a Magmus Operandi.
+REFERENCE           ZMWEAPON_MG_TEMPERED
+LANG_ENGLISH        "Tempered Blundergat"
+
+REFERENCE           ZMWEAPON_MG_TEMPERED_UPGRADED
+LANG_ENGLISH        "Tempered Sweeper"
 
 ENDMARKER

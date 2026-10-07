@@ -280,8 +280,8 @@ init_gamemodes()
 
 include_weapons()
 {
-    include_weapon( "hamr_zm" );
-    include_weapon( "hamr_upgraded_zm", 0 );
+    //  hamr_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and mk48_zm (zm_expanded.csc root list) takes the slots.
     include_weapon( "mg08_zm" );
     include_weapon( "mg08_upgraded_zm", 0 );
     include_weapon( "type95_zm", 0 ); //
@@ -328,16 +328,19 @@ include_weapons()
     include_weapon( "beretta93r_extclip_upgraded_zm", 0 );
     include_weapon( "kard_zm", 0 ); //
     include_weapon( "kard_upgraded_zm", 0 );
-    include_weapon( "fiveseven_zm", 0 );
-    include_weapon( "fiveseven_upgraded_zm", 0 );
+    //  fiveseven_zm pair (the Origins wall buy's own registration) came out
+    //  2026-10-07 round 2 follow-up: the wall is re-pointed to browninghp_zm
+    //  server-side (gunswap.gsc's wall section), and its shelf model follows
+    //  via zm_expanded.csc's connect-time model swap.
     include_weapon( "python_zm", 0 ); //
     include_weapon( "python_upgraded_zm", 0 );
     include_weapon( "c96_zm", 0 );
     include_weapon( "c96_upgraded_zm", 0 );
-    include_weapon( "fivesevendw_zm" );
-    include_weapon( "fivesevendw_upgraded_zm", 0 );
-    include_weapon( "m32_zm" );
-    include_weapon( "m32_upgraded_zm", 0 );
+    //  fivesevendw_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans
+    //  the stock pair and browninghpdw_zm takes the slots (oldschool.gsc's
+    //  DW gate is all six maps now).
+    //  m32_zm pair (the War Machine) swapped out 2026-10-07: gunswap.gsc bans
+    //  the stock pair from registration and mm1_zm takes the slots.
     include_weapon( "beacon_zm", 0 );
     include_weapon( "tomb_shield_zm", 0 );
     include_weapon( "claymore_zm", 0 );
@@ -395,8 +398,9 @@ include_weapons()
     // Tranzit weapons
     include_weapon( "xm8_zm" );
     include_weapon( "xm8_upgraded_zm", 0 );
-    include_weapon( "rpd_zm" );
-    include_weapon( "rpd_upgraded_zm", 0 );
+    //  rpd_zm pair (the mod's own addition) came out 2026-10-07 round 2:
+    //  gunswap.gsc bans the stock pair too and m60_zm takes the slots - it is
+    //  registered on Origins now (quality_of_life.gsc, round 2 note).
     //  🛑 v2.14.4 - THE SEVEN PAIRS ARE GONE ON ALL OF ORIGINS, not just
     //  the Crazy Place. Exact twin of the same removal in
     //  zm_tomb.gsc::added_weapons() - read the banner there for the classic

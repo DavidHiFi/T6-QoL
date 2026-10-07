@@ -3,7 +3,10 @@
 Add each new port to weapon-port-contracts.json. Two passes run.
 
 Source pass (always): both weapon forms, their models, animations, sound
-aliases, and the PaP camo table's slots 3, 8 and 12.
+aliases, and the PaP camo table's slots 3, 8 and 12. A contract may set
+"camo" to null (the gun ships no camo table at all) and may set
+"camoExceptions" per def (def -> expected camo, null = no camo on that def)
+for base forms and projectiles that legitimately carry no camo.
 
 Readback pass (when the Unlinker and the stock listings are present): every
 xmodel, fx, tracer and material a def names must exist either in the linked
@@ -90,6 +93,20 @@ def zone_entries(path):
     return entries
 
 
+def zone_declarations(path):
+    """Assets the zone DECLARED (copied into the fastfile it produces), not the
+    bare `kind,,name` references it only names for the Linker to resolve out of
+    a --load'ed zone. A bare reference never lands in mod.ff, so the readback
+    must not demand it there."""
+    entries = set()
+    for raw in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw.split("//", 1)[0].strip()
+        if "," in line and not line.startswith(">") and ",," not in line:
+            kind, name = line.split(",", 1)
+            entries.add((kind.strip(), name.strip().lstrip(",")))
+    return entries
+
+
 def unlinker_list(unlinker, fastfile):
     """Asset (kind, name) pairs a fastfile owns. Bare references are skipped."""
     out = subprocess.run([str(unlinker), "--list", str(fastfile)], capture_output=True,
@@ -162,6 +179,21 @@ def ipak_name_hashes(path):
     return found
 
 
+def stock_union():
+    """Assets ANY stock zone provides: the union of the six map zones and the
+    shared zones. A def that ships as a stock override may reference stock
+    assets (the Jet Gun's minigun anims, the engine's tag_flash), which the
+    mod's own zones never declare."""
+    cached = getattr(stock_union, "_cache", None)
+    if cached is not None:
+        return cached
+    found = set()
+    for zone in STOCK_MAPS + STOCK_SHARED:
+        found |= stock_listing(zone) or set()
+    stock_union._cache = found
+    return found
+
+
 def source_pass(port, errors, all_zones, sound_aliases):
     name = port["name"]
     zone_path = ROOT / port["zone"]
@@ -169,34 +201,55 @@ def source_pass(port, errors, all_zones, sound_aliases):
         errors.append(f"{name}: missing zone {zone_path}")
         return None
     zone = zone_entries(zone_path)
-    camo_name = port["camo"]
-    if ("camo", camo_name) not in zone:
-        errors.append(f"{name}: {camo_name} is not linked in {port['zone']}")
-    owners = stock_camo_owners(camo_name)
-    if owners:
-        errors.append(f"{name}: camo table {camo_name} is also owned by {', '.join(owners)}; "
-                      f"that map's copy draws instead of the mod's, so use a camo_qol_ name")
-    camo_path = ROOT / "zone_assets" / "camo" / f"{camo_name}.json"
-    if not camo_path.is_file():
-        errors.append(f"{name}: missing {camo_path}")
-    else:
-        camo = json.loads(camo_path.read_text(encoding="utf-8"))
-        slots = camo.get("camoMaterials", [])
-        for index in port["camoSlots"]:
-            if index >= len(slots):
-                errors.append(f"{name}: camo slot {index} is absent")
-                continue
-            overrides = [o for m in slots[index]["materials"] for o in m["materialOverrides"]]
-            mapped = {o["baseMaterial"] for o in overrides}
-            for base in port["camoBaseMaterials"]:
-                if base not in mapped:
-                    errors.append(f"{name}: slot {index} has no {base} override")
-            for override in overrides:
-                if ("material", override["camoMaterial"]) not in all_zones:
-                    errors.append(f"{name}: slot {index} uses unlinked {override['camoMaterial']}")
+    # A def's references must be declared in the contract's own zone, plus any
+    # extra zones the contract names (the Titus-6's dive-to-prone anims live
+    # in mod_revise.zone), plus, when the contract sets stockAssets, any
+    # asset a stock zone provides (stock guns and engine builtins).
+    resolvable = set(zone)
+    for extra in port.get("assetZones", []):
+        resolvable |= zone_entries(ROOT / extra)
+    if port.get("stockAssets"):
+        resolvable |= stock_union()
+    camo_name = port.get("camo")
+    camo_exceptions = port.get("camoExceptions", {})
+    if camo_name:
+        if ("camo", camo_name) not in zone:
+            errors.append(f"{name}: {camo_name} is not linked in {port['zone']}")
+        owners = stock_camo_owners(camo_name)
+        if owners:
+            errors.append(f"{name}: camo table {camo_name} is also owned by {', '.join(owners)}; "
+                          f"that map's copy draws instead of the mod's, so use a camo_qol_ name")
+        camo_path = ROOT / "zone_assets" / "camo" / f"{camo_name}.json"
+        if not camo_path.is_file():
+            errors.append(f"{name}: missing {camo_path}")
+        else:
+            camo = json.loads(camo_path.read_text(encoding="utf-8"))
+            slots = camo.get("camoMaterials", [])
+            for index in port["camoSlots"]:
+                if index >= len(slots):
+                    errors.append(f"{name}: camo slot {index} is absent")
+                    continue
+                overrides = [o for m in slots[index]["materials"] for o in m["materialOverrides"]]
+                mapped = {o["baseMaterial"] for o in overrides}
+                for base in port["camoBaseMaterials"]:
+                    if base not in mapped:
+                        errors.append(f"{name}: slot {index} has no {base} override")
+                for override in overrides:
+                    if ("material", override["camoMaterial"]) not in all_zones:
+                        errors.append(f"{name}: slot {index} uses unlinked {override['camoMaterial']}")
 
     forms = {}
+    donor_defs = set(port.get("donorDefs", []))
+    if donor_defs and not port.get("donorFF"):
+        errors.append(f"{name}: donorDefs set but the contract has no donorFF")
     for weapon in port["weapons"]:
+        if weapon in donor_defs:
+            # A def that ships as the donor's own compiled weapon asset (the
+            # Magmagat's Tempered pair: his 22 KB+ defs are over the 20480-byte
+            # rawfile ceiling, so they do not exist in weapons\zm\). The
+            # readback verifies the donor's (weapon, name) pairs and this
+            # zone's weapon declarations against the linked mod.ff instead.
+            continue
         path = ROOT / "weapons" / "zm" / weapon
         if not path.is_file():
             errors.append(f"{name}: missing weapon {weapon}")
@@ -208,20 +261,36 @@ def source_pass(port, errors, all_zones, sound_aliases):
         # A projectile def nobody holds (the Scavenger's bolt grenade, like
         # stock's blundersplat dart) has no view model and so no camo to draw.
         held = fields.get("gunModel") or fields.get("inventoryType") != "offhand"
-        if held and fields.get("camo") != camo_name:
-            errors.append(f"{name}: {weapon} uses {fields.get('camo')}, expected {camo_name}")
+        # camoExceptions names defs whose camo field legitimately differs from
+        # the family's table (a base form with no camo, a projectile with no
+        # view model camo); null means that def ships with no camo at all.
+        expected_camo = camo_exceptions.get(weapon, camo_name)
+        if held and expected_camo is not None and fields.get("camo") != expected_camo:
+            errors.append(f"{name}: {weapon} uses {fields.get('camo')}, expected {expected_camo}")
         for key, value in fields.items():
             if not value:
                 continue
-            if MODEL_KEY.fullmatch(key) and ("xmodel", value) not in zone:
+            if MODEL_KEY.fullmatch(key) and ("xmodel", value) not in resolvable:
                 errors.append(f"{name}: {weapon} references missing xmodel {value} ({key})")
             if (key.endswith("Anim") or key in ANIM_KEYS) and value.startswith("viewmodel_"):
-                if ("xanim", value) not in zone:
+                if ("xanim", value) not in resolvable:
                     errors.append(f"{name}: {weapon} references missing xanim {value} ({key})")
             if "Sound" in key and any(value.startswith(p) for p in port["soundPrefixes"]):
                 if value not in sound_aliases:
                     errors.append(f"{name}: {weapon} references missing sound alias {value}")
     return forms
+
+
+def raw_efx_names():
+    """Every effect shipped raw (fx/<name>.efx, packed into mod.iwd). A def may
+    reference one directly (the T5 wonder weapons' muzzle flashes): Plutonium
+    resolves a weapon def's fx out of the iwd at weapon precache, which is how
+    the donor mod shipped its 27 T5 effects (mod_wonderweapons.zone header)."""
+    fx_dir = ROOT / "fx"
+    if not fx_dir.is_dir():
+        return set()
+    return {p.relative_to(fx_dir).with_suffix("").as_posix().lower()
+            for p in fx_dir.rglob("*.efx")}
 
 
 def raw_server_fx():
@@ -253,7 +322,26 @@ def readback_pass(port, forms, errors, linked, everywhere):
     """Every asset a def names must be in mod.ff, on every stock map, or (fx only)
     ship raw in mod.iwd with a server loadfx."""
     name = port["name"]
+    # Donor-carried weapon assets ship as their own compiled rows in mod.ff; the
+    # rawfile-based field checks below cannot see them, so assert their presence
+    # by (weapon, name) pair and let the zone-declaration check further down
+    # catch a zone that promises one the link did not deliver.
+    donor_defs = set(port.get("donorDefs", []))
+    for weapon in sorted(donor_defs):
+        if ("weapon", weapon) not in linked:
+            errors.append(f"{name}: donor weapon {weapon} is not carried by the linked mod.ff")
+    # A stock gun the mod overrides only appears on the maps that own it; its
+    # contract names those maps ("stockMaps") and their stock zones count as
+    # providers for that def's references.
+    allowed = everywhere
+    for map_name in port.get("stockMaps", []):
+        listing = stock_listing(map_name)
+        if listing is None:
+            errors.append(f"{name}: stockMaps names {map_name}, which has no stock listing")
+        else:
+            allowed = allowed | listing
     raw_fx = raw_server_fx()
+    shipped_efx = raw_efx_names()
     for weapon, fields in forms.items():
         for key, value in fields.items():
             if not value or value.lower() == "none":
@@ -270,20 +358,34 @@ def readback_pass(port, forms, errors, linked, everywhere):
                 continue
             if (kind, value) in raw_fx:
                 continue
-            if (kind, value) not in linked and (kind, value) not in everywhere:
+            if kind == "fx" and value.lower() in shipped_efx:
+                continue
+            if (kind, value) not in linked and (kind, value) not in allowed:
                 errors.append(f"{name}: {weapon} {key} names {kind} {value}, which is neither "
                               f"in the linked mod.ff nor on every stock map; declare it in {port['zone']}"
                               + (" or ship fx/<name>.efx with a server loadfx" if kind == "fx" else ""))
-    zone = zone_entries(ROOT / port["zone"])
+    zone = zone_declarations(ROOT / port["zone"])
     for kind, asset in sorted(zone):
-        if kind in ("xmodel", "xanim", "fx", "camo", "material") and (kind, asset) not in linked:
+        if kind in ("xmodel", "xanim", "fx", "camo", "material", "weapon") and (kind, asset) not in linked:
+            if (kind, asset) in everywhere:
+                # A stock shared zone owns it; the runtime resolves it there and
+                # the Linker may emit a reference instead of a copy.
+                continue
             errors.append(f"{name}: {port['zone']} declares {kind} {asset} but the linked mod.ff "
                           f"does not carry it; run build_ff.bat")
 
 
-def pixel_pass(port, unlinker, bo2, errors):
+def pixel_pass(port, unlinker, bo2, errors, linked=None):
     """Images the port's xmodels pull in must have pixels in a startup bank."""
     name = port["name"]
+    if port.get("pixelCheck") is False:
+        # Contracts whose gun's images live in a donor or stock bank the
+        # checker cannot open (a --load'ed donor fastfile, a stock DLC bank)
+        # declare pixelCheck false; the pixels are proven another way and
+        # recorded in the port's own job folder. Everything else still needs
+        # donorZone+imageMatch or rawMaterials.
+        print(f"[weapon-port] {name}: pixel check skipped (pixelCheck false in contract)")
+        return
     banks = set()
     for bank in STARTUP_BANKS:
         path = bo2 / "zone" / "all" / f"{bank}.ipak"
@@ -297,6 +399,7 @@ def pixel_pass(port, unlinker, bo2, errors):
     loose = {p.stem.lower() for p in (ROOT / "images").glob("*.iwi")}
     loose |= {p.stem.lower() for p in (ROOT / "zone_assets" / "images").glob("*.iwi")}
     donor, match = port.get("donorZone"), port.get("imageMatch", [])
+    donor_ff = port.get("donorFF")
     raw_prefix = port.get("rawMaterials")
     if raw_prefix:
         # A port built from raw source has no donor zone: its images are the
@@ -307,6 +410,34 @@ def pixel_pass(port, unlinker, bo2, errors):
             images |= {t["image"] for t in material.get("textures", [])}
         if not images:
             errors.append(f"{name}: no zone_assets/materials/{raw_prefix}*.json; fix rawMaterials")
+    elif donor_ff:
+        # A port carved from a donor MOD fastfile (build_ff.bat --loads it
+        # last): its art ships inside that fastfile - luckass's mod carries
+        # no ipak, the pixels are ff-embedded - so a startup-bank check is
+        # the wrong shape. What can go wrong is the carve: an image the
+        # donor owns that the linked mod.ff does not own has lost its pixels
+        # and draws black. unlinker_list skips bare references, so what it
+        # returns are data-carrying images; imageMatch keeps generic
+        # stock-shared names (camo_zmb_dlc2_*, glowcycle, ...) out - those
+        # are meant to resolve from the stock banks, not from this donor.
+        if not (ROOT / donor_ff).is_file():
+            errors.append(f"{name}: --pixels needs the donor fastfile {donor_ff}")
+            return
+        owned = {n for k, n in unlinker_list(unlinker, ROOT / donor_ff)
+                 if k == "image" and any(m in n for m in match)}
+        if not owned:
+            errors.append(f"{name}: {donor_ff} owns no image matching {match}; fix imageMatch")
+            return
+        if linked is None:
+            print(f"[weapon-port] {name}: donor-ff carve check skipped (no linked mod.ff read)")
+            return
+        lost = sorted(i for i in owned if ("image", i) not in linked)
+        for image in lost:
+            errors.append(f"{name}: image {image} is owned by {donor_ff} but the linked mod.ff "
+                          f"does not carry it; its pixels did not survive the carve and it will draw black")
+        print(f"[weapon-port] {name}: {len(owned)} donor image(s) checked against the carve "
+              f"({len(lost)} lost)")
+        return
     elif not donor or not match:
         errors.append(f"{name}: --pixels needs donorZone and imageMatch, or rawMaterials, in the contract")
         return
@@ -433,11 +564,12 @@ def main():
         forms = source_pass(port, errors, all_zones, sound_aliases)
         if forms is None:
             continue
-        camo_colour_pass(port, errors)
+        if port.get("camo"):
+            camo_colour_pass(port, errors)
         if linked is not None:
             readback_pass(port, forms, errors, linked, everywhere)
         if args.pixels and oat and bo2:
-            pixel_pass(port, oat / "Unlinker.exe", bo2, errors)
+            pixel_pass(port, oat / "Unlinker.exe", bo2, errors, linked)
         passes = "source + readback" if linked is not None else "source"
         print(f"[weapon-port] checked {port['name']} ({passes}): {len(forms)} forms, "
               f"camo slots {port['camoSlots']}")

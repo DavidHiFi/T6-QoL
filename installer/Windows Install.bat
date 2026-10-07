@@ -17,9 +17,14 @@ set "PS1=%~dp0Mod Files\qol-installer.ps1"
 
 if not exist "%PS1%" (
   echo.
-  echo   The "Mod Files" folder is missing.
-  echo   Unzip the whole download and keep the folders as they came,
-  echo   then run this again.
+  echo   qol-installer.ps1 was not found next to this file, at:
+  echo   %PS1%
+  echo.
+  echo   Almost always this means only "Windows Install.bat" was dragged out
+  echo   of a zip preview window, or the zip did not extract completely.
+  echo   Close this window, extract the WHOLE zip - every folder, not just
+  echo   this one file - and run it again. If your antivirus quarantined
+  echo   qol-installer.ps1, restore it from its quarantine list.
   echo.
   pause
   exit /b 1

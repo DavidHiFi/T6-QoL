@@ -1281,11 +1281,25 @@ qol_opt_night_mode()
     self endon( "disconnect" );
     level endon( "end_game" );
 
+    //  🛑 THE DEFAULTS OUTLIVE THE LEVEL. The three lighting dvars survive
+    //  fast_restart and map_restart, so with NIGHT MODE on at a restart a fresh
+    //  read here caught the NIGHT values as "defaults", and switching the row
+    //  off afterwards put the night lighting straight back. The clean values are
+    //  kept in dvars, which outlive the level the same way, and are re-read
+    //  from the live lighting only while night mode is off or nothing has been
+    //  kept yet in this game process.
     if ( !isdefined( level.qol_default_exposure ) )
     {
-        level.qol_default_exposure = getdvar( "r_exposureValue" );
-        level.qol_default_sunlight = getdvar( "r_lightTweakSunLight" );
-        level.qol_default_skyfactor = getdvar( "r_sky_intensity_factor0" );
+        if ( getdvar( "zmqol_night_def_exp" ) == "" || !getdvarintdefault( "night_mode", 0 ) )
+        {
+            setdvar( "zmqol_night_def_exp", getdvar( "r_exposureValue" ) );
+            setdvar( "zmqol_night_def_sun", getdvar( "r_lightTweakSunLight" ) );
+            setdvar( "zmqol_night_def_sky", getdvar( "r_sky_intensity_factor0" ) );
+        }
+
+        level.qol_default_exposure = getdvar( "zmqol_night_def_exp" );
+        level.qol_default_sunlight = getdvar( "zmqol_night_def_sun" );
+        level.qol_default_skyfactor = getdvar( "zmqol_night_def_sky" );
     }
 
     b_on = 0;
@@ -1696,6 +1710,8 @@ qol_opt_character()
     //  to do this job cannot work once more than one player is picking.
     n_last_cia_value = undefined;
 
+    self thread qol_opt_character_respawn();
+
     for ( ;; )
     {
         if ( !isdefined( level.givecustomcharacters ) )
@@ -1723,17 +1739,33 @@ qol_opt_character()
         //  `.character N` sets self.zmqol_char_want on whoever typed it, and
         //  that is what this loop reads first.
         //
-        //  The dvar stays as the fallback, so nothing that worked before stops
-        //  working: the lobby/menu row is still the default for anyone who has
-        //  not made a personal pick, and solo is completely unchanged.
+        //  The dvar stays as the fallback for the HOST only, so the lobby/menu
+        //  row still works for the player who owns it and solo is unchanged.
+        //  🛑 A remote player with no personal pick used to read that same
+        //  server dvar and get the host's face. zmqol_popt() gives them 0, the
+        //  map's own pick, instead.
         //  ====================================================================
         if ( isdefined( self.zmqol_char_want ) )
             n_want = self.zmqol_char_want;
         else
-            n_want = getdvarintdefault( "character", 0 );
+            n_want = self scripts\zm\zmqol_playeropt::zmqol_popt( "character", 0 );
 
         b_sees_cia_flag = isdefined( level.should_use_cia );
-        b_is_coop = get_players().size > 1;
+
+        //  🛑 OWNERSHIP OF THE LEVEL FLAG IS DECIDED BY WHO THE PLAYER IS, NOT
+        //  BY HOW MANY PLAYERS HAVE CONNECTED. This used to read
+        //  get_players().size > 1, and the host's thread can easily run while
+        //  the others are still loading: it took the solo branch, wrote its pick
+        //  into the level flag for good, and every later joiner and every
+        //  respawn was dressed from it. The host owns the flag (it is also the
+        //  scoreboard emblem); everyone else borrows it for one call.
+        b_borrow = !self scripts\zm\zmqol_playeropt::zmqol_popt_is_host();
+
+        //  Stock re-dresses a respawning player from the LEVEL flag
+        //  (_globallogic_spawn.gsc:139), which drops a borrowed look. The
+        //  respawn thread below flags it and this pass puts the pick back.
+        b_respawned = isdefined( self.zmqol_char_respawned );
+        self.zmqol_char_respawned = undefined;
 
         // ========================================================================
         //  🛑 v2.3.5 - RESTART LEVEL RE-ROLLS should_use_cia AND THIS LOOP NEVER
@@ -1774,7 +1806,7 @@ qol_opt_character()
         //  own roll (see the borrow-and-restore block below), so an unmatched
         //  value is the normal state and this would have re-applied the
         //  character on every 0.5s pass, forever.
-        if ( !b_is_coop && n_want > 0 && b_sees_cia_flag && b_seen_once )
+        if ( !b_borrow && n_want > 0 && b_sees_cia_flag && b_seen_once )
         {
             n_would_be_index = ( n_want - 1 ) % 4;
             b_would_want_cia = ( n_would_be_index == 0 || n_would_be_index == 2 );
@@ -1830,7 +1862,7 @@ qol_opt_character()
         //  ====================================================================
         b_real_change = n_want != n_last;
 
-        if ( n_want > 0 && ( b_real_change || ( b_sees_cia_flag && !b_last_saw_cia_flag ) || b_should_use_cia_drifted || b_cia_value_rerolled ) )
+        if ( n_want > 0 && ( b_real_change || ( b_sees_cia_flag && !b_last_saw_cia_flag ) || b_should_use_cia_drifted || b_cia_value_rerolled || b_respawned ) )
         {
             n_last = n_want;
             b_last_saw_cia_flag = b_sees_cia_flag;
@@ -1914,7 +1946,7 @@ qol_opt_character()
                 else
                     n_want_cia = 0;
 
-                if ( b_is_coop )
+                if ( b_borrow )
                 {
                     n_saved_cia = level.should_use_cia;
                     level.should_use_cia = n_want_cia;
@@ -1964,6 +1996,18 @@ qol_opt_character()
         }
 
         wait 0.5;
+    }
+}
+
+//  Marks every spawn after the first, for qol_opt_character() to re-dress.
+qol_opt_character_respawn()
+{
+    self endon( "disconnect" );
+
+    for ( ;; )
+    {
+        self waittill( "spawned_player" );
+        self.zmqol_char_respawned = 1;
     }
 }
 
@@ -2622,7 +2666,7 @@ qol_opt_hud_watcher()
 
     for ( ;; )
     {
-        b_all = getdvarintdefault( "hud_all", 0 );
+        b_all = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_all", 0 );
 
         // ====================================================================
         //  v1.85.0 - hud_master, the ".hud off" switch.
@@ -2648,7 +2692,7 @@ qol_opt_hud_watcher()
         //  Re-written every 2s, and ONLY while the switch is off, which is a
         //  state the user asked for explicitly. At the normal setting this costs
         //  exactly one write, on the first pass.
-        b_master = getdvarintdefault( "hud_master", 1 );
+        b_master = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_master", 1 );
         n_tick++;
 
         if ( b_master != n_prev_master || ( !b_master && n_tick % 8 == 0 ) )
@@ -2680,11 +2724,11 @@ qol_opt_hud_watcher()
                 if ( !isdefined( self.qol_drawid_saved ) )
                     self.qol_drawid_saved = getdvarintdefault( "cg_drawIdentifier", 1 );
 
-                setdvar( "cg_drawIdentifier", 0 );
+                self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "cg_drawIdentifier", 0 );
             }
             else if ( isdefined( self.qol_drawid_saved ) )
             {
-                setdvar( "cg_drawIdentifier", self.qol_drawid_saved );
+                self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "cg_drawIdentifier", self.qol_drawid_saved );
                 self.qol_drawid_saved = undefined;
             }
         }
@@ -2707,6 +2751,11 @@ qol_opt_hud_watcher()
         //  (0 RIGHT, 1 LEFT, 2 OFF) and the old test would have read OFF as
         //  LEFT, dragging both timers to the other side of the screen the moment
         //  the round number was switched off. OFF anchors RIGHT, the default.
+        //  🛑 hud_round_left stays a HOST/row dvar on purpose: it moves the
+        //  SHARED server round counter (see the note at the ON/OFF row above),
+        //  and the reference co-op branches kept it server-scoped for the same
+        //  reason - honouring it per player would detach each remote player's
+        //  timers from a counter they cannot move. Recorded in RESULTS.md.
         b_round_left = getdvarintdefault( "hud_round_left", 0 ) == 1;
         //  v2.3.4 - the round counter re-anchors itself on the RIGHT-anchored
         //  digit-count inset every round transition (round_hud() calls it on
@@ -2733,7 +2782,7 @@ qol_opt_hud_watcher()
 
         //  v2.1.3 - one dvar, four states. See qol_opt_timer_seed() for the
         //  table and for why nobody's old setting was lost in the merge.
-        n_timers = getdvarintdefault( "hud_timers", 1 );
+        n_timers = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_timers", 1 );
 
         self qol_opt_show( self.qol_hud_timer, b_master && ( b_all || n_timers == 1 || n_timers == 2 ) );
 
@@ -2762,8 +2811,8 @@ qol_opt_hud_watcher()
         //  bar, so there is exactly one owner now: that loop reads hud_health_bar
         //  and hud_color_health itself.
 
-        self qol_opt_zone_hud( b_master && ( b_all || getdvarintdefault( "hud_zone", 0 ) ) );
-        self qol_opt_compass_hud( b_master && ( b_all || getdvarintdefault( "hud_compass", 0 ) ) );
+        self qol_opt_zone_hud( b_master && ( b_all || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_zone", 0 ) ) );
+        self qol_opt_compass_hud( b_master && ( b_all || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_compass", 0 ) ) );
         self qol_opt_round_timer_hud( b_master && ( b_all || n_timers == 1 || n_timers == 3 ) );
 
         //  Colour is only re-applied when the string actually changes. Writing
@@ -3339,7 +3388,7 @@ qol_opt_crosshair()
 
     for ( ;; )
     {
-        n_now = getdvarintdefault( "crosshair", 1 ) != 0;
+        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "crosshair", 1 ) != 0;
 
         if ( n_now != n_last )
         {
@@ -3485,7 +3534,7 @@ qol_opt_third_person()
 
     for ( ;; )
     {
-        n_now = getdvarintdefault( "third_person", 0 ) != 0;
+        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "third_person", 0 ) != 0;
 
         if ( n_now != self.zmqol_tp_applied )
         {
@@ -3495,6 +3544,16 @@ qol_opt_third_person()
             {
                 self setclientthirdperson( 1 );
                 self setclientthirdpersonangle( 354 );
+
+                //  v2.17.0 - THE THIRD PERSON CAMERA RUNS ON THE PLAYER'S OWN
+                //  FIELD OF VIEW. cg_fov_default_thirdperson defaults to the
+                //  console 65; left alone, the view changes the moment the
+                //  camera mode changes. The host's client shares the server
+                //  dvar table (zmqol_playeropt rule), so a plain setdvar
+                //  points it at the user's own FIELD OF VIEW setting and the
+                //  view keeps whatever they chose.
+                if ( self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
+                    setdvar( "cg_fov_default_thirdperson", getdvarfloat( "cg_fov_default" ) );
             }
             else
             {
@@ -3504,10 +3563,32 @@ qol_opt_third_person()
 
             self resetfov();
 
+            //  v2.17.0 - KEEP THE PLAYER'S OWN EFFECTIVE FOV AFTER EVERY
+            //  TRANSITION. Measured on r5354 with cg_fov_default "100" and
+            //  cg_fovScale "1.25": toggling out leaves "cg_fov" is: "65" -
+            //  the console default - while BOTH settings dvars still read
+            //  100 and 1.25. The user asked for it the other way round:
+            //  *"your field of view is only meant to change if the person
+            //  changes it."* The settings dvars are never touched by the
+            //  engine, so read them back and re-assert the effective value
+            //  after resetfov()'s own write, then verify once more after a
+            //  beat in case the engine's own write lands late. Host only:
+            //  a remote player's fov is not readable from the server, so
+            //  they keep stock's reset until a client-side route exists.
+            if ( self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
+            {
+                setdvar( "cg_fov", getdvarfloat( "cg_fov_default" ) );
+
+                wait 0.1;
+
+                if ( getdvarfloat( "cg_fov" ) != getdvarfloat( "cg_fov_default" ) )
+                    setdvar( "cg_fov", getdvarfloat( "cg_fov_default" ) );
+            }
+
             println( "[zm_qol] third person -> " + n_now );
         }
 
-        wait 1;
+        wait 0.25;
     }
 }
 

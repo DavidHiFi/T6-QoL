@@ -1,3 +1,4 @@
+require("T6.Zombie.QolRoundSummary")
 CoD.PowerUps = {}
 CoD.PowerUps.IconSize = 48
 CoD.PowerUps.UpgradeIconSize = 36
@@ -560,6 +561,7 @@ end
 LUI.createMenu.PowerUpsArea = function (f1_arg0)
 	CoD.PowerUps.ZmqolInstallPerkRowFix()
 	local f1_local0 = CoD.Menu.NewSafeAreaFromState("PowerUpsArea", f1_arg0)
+	CoD.QolRoundSummary.Attach(f1_local0, f1_arg0)
 	f1_local0:setOwner(f1_arg0)
 	f1_local0.scaleContainer = CoD.SplitscreenScaler.new(nil, CoD.Zombie.SplitscreenMultiplier)
 	f1_local0.scaleContainer:setLeftRight(false, false, 0, 0)

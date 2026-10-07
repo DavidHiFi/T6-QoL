@@ -60,6 +60,16 @@ main()
 	// EXE_CLIENT_FIELD_MISMATCH before the map starts.
 	replaceFunc( clientscripts\mp\_utility_code::struct_class_init, ::struct_class_init );
 
+	// CLIENT HALF OF THE GUNSWAP (server twin: scripts\zm\gunswap.gsc). The
+	// stock per-map .csc scripts include the swapped-out stock pairs
+	// client-side; without this the client would precache and display weapons
+	// the server never registers - the v2.14.27 Betty crash class. The banned
+	// list in zmqol_gunswap_include_weapon_client below must match
+	// gunswap.gsc's exactly.
+	replaceFunc( clientscripts\mp\zombies\_zm_weapons::include_weapon, ::zmqol_gunswap_include_weapon_client );
+	replaceFunc( clientscripts\mp\zombies\_zm_weapons::wallbuy_player_connect, ::zmqol_gunswap_wallbuy_player_connect );
+	level thread zmqol_gunswap_wall_repoint_client();
+
 	// CLIENT HALF OF FIRE SALE. Missing since v1.54.0 - see the block below.
 	zmqol_enable_fire_sale();
 
@@ -165,8 +175,11 @@ zmqol_mp_weapons_init()
 	//  def exists on EVERY map - the as50/Origins crash class (ERROR_CATALOGUE
 	//  paragraph 37) cannot apply and no map gate is needed.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "dragunov_zm" );
-	//  v2.9.18 - the campaign SPAS-12. Raw def in mod.iwd like the Dragunov, so
-	//  no map gate is needed; server twin is zmqol_add_mp_weapon( "spas_zm" ... ).
+	//  v2.9.18 SPAS-12, restored 2026-10-07 round 2: the gun is back, taking
+	//  the stock S12's slots (saiga12_zm is banned - gunswap.gsc). The raw
+	//  defs ride in mod.iwd, so the def exists on every map and no gate is
+	//  needed. It first shipped as v2.9.18, came out the same day round 1 of
+	//  the gunswap deleted it, and this line is its old include restored.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "spas_zm" );
 	//  v2.12.7 - the campaign STORM PSR. Raw def in mod.iwd like the Dragunov
 	//  and the SPAS, so the def exists on every map and no map gate is needed.
@@ -192,7 +205,7 @@ zmqol_mp_weapons_init()
 	//  and a client include with no server twin is the v2.14.27 Betty crash.
 	//
 	//  🛑 v2.17.37 - THE L96A1 IS NOW ON ORIGINS TOO, TRADED 1:1 FOR THE
-	//  XPR-50; the other three stay held back here to match the server.
+	//  XPR-50; round 2 of the gunswap put the M60 and the Browning HP there
 	//  quality_of_life.gsc carries the evidence: the M60 and Browning HP drag
 	//  attachment permutations the precache table pays for, so a "pair" is not
 	//  a fixed price and a net-zero swap of all four still overflowed Origins.
@@ -200,10 +213,18 @@ zmqol_mp_weapons_init()
 	//  test is getdvar( "mapname" ) - the same one the EMP gate below uses.
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "t5_l96a1_zm" );
 
+	//  Round 2, 2026-10-07: the M60 and the Browning HP are registered on
+	//  Origins too (their defs read back attachments:''), so the client twin
+	//  includes them un-gated here, exactly like the L96A1 above.
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
+	clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
+
+	//  Round 2, 2026-10-07: the M60 and the Browning HP are on Origins now -
+	//  the defs read back attachments:'' (a fixed 2 slots each), and the same
+	//  day's bans freed the map six slots (see the server banner in
+	//  quality_of_life.gsc for the arithmetic). The RPG-7 stays held back.
 	if ( getdvar( "mapname" ) != "zm_tomb" )
 	{
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "m60_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghp_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "rpg_zm" );
 	}
 
@@ -290,14 +311,20 @@ zmqol_mp_weapons_init()
 	oldschool_map = getdvar( "mapname" );
 	oldschool_mode = getdvar( "ui_zm_gamemodegroup" );
 	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
-	     ( ( oldschool_map == "zm_transit" || oldschool_map == "zm_prison" ) && oldschool_mode == "zsurvival" ||
+	     ( oldschool_map == "zm_prison" ||
+	       ( oldschool_map == "zm_transit" && oldschool_mode == "zsurvival" ) ||
 	       oldschool_map == "zm_nuked" || oldschool_map == "zm_highrise" || oldschool_map == "zm_buried" || oldschool_map == "zm_tomb" ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "mm1_upgraded_zm", 0 );
 	}
-	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
-	     ( oldschool_map == "zm_nuked" || oldschool_map == "zm_buried" ) )
+	//  Round 2, 2026-10-07: the DW's gate is all six maps now. The Five-seveN
+	//  DW it replaces was boxed on every map in both modes (stock), so the
+	//  replacement covers the same ground; see oldschool_dw_enabled() in
+	//  oldschool.gsc for the server half. Vox note: the per-map pickup voice
+	//  is stock's own key for the dual-pistol class on each map (the tomb case
+	//  is handled in oldschool.gsc's init).
+	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
@@ -340,6 +367,14 @@ zmqol_mp_weapons_init()
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "scavenger_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "scavenger_upgraded_zm", 0 );
 	}
+
+	//  ============================================================
+	//  v2.15.43 - THE OLD MAGMAGAT CLIENT TWIN IS GONE. The weapon's acquire
+	//  path is luckass's own zm_prison quest again (scripts\zm\zm_prison\
+	//  zm_prison_magmagat.gsc): every map but Mob of the Dead returns from his
+	//  init, so no client include belongs here any more. His own
+	//  zm_prison_magmagat.csc carries the tempered gun's muzzle flame.
+	//  ============================================================
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
@@ -3521,4 +3556,162 @@ zmqol_metalstorm_chargeshot_stop()
 	self.zmqol_ms_loopent stoploopsound();
 	self.zmqol_ms_charge = 0;
 	self.zmqol_ms_lastcharge = undefined;
+}
+
+// ============================================================================
+//  zmqol_gunswap_include_weapon_client  (server twin: scripts\zm\gunswap.gsc)
+//
+//  The ban half of the gunswap. The names below must match
+//  gunswap.gsc's zmqol_gunswap_banned_names() exactly: the server refuses to
+//  register them and this refuses to precache or display them, so neither
+//  half of the game ever hears about a weapon the other half dropped.
+//  Same Five-seveN exception as the server: on Origins the single stays
+//  registered for its BSP-welded wall buy, keyed off getdvar("mapname")
+//  because the client has no level.script.
+// ============================================================================
+zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
+{
+	if ( !isdefined( level.zmqol_gunswap_banned ) )
+	{
+		//  One flat list: the Five-seveN is banned on Origins too now - its
+		//  wall is re-pointed to the Browning HP server-side (gunswap.gsc's
+		//  wall section), and the label override that stood in for it came
+		//  out of mod.str.
+		level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fiveseven_zm", "fiveseven_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
+	}
+
+	for ( i = 0; i < level.zmqol_gunswap_banned.size; i++ )
+	{
+		if ( weapon == level.zmqol_gunswap_banned[ i ] )
+		{
+			return;
+		}
+	}
+
+	//  Faithful copy of clientscripts\mp\zombies\_zm_weapons::include_weapon
+	//  from here down (decompile verbatim; the two script helpers it calls are
+	//  qualified because this copy lives in this file, not theirs).
+	if(!isDefined(level._included_weapons)) {
+		level._included_weapons = [];
+	}
+
+	level._included_weapons[level._included_weapons.size] = weapon;
+
+	if(!isDefined(level._display_box_weapons)) {
+		level._display_box_weapons = [];
+	}
+
+	if(!isDefined(display_in_box)) {
+		display_in_box = 1;
+	}
+
+	if(!display_in_box) {
+		return;
+	}
+	if(!isDefined(level._resetzombieboxweapons)) {
+		level._resetzombieboxweapons = 1;
+		clientscripts\mp\zombies\_zm_weapons::resetzombieboxweapons();
+	}
+
+	addzombieboxweapon(weapon, getweaponmodel(weapon), clientscripts\mp\zombies\_zm_weapons::weapon_is_dual_wield(weapon));
+	level._display_box_weapons[level._display_box_weapons.size] = weapon;
+}
+
+// ============================================================================
+//  THE CLIENT HALF OF THE WALL RE-POINT   (server half: gunswap.gsc)
+// ----------------------------------------------------------------------------
+//  Stock spawns every wall shelf's gun model on player connect
+//  (stock _zm_weapons.csc:253) from the BSP's model struct, dressed with the
+//  stub's weapon data. After the gunswap re-point the shelf must SHOW a
+//  Browning with Browning data, and useweaponmodel() pairs weapon and model
+//  - a weapon/model mismatch from one source is what the copy exists to
+//  avoid'. So the re-pointed wall resolves its model FROM the weapon
+//  (spawn_weapon_model's undefined-model path, stock _zm_utility.csc:251);
+//  every other wall is stock verbatim. The marker is set in
+//  zmqol_gunswap_wall_repoint_client() below, which also carries ONE keepalive
+//  difference: it runs ahead of every wallbuy_player_connect call.
+// ============================================================================
+
+zmqol_gunswap_wall_repoint_client()
+{
+	//  stock's _zm_weapons.csc::init() builds level._active_wallbuys well
+	//  before any player joins. Wait for it, bounded, then swap - ahead of
+	//  every connect-time model spawn.
+	n = 0;
+
+	while ( !isdefined( level._active_wallbuys ) && n < 20 )
+	{
+		wait 0.05;
+		n++;
+	}
+
+	if ( !isdefined( level._active_wallbuys ) )
+	{
+		println( "CLIENT zm_qol gunswap: wall repoint gave up - level._active_wallbuys never appeared" );
+		return;
+	}
+
+	if ( getdvar( "mapname" ) != "zm_tomb" )
+	{
+		return;
+	}
+
+	keys = getarraykeys( level._active_wallbuys );
+
+	for ( i = 0; i < keys.size; i++ )
+	{
+		wallbuy = level._active_wallbuys[ keys[i] ];
+
+		if ( !isdefined( wallbuy.zombie_weapon_upgrade ) || wallbuy.zombie_weapon_upgrade != "fiveseven_zm" )
+		{
+			continue;
+		}
+
+		wallbuy.zombie_weapon_upgrade = "browninghp_zm";
+		wallbuy.zmqol_wall_replacement = 1;
+		println( "CLIENT zm_qol gunswap: fiveseven wall repointed to browninghp_zm" );
+	}
+}
+
+zmqol_gunswap_wallbuy_player_connect( localclientnum )
+{
+	keys = getarraykeys(level._active_wallbuys);
+
+	println("Wallbuy connect cb : " + localclientnum);
+
+	if(isDefined(level.createfx_enabled) && level.createfx_enabled) {
+		return;
+	}
+	for(i = 0; i < keys.size; i++) {
+		wallbuy = level._active_wallbuys[keys[i]];
+
+		//  THE ONE DIFFERENCE: a repointed wall's model resolves from the
+		//  WEAPON (the Browning HP's world model, already precached by the
+		//  root include list) instead of the BSP's Five-seveN model struct -
+		//  letting useweaponmodel() pair the two would be a foreign pair.
+		wallmodel = undefined;
+
+		if ( !isdefined( wallbuy.zmqol_wall_replacement ) ) {
+			target_struct_early = getStruct(wallbuy.target, "targetname");
+			wallmodel = target_struct_early.model;
+		}
+		fx = level._effect["m14_zm_fx"];
+
+		if(wallbuy.targetname == "buildable_wallbuy") {
+			fx = level._effect["dynamic_wallbuy_fx"];
+		} else if(isDefined(level._effect[wallbuy.zombie_weapon_upgrade + "_fx"])) {
+			fx = level._effect[wallbuy.zombie_weapon_upgrade + "_fx"];
+		}
+
+		wallbuy.fx[localclientnum] = playFX(localclientnum, fx, wallbuy.origin, anglesToForward(wallbuy.angles), anglestoup(wallbuy.angles), 0.1);
+		target_struct = getStruct(wallbuy.target, "targetname");
+
+		if(wallbuy.targetname == "buildable_wallbuy") {
+			continue;
+		}
+		target_model = spawn_weapon_model(localclientnum, wallbuy.zombie_weapon_upgrade, wallmodel, target_struct.origin, target_struct.angles);
+		target_model hide();
+		target_model.parent_struct = target_struct;
+		wallbuy.models[localclientnum] = target_model;
+	}
 }

@@ -1,0 +1,169 @@
+//  🛑 THE ACQUIRE PATH IS LUCKASS'S OWN QUEST, NOT A BOX WEAPON (owner, 2026-10-07:
+//  "you do a quest and upgrade it to the magma gat, the same quest of the person -
+//  keep it only on Mob of the Dead"). v2.15.32-42 shipped the gun everywhere the
+//  253-weapon table had room and put the base form in the box; gone. His own
+//  scripts now run the show: scripts\zm\zm_prison\zm_prison_magmagat.gsc (gates
+//  the whole quest to zm_prison) and his .csc (the tempered gun's muzzle flame).
+//  Our old behaviour twin scripts\zm\magmagat.gsc is deleted - his pack carries
+//  the same weapon behavior inside his mg_weapon.gsc. The five defs his quest
+//  precaches: magmagat_zm, magmagat_upgraded_zm, mg_magma_blob_zm (raw in
+//  weapons\zm\) and mg_tempered_zm, mg_tempered_upgraded_zm (compiled in the
+//  donor, his own bytes - see the weapons note below).
+//
+//  🛑 THE WEAPON DEFS ARE NOT DECLARED HERE, same rule as every other ported
+//  gun: magmagat_zm (19,829 B), magmagat_upgraded_zm (19,878 B) and
+//  mg_magma_blob_zm (20,371 B) ship raw in weapons\zm\ - all under the
+//  20,480-byte runtime-loader ceiling with no trims needed. His Tempered
+//  Blundergat pair (mg_tempered_zm 22,154 B, mg_tempered_upgraded_zm ~25 KB in
+//  his Unlinker dump) is over that ceiling, so those two come as HIS compiled
+//  weapon assets out of the donor, declared at the bottom of this zone.
+//
+//  📝 CAMO. His mod recolours with the stock camo_870mcs table, whose slots 3
+//  and 12 do not map a MagmaGat material on our model set; zm_qol's own
+//  camo_qol_magmagat (zone_assets\camo\, built from the blundergat/gallo
+//  pattern) maps every model material except the two BO4 armour-kit materials,
+//  which the Blundergat precedent leaves uncamo'd too. Both magmagat defs name
+//  it; the blob is an offhand projectile nobody holds and keeps the dart's empty
+//  camo field. The Tempered pair keeps HIS camo_870mcs value as shipped - the
+//  gun exists for two minutes mid-quest, its tempered look is baked into his
+//  mg_tempered_* models, and hooking our table onto it is a change he did not
+//  make.
+// ============================================================================
+
+// the two BO4 gun pairs and the blob model; the far LODs, the lava-tank material
+// and the _pap PaP materials ride along as the xmodels' own dependencies
+xmodel,mg_magmagat_view
+xmodel,mg_magmagat_world
+xmodel,mg_magmus_view
+xmodel,mg_magmus_world
+xmodel,mg_magma_blob
+
+// both defs' muzzle flashes and every effect the weapon script loadfx's by name
+// (mg_fx_init in scripts\zm\zm_prison\zm_prison_magmagat.gsc; the
+// burn/blob_fire/burst_fire paths are zm_prison/zm_transit stock paths,
+// resolvable from the --load list)
+fx,mg/fx_blundersplat_muzzleflash
+fx,mg/fx_blundersplat_muzzleflash_3p
+fx,mg/fx_blundersplat_muzzleflash_ug
+fx,mg/fx_blundersplat_muzzleflash_ug_3p
+fx,mg/fx_magmagat_trail_bolt
+fx,mg/fx_magmagat_impact
+fx,mg/fx_magmagat_explode
+fx,mg/fx_prison_magmagat_aoe
+
+// zm_qol's own PaP camo table for the gun (both defs)
+camo,camo_qol_magmagat
+
+// the three BO4-foley anims, out of the donor
+xanim,mg_viewmodel_magmagat_first_raise
+xanim,mg_viewmodel_magmagat_reload
+xanim,mg_viewmodel_magmagat_reload_empty
+
+// all 38 Blundergat view anims both defs name (zm_prison.ff carries them; the
+// donor also inherited copies, and first-load-wins keeps the zombies ones)
+xanim,viewmodel_blundergat_ads_down
+xanim,viewmodel_blundergat_ads_fire
+xanim,viewmodel_blundergat_ads_lastshot
+xanim,viewmodel_blundergat_ads_up
+xanim,viewmodel_blundergat_crawl_back
+xanim,viewmodel_blundergat_crawl_back_empty
+xanim,viewmodel_blundergat_crawl_forward
+xanim,viewmodel_blundergat_crawl_forward_empty
+xanim,viewmodel_blundergat_crawl_in
+xanim,viewmodel_blundergat_crawl_in_empty
+xanim,viewmodel_blundergat_crawl_left
+xanim,viewmodel_blundergat_crawl_left_empty
+xanim,viewmodel_blundergat_crawl_out
+xanim,viewmodel_blundergat_crawl_out_empty
+xanim,viewmodel_blundergat_crawl_right
+xanim,viewmodel_blundergat_crawl_right_empty
+xanim,viewmodel_blundergat_d2p_in
+xanim,viewmodel_blundergat_d2p_in_empty
+xanim,viewmodel_blundergat_d2p_loop
+xanim,viewmodel_blundergat_d2p_loop_empty
+xanim,viewmodel_blundergat_d2p_out
+xanim,viewmodel_blundergat_d2p_out_empty
+xanim,viewmodel_blundergat_fire
+xanim,viewmodel_blundergat_idle
+xanim,viewmodel_blundergat_idle_empty
+xanim,viewmodel_blundergat_lastshot
+xanim,viewmodel_blundergat_pullout
+xanim,viewmodel_blundergat_pullout_empty
+xanim,viewmodel_blundergat_pullout_quick
+xanim,viewmodel_blundergat_putaway
+xanim,viewmodel_blundergat_putaway_empty
+xanim,viewmodel_blundergat_putaway_quick
+xanim,viewmodel_blundergat_sprint_in
+xanim,viewmodel_blundergat_sprint_in_empty
+xanim,viewmodel_blundergat_sprint_loop
+xanim,viewmodel_blundergat_sprint_loop_empty
+xanim,viewmodel_blundergat_sprint_out
+xanim,viewmodel_blundergat_sprint_out_empty
+
+// the blob def's german-grenade view anims (def validity only - the blob is an
+// offhand projectile nobody holds; zm_prison.ff carries all four)
+xanim,viewmodel_germangrenade_idle
+xanim,viewmodel_germangrenade_pullpin
+xanim,viewmodel_germangrenade_throw
+xanim,viewmodel_germangrenade_tossback_stick
+
+// ============================================================================
+//  THE QUEST (v2.15.43): luckass's Mob of the Dead smelter, hearth, drums and
+//  Tempered Blundergat. Every custom name below resolves out of the donor carve
+//  (his own zm_prison_magmagat.gsc spawns by these names); every stock name
+//  (the Alcatraz fx paths, the candles and clips, the Blundergat anims the
+//  tempered defs name) resolves from zm_prison's zones above.
+// ============================================================================
+
+// the Tempered Blundergat's own BO4 model pair (the def's gunModel/worldModel
+// values) and the PaP pair. The compile needs these to actually copy the def's
+// embedded muzzle-flame fx, its own paired material set, and the blue barrel
+// skins the gate checks.
+xmodel,mg_tempered_view
+xmodel,mg_tempered_world
+xmodel,mg_tempered_up_view
+xmodel,mg_tempered_up_world
+
+// the three stock Blundergat view anims the tempered defs keep (his port wrote
+// the Magmagat pair's copies over them; the tempered defs stay stock here).
+// zm_prison.ff is in the --load list, so these copy in rather than reference.
+xanim,viewmodel_blundergat_reload
+xanim,viewmodel_blundergat_reload_empty
+xanim,viewmodel_blundergat_first_raise
+
+// the five quest drums and the forge press (his smelter)
+xmodel,mg_barrel_green
+xmodel,mg_barrel_fill
+xmodel,mg_press_body
+xmodel,mg_press_ram
+xmodel,mg_press_lever
+
+// the soul skulls and the two smelter ghouls (his %mg_ghoul_smelter_1/_2)
+xmodel,mg_skull_bo4
+xmodel,mg_skull_bo4_lit
+xmodel,mg_ghoul1
+xmodel,mg_ghoul2
+xanim,mg_ghoul_smelter_1
+xanim,mg_ghoul_smelter_2
+// their animtree: luckass's own copy, a superset of stock's (the stock rawfile
+// has no extra anims, only stale comment lines)
+rawfile,animtrees/fxanim_props.atr
+
+// the quest flames: the hearth's blue fire, the lockdown, the skulls' glow, the
+// barrels' fill, the forge fire and the power step
+fx,mg/fx_alcatraz_blue_flame_flare_up
+fx,mg/fx_alcatraz_blue_flame_loop
+fx,mg/fx_alcatraz_blue_flame_skull
+fx,mg/fx_alcatraz_blue_flame_vm
+fx,mg/fx_alcatraz_lockdown_wardens
+fx,mg/fx_alcatraz_magmagat_power
+fx,mg/fx_mg_barrel_flame
+fx,mg/fx_mg_barrel_flare
+fx,mg/fx_mg_forge_fire
+fx,mg/fx_mg_forge_flare
+fx,mg/fx_prison_magmagat_press_fire
+
+// the Tempered Blundergat pair: both defs ship RAW in weapons\zm\ (the zero
+// bounce/attachWorldModelOffset families his build wrote get trimmed; every
+// surviving field byte-matches his 1.0.5 dump) - no weapon decl here, their
+// xmodels resolve from the donor below

@@ -3,72 +3,489 @@
     {
       "name": "Blundergat",
       "zone": "zone_source/mod_blundergat.zone",
-      "weapons": ["blundergat_zm", "blundergat_upgraded_zm"],
+      "weapons": [
+        "blundergat_zm",
+        "blundergat_upgraded_zm"
+      ],
       "camo": "camo_qol_blundergat",
-      "camoBaseMaterials": ["mc/mtl_t6_wpn_zmb_blundergat"],
-      "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["wpn_blundergat_", "fly_blundergat_"],
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_zmb_blundergat"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_blundergat_",
+        "fly_blundergat_"
+      ],
       "donorZone": "zm_prison",
-      "imageMatch": ["mtl_t6_wpn_zmb_blundergat"]
+      "imageMatch": [
+        "mtl_t6_wpn_zmb_blundergat"
+      ]
     },
     {
       "name": "Blast-O-Matic",
       "zone": "zone_source/mod_blastomatic.zone",
-      "weapons": ["blastomatic_zm", "blastomatic_upgraded_zm"],
+      "weapons": [
+        "blastomatic_zm",
+        "blastomatic_upgraded_zm"
+      ],
       "camo": "camo_qol_t9_gallo",
       "camoBaseMaterials": [
-        "mtl_t9_gallo_blastomatic_barrel", "mtl_t9_gallo_blastomatic_barrel_cover",
-        "mtl_t9_gallo_blastomatic_body", "mtl_t9_gallo_blastomatic_forend",
-        "mtl_t9_gallo_blastomatic_lazer", "mtl_t9_gallo_blastomatic_misc",
-        "mtl_t9_gallo_blastomatic_muzzle", "mtl_t9_gallo_blastomatic_pgrip",
-        "mtl_t9_gallo_blastomatic_pump", "mtl_t9_gallo_blastomatic_stock",
+        "mtl_t9_gallo_blastomatic_barrel",
+        "mtl_t9_gallo_blastomatic_barrel_cover",
+        "mtl_t9_gallo_blastomatic_body",
+        "mtl_t9_gallo_blastomatic_forend",
+        "mtl_t9_gallo_blastomatic_lazer",
+        "mtl_t9_gallo_blastomatic_misc",
+        "mtl_t9_gallo_blastomatic_muzzle",
+        "mtl_t9_gallo_blastomatic_pgrip",
+        "mtl_t9_gallo_blastomatic_pump",
+        "mtl_t9_gallo_blastomatic_stock",
         "mtl_t9_gallo_blastomatic_triggergroup"
       ],
-      "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["t9_gallo_"],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "t9_gallo_"
+      ],
       "rawMaterials": "mtl_t9_gallo_blastomatic_"
     },
     {
       "name": "MM1",
       "zone": "zone_source/mod_oldschool.zone",
-      "weapons": ["mm1_zm", "mm1_upgraded_zm"],
+      "weapons": [
+        "mm1_zm",
+        "mm1_upgraded_zm"
+      ],
       "camo": "camo_qol_mm1",
-      "camoBaseMaterials": ["mc/mtl_t6_wpn_launch_mm1"],
-      "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["wpn_m32_fire_npc_pap", "wpn_m32_fire_plr_pap", "wpn_m32_proj_explode"],
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_launch_mm1"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_m32_fire_npc_pap",
+        "wpn_m32_fire_plr_pap",
+        "wpn_m32_proj_explode"
+      ],
       "donorZone": "angola",
-      "imageMatch": ["mtl_t6_wpn_launch_mm1", "menu_mp_weapons_mm1"]
+      "imageMatch": [
+        "mtl_t6_wpn_launch_mm1",
+        "menu_mp_weapons_mm1"
+      ]
     },
     {
       "name": "Browning HP Dual Wield",
       "zone": "zone_source/mod_oldschool.zone",
-      "weapons": ["browninghpdw_zm", "browninghplh_zm", "browninghpdw_upgraded_zm", "browninghplh_upgraded_zm"],
+      "weapons": [
+        "browninghpdw_zm",
+        "browninghplh_zm",
+        "browninghpdw_upgraded_zm",
+        "browninghplh_upgraded_zm"
+      ],
       "camo": "camo_qol_browninghpdw",
-      "camoBaseMaterials": ["mc/mtl_t6_wpn_pistol_browninghp"],
-      "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["wpn_browninghp_"],
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_pistol_browninghp"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_browninghp_"
+      ],
       "donorZone": "angola",
-      "imageMatch": ["mtl_t6_wpn_pistol_browninghp"]
+      "imageMatch": [
+        "mtl_t6_wpn_pistol_browninghp"
+      ]
     },
     {
       "name": "Bloodhound",
       "zone": "zone_source/mod_bloodhound.zone",
-      "weapons": ["bloodhound_zm", "bloodhound_upgraded_zm", "bloodhoundlh_upgraded_zm"],
+      "weapons": [
+        "bloodhound_zm",
+        "bloodhound_upgraded_zm",
+        "bloodhoundlh_upgraded_zm"
+      ],
       "camo": "camo_qol_bloodhound",
-      "camoBaseMaterials": ["mc/mtl_t7_bloodhound_body", "mc/mtl_t7_bloodhound_detail"],
-      "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["t7_bloodhound_"],
+      "camoBaseMaterials": [
+        "mc/mtl_t7_bloodhound_body",
+        "mc/mtl_t7_bloodhound_detail"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "t7_bloodhound_"
+      ],
       "rawMaterials": "mc/mtl_t7_bloodhound_"
     },
     {
       "name": "Scavenger",
       "zone": "zone_source/mod_scavenger.zone",
-      "weapons": ["scavenger_zm", "scavenger_upgraded_zm", "scavenger_bolt_zm"],
+      "weapons": [
+        "scavenger_zm",
+        "scavenger_upgraded_zm",
+        "scavenger_bolt_zm"
+      ],
       "camo": "camo_qol_scavenger",
-      "camoBaseMaterials": ["mc/mtl_t5_weapon_zom_sniper", "mc/mtl_t5_weapon_zom_sniper_lens2"],
-      "camoSlots": [3, 8, 12],
-      "soundPrefixes": ["scav_", "sca_"],
+      "camoBaseMaterials": [
+        "mc/mtl_t5_weapon_zom_sniper",
+        "mc/mtl_t5_weapon_zom_sniper_lens2"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "scav_",
+        "sca_"
+      ],
       "rawMaterials": "mc/mtl_t5_weapon_zom_sniper"
+    },
+    {
+      "name": "Tesla Wunderwaffe",
+      "zone": "zone_source/mod_wonderweapons.zone",
+      "weapons": [
+        "tesla_gun_zm",
+        "tesla_gun_upgraded_zm"
+      ],
+      "camo": "camo_tesla",
+      "camoExceptions": {
+        "tesla_gun_zm": null
+      },
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_zmb_tesla_camo",
+        "mc/mtl_t6_wpn_zmb_tesla_camo1",
+        "mc/mtl_t6_wpn_zmb_tesla_vacuum_camo",
+        "mc/mtl_t6_wpn_zmb_tesla_vacuum_camo1"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_tesla_"
+      ],
+      "stockAssets": true,
+      "pixelCheck": false
+    },
+    {
+      "name": "Winters Howl",
+      "zone": "zone_source/mod_wonderweapons.zone",
+      "weapons": [
+        "freezegun_zm",
+        "freezegun_upgraded_zm"
+      ],
+      "camo": "camo_freezegun",
+      "camoBaseMaterials": [
+        "mc/mtl_t5_wpn_zmb_freezegun_camo",
+        "mc/mtl_t5_wpn_zmb_freezegun_camo1",
+        "mc/mtl_t5_wpn_zmb_freezegun_ammo"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_freezegun_",
+        "fly_freezegun_"
+      ],
+      "stockAssets": true,
+      "pixelCheck": false
+    },
+    {
+      "name": "Thundergun",
+      "zone": "zone_source/mod_wonderweapons.zone",
+      "weapons": [
+        "thundergun_zm",
+        "thundergun_upgraded_zm"
+      ],
+      "camo": "camo_thundergun",
+      "camoExceptions": {
+        "thundergun_zm": null
+      },
+      "camoBaseMaterials": [
+        "mc/mtl_t5_wpn_zmb_thundergun_camo",
+        "mc/mtl_t5_wpn_zmb_thundergun_camo1",
+        "mc/mtl_t5_wpn_zmb_thundergun_camo2"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_thundergun_fire"
+      ],
+      "stockAssets": true,
+      "pixelCheck": false
+    },
+    {
+      "name": "Wave Gun",
+      "zone": "zone_source/mod_wavegun.zone",
+      "weapons": [
+        "microwavegun_zm",
+        "microwavegun_upgraded_zm",
+        "microwavegundw_zm",
+        "microwavegundw_upgraded_zm",
+        "microwavegunlh_zm",
+        "microwavegunlh_upgraded_zm"
+      ],
+      "camo": "camo_microwavegun",
+      "camoBaseMaterials": [
+        "mc/mtl_raygun_moon_rear",
+        "mc/mtl_raygun_moon_front"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_mgun_"
+      ],
+      "stockAssets": true,
+      "pixelCheck": false
+    },
+    {
+      "name": "Storm PSR",
+      "zone": "zone_source/mod_metalstorm.zone",
+      "weapons": [
+        "metalstorm_mms_zm",
+        "metalstorm_mms_upgraded_zm",
+        "metalstorm2_mms_zm",
+        "metalstorm2_mms_upgraded_zm",
+        "metalstorm3_mms_zm",
+        "metalstorm3_mms_upgraded_zm",
+        "metalstorm4_mms_zm",
+        "metalstorm4_mms_upgraded_zm",
+        "metalstorm5_mms_zm",
+        "metalstorm5_mms_upgraded_zm"
+      ],
+      "camo": "camo_metalstorm",
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_special_storm",
+        "mc/mtl_t6_wpn_special_storm_scope"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [],
+      "pixelCheck": false
+    },
+    {
+      "name": "Titus-6",
+      "zone": "zone_source/mod_titus6.zone",
+      "weapons": [
+        "titus6_zm",
+        "titus6_upgraded_zm",
+        "mk_titus6_zm",
+        "mk_titus6_upgraded_zm",
+        "titus6_explosive_dart_zm",
+        "titus6_explosive_dart_upgraded_zm"
+      ],
+      "camo": "camo_titus6",
+      "camoExceptions": {
+        "titus6_explosive_dart_zm": null,
+        "titus6_explosive_dart_upgraded_zm": null
+      },
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_titus",
+        "mc/mtl_t6_wpn_lmg_type95_drum",
+        "mc/mtl_t6_attach_sniper_fastmag"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "assetZones": [
+        "zone_source/mod_revise.zone"
+      ],
+      "soundPrefixes": [
+        "wpn_titus_"
+      ],
+      "pixelCheck": false
+    },
+    {
+      "name": "Peacekeeper",
+      "zone": "zone_source/mod_locations.zone",
+      "weapons": [
+        "peacekeeper_zm",
+        "peacekeeper_upgraded_zm"
+      ],
+      "camo": "camo_peacekeeper",
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_smg_peacekeeper"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_peacekeeper_"
+      ],
+      "pixelCheck": false
+    },
+    {
+      "name": "Crossbow",
+      "zone": "zone_source/mod_locations.zone",
+      "weapons": [
+        "crossbow_zm",
+        "crossbow_upgraded_zm",
+        "crossbow_explosive_bolt_zm",
+        "crossbow_explosive_bolt_upgraded_zm"
+      ],
+      "camo": "camo_crossbow",
+      "camoExceptions": {
+        "crossbow_explosive_bolt_zm": null,
+        "crossbow_explosive_bolt_upgraded_zm": null
+      },
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_crossbow",
+        "mc/mtl_t6_wpn_crossbow_camo3"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "wpn_crossbow_"
+      ],
+      "pixelCheck": false
+    },
+    {
+      "name": "Jet Gun",
+      "zone": "zone_source/mod_locations.zone",
+      "weapons": [
+        "jetgun_zm",
+        "jetgun_upgraded_zm"
+      ],
+      "camo": null,
+      "camoExceptions": {
+        "jetgun_zm": null,
+        "jetgun_upgraded_zm": null
+      },
+      "camoSlots": [],
+      "soundPrefixes": [
+        "wpn_jetgun_fire_"
+      ],
+      "stockAssets": true,
+      "stockMaps": [
+        "zm_transit"
+      ],
+      "pixelCheck": false
+    },
+    {
+      "name": "Slipgun",
+      "zone": "zone_source/mod_locations.zone",
+      "weapons": [
+        "slipgun_upgraded_zm"
+      ],
+      "camo": "camo_qol_slipgun",
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_zmb_slipgun"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [],
+      "stockAssets": true,
+      "stockMaps": [
+        "zm_highrise"
+      ],
+      "pixelCheck": false
+    },
+    {
+      "name": "Paralyzer",
+      "zone": "zone_source/mod_locations.zone",
+      "weapons": [
+        "slowgun_upgraded_zm"
+      ],
+      "camo": "camo_qol_slowgun",
+      "camoBaseMaterials": [
+        "mc/mtl_t6_wpn_zmb_slowgun"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [],
+      "stockAssets": true,
+      "stockMaps": [
+        "zm_buried"
+      ],
+      "pixelCheck": false
+    },
+    {
+      "name": "Magmagat",
+      "zone": "zone_source/mod_magmagat.zone",
+      "weapons": [
+        "magmagat_zm",
+        "magmagat_upgraded_zm",
+        "mg_magma_blob_zm",
+        "mg_tempered_zm",
+        "mg_tempered_upgraded_zm"
+      ],
+      "camo": "camo_qol_magmagat",
+      "camoBaseMaterials": [
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_receiver",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_frame",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_barrel",
+        "mc/mtl_mg_magmagat",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_receiver_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_frame_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_barrel_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock_details",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_stock_details_pap",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_magma",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_magma_barrel",
+        "mc/mg_bo4_mtl_wpn_t8_zm_blundergat_magma_details",
+        "mc/mtl_mg_magmagat_tank"
+      ],
+      "camoSlots": [
+        3,
+        8,
+        12
+      ],
+      "soundPrefixes": [
+        "mg_"
+      ],
+      "donorFF": "zone_source/magmagat_donor/mod.ff",
+      "imageMatch": [
+        "mg_"
+      ],
+      "camoExceptions": {
+        "mg_magma_blob_zm": null,
+        "mg_tempered_zm": null,
+        "mg_tempered_upgraded_zm": null
+      },
+      "weaponsNote": "mg_tempered_zm / mg_tempered_upgraded_zm are rebuilt raw defs out of luckass's Unlinker dump (magmagat-quest-001/build_tempered_defs.py): every surviving field byte-matches his compiled values; his zero-valued bounce / attachWorldModelOffset families are trimmed so both fit the 20480 rawfile ceiling. His camo_870mcs value is honored via camoExceptions = null. Their materials and the blue-barrel skins come from the donor through the mg_tempered_view/world xmodel copies."
     }
   ]
 }

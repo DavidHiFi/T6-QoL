@@ -271,6 +271,20 @@ scavenger_explode( v_blast, b_upgraded )
 //  way BO1's player_add_points( "death" ) did.
 scavenger_death_response()
 {
+    //  Buried ghosts keep stock's own death. The ghost AI carries .is_ghost = 1
+    //  (stock _zm_ai_ghost.gsc 292 and 2076; stock itself tests it as
+    //  isdefined + truthy at 1785, 2097, 2111, 2156, 2461, and no other AI
+    //  sets it). Claiming the kill here hid the ghost at once and deleted it
+    //  at 0.4 s, racing ghost_death_func's anim and extra_custom_death_logic
+    //  (stock 719-725), and returning 1 skipped the stock drop path. Return 0
+    //  and stock stays in charge. The raw field is used instead of including
+    //  _zm_ai_ghost: that module ships only in Buried's fastfile, and stock's
+    //  own is_ghost() at 2492 is an inverted time-bomb save filter, not this
+    //  test. Zombies and dogs never carry .is_ghost, so their handling is
+    //  untouched.
+    if ( isdefined( self.is_ghost ) && self.is_ghost )
+        return 0;
+
     if ( !isdefined( self.damageweapon ) || !isdefined( self.damagemod ) )
         return 0;
 
