@@ -69,6 +69,16 @@ init()
         vox_dw = "wpck_dual";
     }
 
+    if ( level.script == "zm_tomb" )
+    {
+        //  Origins' own banks voice the dual-pistol class as wpck_duel (the
+        //  stock Five-seveN DW's key there, zm_tomb.gsc:978) and the M32 as
+        //  wpck_crappy (zm_tomb.gsc:979). Copied from the map's own
+        //  registrations, never invented - the round-2 gunswap note covers it.
+        vox_mm1 = "wpck_crappy";
+        vox_dw = "wpck_duel";
+    }
+
     if ( mm1 )
     {
         precacheitem( "mm1_zm" );
@@ -97,7 +107,15 @@ oldschool_mm1_enabled( map, mode )
     if ( mode != "zclassic" && mode != "zsurvival" )
         return 0;
 
-    if ( map == "zm_transit" || map == "zm_prison" )
+    //  zm_prison: the mod's own War Machine block came out of added_weapons()
+    //  (gunswap 2026-10-07), so the MM1 takes the launcher slot in both modes.
+    //  zm_transit: stock's m32 there was include_weapon'd with in_box 0 -
+    //  precached, never offered - so there is no box launcher to replace and
+    //  survival keeps the gate it always had.
+    if ( map == "zm_prison" )
+        return 1;
+
+    if ( map == "zm_transit" )
         return mode == "zsurvival";
 
     return map == "zm_nuked" || map == "zm_highrise" || map == "zm_buried" || map == "zm_tomb";
@@ -108,5 +126,22 @@ oldschool_dw_enabled( map, mode )
     if ( mode != "zclassic" && mode != "zsurvival" )
         return 0;
 
-    return map == "zm_nuked" || map == "zm_buried";
+    //  Round 2 of the gunswap, 2026-10-07: the Five-seveN DW the Browning HP
+    //  DW replaces was boxed on every map in both modes (stock include lists),
+    //  and the same round's bans freed real slots everywhere - so the gate is
+    //  all six maps now, not just the two it booted on. Grief/turned keep
+    //  their gate: their weapon budget was never measured, and the FSDW dies
+    //  there too (the cost of the swap in the unmeasured modes).
+    //  v2.15.43 - the Magmagat quest (scripts\zm\zm_prison\
+    //  zm_prison_magmagat.gsc) needs five weapon-table slots on Mob classic
+    //  that only exist if this four-slot family steps aside there - the
+    //  measured budget says so exactly (248 after the hold-back + 5 = 253 of
+    //  the 253 ceiling; same night's SaveRegisteredWeapons death says no
+    //  headroom existed before it). The DW keeps every other map it had,
+    //  including both Mob survival locations, which stay at 250.
+    if ( map == "zm_prison" )
+        return false;
+
+    return map == "zm_nuked" || map == "zm_buried" || map == "zm_highrise" ||
+           map == "zm_transit" || map == "zm_tomb";
 }
