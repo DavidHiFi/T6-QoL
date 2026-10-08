@@ -603,13 +603,10 @@ added_weapons()
         include_weapon( "srm1216_upgraded_zm", 0 );
         add_zombie_weapon_prison( "srm1216_zm", "srm1216_upgraded_zm", &"ZOMBIE_WEAPON_SRM1216", 50, "wpck_m1216", "", undefined, 1 );
 
-        include_weapon( "rpd_zm" );
-        include_weapon( "rpd_upgraded_zm", 0 );
-        add_zombie_weapon_prison( "rpd_zm", "rpd_upgraded_zm", &"ZOMBIE_WEAPON_RPD", 50, "wpck_rpd", "", undefined, 1 );
-
-        include_weapon( "hamr_zm" );
-        include_weapon( "hamr_upgraded_zm", 0 );
-        add_zombie_weapon_prison( "hamr_zm", "hamr_upgraded_zm", &"ZOMBIE_WEAPON_HAMR", 50, "wpck_hamr", "", undefined, 1 );
+        //  rpd_zm and hamr_zm pairs (the mod's own additions here) came out
+        //  2026-10-07 round 2 of the gunswap: gunswap.gsc bans the stock pairs
+        //  too and m60_zm / mk48_zm (quality_of_life.gsc root list) take the
+        //  slots on every map, both modes.
 
         include_weapon( "python_zm" );
         include_weapon( "python_upgraded_zm", 0 );
@@ -619,9 +616,9 @@ added_weapons()
         include_weapon( "kard_upgraded_zm", 0 );
         add_zombie_weapon_prison( "kard_zm", "kard_upgraded_zm", &"ZOMBIE_WEAPON_KARD", 50, "wpck_kap", "", undefined, 1 );
 
-        include_weapon( "m32_zm" );
-        include_weapon( "m32_upgraded_zm", 0 );
-        add_zombie_weapon_prison( "m32_zm", "m32_upgraded_zm", &"ZOMBIE_WEAPON_M32", 50, "wpck_m32", "", undefined, 1 );
+        //  m32_zm/_upgraded (the War Machine) came out 2026-10-07 (user:
+        //  replace it with the MM1). gunswap.gsc bans the stock pair from
+        //  registration and the MM1 now covers both Mob modes (oldschool.gsc).
     }
 }
 
