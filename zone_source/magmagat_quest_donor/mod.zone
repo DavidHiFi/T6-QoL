@@ -1,0 +1,17 @@
+
+// Call Of Duty: Black Ops II
+>game,T6
+
+// magmagat_quest_donor - ONE asset: luckass's fxanim_props.atr (his superset of
+// the stock tree, Unlinker-dumped from his 1.0.5 mod.ff, 33,455 B / 1089 lines).
+// The Magmagat quest's smelter ghouls (his %mg_ghoul_smelter_1/_2) only exist in
+// this tree. common_zm.ff carries the stock copy of the same NAME and is
+// --load'ed before any later donor could win it, so this donor sits BEFORE
+// common_zm in build_ff.bat's --load chain: first-load-wins then resolves the
+// main build's decl (mod_locations.zone: rawfile,animtrees/fxanim_props.atr)
+// from here. Source ff: zone_source/magmagat_donor/mod.ff's own source
+// (luckass's release mod.ff, MIT, credited).
+// Built with the same recipe as magmagat_donor (how_this_was_built.zone.txt):
+//   Linker.exe --load "<luckass rel-1.0.5 mod.ff>" --base-folder "<this folder>"
+//     --add-source-search-path "<this folder>" --output-folder "<this folder>\out" mod
+rawfile,animtrees/fxanim_props.atr
