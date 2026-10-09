@@ -31,6 +31,18 @@ reference_anims_from_animtree()
     dummy_anim_ref = %ai_zombie_freeze_death_e;
     dummy_anim_ref = %ai_zombie_crawl_freeze_death_01;
     dummy_anim_ref = %ai_zombie_crawl_freeze_death_02;
+
+    // Electric Cherry stun (2026-09-28): the five clips stock's core
+    // _zm_perk_electric_cherry::electric_cherry_stun() needs on this tree. Mob's
+    // aitype carries them natively; the parser checks the list compiled INTO the
+    // aitype, so zm_afterlife_stun in the .asd dies at BG_AnimStateDef_Parse
+    // without these (see zone_source\disabled_ww_animtrees README).
+    dummy_anim_ref = %ai_zombie_afterlife_stun_a;
+    dummy_anim_ref = %ai_zombie_afterlife_stun_b;
+    dummy_anim_ref = %ai_zombie_afterlife_stun_c;
+    dummy_anim_ref = %ai_zombie_afterlife_stun_d;
+    dummy_anim_ref = %ai_zombie_afterlife_stun_e;
+
     dummy_anim_ref = %ai_zombie_idle_v1_delta;
     dummy_anim_ref = %ai_zombie_idle_crawl_delta;
     dummy_anim_ref = %ai_zombie_walk_v1;

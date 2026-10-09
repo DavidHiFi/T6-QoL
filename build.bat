@@ -160,7 +160,7 @@ REM      failed. Client Field set 'allplayers' already contains a field...
 REM  zm_tomb.gsc mirrors two clientfields that stock only registers when a perk
 REM  machine exists. Once a loc script registers machines, _zm_perks::init()
 REM  registers them itself and the mirror becomes a duplicate.
-REM  MOD_CATALOGUE.md §37e predicted this exact trap; nothing enforced it.
+REM  MOD_CATALOGUE.md ?37e predicted this exact trap; nothing enforced it.
 REM  Now something does.
 REM ============================================================================
 echo [0c/9] Pre-flight: perk-machine clientfield guard...
@@ -205,6 +205,12 @@ REM
 REM  That is exactly the shape a gate is for: silent, invisible offline, only
 REM  observable by a human firing the weapon. See tools\check-wonderweapon-anims.ps1
 REM  for the five links and why each one is checked.
+REM
+REM  Since 2026-09-28 the same gate also pins the ELECTRIC CHERRY STUN chain
+REM  (the four non-native maps' zm_afterlife_stun state, the five clips, the
+REM  three zone links and the aitype refs). Both the muted symptom and the
+REM  loud BG_AnimStateDef_Parse fatal live there now. The same wwanimfail exit
+REM  applies - see :wwanimfail's note, which :cherrystunfail extends below.
 REM ============================================================================
 echo [0e/9] Pre-flight: wonder-weapon animation chain...
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1"
@@ -286,7 +292,7 @@ REM  built mod.iwd, not merely in the repo. This project has shipped "fixed"
 REM  files that never reached the build before - the texture sync compared file
 REM  length and silently shipped nothing for weeks. Prove it after the pack.
 "%PS%" -NoProfile -ExecutionPolicy Bypass -File "%PROJ_DIR0%tools\check-wonderweapon-anims.ps1" -PostPack
-if errorlevel 1 goto wwanimfail
+if errorlevel 1 goto cherrystunfail
 
 REM  Same reasoning for the menu art: prove the 20 textures are actually inside
 REM  the archive, under images/, and not merely sitting in images_menu\.
@@ -340,7 +346,7 @@ if errorlevel 1 (
 REM ----------------------------------------------------------------------------
 REM  THE TEXTURE PACK, AND WHY THE DEPLOY HAS TO DO THIS EVERY TIME
 REM ----------------------------------------------------------------------------
-REM  🛑 v2.17.35 - THIS WAS REMOVED ONCE AND IT COST THE USER THEIR FONTS, THEIR
+REM  ?? v2.17.35 - THIS WAS REMOVED ONCE AND IT COST THE USER THEIR FONTS, THEIR
 REM  PERK ICONS AND AN ENTIRE EVENING. DO NOT REMOVE IT AGAIN WITHOUT READING
 REM  THIS AND TESTING THE ALTERNATIVE IN GAME FIRST.
 REM
@@ -350,14 +356,14 @@ REM  if it outranks the game's .ipak archives, and the single path that does is
 REM  storage\t6\images, because Plutonium patches its image loader to check
 REM  there before the archives.
 REM
-REM  📝 mod.iwd WAS TRIED AND IT DOES NOT WORK - measured, not assumed. All 1252
+REM  ?? mod.iwd WAS TRIED AND IT DOES NOT WORK - measured, not assumed. All 1252
 REM  .iwi were packed at images/ inside mod.iwd on 2026-09-22. mod.iwd went 40 MB
 REM  -> 1.48 GB and the game still drew stock fonts. Textures stream from a real
 REM  file handle and a zip entry cannot provide one. mod.ff does not work either:
 REM  the linker accepted 993 images and wrote 13,184 bytes - 13 bytes each,
 REM  headers with no pixel data. Both routes are closed.
 REM
-REM  🌟 SO THE BYTES LIVE IN THE MOD AND ONLY THE DOORWAY IS OUTSIDE IT. The pack
+REM  ?? SO THE BYTES LIVE IN THE MOD AND ONLY THE DOORWAY IS OUTSIDE IT. The pack
 REM  is images\ in this tree, mirrored into the DEPLOYED mod at
 REM  <storage>\mods\zm_qol\images, and storage\t6\images is an NTFS junction onto
 REM  that folder - a link, not a copy, so it costs zero extra bytes. Installing
@@ -372,7 +378,7 @@ REM
 REM  A junction, not a symlink: junctions need no elevation. If the path is a
 REM  real folder its contents are carried into the mod first, so a controller
 REM  pack or a hand-added texture is never lost.
-REM  🛑 THIS SYNC COMPARES CONTENT, NOT SIZE. It used to copy only when the
+REM  ?? THIS SYNC COMPARES CONTENT, NOT SIZE. It used to copy only when the
 REM  destination was missing or a different LENGTH, and that silently pinned
 REM  every same-size texture edit forever. Found 2026-09-23: the three power-up
 REM  HUD badges greyed in b3a752e (Insta-Kill, Double Points, Fire Sale) are
@@ -417,7 +423,7 @@ echo.
 echo [6/9] Refreshing the installer's own bundled copy:
 echo        %~dp0installer\Mod Files
 REM  ============================================================================
-REM  🛑 v2.3.2 - THE INSTALLER WAS SILENTLY REVERTING EVERY FIX.
+REM  ?? v2.3.2 - THE INSTALLER WAS SILENTLY REVERTING EVERY FIX.
 REM
 REM  User, 2026-08-25: a claymore fix (and the last-zombie hellhound backstop)
 REM  built and deployed here, byte-verified in Plutonium's mods folder, then
@@ -442,7 +448,7 @@ if errorlevel 1 echo    [skip] couldn't write the installer's bundled copy.
 echo.
 echo [7/9] Cleaning this mod's LUI out of Plutonium's raw\ folder...
 REM  ============================================================================
-REM  🛑 v2.2.0 - THIS STEP USED TO *WRITE* INTO raw\. IT NOW UNDOES THAT.
+REM  ?? v2.2.0 - THIS STEP USED TO *WRITE* INTO raw\. IT NOW UNDOES THAT.
 REM
 REM  User, 2026-08-21, with a screenshot: "I loaded a completely seperate mod
 REM  from my quality of life mod and some of the stuff from my mod was showing
@@ -456,7 +462,7 @@ REM  optionssettings.lua / privategamelobby_project.lua / selectmaplistzombie.lu
 REM  in there put this mod's tabs, rows and start locations in front of every
 REM  other mod on the machine, permanently.
 REM
-REM  🌟 AND THE SYNC WAS NEVER NEEDED. The old comment here claimed the frontend
+REM  ?? AND THE SYNC WAS NEVER NEEDED. The old comment here claimed the frontend
 REM  menus load at BOOT before any mod is on the search path, so they could not
 REM  be delivered any other way. Only the first half of that is true. Measured
 REM  out of console_zm.log.006, verbatim line numbers:
@@ -492,7 +498,7 @@ set "PROJ_DIR=%~dp0"
 "%PS%" -NoProfile -ExecutionPolicy Bypass -Command "$raw=$env:RAW_DIR; $proj=$env:PROJ_DIR; if(-not (Test-Path -LiteralPath $raw)){ Write-Host '    [skip] no raw\ folder'; exit 0 }; $restored=0; $left=0; @('ui_mp','ui') | ForEach-Object { Get-ChildItem -LiteralPath (Join-Path $proj $_) -Recurse -Filter *.lua -ErrorAction SilentlyContinue } | ForEach-Object { $rel=$_.FullName.Substring($proj.Length); $dst=Join-Path $raw $rel; if(-not (Test-Path -LiteralPath $dst)){ return }; $body=(Get-Content -LiteralPath $dst -Raw); if($body -eq $null -or -not ($body -match 'zm_qol')){ return }; $bak=@(Get-ChildItem -LiteralPath (Split-Path $dst -Parent) -Filter ((Split-Path $dst -Leaf) + '.bak-*') -ErrorAction SilentlyContinue | Sort-Object LastWriteTime); if($bak.Count -gt 0){ Copy-Item -LiteralPath $bak[0].FullName -Destination $dst -Force; Write-Host ('    [restored] ' + $rel + '  <- ' + $bak[0].Name); $restored++ } else { Copy-Item -LiteralPath $_.FullName -Destination $dst -Force; Write-Host ('    [gated] ' + $rel + '  no pristine backup - refreshed to the mod-aware copy'); $left++ } }; if($restored -eq 0 -and $left -eq 0){ Write-Host '    [ok] raw\ holds none of this mod''s LUI' }" 2>nul
 echo.
 echo [8/9] Reconciling Plutonium's loose scripts\ folder...
-REM  🛑 THIS ONE COST SIX BOOTS AND FOUR CRASHES, 2026-08-11.
+REM  ?? THIS ONE COST SIX BOOTS AND FOUR CRASHES, 2026-08-11.
 REM
 REM  %%LOCALAPPDATA%%\Plutonium\storage\t6\scripts\ is loaded GLOBALLY and takes
 REM  precedence over the .gsc packed in mod.iwd - exactly like raw\ does for
@@ -514,7 +520,7 @@ set "LOOSE_DIR=%LOCALAPPDATA%\Plutonium\storage\t6\scripts"
 echo.
 echo [9/9] Quarantining FOREIGN scripts in Plutonium's raw\ folder...
 REM  ============================================================================
-REM  🛑 THIS IS WHAT KILLED DIE RISE ON 2026-09-04 (ERROR_CATALOGUE 65).
+REM  ?? THIS IS WHAT KILLED DIE RISE ON 2026-09-04 (ERROR_CATALOGUE 65).
 REM
 REM  %%LOCALAPPDATA%%\Plutonium\storage\t6\raw\ is loaded GLOBALLY, for EVERY mod,
 REM  whatever fs_game says. Another mod - Zombies Declassified / dlc5 - installs 60
@@ -624,6 +630,19 @@ echo   freezing them into ice - both guns still fire and still kill, so NOTHING
 echo   in any log would report it. The user finds it by shooting something.
 echo   Fix the chain the check named. Do NOT go looking in zapgun.gsc or
 echo   _zm_weap_freezegun.gsc - their scripts are almost never the cause.
+if not defined OFFLINE pause
+exit /b 1
+
+:cherrystunfail
+echo.
+echo   BUILD STOPPED: the Electric Cherry stun chain is broken.
+echo   On TranZit, Nuketown, Die Rise and Buried the reload shock would still
+echo   damage zombies, but the stun animation would never play - the exact
+echo   "zombies take damage without the stun animation" report (2026-09-28).
+echo   OR the state would name an anim no aitype bakes and the map dies at
+echo   BG_AnimStateDef_Parse. Fix the link the check named: the .asd state, the
+echo   .atr anim names, the five xanims in mod_locations.zone, and the aitype
+echo   overrides' dummy_anim_ref lines move together or not at all.
 if not defined OFFLINE pause
 exit /b 1
 

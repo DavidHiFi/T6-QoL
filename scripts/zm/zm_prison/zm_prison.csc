@@ -70,10 +70,18 @@ include_weapons()
     include_weapon( "m1911_upgraded_zm", 0 );
     include_weapon( "judge_zm", 0 ); //
     include_weapon( "judge_upgraded_zm", 0 );
-    //  fiveseven_zm pair (the stock client twin) came out 2026-10-07 round 2
-    //  follow-up: gunswap.gsc bans the stock pair everywhere and browninghp_zm
-    //  (the root list) takes the slots. v2.18.1's Docks Beretta twin below is
-    //  main's own fix and stays untouched by the gunswap.
+    //  fiveseven_zm pair swapped out 2026-10-07 round 2: gunswap.gsc bans the
+    //  stock pair and browninghp_zm (same root list) takes the slots.
+    //  🛑 v2.18.1 - THE DOCKS CLIENT TWIN for
+    //  scripts\zm\locs\zm_prison_loc_docks.gsc::set_box_weapons(), which puts
+    //  the Beretta INTO the box when the docks location runs (zstandard AND
+    //  zgrief - the loc main is registered for both). Stock includes it with
+    //  the box flag 0 everywhere (zm_prison.gsc:808), so on Docks the server
+    //  awarded a Beretta the client's display list did not carry - the box
+    //  handed out a weapon while showing nothing, the exact failure mode the
+    //  banner on boxfix.gsc documents for a server/client list divergence.
+    //  ui_zm_mapstartlocation is read at the same stage and in the same way as
+    //  the Diner shield twin in zm_transit.csc::zmqol_diner_shield_enabled().
     if ( getdvar( "ui_zm_mapstartlocation" ) == "docks" )
     {
         include_weapon( "beretta93r_zm" );

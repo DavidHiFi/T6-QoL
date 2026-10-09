@@ -357,10 +357,52 @@ if ZmQolApplyTapToInteractFromDvar == nil then
 	end
 end
 
+-- zm_qol v2.17.0 - THIRD PERSON pad bind, re-applied from its saved dvar on
+-- every map load (same shape as TAP TO INTERACT above). A BUTTON LAYOUT
+-- change or an execcontrollerbindings rewrites every pad bind and would
+-- silently drop ours; this puts it back before the player can move. The dvar
+-- is zmqol_tp_pad, written by the THIRD PERSON BUTTON row on the
+-- CONTROLS > UTILITY tab (optionssettings.lua); NONE writes nothing. The
+-- guarded definitions are duplicated here because this file is the in-game
+-- VM's copy of the applier (frontend: optionssettings.lua).
+if ZmQolApplyTpPad == nil then
+	ZmQolApplyTpPad = function (ClientIndex, Previous, Current, Source)
+		if ClientIndex == nil then
+			ClientIndex = 0
+		end
+		Previous = tostring(Previous or "NONE")
+		Current = tostring(Current or "NONE")
+		if Previous ~= "NONE" and Previous ~= "" and Previous ~= Current then
+			Engine.Exec(ClientIndex, "unbind " .. Previous)
+		end
+		if Current ~= "NONE" and Current ~= "" then
+			Engine.Exec(ClientIndex, "bind " .. Current .. " \"+actionslot 5\"")
+			Engine.Exec(ClientIndex, "echo [zm_qol] third person: " .. Current .. " toggles the camera - source " .. tostring(Source))
+		else
+			Engine.Exec(ClientIndex, "echo [zm_qol] third person pad bind cleared - source " .. tostring(Source))
+		end
+	end
+end
+
+if ZmQolApplyTpPadFromDvar == nil then
+	ZmQolApplyTpPadFromDvar = function (ClientIndex, Source)
+		pcall(function ()
+			local Value = UIExpression.DvarString(nil, "zmqol_tp_pad")
+			if Value ~= nil and Value ~= "" and Value ~= "NONE" then
+				ZmQolApplyTpPad(ClientIndex, Value, Value, Source)
+			else
+				Engine.Exec(ClientIndex, "echo [zm_qol] third person pad bind is unset or NONE - binds left alone - source " .. tostring(Source))
+			end
+		end)
+	end
+end
+
 LUI.createMenu.Loading = function (f6_arg0)
 	-- zm_qol v2.10.2 - TAP TO INTERACT applied from its saved dvar on every
 	-- map load (f6_arg0 is the controller: stock hands it to setOwner below).
 	pcall(ZmQolApplyTapToInteractFromDvar, f6_arg0, "loading")
+	-- zm_qol v2.17.0 - THIRD PERSON pad bind, same route as TAP TO INTERACT.
+	pcall(ZmQolApplyTpPadFromDvar, f6_arg0, "loading")
 	-- zm_qol: clear the intro-cutscene gate at the TOP of every loading screen.
 	-- Quitting mid-cutscene would otherwise leave it raised, and the next
 	-- match would sit waiting for a video that is never going to play. Only

@@ -1143,12 +1143,15 @@ zmqol_play_chalk_fx( effect, origin, angles )
 
     for ( ;; )
     {
-        fx = spawnfx( level._effect[ effect ], origin, anglestoforward( angles ), anglestoup( angles ) );
+        fx = scripts\zm\zmqol_fx_survivors::zmqol_track_spawnfx( spawnfx( level._effect[ effect ], origin, anglestoforward( angles ), anglestoup( angles ) ) );
         triggerfx( fx );
 
         level waittill( "connected", player );
 
-        fx delete();
+        //  zmqol_fx_survivors may have deleted it during a fast_restart re-init;
+        //  a second delete on the stale reference would be a script error.
+        if ( isdefined( fx ) )
+            fx delete();
     }
 }
 

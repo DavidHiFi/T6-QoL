@@ -538,6 +538,13 @@ zmqol_cornfield_box_collision( v_box, n_yaw )
 
 init_barriers()
 {
+	//  🛑 Cornfield's dressing vehicles now carry the collision flag too, same
+	//  as the walls they dress (v2.15.50): barrier()'s 4th argument is what
+	//  makes a spawn solid, and these three were walk-through at the field's
+	//  edge lines - the same defect the user walked out of the map through on
+	//  Tunnel survival (2026-10-07), fixed across all three locations in one
+	//  commit. Diner's veh_ setModel calls are map-placed and are not touched.
+
 	// Restored: the invisible wall that keeps players inside the cornfield.
 	collision = spawn("script_model", (10500, -850, 0), 1);
 	collision setmodel("zm_collision_transit_cornfield_survival");
@@ -547,20 +554,20 @@ init_barriers()
 	origin = (9720, -1090, -212);
 	angles = (0, 90, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToRight(angles) * 24) + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin, angles);
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin, angles, 1);
 
 	// cornfield right
 	origin = (9900, -232, -217);
 	angles = (0, -90, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToRight(angles) * -48) + (anglesToUp(angles) * 256), angles, 1);
 	scripts\zm\locs\loc_common::barrier("collision_wall_512x512x10_standard", origin + (anglesToForward(angles) * 256) + (anglesToRight(angles) * -48) + (anglesToUp(angles) * 256), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_microbus_dead", origin, angles);
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_microbus_dead", origin, angles, 1);
 
 	// cornfield right corner
 	origin = (9982, -142, -217);
 	angles = (0, 35, 0);
 	scripts\zm\locs\loc_common::barrier("collision_wall_128x128x10_standard", origin + (anglesToUp(angles) * 64), angles, 1);
-	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin + (anglesToForward(angles) * 15) + (anglesToRight(angles) * -50), angles + (0, 165, 0));
+	scripts\zm\locs\loc_common::barrier("veh_t6_civ_smallwagon_dead", origin + (anglesToForward(angles) * 15) + (anglesToRight(angles) * -50), angles + (0, 165, 0), 1);
 }
 
 disable_zombie_spawn_locations()

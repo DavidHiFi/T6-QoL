@@ -324,7 +324,12 @@ zmqol_mp_weapons_init()
 	//  oldschool.gsc for the server half. Vox note: the per-map pickup voice
 	//  is stock's own key for the dual-pistol class on each map (the tomb case
 	//  is handled in oldschool.gsc's init).
-	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) )
+	//  v2.15.43 - THE MAGMAGAT QUEST HOLDS THE DW BACK ON MOB CLASSIC ONLY: its
+	//  five slots only exist because this four-slot family steps aside there
+	//  (oldschool_dw_enabled() in scripts\zm\oldschool.gsc has the same guard
+	//  and the measured-budget note). Both Mob survival locations keep the DW.
+	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
+	     oldschool_map != "zm_prison" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
@@ -369,24 +374,12 @@ zmqol_mp_weapons_init()
 	}
 
 	//  ============================================================
-	//  THE MAGMAGAT AND THE MAGMUS OPERANDI, luckass's BO4 Mob-of-the-Dead
-	//  remaster weapon (github lborruto/t6_motd_magmagat v1.0.5, MIT).
-	//  Server twin is scripts\zm\magmagat.gsc (same test: Buried classic and
-	//  Maze, Docks survival - the maps with room for its 3 slots in the
-	//  253-weapon table: the gun pair plus the blob grenade the server
-	//  precaches); mod_magmagat.zone has the assets. The blob's def is never
-	//  in the box, so it has no include here (stock includes no projectile
-	//  def either: zm_prison.csc lists the Blundergat, not its blundersplat
-	//  dart).
+	//  v2.15.43 - THE OLD MAGMAGAT CLIENT TWIN IS GONE. The weapon's acquire
+	//  path is luckass's own zm_prison quest again (scripts\zm\zm_prison\
+	//  zm_prison_magmagat.gsc): every map but Mob of the Dead returns from his
+	//  init, so no client include belongs here any more. His own
+	//  zm_prison_magmagat.csc carries the tempered gun's muzzle flame.
 	//  ============================================================
-	magmagat_map = getdvar( "mapname" );
-	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( magmagat_map == "zm_prison" && magmagat_mode == "zsurvival" ||
-	     magmagat_map == "zm_buried" && ( magmagat_mode == "zclassic" || magmagat_mode == "zsurvival" ) )
-	{
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );
-	}
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
 	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
@@ -2602,17 +2595,15 @@ zmqol_enable_electric_cherry()
 {
 	map = getDvar( "mapname" );
 
-	//  🛑 v2.9.30 - zm_buried REMOVED, in the same edit as the server's list in
-	//  quality_of_life.gsc::zmqol_enable_electric_cherry(). Buried failed to
-	//  load at 71/63 toplayer bits; the two lists must stay identical or it is
-	//  EXE_CLIENT_FIELD_MISMATCH before the map starts.
+	//  Buried trades the PhD purchase field for Cherry's field. The server
+	//  uses the same map list and clientfield filter.
 	//  v2.10.7 - zm_prison NON-CLASSIC (Cell Block survival) added, EXACT
 	//  TWIN of quality_of_life.gsc::zmqol_enable_electric_cherry(). is_classic()
 	//  reads the ui_zm_gamemodegroup dvar on both sides (_zm_utility.csc:392),
 	//  so the two evaluate one value. Precedent: BO2-Reimagined
 	//  zm_prison_reimagined.csc:22-25. Standard (classic) Mob is native and
 	//  untouched; registering it twice there would be fatal.
-	if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && !( map == "zm_prison" && !is_classic() ) )
+	if ( map != "zm_transit" && map != "zm_nuked" && map != "zm_highrise" && map != "zm_buried" && !( map == "zm_prison" && !is_classic() ) )
 		return;
 
 	if ( isDefined( level._custom_perks ) && isDefined( level._custom_perks[ "specialty_grenadepulldeath" ] ) )
@@ -2819,6 +2810,18 @@ perks_register_clientfield()
 		a_keys = getarraykeys(level._custom_perks);
 		for (i = 0; i < a_keys.size; i++)
 		{
+			//  Buried: Electric Cherry replaced the PhD machine (2026-09-28), and
+			//  perk_dive_to_nuke's bit pays for perk_electric_cherry's in a set
+			//  that is full at 63. EXACT TWIN of the same skip in
+			//  quality_of_life.gsc::perks_register_clientfield(). The code
+			//  callback is cleared too, so perk_init_code_callbacks() never
+			//  names a field this side did not register. The perma-Flopper uses
+			//  phd_flopper_effects, which Buried registers itself.
+			if (getDvar("mapname") == "zm_buried" && a_keys[i] == "specialty_flakjacket")
+			{
+				level._custom_perks[a_keys[i]].clientfield_code_callback = undefined;
+				continue;
+			}
 			if (isdefined(level._custom_perks[a_keys[i]].clientfield_register))
 			{
 				level [[level._custom_perks[a_keys[i]].clientfield_register]]();
@@ -3579,7 +3582,7 @@ zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 		//  wall is re-pointed to the Browning HP server-side (gunswap.gsc's
 		//  wall section), and the label override that stood in for it came
 		//  out of mod.str.
-		level.zmqol_gunswap_banned = [ "usrpg_zm", "usrpg_upgraded_zm", "m32_zm", "m32_upgraded_zm", "rpd_zm", "rpd_upgraded_zm", "hamr_zm", "hamr_upgraded_zm", "barretm82_zm", "barretm82_upgraded_zm", "saiga12_zm", "saiga12_upgraded_zm", "fiveseven_zm", "fiveseven_upgraded_zm", "fivesevendw_zm", "fivesevendw_upgraded_zm" ];
+		level.zmqol_gunswap_banned = strtok( "usrpg_zm usrpg_upgraded_zm m32_zm m32_upgraded_zm rpd_zm rpd_upgraded_zm hamr_zm hamr_upgraded_zm barretm82_zm barretm82_upgraded_zm saiga12_zm saiga12_upgraded_zm fiveseven_zm fiveseven_upgraded_zm fivesevendw_zm fivesevendw_upgraded_zm", " " );
 	}
 
 	for ( i = 0; i < level.zmqol_gunswap_banned.size; i++ )
@@ -3612,7 +3615,7 @@ zmqol_gunswap_include_weapon_client( weapon, display_in_box, func )
 	}
 	if(!isDefined(level._resetzombieboxweapons)) {
 		level._resetzombieboxweapons = 1;
-		clientscripts\mp\zombies\_zm_weapons::resetzombieboxweapons();
+		resetzombieboxweapons();
 	}
 
 	addzombieboxweapon(weapon, getweaponmodel(weapon), clientscripts\mp\zombies\_zm_weapons::weapon_is_dual_wield(weapon));

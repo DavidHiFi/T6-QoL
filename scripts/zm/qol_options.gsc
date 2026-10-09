@@ -3544,6 +3544,16 @@ qol_opt_third_person()
             {
                 self setclientthirdperson( 1 );
                 self setclientthirdpersonangle( 354 );
+
+                //  v2.17.0 - THE THIRD PERSON CAMERA RUNS ON THE PLAYER'S OWN
+                //  FIELD OF VIEW. cg_fov_default_thirdperson defaults to the
+                //  console 65; left alone, the view changes the moment the
+                //  camera mode changes. The host's client shares the server
+                //  dvar table (zmqol_playeropt rule), so a plain setdvar
+                //  points it at the user's own FIELD OF VIEW setting and the
+                //  view keeps whatever they chose.
+                if ( self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
+                    setdvar( "cg_fov_default_thirdperson", getdvarfloat( "cg_fov_default" ) );
             }
             else
             {
@@ -3553,10 +3563,32 @@ qol_opt_third_person()
 
             self resetfov();
 
+            //  v2.17.0 - KEEP THE PLAYER'S OWN EFFECTIVE FOV AFTER EVERY
+            //  TRANSITION. Measured on r5354 with cg_fov_default "100" and
+            //  cg_fovScale "1.25": toggling out leaves "cg_fov" is: "65" -
+            //  the console default - while BOTH settings dvars still read
+            //  100 and 1.25. The user asked for it the other way round:
+            //  *"your field of view is only meant to change if the person
+            //  changes it."* The settings dvars are never touched by the
+            //  engine, so read them back and re-assert the effective value
+            //  after resetfov()'s own write, then verify once more after a
+            //  beat in case the engine's own write lands late. Host only:
+            //  a remote player's fov is not readable from the server, so
+            //  they keep stock's reset until a client-side route exists.
+            if ( self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
+            {
+                setdvar( "cg_fov", getdvarfloat( "cg_fov_default" ) );
+
+                wait 0.1;
+
+                if ( getdvarfloat( "cg_fov" ) != getdvarfloat( "cg_fov_default" ) )
+                    setdvar( "cg_fov", getdvarfloat( "cg_fov_default" ) );
+            }
+
             println( "[zm_qol] third person -> " + n_now );
         }
 
-        wait 1;
+        wait 0.25;
     }
 }
 
