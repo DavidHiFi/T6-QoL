@@ -90,7 +90,7 @@ if /i "%~1"=="regen" (
     REM  runs raw .gsc straight out of mod.iwd, which is how quality_of_life.gsc
     REM  works while being declared in no zone file at all.
     REM
-    REM  🛑 .csc lines are NOT touched - client scripts DO load from the fastfile
+    REM  ?? .csc lines are NOT touched - client scripts DO load from the fastfile
     REM  and are staged from source further down.
     REM
     REM  Done here rather than by hand because this file is generated: a hand
@@ -158,12 +158,12 @@ REM
 REM  Both come straight back out of the donor, so none of it is checked in:
 REM      Unlinker --include-assets soundbank --search-path <base>  ->  the CSV
 REM                                                                    AND the audio
-REM  🛑 --search-path must point at zone_source\base, never at the project root.
+REM  ?? --search-path must point at zone_source\base, never at the project root.
 REM  The root mod.all.sabl is a BUILD OUTPUT once this script has run; dumping from
 REM  it would feed each build its own previous output and compound. Same rule as
 REM  linking from base\mod.ff instead of the live mod.ff.
 REM
-REM  🛑 DO NOT "FIX" THE DOUBLED EXTENSION. The dumped files are named
+REM  ?? DO NOT "FIX" THE DOUBLED EXTENSION. The dumped files are named
 REM  foo.snd.wav.wav and the CSV's FileSource says foo.snd.wav.wav, and BOTH ARE
 REM  CORRECT - that doubled name is this bank's genuine stored value, not something the
 REM  Unlinker added. It writes the CSV out verbatim. Verified by dumping the donor two
@@ -192,7 +192,7 @@ if not exist "%PROJ%\zone_assets\soundbank\mod.all.aliases.csv" (
 REM  Now overlay what THIS project adds, every run, so an edit to either always
 REM  takes: the extra alias rows, then the WAVs they point at.
 REM
-REM  🛑 THE OVERLAY REPLACES BY NAME. IT USED TO ONLY APPEND, AND THAT MADE EDITING A
+REM  ?? THE OVERLAY REPLACES BY NAME. IT USED TO ONLY APPEND, AND THAT MADE EDITING A
 REM  SHIPPED ALIAS A SILENT NO-OP - the exact failure this file's own header warns
 REM  about, one level up.
 REM
@@ -209,7 +209,7 @@ REM  So: the additions file now OWNS every alias name it mentions. Each build dr
 REM  all cached rows carrying a name the additions file uses, then appends the
 REM  additions verbatim.
 REM
-REM  🛑 DROP-AND-APPEND, NOT REPLACE-IN-PLACE, BECAUSE AN ALIAS CAN HAVE VARIANTS.
+REM  ?? DROP-AND-APPEND, NOT REPLACE-IN-PLACE, BECAUSE AN ALIAS CAN HAVE VARIANTS.
 REM  zmb_rand_perk_sparks_top is THREE rows sharing one Name - that is how T6 does
 REM  randomised one-shots, the engine picks a row per play. A name-keyed replace
 REM  collapses all three into whichever came last, silently turning a varied spark
@@ -277,7 +277,7 @@ REM    the zone folder had customised under the same name. That is exactly the
 REM    reported shape: only SOME custom sounds go missing - the ones the donor
 REM    table happens to mention.
 REM
-REM  🛑 VERIFIED SAFE BEFORE CHANGING IT, not assumed. Every alias string this
+REM  ?? VERIFIED SAFE BEFORE CHANGING IT, not assumed. Every alias string this
 REM  mod's own .gsc/.csc actually plays was extracted and cross-checked:
 REM      37 distinct aliases played
 REM      19 owned by the additions file  -> still shipped, unaffected
@@ -302,7 +302,7 @@ REM  audible part of some effects - Origins' zmb_zombieblood_loop names
 REM  zmb_tomb_zombieblood, which drops ambience to 25%% and weapons/impacts to 50%%
 REM  for the whole 30 seconds, and that muffling IS the zombie-blood soundscape.
 REM
-REM  🛑 THE DONOR mod.all HAS NO DUCKLIST AT ALL - zero of its 1,691 aliases carry
+REM  ?? THE DONOR mod.all HAS NO DUCKLIST AT ALL - zero of its 1,691 aliases carry
 REM  a Duck value - so nothing staged one before v1.65.0. An alias that names a
 REM  duck the bank cannot supply is a HARD LINK ERROR, not a silent no-op:
 REM      Unable to find .duk file for {} in ducklist for sound bank {}
@@ -315,7 +315,7 @@ REM      soundbank\ducks\<name>.duk        the JSON snapshot
 REM  Both come from soundbank\ at the project root (source, git-tracked) and are
 REM  copied verbatim into zone_assets\soundbank\ every run, like the alias rows.
 REM
-REM  📝 Duck names are mod-private (zmqol_*) for the same reason alias names are:
+REM  ?? Duck names are mod-private (zmqol_*) for the same reason alias names are:
 REM  mod.ff loads ahead of every map, so a stock name here would put a second
 REM  definition in front of the map that owns it.
 echo   Staging this mod's sound-bank ducks ...
@@ -346,7 +346,7 @@ REM  zm_whos_who visionset) are all gated behind level.whos_who_client_setup and
 REM  level.vsmgr_prio_visionset_zm_whos_who, which ONLY Die Rise sets. Off Die
 REM  Rise the perk self-gates down to one clientfield and no client assets.
 REM
-REM  🛑🛑 --load ORDER IS NOT COSMETIC. IT DECIDES WHICH COPY OF A SHARED STOCK
+REM  ???? --load ORDER IS NOT COSMETIC. IT DECIDES WHICH COPY OF A SHARED STOCK
 REM  ASSET THIS MOD SHIPS - AND mod.ff LOADS BEFORE EVERY MAP, SO THAT COPY WINS
 REM  ON EVERY MAP, INCLUDING THE ONES THE ASSET IS NATIVE TO.
 REM
@@ -356,7 +356,7 @@ REM  looking). Two fastfiles can hold DIFFERENT bytes under the SAME name - stoc
 REM  ships per-map shader permutations and per-map fx rebuilds - so whichever one
 REM  is listed first silently becomes the version every map gets.
 REM
-REM  🔴 THIS SHIPPED BROKEN FOR SEVERAL VERSIONS AND THE USER REPORTED IT (v1.62.7):
+REM  ?? THIS SHIPPED BROKEN FOR SEVERAL VERSIONS AND THE USER REPORTED IT (v1.62.7):
 REM  Electric Cherry's zap on zombies rendered as a bright blown-out blob instead of
 REM  lightning arcs - and it was wrong on Mob of the Dead and Origins TOO, where the
 REM  perk is stock and this mod adds nothing. Measured cause: so_zsurvival_zm_transit
@@ -368,7 +368,7 @@ REM      techniqueset effect_zeqqz943, 4928 bytes in every case:
 REM        zm_prison / zm_tomb / zm_highrise   503675916d7525ca   <- all identical
 REM        so_zsurvival_zm_transit             b6c22239cf5774a5   <- what shipped
 REM
-REM  🛑 SO: zm_prison.ff AND zm_prison_patch.ff MUST STAY AHEAD OF EVERY so_*.ff.
+REM  ?? SO: zm_prison.ff AND zm_prison_patch.ff MUST STAY AHEAD OF EVERY so_*.ff.
 REM  Mob of the Dead is Electric Cherry's home map, so loading it first makes the
 REM  perk's whole chain - the 5 alcatraz cherry fx, the 3 tesla fx, the bottle
 REM  weapon and its two xmodels, the HUD + minimap icons, the vision file and every
@@ -378,13 +378,13 @@ REM  before and after (nothing re-owned, nothing dropped), 0 errors, same 34 sou
 REM  warnings; 64 assets change donor, of which 20 actually differ in content and
 REM  every one of those is either Electric Cherry's own or in the tesla fx chain.
 REM
-REM  📝 Known residual, NOT introduced by this ordering - three generic lit-model
+REM  ?? Known residual, NOT introduced by this ordering - three generic lit-model
 REM  techsets (mc_lit_sm_r0c0d0n0_33ffej1u, _r0c0n0x0_q361191u, _t0c0n0_9qf6e4qj)
 REM  differ on EVERY map, so no single donor is right for all of them. mod.ff has
 REM  always overridden them globally; this only changes which map they happen to
-REM  match. The real repair is to stop owning them at all - QUEUE §0f item 4.
+REM  match. The real repair is to stop owning them at all - QUEUE ?0f item 4.
 REM
-REM  🌟 THE TWO MULTIPLAYER FASTFILES ARE LOADED **DEAD LAST**, ON PURPOSE.
+REM  ?? THE TWO MULTIPLAYER FASTFILES ARE LOADED **DEAD LAST**, ON PURPOSE.
 REM
 REM  They are here for the MP weapons the user asked for (SWAT-556, FAL-OSW,
 REM  MK 48, QBB LSW, MP7, Vector K10, MSMC, Peacekeeper, Crossbow, Titus-6) -
@@ -397,7 +397,7 @@ REM  so putting these last means an MP copy is only ever taken when NO zombies
 REM  fastfile above offers that asset at all - i.e. only for the genuinely new
 REM  weapon assets. Anything shared keeps its zombies donor, unchanged.
 REM
-REM  🔴 AND THE FIRST ATTEMPT AT THIS CAUGHT THE OWNERSHIP TRAP RED-HANDED.
+REM  ?? AND THE FIRST ATTEMPT AT THIS CAUGHT THE OWNERSHIP TRAP RED-HANDED.
 REM
 REM  Appending ONLY the two MP files, with nothing new declared, did NOT produce
 REM  an identical build: 4,185 -> 4,201 assets. Sixteen appeared, and every one of
@@ -415,34 +415,34 @@ REM  version suddenly resolved - and because mod.ff loads ahead of the map, that
 REM  MP blood fx would have overridden the zombies one ON EVERY MAP. That is
 REM  exactly the shape of the v1.62.7 Electric Cherry blob bug.
 REM
-REM  🛑 THE FIX IS THE TWO ZOMBIES COMMON FILES, LOADED FIRST. common_zm.ff owns
+REM  ?? THE FIX IS THE TWO ZOMBIES COMMON FILES, LOADED FIRST. common_zm.ff owns
 REM  fx_flesh_hit_splat, both blood_spatter material sets and effect_q01e8072 -
 REM  confirmed with Unlinker --list. Putting it ahead of common_mp.ff means every
 REM  name zombies and multiplayer share resolves from the ZOMBIES copy, and the MP
 REM  files are left to supply only what no zombies fastfile has at all: the new
 REM  weapons' own xmodels, materials and xanims.
 REM
-REM  📝 Re-run that A/B if this order is ever touched: dump the asset list, change
+REM  ?? Re-run that A/B if this order is ever touched: dump the asset list, change
 REM  the loads, dump again, and account for EVERY line that moves. See
 REM  [[t6-oat-load-order-decides-asset-copy]] and [[t6-modff-asset-ownership-trap]].
 REM
-REM  🌟 code_post_gfx_mp.ff is here for exactly ONE asset: the XPR-50's HUD icon
+REM  ?? code_post_gfx_mp.ff is here for exactly ONE asset: the XPR-50's HUD icon
 REM  material menu_mp_weapons_as50, which no fastfile already in this list OWNS
 REM  (common_mp.ff carries it only as a bare reference - note the leading comma
 REM  in "material, ,menu_mp_weapons_as50"). It sits after both zombies commons
 REM  so first-load-wins keeps every shared name on its zombies copy. A/B'd.
 REM
-REM  🌟 monsoon.ff and code_post_gfx.ff are the TITUS-6's sources, and they are
+REM  ?? monsoon.ff and code_post_gfx.ff are the TITUS-6's sources, and they are
 REM  CAMPAIGN fastfiles - the first campaign content this mod has ever linked.
 REM  monsoon.ff owns the Titus xmodels, its 43 view anims, mtl_t6_wpn_titus and
 REM  the two weapon/titus effects; code_post_gfx.ff owns hud_monsoon_titus_arrow
 REM  and nothing else here needs it. Both sit after every zombies fastfile, so
 REM  first-load-wins means they can only supply names no zombies file offers.
-REM  🛑 A/B the full asset list after any change here - a campaign ff is exactly
+REM  ?? A/B the full asset list after any change here - a campaign ff is exactly
 REM  the shape of thing that shadows a shared name, and zero-removed is the
 REM  property that proves it did not.
 REM
-REM  🌟 zone_source\wavegun_donor\mod.ff (v2.10.14) sits right after it, under
+REM  ?? zone_source\wavegun_donor\mod.ff (v2.10.14) sits right after it, under
 REM  the same safety argument: it is a 191-asset donor (the 6 Wave Gun xmodels,
 REM  their 2 materials + images + 2 DLC5 techsets, hud_icon_colt, 49 viewmodel
 REM  xanims, 28 fx and the fx materials) copied out of Zombies Declassified's
@@ -455,7 +455,7 @@ REM
 REM  (v2.15.49: zone_source\zomswell_donor is NO LONGER LOADED. The two DLC5 zombie
 REM  techsets now compile from raw - zone_assets\techsets + techniques + shader_bin -
 REM  with the Wave Gun swell vertex shaders; see mod_wavegun_swell.zone.)
-REM  🌟 zone_source\zomswell_donor\mod.ff (v2.15.45) followed the same recipe, two
+REM  ?? zone_source\zomswell_donor\mod.ff (v2.15.45) followed the same recipe, two
 REM  assets wide: the two DLC5 zombie techsets mc_sw4_3d_char_cloth_4z8fq5wu_dlc5
 REM  and mc_sw4_3d_char_skin_j92387z3_dlc5, copied out of Declassified's zm_moon.ff
 REM  with the patched OAT. They carry the Wave Gun swell vertex shader that
@@ -465,18 +465,18 @@ REM  and pimp_shader_sw4_3d_phong_emissive_alcatraz_b7d697d7.hlsl in retail).
 REM  The names are new on every loaded fastfile, so at the tail this donor can
 REM  only add. A/B the asset list if it moves.
 REM
-REM  🌟 zone_source\bonfire_donor\mod.ff (v2.12.0) is the same idea, two assets wide: the
+REM  ?? zone_source\bonfire_donor\mod.ff (v2.12.0) is the same idea, two assets wide: the
 REM  BONFIRE SALE pickup model zombie_pickup_bonfire and the HUD countdown material
 REM  zom_icon_bonfire, copied out of Zombies Declassified's zm_pentagon.ff ("Five" - the only
 REM  map in any Call of Duty that ships this power-up) with the patched OAT in H:\Plutonium\tools\oat-dlc5.
 REM  Recipe in zone_source\bonfire_donor\how_this_was_built.zone.txt.
-REM  🛑 BOTH NAMES ARE ABSENT FROM ALL EIGHT ZOMBIES FASTFILES - measured 2026-09-05 with
+REM  ?? BOTH NAMES ARE ABSENT FROM ALL EIGHT ZOMBIES FASTFILES - measured 2026-09-05 with
 REM  Unlinker --list over zm_transit, zm_nuked, zm_highrise, zm_prison, zm_buried, zm_tomb,
 REM  common_zm and patch_zm - so loaded here at the tail this donor can only ADD names and
 REM  cannot take an asset away from anything. Its third asset, the model's own skin
 REM  mc/mtl_x2icon_gold, is a REFERENCE (leading comma): common_zm.ff owns it and loads on
 REM  every map, so first-load-wins keeps it there. A/B the asset list if this moves.
-REM  🌟 zone_source\fx_donor\mod.ff is LAST, and that placement is the whole
+REM  ?? zone_source\fx_donor\mod.ff is LAST, and that placement is the whole
 REM  safety argument for it. It is the fastfile of the "T5 Winter's Howl Port"
 REM  module, added so mod_freezefx.zone can reach the 19 fx MATERIALS the ported
 REM  .efx draw with - four of which the Winter's Howl muzzle flash needs and
@@ -485,14 +485,14 @@ REM  wins means it can only supply a name that nothing above it offers, so no
 REM  shared asset changes owner. A/B the asset list if this ever moves.
 REM
 REM  (2026-10-07: magmagat_donor below is now the true tail.)
-REM  🌟 zone_source\oldschool_donor\mod.ff (2026-09-26): the
+REM  ?? zone_source\oldschool_donor\mod.ff (2026-09-26): the
 REM  MM1 grenade launcher's models, anims, icon and trail fx (out of retail
 REM  angola.ff) and the Browning HP's two left-hand models (out of Mario Woopsie's
 REM  MOTD Old School Weapons). 53 assets; the names mod_oldschool.zone declares
 REM  exist in no zombies fastfile above, so from the last slot it can only add.
 REM  Recipe: zone_source\oldschool_donor\how_this_was_built.zone.txt.
 REM
-REM  🌟 zone_source\magmagat_donor\mod.ff (2026-10-07) is the new true tail: luckass's
+REM  ?? zone_source\magmagat_donor\mod.ff (2026-10-07) is the new true tail: luckass's
 REM  MagmaGat (BO4 Mob-of-the-Dead-remaster weapon for T6, github lborruto/
 REM  t6_motd_magmagat v1.0.5, MIT, credited in README) carved to the weapon's own
 REM  art - 5 xmodels, 3 BO4-foley xanims, 10 fx (the two magma-splat models/effects
@@ -504,7 +504,7 @@ REM  from the owners above and drop out of mod.ff. Recipe:
 REM  zone_source\magmagat_donor\how_this_was_built.zone.txt. A/B the asset list
 REM  if this moves.
 REM
-REM  🛑 Do NOT put REM lines between the caret-continued --load arguments below.
+REM  ?? Do NOT put REM lines between the caret-continued --load arguments below.
 REM  cmd does not treat them as comments there - they are passed to the Linker as
 REM  arguments, and it fails with: Could not find zone definition file for
 REM  target "REM".
@@ -571,7 +571,7 @@ if not exist "%PROJ%\zone_out\mod.ff" (
 copy /y "%PROJ%\zone_out\mod.ff" "%PROJ%\mod.ff" >nul
 
 REM --- the sound banks --------------------------------------------------------
-REM  🛑 THE LINKER BUILDS THE SOUND BANKS TOO, and until v1.39.0 this script threw
+REM  ?? THE LINKER BUILDS THE SOUND BANKS TOO, and until v1.39.0 this script threw
 REM  them away with the rest of zone_out. That is why "you cannot add a sound to
 REM  this mod" was believed for six releases.
 REM
