@@ -867,7 +867,7 @@ pap_built_pose( v_expected )
 //  script_noteworthy "specialty_weapupgrade". When an arena registers its OWN
 //  PaP, the index holds TWO - and everything downstream takes the first one it
 //  finds:
-//    * quality_of_life.gsc::new_pap_trigger() builds the Instant PaP radius
+//    * qol_instant_pap.gsc::qol_ipap_trigger() builds the Instant PaP radius
 //      around trigger [0], which was the map's machine out in No Man's Land,
 //      nowhere near the player. Hence "instant PaP doesn't work".
 //    * the use trigger, the rising-weapon model and the machine fx all key off
