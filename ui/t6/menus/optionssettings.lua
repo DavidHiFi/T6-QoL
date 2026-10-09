@@ -99,7 +99,7 @@ ZmQolCreateUtilityTab = function (utilityTab, localClientIndex)
 	local selector = buttonList:addKeyBindSelector(
 		localClientIndex,
 		"THIRD PERSON",
-		"+actionslot 5",
+		"set zmqol_tp_fire 1",
 		CoD.BIND_PLAYER,
 		"Toggle the third person camera."
 	)
@@ -121,9 +121,7 @@ ZmQolCreateUtilityTab = function (utilityTab, localClientIndex)
 	-- Pad names come in TWO namespaces and both are accepted: the bind-file
 	-- names (bindings_zm.bdg: BUTTON_A, BUTTON_LSHLDR, DPAD_UP, ...) and the
 	-- prompt-role names stock compares gamepad_button events against
-	-- (codbase.lua buttonStrings: primary=A, alt1=X, shoulderl=LB, ...). The
-	-- echo line logs what the engine actually sent, so the first live capture
-	-- proves the namespace instead of trusting the guess.
+	-- (codbase.lua buttonStrings: primary=A, alt1=X, shoulderl=LB, ...).
 	local PadBindNames = {
 		BUTTON_A = "BUTTON_A",
 		BUTTON_X = "BUTTON_X",
@@ -165,20 +163,17 @@ ZmQolCreateUtilityTab = function (utilityTab, localClientIndex)
 		button.bindText:setText(Bound)
 	end
 	selector:registerEventHandler("button_action", function (button, event)
-		Engine.Exec(button.controller, "set zmqol_dbg_action fired")
 		button.m_padCapture = true
 		button.bindText:setText(Engine.Localize("MENU_BIND_KEY_PENDING"))
 		Engine.ExecNow(button.controller, "clearKeyStates")
 		Engine.BindCommand(button.controller, button.m_command, button.m_bindIndex)
 	end)
 	selector:registerEventHandler("gamepad_button", function (button, event)
-		Engine.Exec(button.controller, "set zmqol_dbg_pad " .. tostring(event.button) .. "_" .. tostring(event.qualifier) .. "_" .. tostring(event.down))
 		if button.m_inputDisabled then
 			return
 		end
 		local name = tostring(event.button or "")
 		if button.m_padCapture and event.down == true then
-			Engine.Exec(button.controller, "echo [zm_qol] bind capture saw gamepad button '" .. name .. "' qualifier '" .. tostring(event.qualifier) .. "'")
 			if name == "BUTTON_B" or name == "secondary" then
 				button.m_padCapture = nil
 				RefreshBindText(button)
@@ -186,7 +181,7 @@ ZmQolCreateUtilityTab = function (utilityTab, localClientIndex)
 			end
 			local BindName = PadBindNames[name]
 			if BindName ~= nil then
-				Engine.Exec(button.controller, "bind " .. BindName .. " \"+actionslot 5\"")
+				Engine.Exec(button.controller, "bind " .. BindName .. " \"set zmqol_tp_fire 1\"")
 				button.m_padCapture = nil
 				RefreshBindText(button, BindName)
 				return true
