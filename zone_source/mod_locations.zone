@@ -196,6 +196,19 @@ xanim,qolwf_diesel_turn_off
 xanim,qolwf_diesel_on_idle
 xanim,qolwf_diesel_ballspin_loop
 
+// ============================================================================
+//  v2.15.43 - THE MAGMAGAT QUEST'S ANIMTREE (owner, 2026-10-07: the gun comes
+//  through luckass's Mob of the Dead quest again). His own fxanim_props.atr
+//  is a SUPERSET of stock's: Unlinker-dumped from his mod.ff (33,455 B / 1089
+//  lines vs stock's 928), carries every stock entry plus his smelter ghouls'
+//  %mg_ghoul_smelter_1/_2 and the rest of his prop set. The 4 lines stock has
+//  that his lacks are comment drift only, so first-load-wins stays content-
+//  safe wherever a stock zone also carries the tree. THE DECL MUST SIT HERE
+//  (before the donor is --load'ed): last night's donor-carried decl lost the
+//  asset to the stock copy and the map died on the compile.
+// ============================================================================
+rawfile,animtrees/fxanim_props.atr
+
 // REMOVED v1.22.0 (owned Origins' assets): xmodel,p6_zm_vending_diesel_magic
 // REMOVED v1.22.0 (owned Origins' assets): xmodel,t6_wpn_zmb_perk_bottle_bear_world
 // REMOVED v1.22.0 (owned Origins' assets): fx,maps/zombie_tomb/fx_tomb_dieselmagic_on
@@ -314,6 +327,45 @@ xanim,qolwf_diesel_ballspin_loop
 //    Building it needs Sound Studio Extended, which is GUI-only - see
 //    .agents\sound_work_notes.md.
 // soundbank,zmb_tomb.all
+
+// ============================================================================
+//  ELECTRIC CHERRY STUN  -  the reload shock's stun anim on the four maps
+//  that never shipped it  (2026-09-28, user: "zombies take damage without the
+//  stun animation. Make it exactly Mob/Origins").
+// ----------------------------------------------------------------------------
+//  Stock's core _zm_perk_electric_cherry::electric_cherry_stun() animscripted()
+//  state zm_afterlife_stun, which only zm_prison_basic.asd and zm_tomb_basic.asd
+//  carry natively. On TranZit, Nuketown, Die Rise and Buried the state did not
+//  exist, so the zombie took the damage and never played a clip.
+//
+//  THE THREE FILES PER TREE (v2.17.43's measured shape, kept):
+//      the .asd  gains the zm_afterlife_stun state      (zone_assets\animstatedefs)
+//      the .atr  gains the five ai_zombie_afterlife_stun_* names
+//                                                        (zone_assets\animtrees)
+//      the aitype overrides gain the five dummy_anim_ref lines - the parser
+//      checks the anim list COMPILED into the aitype, so an .asd naming anims
+//      no aitype carries is exactly the BG_AnimStateDef_Parse fatal the
+//      wonder-weapon block documents (aitype\*.gsc + clientscripts, server and
+//      client). Transit/Nuketown/Highrise already shipped overrides; Buried's
+//      nine basic aitype/csc pairs are NEW to aitype\ in this edit and ship raw
+//      out of mod.iwd (the 09-10 measured route, live on Town at 80dc533).
+//
+//  The five clips resolve from zm_prison.ff at link time (stock xanim block,
+//  zm_prison.zone 1823-1827; build_ff.bat --loads it). The images above them
+//  prove the fallback works: both tesla shock textures came out of zm_prison
+//  the same way.
+//
+//  Buried's asd/atr previously resolved stock from so_zclassic_zm_buried (the
+//  disabled_ww_animtrees README's fall-through). With the aitype overrides
+//  carrying the refs, the wall is gone and zone_assets\ copies now ship for
+//  Buried too - STOCK content plus only the stun state and its five names,
+//  +0/-0 removed like every other tree's additive edits.
+// ============================================================================
+xanim,ai_zombie_afterlife_stun_a
+xanim,ai_zombie_afterlife_stun_b
+xanim,ai_zombie_afterlife_stun_c
+xanim,ai_zombie_afterlife_stun_d
+xanim,ai_zombie_afterlife_stun_e
 
 // ============================================================================
 //  ELECTRIC CHERRY  -  the 9th perk, on the maps that never shipped it
