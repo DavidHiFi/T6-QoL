@@ -20,7 +20,9 @@ function ZmQolLobbyModLoaded()
 
 	Value = string.lower(Value)
 
-	return Value == "mods/zm_qol" or Value == "zm_qol"
+	--  Prefix match: deployment copies of zm_qol count as the mod (see the
+	--  guard block in codroot.lua).
+	return string.sub( Value, 1, 11 ) == "mods/zm_qol" or Value == "zm_qol"
 end
 
 -- ============================================================================

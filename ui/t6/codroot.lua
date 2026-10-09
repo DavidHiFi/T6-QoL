@@ -113,7 +113,11 @@ if ZmQolLuiGuardModActive == nil then
 			return false
 		end
 		Value = string.lower(Value)
-		return Value == "mods/zm_qol" or Value == "zm_qol"
+		--  Prefix match: deployment copies of this mod (mods/zm_qol_mg_audit)
+		--  ship this same file and must arm the guard too - the exact match
+		--  left them unprotected (measured 2026-10-09: no zmqol_lui_guard line
+		--  in an mg_audit session).
+		return string.sub( Value, 1, 11 ) == "mods/zm_qol" or Value == "zm_qol"
 	end
 end
 
