@@ -132,6 +132,16 @@ oldschool_dw_enabled( map, mode )
     //  all six maps now, not just the two it booted on. Grief/turned keep
     //  their gate: their weapon budget was never measured, and the FSDW dies
     //  there too (the cost of the swap in the unmeasured modes).
+    //  v2.15.43 - the Magmagat quest (scripts\zm\zm_prison\
+    //  zm_prison_magmagat.gsc) needs five weapon-table slots on Mob classic
+    //  that only exist if this four-slot family steps aside there - the
+    //  measured budget says so exactly (248 after the hold-back + 5 = 253 of
+    //  the 253 ceiling; same night's SaveRegisteredWeapons death says no
+    //  headroom existed before it). The DW keeps every other map it had,
+    //  including both Mob survival locations, which stay at 250.
+    if ( map == "zm_prison" )
+        return false;
+
     return map == "zm_nuked" || map == "zm_buried" || map == "zm_highrise" ||
-           map == "zm_transit" || map == "zm_prison" || map == "zm_tomb";
+           map == "zm_transit" || map == "zm_tomb";
 }

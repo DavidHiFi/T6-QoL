@@ -995,3 +995,24 @@ zm_death_freeze_crawl_t5 : restart missing_legs notify death_anim
 	ai_zombie_crawl_freeze_death_01
 	ai_zombie_crawl_freeze_death_02
 }
+
+
+// Electric Cherry stun (2026-09-28): stock's core _zm_perk_electric_cherry::
+// electric_cherry_stun() animscripted() this state on every zombie the reload
+// shock does not kill. Mob/Origins carry it natively (zm_prison_basic 707,
+// zm_tomb_basic 699); the other three maps and Buried never shipped it, so
+// those zombies took the damage without playing the stun (user, 2026-09-28).
+// State and anim names copied verbatim from zm_prison_basic.asd 707-714 - the
+// five anims ship in the same edit (mod_locations.zone, xanim block).
+// The aitype overrides in aitype\\ gained the five dummy_anim_ref lines in the
+// same edit: the parser checks the anim list COMPILED into the aitype, so an
+// .asd state naming anims the tree lacks is exactly the BG_AnimStateDef_Parse
+// fatal the wonder-weapon block above documents.
+zm_afterlife_stun : restart notify stunned
+{
+	ai_zombie_afterlife_stun_a
+	ai_zombie_afterlife_stun_b
+	ai_zombie_afterlife_stun_c
+	ai_zombie_afterlife_stun_d
+	ai_zombie_afterlife_stun_e
+}

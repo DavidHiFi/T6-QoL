@@ -238,6 +238,8 @@ divetonuke_explode( attacker, origin )
     radius = level.zombie_vars["zombie_perk_divetonuke_radius"];
     min_damage = level.zombie_vars["zombie_perk_divetonuke_min_damage"];
     max_damage = level.zombie_vars["zombie_perk_divetonuke_max_damage"];
+    a_near = [];
+    a_health = [];
 
     if ( isdefined( level.flopper_network_optimized ) && level.flopper_network_optimized )
     {
@@ -271,7 +273,13 @@ divetonuke_explode( attacker, origin )
         //
         //  Latent, not observed - no dive crash has ever been reported. This
         //  makes the call deterministic; it does not fix a seen bug.
+        a_near = divetonuke_zombies_in_blast( origin, radius );
+
+        for ( i = 0; i < a_near.size; i++ )
+            a_health[i] = a_near[i].health;
+
         radiusdamage( origin, radius, max_damage, min_damage, attacker, "MOD_GRENADE_SPLASH", "frag_grenade_zm" );
+        level thread divetonuke_blast_fill_in( attacker, origin, radius, max_damage, min_damage, a_near, a_health );
     }
 
     playfx( level._effect["divetonuke_groundhit"], origin );
@@ -279,6 +287,79 @@ divetonuke_explode( attacker, origin )
     maps\mp\_visionset_mgr::vsmgr_activate( "visionset", "zm_perk_divetonuke", attacker );
     wait 1;
     maps\mp\_visionset_mgr::vsmgr_deactivate( "visionset", "zm_perk_divetonuke", attacker );
+}
+
+//  🌟 2026-09-28 - THE DIVE KILLS WHAT IT LANDS IN. A tester: a dive from a
+//  high place into zombies "wasn't killing them".
+//
+//  The radiusdamage above goes off at the player's feet, on the floor. The
+//  Bouncing Betty measured the same engine call reaching 0 of 3 zombies
+//  inside its radius (betty-radius-001, bouncingbetty.gsc
+//  zmqol_betty_blast_fill_in). Origins never had the problem: zm_tomb sets
+//  level.flopper_network_optimized, which takes the branch above and hits
+//  every zombie in range with dodamage, no trace. Buried's Perma-Flopper does
+//  the same (level.pers_flopper_network_optimized).
+//
+//  So every zombie that was inside the radius before the blast and still has
+//  the same health 0.05 s after it takes the stock falloff here, once,
+//  labelled like the blast. A zombie the blast did reach lost health and is
+//  skipped, so nothing is hit twice. Scripted and boss zombies keep their
+//  magic bullet shield, as in the Betty fill-in.
+divetonuke_zombies_in_blast( origin, radius )
+{
+    a_near = [];
+    a_zombies = get_round_enemy_array();
+
+    for ( i = 0; i < a_zombies.size; i++ )
+    {
+        if ( !isdefined( a_zombies[i] ) || !isalive( a_zombies[i] ) )
+            continue;
+
+        if ( distance( a_zombies[i].origin, origin ) > radius )
+            continue;
+
+        if ( is_magic_bullet_shield_enabled( a_zombies[i] ) )
+            continue;
+
+        a_near[a_near.size] = a_zombies[i];
+    }
+
+    return a_near;
+}
+
+divetonuke_blast_fill_in( attacker, origin, radius, max_damage, min_damage, a_near, a_health )
+{
+    wait 0.05;
+
+    n_hit = 0;
+    n_filled = 0;
+
+    for ( i = 0; i < a_near.size; i++ )
+    {
+        e_zombie = a_near[i];
+
+        if ( !isdefined( e_zombie ) || !isalive( e_zombie ) || e_zombie.health < a_health[i] )
+        {
+            n_hit++;
+            continue;
+        }
+
+        n_frac = distance( e_zombie.origin, origin ) / radius;
+
+        if ( n_frac > 1 )
+            n_frac = 1;
+
+        n_damage = int( max_damage - ( max_damage - min_damage ) * n_frac );
+
+        if ( isdefined( attacker ) && isplayer( attacker ) )
+            e_zombie dodamage( n_damage, e_zombie.origin, attacker, attacker, "none", "MOD_GRENADE_SPLASH", 0, "frag_grenade_zm" );
+        else
+            e_zombie dodamage( n_damage, e_zombie.origin, undefined, undefined, "none", "MOD_GRENADE_SPLASH", 0, "frag_grenade_zm" );
+
+        n_filled++;
+    }
+
+    println( "[zm_qol] phd dive: " + a_near.size + " zombie(s) within " + radius + " - blast hit " + n_hit + ", filled in " + n_filled );
 }
 
 divetonuke_explode_network_optimized( origin, radius, max_damage, min_damage, damage_mod )

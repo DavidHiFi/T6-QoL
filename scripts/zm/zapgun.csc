@@ -54,8 +54,18 @@ init()
     if ( str_ww != "" && str_ww != "1" && str_ww != "5" )
         return;
 
-    if ( getdvar( "mapname" ) == "zm_buried" || getdvar( "mapname" ) == "zm_tomb" )
+    //  2026-10-08: TranZit and Die Rise are MEASURED over the raw weapon-load pool
+    //  with the Zap Guns on (modding-jobs\overnight-20261008-001): the upgraded trio
+    //  lazy-loads but its last member cannot register, and the alt lookup dies with
+    //  "could not find altWeapon 'microwavegun_upgraded_zm'" (Die Rise 03:51 boot)
+    //  / "could not find alt Dual Wield Weapon 'microwavegunlh_upgraded_zm'" (Tunnel
+    //  01:55 boot) -> SV_Shutdown. Held back there the same way as Buried/Origins;
+    //  Mob and Nuketown keep it. The gate MUST stay identical to zapgun.gsc.
+    if ( getdvar( "mapname" ) == "zm_buried" || getdvar( "mapname" ) == "zm_tomb" || getdvar( "mapname" ) == "zm_transit" || getdvar( "mapname" ) == "zm_highrise" )
+    {
+        println( "[zm_qol] zapgun: held back on " + getdvar( "mapname" ) + " - weapon budget" );
         return;
+    }
 
     include_weapon( "microwavegundw_zm" );
     include_weapon( "microwavegundw_upgraded_zm", 0 );
