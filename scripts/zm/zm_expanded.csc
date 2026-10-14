@@ -381,20 +381,6 @@ zmqol_mp_weapons_init()
 	//  zm_prison_magmagat.csc carries the tempered gun's muzzle flame.
 	//  ============================================================
 
-	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
-	//  zmqol_emp_grenade_init(). Both halves must agree or the box cannot draw
-	//  its pickup model.
-	//
-	//  🛑 GATED THE SAME WAY THE SERVER IS, and on the same two conditions, or
-	//  the two lists diverge: skipped on zm_transit (which includes it in its
-	//  own stock client script, clientscripts\mp\zm_transit.csc:314) and skipped
-	//  when emp_all_maps is 0.
-	//
-	//  📝 mod.ff owns emp_grenade_zm and its models now, so the def exists on
-	//  every map and the as50/Origins missing-def crash class cannot apply.
-	if ( getdvarintdefault( "emp_all_maps", 1 ) && getdvar( "mapname" ) != "zm_transit" )
-		clientscripts\mp\zombies\_zm_weapons::include_weapon( "emp_grenade_zm" );
-
 	// their upgraded halves - included, but never a box result
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sig556_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sa58_upgraded_zm", 0 );

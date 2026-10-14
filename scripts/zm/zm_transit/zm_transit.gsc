@@ -26,7 +26,6 @@ main()
 {
     replaceFunc( maps\mp\zm_transit_standard_station::main, ::main_o );
     replaceFunc( maps\mp\zm_transit_lava::zombie_exploding_death, ::zombie_exploding_death );
-    replaceFunc( maps\mp\zm_transit_lava::lava_damage_init, ::qol_lava_damage_init );
 
     // The shared equipment module calls this map-owned helper for primary Jetguns.
     level.zmqol_jetgun_primary_give = ::zmqol_jetgun_give_as_primary;
@@ -909,103 +908,6 @@ zombie_exploding_death( zombie_dmg, trap )
     else
     {
         self delay_thread( 1, ::self_delete );
-    }
-}
-
-// ============================================================================
-//  NO LAVA DAMAGE                                                    (v2.7.0)
-// ----------------------------------------------------------------------------
-//  User, 2026-08-28: a PATCHES-tab toggle for Classic TranZit and all four
-//  survival locations (Diner, Farm, Town, Bus Depot) that leaves lava visible
-//  on the ground but stops it igniting/exploding zombies and stops it
-//  damaging players. Dvar: no_lava_damage (qol_options.gsc).
-//
-//  WHY lava_damage_init IS THE HOOK, NOT THE DAMAGE FUNCTIONS THEMSELVES.
-//  Stock's maps\mp\zm_transit_lava.gsc:
-//      lava_damage_init()   -> array_thread( lava, ::lava_damage_think )
-//      lava_damage_think()  -> ent thread player_lava_damage( self )
-//                              ent thread zombie_lava_damage( self )
-//  Both dispatch calls are UNQUALIFIED, SAME FILE - a replaceFunc aimed at
-//  player_lava_damage/zombie_lava_damage from an external script like this one
-//  cannot intercept them (AI_CONTEXT rule 3 / starter kit CLAUDE.md §4, failure
-//  mode 1). lava_damage_init() is different: BOTH its stock callers
-//  (zm_transit.gsc and zm_transit_dr.gsc, Diner's own top-level script) invoke
-//  it as `level thread maps\mp\zm_transit_lava::lava_damage_init()` - a
-//  qualified call from a DIFFERENT file, which is exactly the case replaceFunc
-//  is built for.
-//
-//  🛑 NO "CALL THE ORIGINAL" AFTER A REPLACE. Once lava_damage_init is
-//  replaced, any call to that qualified name - including from inside this very
-//  replacement - redirects back here, so qol_lava_damage_init() below
-//  reimplements stock's six-line body directly rather than trying to invoke a
-//  now-shadowed original. qol_lava_damage_think() is a line-for-line copy of
-//  stock's lava_damage_think(), with exactly two differences: one inserted
-//  live dvar check, and its two dispatch calls made BY QUALIFIED NAME to
-//  stock's real, untouched player_lava_damage()/zombie_lava_damage() - calling
-//  a function externally by its qualified name is unaffected by replacing a
-//  DIFFERENT function in the same file, so OFF/vanilla reproduces stock
-//  exactly. Neither damage function nor any of their own helpers
-//  (zombie_burning_fx, zombie_burning_dmg, player_stop_burning, etc.) are
-//  touched at all - when the toggle is OFF they simply never get a reason not
-//  to run, and when it is ON they are never reached in the first place.
-// ============================================================================
-qol_lava_damage_init()
-{
-    lava = getentarray( "lava_damage", "targetname" );
-
-    //  🛑 Confirms two things this session could not verify offline: that this
-    //  replace actually took (and ran before stock's own qualified call to the
-    //  original), and how many lava_damage entities this location has (0 would
-    //  mean this start location has no lava triggers to gate at all).
-    println( "[zm_qol] lava: qol_lava_damage_init running (replaceFunc took) - " + lava.size + " lava_damage entities found, location=" + getdvar( "ui_zm_mapstartlocation" ) );
-
-    if ( !isdefined( lava ) )
-        return;
-
-    array_thread( lava, ::qol_lava_damage_think );
-}
-
-qol_lava_damage_think()
-{
-    self._trap_type = "";
-
-    if ( isdefined( self.script_noteworthy ) )
-        self._trap_type = self.script_noteworthy;
-
-    if ( isdefined( self.target ) )
-    {
-        self.volume = getent( self.target, "targetname" );
-        assert( isdefined( self.volume ), "No volume found for lava target " + self.target );
-    }
-
-    while ( true )
-    {
-        self waittill( "trigger", ent );
-
-        //  Read live on every trigger, not just once at map load, so the
-        //  PATCHES row applies instantly mid-match in both directions.
-        if ( getdvarintdefault( "no_lava_damage", 0 ) )
-            continue;
-
-        if ( isdefined( ent.ignore_lava_damage ) && ent.ignore_lava_damage )
-            continue;
-
-        if ( isdefined( ent.is_burning ) )
-            continue;
-
-        if ( isdefined( self.target ) && !ent istouching( self.volume ) )
-            continue;
-
-        if ( isplayer( ent ) )
-        {
-            if ( !isdefined( self.script_float ) || self.script_float >= 0.1 )
-                ent thread maps\mp\zm_transit_lava::player_lava_damage( self );
-        }
-        else if ( !isdefined( ent.marked_for_death ) )
-        {
-            if ( !isdefined( self.script_float ) || self.script_float >= 0.1 )
-                ent thread maps\mp\zm_transit_lava::zombie_lava_damage( self );
-        }
     }
 }
 

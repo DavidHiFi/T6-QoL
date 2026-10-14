@@ -1,4 +1,3 @@
-require("T6.Zombie.QolRoundSummary")
 CoD.PowerUps = {}
 CoD.PowerUps.IconSize = 48
 CoD.PowerUps.UpgradeIconSize = 36
@@ -561,7 +560,6 @@ end
 LUI.createMenu.PowerUpsArea = function (f1_arg0)
 	CoD.PowerUps.ZmqolInstallPerkRowFix()
 	local f1_local0 = CoD.Menu.NewSafeAreaFromState("PowerUpsArea", f1_arg0)
-	CoD.QolRoundSummary.Attach(f1_local0, f1_arg0)
 	f1_local0:setOwner(f1_arg0)
 	f1_local0.scaleContainer = CoD.SplitscreenScaler.new(nil, CoD.Zombie.SplitscreenMultiplier)
 	f1_local0.scaleContainer:setLeftRight(false, false, 0, 0)
@@ -594,28 +592,6 @@ LUI.createMenu.PowerUpsArea = function (f1_arg0)
 		Widget:addElement(upgradePowerUpIcon)
 		Widget.upgradePowerUpIcon = upgradePowerUpIcon
 		
-		-- zm_qol v1.99.0: POWER-UP TIMER TEXT. One per icon, alpha 0 until the
-		-- server reports seconds for that power-up.
-		--
-		-- v1.99.2: MOVED ABOVE THE ICON (user, 2026-08-16 - "move the timer right
-		-- above the power up icon itself"). It used to be the forum mod's layout:
-		-- right-aligned in the bottom 18 units, which is the same band the icon
-		-- occupies, so the number sat ON the icon's lower-right corner.
-		--
-		-- Now it is its own band, bottom edge flush with the icon's top edge, and
-		-- centred over the icon rather than right-aligned - the number is a label
-		-- for the icon now, not an overlay on it.
-		local zmqolTimerText = LUI.UIText.new()
-		zmqolTimerText:setLeftRight(true, true, 0, 0)
-		zmqolTimerText:setTopBottom(false, true, -(CoD.PowerUps.IconSize + CoD.PowerUps.ZmqolTimerHeight), -CoD.PowerUps.IconSize)
-		zmqolTimerText:setAlignment(LUI.Alignment.Center)
-		-- v1.99.52: WHITE (user, 2026-08-18). Was the forum mod's yellow-green
-		-- 0.8/0.9/0. Nothing else reads or writes this colour - it is set once
-		-- at construction and the tick handler only touches text and alpha.
-		zmqolTimerText:setRGB(1, 1, 1)
-		zmqolTimerText:setAlpha(0)
-		Widget:addElement(zmqolTimerText)
-		Widget.zmqolTimerText = zmqolTimerText
 
 		Widget.powerupId = nil
 		f1_local0.scaleContainer:addElement(Widget)
@@ -643,81 +619,6 @@ LUI.createMenu.PowerUpsArea = function (f1_arg0)
 	f1_local0:registerEventHandler("hud_update_bit_" .. CoD.BIT_DEMO_ALL_GAME_HUD_HIDDEN, CoD.PowerUps.UpdateVisibility)
 	f1_local0:registerEventHandler("powerups_update_position", CoD.PowerUps.UpdatePosition)
 
-	-- =======================================================================
-	--  zm_qol v1.99.0: POWER-UP TIMERS, the client half.
-	--
-	--  Reads the `powerup_times` dvar the server writes (see
-	--  zmqol_powerup_timer_think in quality_of_life.gsc) and paints the
-	--  seconds under whichever icon is showing that power-up.
-	--
-	--  Format is `name:secs,name:secs,` - the forum mod's, kept as-is.
-	--
-	--  🛑 THE SERVER SENDS WHOLE SECONDS AND ONLY WHEN THEY CHANGE. That is not
-	--  a detail: the forum version wrote the dvar on every one of stock's
-	--  20 Hz ticks per power-up per player, which is ~120 reliable commands a
-	--  second against a 128-entry ring. Do NOT "improve" this by asking for
-	--  fractional time.
-	--
-	--  📝 NOT HARDCODED TO A POWER-UP LIST. It matches on Widget.powerUpId,
-	--  which stock sets to the clientFieldName of whatever is in that slot - so
-	--  the Death Machine (deathmachine_powerup) and anything added later are
-	--  covered with no extra work.
-	--
-	--  🛑 v1.99.1 - THE CAPITAL U IS THE WHOLE BUG. v1.99.0 read `w.powerupId`.
-	--  Lua is case-sensitive, and although stock DOES write a lowercase
-	--  `Widget.powerupId = nil` once at construction (line ~515), that field is
-	--  dead - nothing ever assigns it again. The live one is `powerUpId`, set in
-	--  CoD.PowerUps.UpdateState and read by GetExistingPowerUpIndex and
-	--  UpdatePosition. Proof it is the live one: the icons position themselves
-	--  correctly in game, and UpdatePosition keys entirely off powerUpId.
-	--  So `t` was ALWAYS nil, the alpha was ALWAYS 0, and no timer could ever
-	--  draw regardless of what the server sent.
-	--
-	--  Re-patching AmmoAreaZombie here as well: on Origins that table may not
-	--  exist yet when PatchAmmoCounters() runs at file scope, and this handler
-	--  is idempotent (the deathmachinePatch flag), so it self-heals in 100 ms.
-	-- =======================================================================
-	f1_local0:registerEventHandler("zmqol_powerup_timer_tick", function (self)
-		if CoD.AmmoAreaZombie ~= nil and CoD.AmmoAreaZombie.deathmachinePatch ~= true then
-			CoD.PowerUps.PatchZombieAmmoArea()
-		end
-
-		local times = {}
-		local str = UIExpression.DvarString(nil, "powerup_times")
-
-		if str ~= nil and str ~= "" then
-			for pair in string.gmatch(str, "([^,]+)") do
-				local name, secs = string.match(pair, "([^:]+):([^:]+)")
-				if name ~= nil and secs ~= nil then
-					local n = tonumber(secs)
-					if n ~= nil then
-						times[name] = n
-					end
-				end
-			end
-		end
-
-		for i = 1, #self.powerUps do
-			local w = self.powerUps[i]
-
-			if w.zmqolTimerText ~= nil then
-				local t = nil
-				if w.powerUpId ~= nil then
-					t = times[w.powerUpId]
-				end
-
-				if t ~= nil and t > 0 then
-					w.zmqolTimerText:setText(tostring(math.ceil(t)))
-					w.zmqolTimerText:setAlpha(1)
-				else
-					w.zmqolTimerText:setAlpha(0)
-				end
-			end
-		end
-
-		return true
-	end)
-	f1_local0:addElement(LUI.UITimer.new(100, "zmqol_powerup_timer_tick", false, f1_local0))
 
 	f1_local0.visible = true
 	return f1_local0

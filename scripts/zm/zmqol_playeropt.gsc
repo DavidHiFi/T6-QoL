@@ -63,13 +63,11 @@ zmqol_popt( str_name, n_default )
     return n_default;
 }
 
-//  The shared HUD rule: hud_master off hides it, hud_all forces it on.
+//  The shared HUD rule. Bo2-VN: hud_master and hud_all are removed, so a row
+//  is decided by its own value alone.
 zmqol_popt_hud_on( str_row, n_row_default )
 {
-    if ( !self zmqol_popt( "hud_master", 1 ) )
-        return 0;
-
-    return self zmqol_popt( "hud_all", 0 ) || self zmqol_popt( str_row, n_row_default );
+    return self zmqol_popt( str_row, n_row_default );
 }
 
 //  Writes a personal option. The host keeps writing the dvar, so the menu row
@@ -109,23 +107,10 @@ zmqol_popt_default( str_name )
 {
     switch ( str_name )
     {
-        case "hud_all":
         case "hud_zone":
-        case "hud_compass":
-        case "hud_subtitles":
-        case "third_person":
-        case "velocity":
             return 0;
-        case "hud_master":
-        case "hud_health_bar":
-        case "hud_timers":
         case "hud_remaining":
-        case "hud_bleedout_bar":
-        case "hud_perk_popup":
-        case "hud_powerup_timers":
         case "crosshair":
-        case "hitmarkers":
-        case "redhitmarkers":
             return 1;
     }
 
@@ -175,14 +160,10 @@ zmqol_popt_cmd_open( cmd )
         case "giveperks":
         case "removeperks":
         case "movespeed":
-        case "velocity":
-        case "vel":
-        case "speed":
         case "afk":
         case "my":
         case "popt":
         case "mine":
-        case "hud":
         case "powerups":
             return 1;
     }
@@ -196,7 +177,7 @@ zmqol_popt_command( tokens )
     if ( tokens.size < 2 )
     {
         self iprintln( "^3[zm_qol] usage: ^7.my <option> <value>  ^3| ^7.my <option> clear" );
-        self iprintln( "^3options: ^7hud_master hud_all hud_timers hud_zone hud_compass crosshair third_person velocity hitmarkers ..." );
+        self iprintln( "^3options: ^7hud_zone hud_remaining crosshair" );
         return;
     }
 
@@ -299,7 +280,7 @@ zmqol_console_command_names()
     //  console twin. `fly` is intentionally omitted - see the note above.
     a[a.size] = "p";            a[a.size] = "round";        a[a.size] = "setround";
     a[a.size] = "god";          a[a.size] = "ghost";        a[a.size] = "afk";
-    a[a.size] = "hud";          a[a.size] = "help";         a[a.size] = "where";
+    a[a.size] = "help";         a[a.size] = "where";
     a[a.size] = "boxhere";
     a[a.size] = "wallhere";
     a[a.size] = "fog";          a[a.size] = "night";        a[a.size] = "nightmode";
@@ -597,43 +578,6 @@ zmqol_dev_command_listener()
                 player iprintln( "^2[zm_qol] godmode ON" );
             }
         }
-        else if ( cmd == "hud" )
-        {
-            // ================================================================
-            //  .hud on / .hud off  -  the master HUD switch          (v1.85.0)
-            //
-            //  Console twin: `hud_master 0|1`, registered in qol_options::init()
-            //  like every other command here - see the commands-are-dvars rule.
-            //  This branch only writes the dvar; qol_options::qol_opt_hud_watcher
-            //  is the single place that acts on it, so the chat command and the
-            //  console command cannot drift or fight each other.
-            //
-            //  Bare ".hud" toggles, which is what every other switch here does.
-            // ================================================================
-            b_on = !player zmqol_popt( "hud_master", 1 );
-
-            if ( tokens.size > 1 )
-            {
-                str_arg = tolower( tokens[1] );
-
-                if ( str_arg == "on" || str_arg == "1" )
-                    b_on = 1;
-                else if ( str_arg == "off" || str_arg == "0" )
-                    b_on = 0;
-                else
-                {
-                    player iprintln( "^3[zm_qol] usage: ^7.hud on ^3| ^7.hud off" );
-                    continue;
-                }
-            }
-
-            player zmqol_popt_store( "hud_master", b_on );
-
-            if ( b_on )
-                player iprintln( "^2[zm_qol] HUD ON" );
-            else
-                player iprintln( "^1[zm_qol] HUD OFF ^7- .hud on to bring it back" );
-        }
         else if ( cmd == "ghost" )
         {
             // self.ignoreme is the stock "AI does not target me" flag - it is what
@@ -926,30 +870,6 @@ zmqol_dev_command_listener()
                 player iprintln( "^2[zm_qol] dropping the last ^7" + n_dropped + "^2 machine(s)" );
             else
                 player iprintln( "^3[zm_qol] every machine is already down" );
-        }
-        else if ( cmd == "velocity" || cmd == "vel" || cmd == "speed" )
-        {
-            //  User, 2026-08-13, pointing at T6-B2OP-PATCH.
-            //
-            //  🛑 THE METER IS NOT IN THAT PATCH. b2op.gsc has no velocity meter;
-            //  its README only documents the stat slot that toggles B2FR's one,
-            //  and B2FR is a separate repo that is not in the workspace. So this
-            //  is written, not ported. What B2OP did supply is the HUD shape -
-            //  its coordinates readout (b2op.gsc:5279-5301) uses setvalue() on a
-            //  numeric hudelem rather than settext per tick, which is also this
-            //  project's own rule (settext every frame floods reliable commands
-            //  and throws EXE_SERVERCOMMANDOVERFLOW).
-            str_arg = "";
-
-            if ( tokens.size > 1 )
-                str_arg = tokens[1];
-
-            if ( str_arg == "off" )
-                player zmqol_popt_store( "velocity", 0 );
-            else if ( str_arg == "on" )
-                player zmqol_popt_store( "velocity", 1 );
-            else
-                player iprintln( "^3[zm_qol] ^3.velocity on ^7or ^3.velocity off ^8(off by default)" );
         }
         else if ( cmd == "fly" )
         {
