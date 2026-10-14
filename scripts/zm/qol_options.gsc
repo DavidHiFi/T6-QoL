@@ -75,7 +75,6 @@ init()
     //  story. Renamed to a positive name with the sane default so the row
     //  in the SOUND tab reads the way a player expects.
     qol_opt_dvar( "voice_lines",           "1" );
-    qol_opt_dvar( "coop_pause",            "0" );
     //  v2.14.3 - SOLO EASTER EGGS, the pre-game lobby row (user, 2026-09-06).
     //  Registered here only so it shows up in console autocomplete and holds a
     //  real value on the first open of a lobby; the row itself lives in
@@ -115,92 +114,8 @@ init()
     //  story and why this ships as a tunable rather than a fix.
     qol_opt_dvar( "zmqol_raygun_hand_ofs", "0 0 0" );
 
-    //  v1.85.0 - THE MASTER SWITCH, driven by ".hud on" / ".hud off".
-    //  hud_all forces the individual hud_* options ON; hud_master overrides the
-    //  lot in the other direction, including the game's OWN LUI hud (points,
-    //  ammo, round, perk icons) which no hud_* dvar has ever reached. 1 = normal.
-    qol_opt_dvar( "hud_master",       "1" );
-    qol_opt_dvar( "hud_all",          "0" );
-    qol_opt_dvar( "hud_timer",        "1" );
-    //  v1.84.0 - ON by default. The user asked for the round timer to be shown
-    //  under the game counter, not left behind a switch they have to find.
-    qol_opt_dvar( "hud_round_timer",  "1" );
-    // ========================================================================
-    //  v2.1.3 - hud_timers, the FOUR-WAY row that replaced the two above.
-    //
-    //  User, 2026-08-21: *"for the timers remove both of them and turn them it
-    //  into one option called 'GAME TIMERS' ... 'GAME TIMER', 'ROUND TIMER',
-    //  'GAME TIMER + ROUND TIMER', 'OFF'."*
-    //
-    //      1 = both (the shipped default)   2 = game only
-    //      3 = round only                   0 = off
-    //
-    //  🛑 NOT a plain qol_opt_dvar default: seeding a blank hud_timers with "1"
-    //  would give BOTH timers back to a player who had deliberately switched one
-    //  of them off, because their choice lives in the two dvars above and this
-    //  is the first build that has ever read this name. qol_opt_timer_seed()
-    //  derives the value from those two instead. The LUI does the same
-    //  derivation in optionssettings.lua::QolMigrateTimers for the case where
-    //  the menu is opened before a map has ever loaded; both use the same table
-    //  and both are skipped the moment hud_timers holds anything.
-    // ========================================================================
-    qol_opt_timer_seed();
-    qol_opt_dvar( "hud_health_bar",   "1" );
-    //  v1.99.1 - the red "Bleeding out in: N" bar shown while you are downed
-    //  (scripts\zm\bleedout_bar.gsc, imported from Nathan3197's mod). User asked
-    //  for a switch, 2026-08-16. ON by default - it is existing behaviour, and a
-    //  new toggle must not silently change what the mod already does.
-    //  Read in ONE place, inside bleedout_bar()'s loop.
-    //  v1.99.6 - that read moved INTO the loop, so the row is live: flip it
-    //  while you are already downed and the bar appears or disappears at once.
-    //  v1.99.1 read it once at creation and the user reported exactly that gap.
-    qol_opt_dvar( "hud_bleedout_bar", "1" );
     qol_opt_dvar( "hud_remaining",    "1" );
     qol_opt_dvar( "hud_zone",         "0" );
-    //  v1.99.26 - compass, user request 2026-08-17 from the TechnoOps mod. OFF by
-    //  default: it is a NEW element, and a new toggle must not change what the
-    //  mod already draws for someone who never asked for it.
-    qol_opt_dvar( "hud_compass",      "0" );
-    //  v1.98.0 - the icon + name + description pop-up shown when you buy a perk
-    //  (the Vanguard Perk Animation module in quality_of_life.gsc). User asked
-    //  for a switch, 2026-08-16. ON by default - it is existing behaviour, and a
-    //  new toggle must not silently change what the mod already does.
-    //  Read in ONE place, at the top of perk_bought(), so the toggle takes
-    //  effect on the very next perk with no respawn.
-    qol_opt_dvar( "hud_perk_popup",   "1" );
-    //  v1.99.0 - seconds remaining under each power-up icon. ON by default:
-    //  the user asked for the feature, not merely for a switch.
-    //  🛑 The dvar is read SERVER-side, in zmqol_powerup_timer_think(), so
-    //  switching it off stops the reliable-command traffic entirely rather than
-    //  just hiding the text. See the long note there.
-    qol_opt_dvar( "hud_powerup_timers", "1" );
-    qol_opt_dvar( "hud_color",        "1 1 1" );
-    qol_opt_dvar( "hud_color_health", "1 1 1" );
-    //  v1.90.6 - the two stacked timers get their own colours, kept out of the
-    //  shared hud_color tint list.
-    //
-    //  v1.95.3 - both are now the SAME dull navy blue, user 2026-08-14 (was
-    //  yellow / light blue). Two dvars are kept rather than one so either row can
-    //  still be re-coloured on its own from the console.
-    //
-    //  🛑 They had to come OUT of the shared hud_color tint list to do this.
-    //  qol_opt_hud_watcher() repaints from one dvar on change, so a colour set
-    //  at creation was guaranteed to be flattened back to white on the very
-    //  first pass - the same single-owner rule as the health bar above.
-    //  hud_color still owns zombietext. The zone name has its own dvar below.
-    //
-    //  🛑 The watcher's str_prev_color_timer / _round / _zone seeds MUST match
-    //  these strings exactly, or the first pass sees a change and repaints on
-    //  spawn.
-    qol_opt_dvar( "hud_color_timer",       "1 1 1" );   //  white, user 2026-08-31 (was navy blue)
-    //  v2.17.47 - grey, user 2026-09-27: *"make the round timer below ... gray
-    //  and a little bit darker than white, not like black"*, so it reads apart
-    //  from the white game timer above it. Was white since 2026-09-02.
-    qol_opt_dvar( "hud_color_round_timer", "0.7 0.7 0.7" );
-    //  v2.17.47 - the zone name under the player name, same grey and the same
-    //  request: it was white like the name, so the two ran together. Its own
-    //  dvar so hud_color can no longer flatten it back to white.
-    qol_opt_dvar( "hud_color_zone",        "0.7 0.7 0.7" );
 
     //  Read by quality_of_life::get_pack_a_punch_weapon_options(). Default 1
     //  keeps the animated camo exactly where this mod already had it.
@@ -225,26 +140,6 @@ init()
     qol_opt_dvar( "anim_pap_camo_highrise", "1" );   //  v2.9.16 - Die Rise joins (user 2026-08-31)
     qol_opt_dvar( "anim_pap_camo_nuked",    "1" );   //  v2.9.16 - Nuketown joins (user 2026-08-31)
 
-    //  v1.95.0 - three new rows for the QUALITY OF LIFE menu, user 2026-08-14.
-    //  All default ON, so the mod behaves exactly as before unless switched off.
-    //  Read in quality_of_life.gsc by updatedamagefeedback(), the custom-summary
-    //  popup and zmqol_credits_banner_print() respectively. Registered here with
-    //  the rest so they appear in console autocomplete and so the menu row reads
-    //  a real value instead of an empty string on the first open.
-    qol_opt_dvar( "hitmarkers",    "1" );
-
-    //  v1.99.31 - the SOUND tab's four feedback packs, user request 2026-08-17.
-    //  All default "0", which for hit/kill means the alert this mod has always
-    //  played and for downed/crit means silence - so nothing changes for anyone
-    //  who does not go looking. The numbering and the alias tables live in
-    //  quality_of_life.gsc's zmqol_init_feedback_sounds(); registered here with
-    //  the rest so the console autocompletes them and the menu row reads a real
-    //  value the first time it is opened instead of an empty string.
-    qol_opt_dvar( "hit_sound",     "0" );
-    qol_opt_dvar( "kill_sound",    "0" );
-    qol_opt_dvar( "downed_sound",  "0" );
-    qol_opt_dvar( "crit_sound",    "0" );
-    qol_opt_dvar( "round_summary", "1" );
     // ========================================================================
     //  v2.14.14 - flash_intro, the FOUR-WAY row that replaced FLASH CREDITS
     //  (intro_credits) and FLASH HELP (flash_help) on the GAME tab.
@@ -267,17 +162,6 @@ init()
     // ========================================================================
     qol_opt_flash_seed();
 
-    //  v1.99.61 - PERK BONUS POINTS, user request 2026-08-18. ON by default:
-    //  the +100 for proning at a perk machine is behaviour this mod has always
-    //  had, so the switch must change nothing until it is thrown. OFF means NO
-    //  prone points at all - the mod's own detector stops paying AND Origins'
-    //  native 25-point "loose change" easter egg is suppressed, which is the
-    //  two-state behaviour the user asked for ("either the effect is on with 100
-    //  points prone per machine, or not points at all from proning"). Read live
-    //  in quality_of_life.gsc's prone_bonus_monitor() and in zm_tomb.gsc's
-    //  origins_change_patch(), so it takes effect mid-match both ways.
-    qol_opt_dvar( "perk_bonus_points", "1" );
-
     //  v1.99.61 - FLASH HELP, user request 2026-08-18: the second match-start
     //  flash line, telling players how to open chat and reach .help.
     //  🛑 v2.14.14 - flash_help is no longer registered here. It and
@@ -293,13 +177,6 @@ init()
     //  for a switch (the same call as the power-up timers in v1.99.0). "0" is
     //  exact vanilla, down to the same random 0.1-0.7s wait stock takes.
     qol_opt_dvar( "instant_nuke", "1" );
-
-    //  v1.99.73 - BETTER DEADSHOT, user request 2026-08-19. OFF by default: a
-    //  doubled headshot is new behaviour and a new switch must not change what
-    //  the mod already does until it is thrown. Registered here so the console
-    //  autocompletes it; quality_of_life.gsc::zmqol_better_deadshot_scale()
-    //  reads it on every bullet, so it is live both ways mid-game.
-    qol_opt_dvar( "better_deadshot", "0" );
 
     //  v2.2.0 - BETTER SPEED COLA, user request 2026-08-21, the GAME tab row
     //  directly under BETTER DEADSHOT. OFF by default for the same reason that
@@ -353,87 +230,12 @@ init()
     //  ========================================================================
     qol_opt_dvar( "crosshair", "1" );
 
-    //  v2.7.0 - NO LAVA DAMAGE, user request 2026-08-28, the PATCHES tab.
-    //  TranZit-family maps only (Classic TranZit, Diner, Farm, Town, Bus Depot -
-    //  all share mapname "zm_transit", told apart only by ui_zm_mapstartlocation).
-    //  OFF (0) = stock: lava still ignites/explodes zombies and damages players.
-    //  ON (1) = lava stays visible on the ground but does nothing - the ground
-    //  fx/material are a separate system this never touches.
-    //  Read live on every lava trigger event by
-    //  scripts\zm\zm_transit\zm_transit.gsc::qol_lava_damage_think(), which
-    //  replaces maps\mp\zm_transit_lava::lava_damage_init() - see that file for
-    //  why that is the one safe hook point (player_lava_damage/zombie_lava_damage
-    //  are both called unqualified, same file, in stock - not replaceFunc-able
-    //  directly). Live in both directions mid-match, not just at map load.
-    qol_opt_dvar( "no_lava_damage", "0" );
-
-    //  v2.12.5 - NO DENIZENS, user request 2026-09-05, the new GAME 3 tab.
-    //  *"add an option to turn tranzit denizens on/off (enabled/disabled),
-    //  disabled is standard vanilla behaviour, setting it to enabled makes no
-    //  denizens spawn in the fog so they wont annoy the player."*
-    //
-    //  OFF (0) = stock: denizens spawn in the fog exactly as Treyarch shipped.
-    //  ON (1) = none ever spawn.
-    //
-    //  🌟 IT DRIVES A STOCK DVAR, AND THAT DVAR HAS EXACTLY ONE READER IN THE
-    //  WHOLE GAME. maps\mp\zombies\_zm_ai_screecher.gsc:85, inside
-    //  screecher_spawning_logic()'s main loop:
-    //        while ( getdvarint( #"scr_screecher_ignore_player" ) )
-    //            wait 0.1;
-    //  While it is non-zero the spawn loop parks before it ever picks a spawn
-    //  point, so nothing is spawned and nothing is killed off afterwards - the
-    //  player never sees a denizen appear and vanish. A grep of the entire
-    //  gsc-dump finds that line and no other use of the name (the two
-    //  scr_screecher_ignore_SCORE reads at :1111 and :1164 are a different
-    //  dvar, and both sit inside /# #/ dev blocks), so there is no side effect
-    //  to inherit.
-    //
-    //  🛑 THAT LINE IS NOT IN A DEV BLOCK. The /# #/ pairs in that function are
-    //  at :64-67 and :74-76 only; :85 is plain retail code. Checked explicitly,
-    //  because a stock call that turned out to be dev-only is exactly how the
-    //  .fog toggle shipped doing nothing (CLAUDE.md's pre-mortem rule).
-    //
-    //  📝 The write is a plain setdvar of a name stock reads hashed. Stock does
-    //  the same thing to itself - gametypes_zm\_serversettings.gsc reads
-    //  getdvar( #"sv_hostname" ) at :6 and writes setdvar( "sv_hostname", ... )
-    //  at :11, and reads #"g_allowVote" at :22 while writing "g_allowvote" at
-    //  :27 - so the hashed and string forms address one dvar, case included.
-    //
-    //  Mirrored onto the stock dvar once a second by
-    //  quality_of_life.gsc::zmqol_no_denizens_watch(), which is TranZit-only
-    //  and live in both directions mid-match.
-    qol_opt_dvar( "no_denizens", "0" );
-
-    //  v2.14.13 - THIRD PERSON, user request 2026-09-07, the GAME 3 tab. OFF =
-    //  stock first person. Applied per player, once a second, by
-    //  qol_opt_third_person() below - see its banner for why it drives the
-    //  engine method rather than a dvar, and why it has to re-apply after
-    //  every spawn.
-    qol_opt_dvar( "third_person", "0" );
-
     //  v2.14.28 - KNIFE LUNGE, user request 2026-09-08, the GAME 3 tab. ON =
     //  stock (the melee charge that pulls you onto the zombie). OFF writes the
     //  engine's own switch for it, aim_automelee_enabled, to 0 - see
     //  qol_opt_knife_lunge() below for the evidence. Applied per player, once a
     //  second, live in both directions.
     qol_opt_dvar( "knife_lunge", "1" );
-
-    //  v2.16.14 - NO MUD SLOWDOWN, user request 2026-09-15, the GAME 3 tab.
-    //  OFF (0) = stock: Origins' mud drags you to 0.6 move speed (0.7 with
-    //  Stamin-Up). ON (1) = full speed in mud, and the struggle VO and squelch
-    //  loop go with it. Applied by emptying the map's own list of mud volumes -
-    //  see scripts\zm\zm_tomb\qol_no_mud_slow.gsc for why that seam and not a
-    //  replaceFunc on the monitor. Origins-only because mud is Origins-only,
-    //  survival and grief locations included; live in both directions.
-    qol_opt_dvar( "no_mud_slow", "0" );
-
-    //  v2.7.2 - 3 HIT DOWN, user request 2026-08-28, the PATCHES tab. OFF =
-    //  stock. Read on every zombie melee hit by
-    //  quality_of_life.gsc::zmqol_three_hit_down_scale(), chained through the
-    //  stock overrideplayerdamage extension point - see
-    //  zmqol_three_hit_down_install() for the whole mechanism. Live mid-match
-    //  in both directions, same as the other PATCHES rows.
-    qol_opt_dvar( "three_hit_down", "0" );
 
     //  v2.8.2 - ONE SHOT ONE KILL, user request 2026-08-29, the CHEATS tab.
     //  OFF (0) = stock. Read on every point of damage a player deals, inside
@@ -534,13 +336,6 @@ init()
     //  qol_opt_move_speed() for the values and where they came from.
     qol_opt_dvar( "move_speed", "1" );
 
-    //  v2.0.6 - NETWORK FRAME PATCH, user request. OFF by default: with it off
-    //  quality_of_life::zmqol_wait_network_frame() is byte-exact stock, so the
-    //  row changes nothing until it is thrown. See the header above that
-    //  function for the console figures and why B2OP disables its own copy on
-    //  modern Plutonium.
-    qol_opt_dvar( "network_frame_patch", "0" );
-
     //  v2.0.7 - GRAPHICS BOOST, user request (REZ's "Vanilla+" config). OFF by
     //  default: REZ's own documentation targets modern dedicated GPUs with
     //  1.5-2 GB of VRAM headroom, so it must not be forced on everyone who
@@ -552,17 +347,10 @@ init()
     //  used to carry survives as qol_opt_aa_selfheal(), which is the only part
     //  that ever needed to run.
 
-    //  v2.0.8 - ROUND COUNTER LEFT (HUD tab). 0 = top right, the Cold War
-    //  placement the mod has always shipped, so nobody's HUD moves on update.
-    qol_opt_dvar( "hud_round_left", "0" );
-
     qol_opt_aa_selfheal();
-    level thread qol_opt_coop_pause();
-    level thread qol_opt_round_clock();
     level thread qol_opt_no_power();
     level thread qol_opt_lod_fix();
     level thread qol_opt_move_speed();
-    level thread qol_opt_roundcounter_master();
     level thread qol_opt_connect_loop();
     level thread qol_opt_starting_pistol();
 
@@ -593,81 +381,6 @@ init()
     //  ever did fail hard, being last means it can only cost itself - not the
     //  coop pause, the round clock, no_power, lod_fix or the connect loop.
     setdvar( "sv_allowAimAssist", 1 );
-}
-
-// ============================================================================
-//  qol_opt_roundcounter_master  -  ".hud off" reaches the round chalk too
-//
-//  v1.87.1. The BOCW round counter (quality_of_life.gsc::round_hud()) was the
-//  one HUD element ".hud off" did not hide - it is still visible as the chalk
-//  mark in the top right of the user's screenshot.
-//
-//  🛑 IT CANNOT BE DRIVEN FROM qol_opt_hud_watcher(). Two reasons:
-//    1. It is a SERVER hudelem (createservericon / createserverfontstring),
-//       one shared element rather than one per player, so a per-player watcher
-//       would have every player writing the same element.
-//    2. It is ANIMATION-driven, not tick-driven - round_hud() runs
-//       fadeovertime / scaleovertime / moveovertime sequences at each round
-//       change. Writing its alpha on a timer would fight those animations.
-//
-//  So this only ever writes while the HUD is switched OFF, plus exactly once on
-//  the off->on edge to put it back. While the HUD is on it never touches the
-//  element, and the round animation is left completely alone.
-// ============================================================================
-qol_opt_roundcounter_master()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "end_game" );
-
-    n_prev = 1;
-
-    for ( ;; )
-    {
-        wait 0.25;
-
-        // ====================================================================
-        //  v2.1.3 - ROUND COUNTER POSITION -> OFF hides it here too.
-        //
-        //  User, 2026-08-21: *"add a third 'off' options so you can turn it off
-        //  entirely."*  hud_round_left 2 = OFF.
-        //
-        //  🌟 THIS LOOP IS THE RIGHT PLACE AND NOT A NEW MECHANISM: it already
-        //  owns this element's alpha and already re-asserts it every pass, which
-        //  is exactly what the round counter needs - round_hud() fades it back
-        //  to alpha 1 at every round transition, so a single write would be
-        //  undone by the next round. Adding a second writer elsewhere is the
-        //  flashing-hudelem bug this project has already had once.
-        //
-        //  🛑 level.zmqol_roundcounter is a SERVER hudelem, one for the whole
-        //  match, so OFF is the host's setting for everybody - the same as
-        //  hud_master has always been on this element. It cannot be per-player
-        //  without rebuilding the counter as a client hudelem, which would
-        //  change what every other feature that touches it is holding.
-        // ====================================================================
-        n_on = getdvarintdefault( "hud_master", 1 ) && getdvarintdefault( "hud_round_left", 0 ) != 2;
-
-        if ( !isdefined( level.zmqol_roundcounter ) )
-        {
-            n_prev = n_on;
-            continue;
-        }
-
-        if ( !n_on )
-        {
-            //  Re-asserted every pass, not once: round_hud() sets alpha back to
-            //  1 at every round transition, so a single write would be undone
-            //  by the next round.
-            level.zmqol_roundcounter.alpha = 0;
-        }
-        else if ( !n_prev )
-        {
-            level.zmqol_roundcounter.alpha = 1;
-        }
-
-        n_prev = n_on;
-    }
 }
 
 // ============================================================================
@@ -872,46 +585,6 @@ qol_opt_dvar( str_dvar, str_default )
 }
 
 // ============================================================================
-//  qol_opt_timer_seed  -  v2.1.3, the GAME TIMER / ROUND TIMER merge
-//
-//  Fills hud_timers in from the two dvars the old pair of HUD rows wrote, once,
-//  and only while hud_timers is still empty:
-//
-//        hud_timer  hud_round_timer      hud_timers
-//            1            1          ->      1   both
-//            1            0          ->      2   game only
-//            0            1          ->      3   round only
-//            0            0          ->      0   off
-//
-//  🛑 IDEMPOTENT BY CONSTRUCTION. The only write is the setdvar at the bottom,
-//  and the first line returns the moment the name holds anything, so a stale
-//  hud_timer can never re-derive a value the player has since changed.
-//
-//  📝 Twin of optionssettings.lua::CoD.OptionsSettings.QolMigrateTimers, which
-//  covers the player who opens the menu from the main menu before any map has
-//  loaded. Same table on both sides - change one and change the other.
-// ============================================================================
-qol_opt_timer_seed()
-{
-    if ( getdvar( "hud_timers" ) != "" )
-        return;
-
-    b_game  = getdvarintdefault( "hud_timer", 1 ) != 0;
-    b_round = getdvarintdefault( "hud_round_timer", 1 ) != 0;
-
-    n_mode = 0;
-
-    if ( b_game && b_round )
-        n_mode = 1;
-    else if ( b_game )
-        n_mode = 2;
-    else if ( b_round )
-        n_mode = 3;
-
-    setdvar( "hud_timers", n_mode );
-}
-
-// ============================================================================
 //  qol_opt_flash_seed  -  v2.14.14, the FLASH CREDITS / FLASH HELP merge
 //
 //  Fills flash_intro in from the two dvars the old pair of GAME rows wrote,
@@ -1016,89 +689,10 @@ qol_opt_player_init()
     {
         self waittill( "spawned_player" );
 
-        // ====================================================================
-        //  🛑 v2.17.40 - THIS BLOCK RUNS ON EVERY SPAWN, NOT JUST THE FIRST.
-        //  IT SITS ABOVE THE b_first CHECK ON PURPOSE. DO NOT MOVE IT BACK.
-        //
-        //  Each line is guarded by isdefined(), so a spawn that already has its
-        //  three elements allocates nothing - this costs a respawn three reads.
-        //  What it buys is self-healing: if anything ever drops these handles
-        //  again, the very next spawn takes the slots back instead of leaving
-        //  the pop-up quietly short for the rest of the match. That is exactly
-        //  what v2.17.39 could not survive - vpa_onplayerspawned() nulled all
-        //  three on every spawn without destroying them, so the reservation was
-        //  orphaned on the same notify that created it. See the v2.17.40 banner
-        //  in quality_of_life.gsc::vpa_onplayerspawned().
-        //
-        //  🛑 alpha 0 IS SET INSIDE EACH GUARD, NOT AFTER THE THREE. Writing it
-        //  unconditionally every spawn would blank a pop-up that is mid-
-        //  animation when the player respawns. Only a freshly created element
-        //  needs hiding; a reused one is owned by perk_bought(), which rewrites
-        //  every field on every purchase.
-        // ====================================================================
-        if ( !isdefined( self.perkname_hud ) )
-        {
-            self.perkname_hud = newclienthudelem( self );
-            self.perkname_hud.alpha = 0;
-        }
-        if ( !isdefined( self.perkdesc_hud ) )
-        {
-            self.perkdesc_hud = newclienthudelem( self );
-            self.perkdesc_hud.alpha = 0;
-        }
-        if ( !isdefined( self.perkhud ) )
-        {
-            self.perkhud = newclienthudelem( self );
-            self.perkhud.alpha = 0;
-        }
-
         if ( !b_first )
             continue;
 
         b_first = 0;
-
-        // ====================================================================
-        //  🛑 v2.17.39 - RESERVE THE PERK POP-UP'S THREE HUDELEMS AT SPAWN.
-        //
-        //  User, 2026-09-24, Origins Laboratory: bought Quick Revive after the
-        //  first generator and the pop-up drew its name and description with NO
-        //  ICON - the icon flashed for an instant at the very end as it faded.
-        //  Twice now.
-        //
-        //  newclienthudelem() draws from a finite client pool and FAILS QUIETLY
-        //  when it is empty. perk_bought() asks for three in a row and the icon
-        //  is deliberately last, so a short pool costs the picture. Origins is
-        //  the worst case: the generator capture rings allocate on demand from
-        //  that same pool, so buying a perk right after a generator is exactly
-        //  when the pool is thinnest.
-        //
-        //  perk_bought() now REUSES these three instead of building and
-        //  destroying them per purchase, which fixes every perk after the first.
-        //  Claiming them here, at first spawn, closes the remaining hole: the
-        //  FIRST perk of the match. At spawn the pool is untouched - no capture
-        //  ring, no other pop-up - so the reservation always succeeds.
-        //
-        //  🛑 IT LIVES IN THIS FILE, NOT quality_of_life.gsc, AND IT IS INLINE.
-        //  b32602e did this correctly and was reverted only because it used a
-        //  HELPER FUNCTION in quality_of_life.gsc, which is at its symbol and
-        //  import-reference ceiling - that overflow killed every map load and
-        //  cost three boots. This file has headroom, isdefined and
-        //  newclienthudelem are builtins, and no new function is defined.
-        //  See [[qol-symbol-table-not-size]] and
-        //  [[getdvarintdefault-is-not-a-builtin]].
-        //
-        //  Alpha 0 so nothing draws until perk_bought() fills them in - it
-        //  rewrites every field on every purchase, so nothing carries over.
-        //  perk_bought() keeps its own isdefined guards, so this is a
-        //  reservation and not a dependency: if it never ran, the pop-up still
-        //  allocates on demand exactly as before.
-        //
-        //  📝 v2.17.40 - THE CODE THIS BANNER DESCRIBES HAS MOVED UP, above the
-        //  b_first check, so it re-asserts on every spawn instead of only the
-        //  first. The reasoning above is unchanged and still correct; only the
-        //  placement moved. The banner is kept here because it is the record of
-        //  why the reservation exists at all.
-        // ====================================================================
 
         self thread qol_opt_cherry_sound();
         self thread qol_opt_rapid_fire();
@@ -1108,7 +702,6 @@ qol_opt_player_init()
         self thread qol_opt_starting_pistol_player();
         self thread qol_opt_hud_watcher();
         self thread qol_opt_crosshair();
-        self thread qol_opt_third_person();
         self thread qol_opt_knife_lunge();
         //  v2.14.15 - BETTER SPEED COLA, part two: the perk-bottle drink watcher.
         //  Lives with the rest of that feature in quality_of_life.gsc.
@@ -2173,57 +1766,6 @@ qol_opt_starting_pistol_player()
 }
 
 // ----------------------------------------------------------------------------
-//  coop_pause  -  freeze zombie spawning between rounds. Solo games ignore it,
-//  same as Remix, because a solo player can just pause the game.
-// ----------------------------------------------------------------------------
-qol_opt_coop_pause()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "end_game" );
-
-    b_paused = 0;
-
-    for ( ;; )
-    {
-        wait 0.5;
-
-        b_want = getdvarintdefault( "coop_pause", 0 );
-
-        if ( b_want == b_paused )
-            continue;
-
-        a_players = get_players();
-
-        if ( a_players.size < 2 )
-            continue;
-
-        if ( b_want )
-        {
-            //  Wait for the round to end first - pausing mid-round would strand
-            //  whatever is already alive and read as a freeze.
-            if ( get_round_enemy_array().size + level.zombie_total != 0 )
-            {
-                level iprintln( "^3[zm_qol] ^7pausing at the start of the next round" );
-                level waittill( "end_of_round" );
-            }
-
-            b_paused = 1;
-            level iprintln( "^3[zm_qol] ^7PAUSED - coop_pause 0 to resume" );
-        }
-        else
-        {
-            b_paused = 0;
-            level iprintln( "^3[zm_qol] ^7resumed" );
-        }
-
-        foreach ( player in a_players )
-            player setclientdvar( "ai_disableSpawn", b_paused );
-    }
-}
-
-// ----------------------------------------------------------------------------
 //  no_power  -  TranZit's power-free challenge: no turbine, no jet gun.
 // ----------------------------------------------------------------------------
 //  🛑 This lives in a ROOT script even though it is TranZit-only, and that is
@@ -2612,22 +2154,8 @@ zmqol_perk_power_off_keep_drinks( origin, radius )
     level notify( notify_name + "_off" );
 }
 
-// ----------------------------------------------------------------------------
-//  The HUD dvars
-// ----------------------------------------------------------------------------
-//  These drive the HUD THIS MOD ALREADY DRAWS rather than adding a second one
-//  next to it - the user asked to "keep my current hud for my health hud and
-//  timer at the top of the screen". quality_of_life's timer(), zombiecounter()
-//  and first_spawn() now stash their elements on self for this to find.
-//
-//  hud_all is an override, not a master switch: 0 leaves each hud_* dvar to
-//  decide for itself, 1 forces everything on. That way turning it on to see
-//  everything does not wipe out the individual settings underneath.
-//
-//  🛑 Only hud_zone and the round timer (hud_timers 1 or 3) create anything,
-//  and only while their dvar is on - see the HUD allowance note at the top of
-//  this file.
-// ----------------------------------------------------------------------------
+//  Bo2-VN: the HUD watcher keeps only the ZONE NAME row. The master switch,
+//  timers, compass, colour dvars and round-counter position are removed.
 qol_opt_hud_watcher()
 {
     if ( zmqol_minimal() )
@@ -2638,271 +2166,11 @@ qol_opt_hud_watcher()
 
     flag_wait( "initial_blackscreen_passed" );
 
-    //  🛑 SEEDED WITH THE DEFAULT, NOT "". Seeding empty made the first pass see
-    //  a "change" from "" to "1 1 1" and tint everything white on spawn - which
-    //  turned the health bar's dark backing plate into the thick white border
-    //  the user reported and never asked for. Nothing may be recoloured until
-    //  the value actually differs from the default.
-    str_prev_color = "1 1 1";
-    //  v1.90.6 - same contract as str_prev_color: seeded to the dvar default so
-    //  the first pass is a no-op. The elements are created already carrying
-    //  these colours (timer() in quality_of_life.gsc and qol_opt_round_timer_hud
-    //  below), so the watcher only ever has to act on a real console change.
-    //  v2.10.1 - both white now; these MUST track the two qol_opt_dvar defaults
-    //  above or the first pass repaints on spawn. (The 08-31 white pass missed
-    //  this pair - the game timer repainted once per spawn until 2026-09-02.)
-    str_prev_color_timer = "1 1 1";
-    str_prev_color_round = "0.7 0.7 0.7";   //  v2.17.47 - grey, see the dvar
-    str_prev_color_zone = "0.7 0.7 0.7";    //  v2.17.47 - grey, see the dvar
-
-    //  -1 so the first pass always writes the LUI flag once, whatever hud_master
-    //  says. Seeding it to 1 would leave the flag unset on a player who joined
-    //  with hud_master already 0.
-    n_prev_master = -1;
-    n_tick = 0;
-
     for ( ;; )
     {
-        b_all = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_all", 0 );
-
-        // ====================================================================
-        //  v1.85.0 - hud_master, the ".hud off" switch.
-        //
-        //  🛑 IT MUST BEAT hud_all, so it is applied as a multiplier on every
-        //  branch below rather than as another `||` term. ".hud off" means off.
-        //
-        //  🌟 setclientuivisibilityflag( "hud_visible", 0 ) is what actually
-        //  takes the GAME's hud down - points, ammo, round, perk icons, the
-        //  power-up row. None of those are hudelems this mod owns, so no hud_*
-        //  dvar has ever been able to touch them. This is not a guess: it is the
-        //  exact call stock uses to hide the hud behind the intro screen, and
-        //  quality_of_life.gsc::fade_out_intro_screen_zm_instant() sets the very
-        //  same flag back to 1 when the blackscreen lifts.
-        //
-        //  Written ONLY on change. It is a reliable client command, and firing
-        //  one every 0.25s is how you earn EXE_SERVERCOMMANDOVERFLOW.
-        // ====================================================================
-        //  🛑 AND IT HAS TO BE RE-ASSERTED, not just written once. Stock sets
-        //  "hud_visible" back to 1 from several places during normal play -
-        //  _globallogic_player.gsc:79, _globallogic.gsc:1197 and _zm.gsc:5300 -
-        //  so a spawn or a round transition would quietly undo ".hud off".
-        //  Re-written every 2s, and ONLY while the switch is off, which is a
-        //  state the user asked for explicitly. At the normal setting this costs
-        //  exactly one write, on the first pass.
-        b_master = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_master", 1 );
-        n_tick++;
-
-        if ( b_master != n_prev_master || ( !b_master && n_tick % 8 == 0 ) )
-        {
-            n_prev_master = b_master;
-            self setclientuivisibilityflag( "hud_visible", b_master );
-
-            // ================================================================
-            //  🌟 v1.99.91 - THE SESSION WATERMARK GOES WITH IT.
-            //
-            //  User, 2026-08-20: *"same with the draw identifier ... make sure
-            //  when HUD is set to Disabled the hud is really disabled, not just
-            //  some hud elements."*
-            //
-            //  cg_drawIdentifier is the Plutonium dvar behind the GAME tab's
-            //  DRAW IDENTIFIER row (ui/t6/menus/optionssettings.lua:1267) - the
-            //  "*1787171762-0fe7-..." line across the top of the screen. It is
-            //  drawn by the client, not by any hudelem or LUI widget this mod
-            //  owns, so neither hud_visible nor any hud_* dvar could reach it.
-            //
-            //  🛑 THE USER'S OWN SETTING IS PRESERVED, NOT OVERWRITTEN. The
-            //  value is stashed on the first switch-off and put back verbatim on
-            //  switch-on, so a player who had it off keeps it off, and a player
-            //  who had it on gets it back. Writing a hardcoded 1 on restore
-            //  would quietly turn the watermark on for everyone who had it off.
-            // ================================================================
-            if ( !b_master )
-            {
-                if ( !isdefined( self.qol_drawid_saved ) )
-                    self.qol_drawid_saved = getdvarintdefault( "cg_drawIdentifier", 1 );
-
-                self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "cg_drawIdentifier", 0 );
-            }
-            else if ( isdefined( self.qol_drawid_saved ) )
-            {
-                self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "cg_drawIdentifier", self.qol_drawid_saved );
-                self.qol_drawid_saved = undefined;
-            }
-        }
-
-        // ====================================================================
-        //  v2.0.8 - ROUND COUNTER LEFT, applied live.
-        //
-        //  The round counter re-anchors itself every round (round_hud() calls
-        //  the same helper on its fly-back), but the two timers are created
-        //  ONCE, so without this a mid-game flip would leave them behind on the
-        //  other side of the screen. Written only when the row CHANGES.
-        //
-        //  🛑 level.zmqol_roundcounter is a SERVER hudelem shared by everyone,
-        //  so it is moved once at level scope rather than once per player -
-        //  writing it inside this per-player loop would still be correct but
-        //  would do it N times for no reason. It is guarded because the default
-        //  branch of round_hud() destroys and re-creates it every round.
-        // ====================================================================
-        //  🛑 v2.1.3 - `!= 0` BECAME `== 1`. hud_round_left is three-valued now
-        //  (0 RIGHT, 1 LEFT, 2 OFF) and the old test would have read OFF as
-        //  LEFT, dragging both timers to the other side of the screen the moment
-        //  the round number was switched off. OFF anchors RIGHT, the default.
-        //  🛑 hud_round_left stays a HOST/row dvar on purpose: it moves the
-        //  SHARED server round counter (see the note at the ON/OFF row above),
-        //  and the reference co-op branches kept it server-scoped for the same
-        //  reason - honouring it per player would detach each remote player's
-        //  timers from a counter they cannot move. Recorded in RESULTS.md.
-        b_round_left = getdvarintdefault( "hud_round_left", 0 ) == 1;
-        //  v2.3.4 - the round counter re-anchors itself on the RIGHT-anchored
-        //  digit-count inset every round transition (round_hud() calls it on
-        //  every fly-back), but these two timers only got re-anchored above on
-        //  a LEFT/RIGHT flip - so without this they would freeze at whatever
-        //  inset was live the last time hud_round_left changed and drift out
-        //  of alignment with the round counter as the round climbs past a
-        //  digit boundary (9->10, 99->100, ...). Tracked the same way
-        //  b_round_left already is: only write on an actual change.
-        n_round_digits = zmqol_round_digit_count();
-
-        if ( !isdefined( self.qol_round_left_last ) || self.qol_round_left_last != b_round_left ||
-             !isdefined( self.qol_round_digits_last ) || self.qol_round_digits_last != n_round_digits )
-        {
-            self.qol_round_left_last = b_round_left;
-            self.qol_round_digits_last = n_round_digits;
-
-            zmqol_hud_round_anchor( self.qol_hud_timer );
-            zmqol_hud_round_anchor( self.qol_hud_roundtimer );
-
-            if ( isdefined( level.zmqol_roundcounter ) )
-                zmqol_hud_round_anchor( level.zmqol_roundcounter );
-        }
-
-        //  v2.1.3 - one dvar, four states. See qol_opt_timer_seed() for the
-        //  table and for why nobody's old setting was lost in the merge.
-        n_timers = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_timers", 1 );
-
-        self qol_opt_show( self.qol_hud_timer, b_master && ( b_all || n_timers == 1 || n_timers == 2 ) );
-
-        // ====================================================================
-        //  🛑 TWO ELEMENTS ARE DELIBERATELY NOT TOUCHED HERE, AND v1.85.0 GOT
-        //  BOTH WRONG. Same rule as the health HUD below: whatever repaints an
-        //  element every tick is the ONLY thing allowed to write its alpha.
-        //
-        //  self.zombietext - quality_of_life.gsc::zombiecounter() writes
-        //  `alpha = 1` four times a second. Writing 0 from here made the counter
-        //  visibly flash on and off, which is what the user reported. That loop
-        //  now reads hud_master / hud_all / hud_remaining itself.
-        //
-        //  self.qol_hud_shield - shield_hud() CREATES AND DESTROYS its two
-        //  elements rather than fading them, and its background is deliberately
-        //  alpha 0.5. qol_opt_show() only knows 0 and 1, so restoring it from
-        //  here would have turned that dark backing plate fully opaque - the
-        //  exact "thick white border" bug this file already documents for the
-        //  health bar. shield_hud() takes its own destroy path on hud_master 0.
-        // ====================================================================
-
-        //  🛑 The health HUD is deliberately NOT touched here. quality_of_life's
-        //  own health loop already owns its alpha (it restores it the instant it
-        //  sees a 0) and its colour (it repaints per health tier every 0.1s).
-        //  Two threads writing the same health elements is what produced the white
-        //  bar, so there is exactly one owner now: that loop reads hud_health_bar
-        //  and hud_color_health itself.
-
-        self qol_opt_zone_hud( b_master && ( b_all || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_zone", 0 ) ) );
-        self qol_opt_compass_hud( b_master && ( b_all || self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_compass", 0 ) ) );
-        self qol_opt_round_timer_hud( b_master && ( b_all || n_timers == 1 || n_timers == 3 ) );
-
-        //  Colour is only re-applied when the string actually changes. Writing
-        //  .color every tick on every element would be a lot of needless work
-        //  for a value that changes when someone types at the console.
-        str_color = getdvar( "hud_color" );
-
-        if ( str_color != str_prev_color )
-        {
-            str_prev_color = str_color;
-            v_color = qol_opt_parse_color( str_color );
-
-            if ( isdefined( v_color ) )
-            {
-                //  v1.90.6 - qol_hud_timer and qol_hud_roundtimer are NO LONGER
-                //  tinted from hud_color; they have their own dvars below so the
-                //  user's yellow / light blue survive a hud_color change.
-                //  v2.17.47 - the zone name is no longer tinted from here; it
-                //  has its own grey dvar below.
-                self qol_opt_tint( self.zombietext, v_color );
-            }
-        }
-
-        str_color_zone = getdvar( "hud_color_zone" );
-
-        if ( str_color_zone != str_prev_color_zone )
-        {
-            str_prev_color_zone = str_color_zone;
-            v_color = qol_opt_parse_color( str_color_zone );
-
-            if ( isdefined( v_color ) )
-                self qol_opt_tint( self.qol_hud_zone, v_color );
-        }
-
-        //  The two stacked top-right timers, each with its own colour dvar.
-        str_color_timer = getdvar( "hud_color_timer" );
-
-        if ( str_color_timer != str_prev_color_timer )
-        {
-            str_prev_color_timer = str_color_timer;
-            v_color = qol_opt_parse_color( str_color_timer );
-
-            if ( isdefined( v_color ) )
-                self qol_opt_tint( self.qol_hud_timer, v_color );
-        }
-
-        str_color_round = getdvar( "hud_color_round_timer" );
-
-        if ( str_color_round != str_prev_color_round )
-        {
-            str_prev_color_round = str_color_round;
-            v_color = qol_opt_parse_color( str_color_round );
-
-            if ( isdefined( v_color ) )
-                self qol_opt_tint( self.qol_hud_roundtimer, v_color );
-        }
-
+        self qol_opt_zone_hud( self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_zone", 0 ) );
         wait 0.25;
     }
-}
-
-//  "1 0.5 0" -> ( 1, 0.5, 0 ). Undefined on anything that is not three numbers,
-//  so a typo at the console leaves the HUD alone instead of blanking it.
-qol_opt_parse_color( str_color )
-{
-    if ( !isdefined( str_color ) || str_color == "" )
-        return undefined;
-
-    a_parts = strtok( str_color, " " );
-
-    if ( !isdefined( a_parts ) || a_parts.size != 3 )
-        return undefined;
-
-    return ( string_to_float( a_parts[0] ), string_to_float( a_parts[1] ), string_to_float( a_parts[2] ) );
-}
-
-qol_opt_show( e_hud, b_visible )
-{
-    if ( !isdefined( e_hud ) )
-        return;
-
-    if ( b_visible )
-        e_hud.alpha = 1;
-    else
-        e_hud.alpha = 0;
-}
-
-qol_opt_tint( e_hud, v_color )
-{
-    if ( !isdefined( e_hud ) )
-        return;
-
-    e_hud.color = v_color;
 }
 
 // ----------------------------------------------------------------------------
@@ -3081,283 +2349,12 @@ qol_opt_zone_hud( b_on )
     }
 }
 
-// ----------------------------------------------------------------------------
-//  COMPASS  -  the heading you are facing, top centre.          (v1.99.26)
-// ----------------------------------------------------------------------------
-//  User request 2026-08-17, from the TechnoOps collection. Their version is in
-//  their pre-game lobby; the user asked for it on the HUD tab instead.
-//
-//  🌟 NOTHING IS IMPORTED. Theirs is three text hudelems and an angle lookup -
-//  a technique, not an asset - so this is written against this file's own zone
-//  HUD rather than copied. No shader, no material, no rule-7 question.
-//
-//  🛑 AND IT IS DELIBERATELY NOT A COPY OF THEIRS, because theirs would crash
-//  this mod. `compassHud()` (their main.gsc:1926) calls settext() every pass of
-//  a permanent loop. settext() is ONE RELIABLE SERVER COMMAND PER CALL against
-//  a 128-entry ring - the exact unbounded emitter ERROR_CATALOGUE section 7b is
-//  about, and the one that was fixed out of the zone HUD directly above in
-//  v1.95.1. Here the heading is one of EIGHT strings and is written only when
-//  it actually changes, so standing still or turning slowly costs nothing.
-//
-//  📝 Only the heading is drawn. Their version stacks a numeric angle and the
-//  zone name under it; this mod already has a zone-name row (hud_zone), and a
-//  raw yaw number is not something a player reads mid-round.
-qol_opt_compass_hud( b_on )
-{
-    if ( !b_on )
-    {
-        if ( isdefined( self.qol_hud_compass ) )
-        {
-            self.qol_hud_compass destroy();
-            self.qol_hud_compass = undefined;
-        }
-
-        return;
-    }
-
-    if ( !isdefined( self.qol_hud_compass ) )
-    {
-        self.qol_hud_compass = self createfontstring( "small", 1.4 );
-        self.qol_hud_compass.archived = 0;     // v2.17.41 - HUD SLOT BUDGET
-        //  Top centre. Clear of the round counter (top right) and of the
-        //  power-up row, which is centred lower down.
-        self.qol_hud_compass setpoint( "TOP", "TOP", 0, 10 );
-        self.qol_hud_compass.hidewheninmenu = 1;
-    }
-
-    str_heading = qol_opt_heading_text( self getplayerangles() );
-
-    //  🌟 The cache lives ON THE HUDELEM, not in a local - same reason as the
-    //  zone HUD above. Toggling hud_compass destroys and re-creates the element,
-    //  and a local would survive that and leave the new element permanently
-    //  blank. A fresh element carries no .qol_last_heading, so the first pass
-    //  after any re-create writes the text again.
-    if ( !isdefined( self.qol_hud_compass.qol_last_heading ) || self.qol_hud_compass.qol_last_heading != str_heading )
-    {
-        self.qol_hud_compass settext( str_heading );
-        self.qol_hud_compass.qol_last_heading = str_heading;
-    }
-}
-
-//  Yaw -> compass point. getplayerangles()[1] is the yaw, 0 = +X = East in this
-//  engine, increasing anticlockwise; the +22.5 rounds to the nearest of eight
-//  rather than truncating, so each label owns a 45-degree arc centred on it.
-qol_opt_heading_text( v_angles )
-{
-    n_yaw = v_angles[1];
-
-    while ( n_yaw < 0 )
-        n_yaw = n_yaw + 360;
-    while ( n_yaw >= 360 )
-        n_yaw = n_yaw - 360;
-
-    n_index = int( ( n_yaw + 22.5 ) / 45 );
-
-    if ( n_index >= 8 )
-        n_index = 0;
-
-    if ( n_index == 0 ) return "E";
-    if ( n_index == 1 ) return "NE";
-    if ( n_index == 2 ) return "N";
-    if ( n_index == 3 ) return "NW";
-    if ( n_index == 4 ) return "W";
-    if ( n_index == 5 ) return "SW";
-    if ( n_index == 6 ) return "S";
-
-    return "SE";
-}
-
-//  Time since the current round started, next to the game timer.
-qol_opt_round_timer_hud( b_on )
-{
-    if ( !b_on )
-    {
-        if ( isdefined( self.qol_hud_roundtimer ) )
-        {
-            self.qol_hud_roundtimer destroy();
-            self.qol_hud_roundtimer = undefined;
-        }
-
-        return;
-    }
-
-    if ( !isdefined( self.qol_hud_roundtimer ) )
-    {
-        //  v1.95.3 - SITS DIRECTLY UNDER THE GAME TIMER, TOP-RIGHT, and the pair
-        //  now sits under the round counter instead of on Mob's key icon.
-        //
-        //  🛑 EVERY FIELD BELOW MIRRORS quality_of_life.gsc::timer() ON PURPOSE,
-        //  and the derivation of all four numbers lives in that function's
-        //  comment - read it before touching either element. Same alignx, same
-        //  horzalign, same vertalign, same x; only y differs, by one 14-unit row.
-        //  (Both keep vertalign "user_top" rather than round_hud()'s "top": the y
-        //  values are measured in the "user_top" frame, so that offset is already
-        //  accounted for.)
-        //  🛑 v2.14.21 - BUILT EXACTLY AS THE GAME TIMER IS BUILT. User,
-        //  2026-09-08, screenshot in hand: *"the round timer below the global
-        //  timer still has the black outline and doesn't match the global timer,
-        //  so fix that"*. This used to be createfontstring( "small", 1.2 ), and
-        //  the "small" face is where the outline came from (v2.14.18's glow
-        //  fields changed nothing on either element - measured on that
-        //  screenshot). A raw newclienthudelem() with no .font at fontscale 1.4
-        //  is the game timer's own construction, so the two now share one face,
-        //  one size and one (absent) outline. y stays 94: both are aligny "top",
-        //  and the 14-unit row was measured glyph-top to glyph-top.
-        self.qol_hud_roundtimer = newclienthudelem( self );
-        self.qol_hud_roundtimer.archived = 0;  // v2.17.41 - HUD SLOT BUDGET
-        self.qol_hud_roundtimer.fontscale = 1.4;
-        self.qol_hud_roundtimer.alignx = "center";
-        self.qol_hud_roundtimer.aligny = "top";
-        self.qol_hud_roundtimer.vertalign = "user_top";
-        //  v2.0.8 - side comes from the shared anchor so this stays glued to the
-        //  round counter when ROUND COUNTER LEFT is thrown. y is untouched.
-        zmqol_hud_round_anchor( self.qol_hud_roundtimer );
-        self.qol_hud_roundtimer.y = 94;     // == timer.y (80) + one 14-unit row
-        //  v1.95.3 - dull navy blue, same value as the game timer above, user
-        //  2026-08-14. Set at creation for the same reason: the watcher no-ops on
-        //  its first pass. Console override: hud_color_round_timer "r g b".
-        //  v2.17.47 - grey, user 2026-09-27, so it reads apart from the white
-        //  game timer above it. Must match hud_color_round_timer's default.
-        self.qol_hud_roundtimer.color = ( 0.7, 0.7, 0.7 );
-        //  No glow: see the v2.14.21 note above and in quality_of_life.gsc::
-        //  timer(). 🛑 Change one construction without the other and the pair
-        //  splits again.
-        self.qol_hud_roundtimer.hidewheninmenu = 1;
-
-        if ( isdefined( level.qol_round_start_time ) )
-            self.qol_hud_roundtimer settimerup( ( gettime() - level.qol_round_start_time ) / 1000 );
-        else
-            self.qol_hud_roundtimer settimerup( 0 );
-    }
-}
-
-//  level.qol_round_start_time is what the round timer counts from. Threaded
-//  from init() rather than hooked into the round logic so nothing stock has to
-//  be replaced for a cosmetic readout.
-qol_opt_round_clock()
-{
-    level endon( "end_game" );
-
-    for ( ;; )
-    {
-        level waittill( "start_of_round" );
-        level.qol_round_start_time = gettime();
-
-        foreach ( player in get_players() )
-        {
-            if ( isdefined( player.qol_hud_roundtimer ) )
-                player.qol_hud_roundtimer settimerup( 0 );
-        }
-    }
-}
-
 zmqol_minimal()
 {
     //  Twin of the one in quality_of_life.gsc - see the long note there. GSC
     //  scopes function names per file, so each file that needs the gate carries
     //  its own two-line copy rather than reaching across with a qualified call.
     return getdvarintdefault( "zmqol_minimal", 0 );
-}
-
-// ============================================================================
-//  zmqol_hud_round_anchor  -  ROUND COUNTER LEFT                     (v2.0.8)
-//
-//  User, 2026-08-21: *"my mod has the round counter at the top right of the
-//  screen like cold war zombies ... it'd be cool to have an option in the hud
-//  tab ... to be able to have it on the top left (same vertical y coords, just
-//  on the top left instead of top right, same as bo4 zombies)."*
-//
-//  🌟 THE MIRROR IS DERIVED FROM TWO SHIPPED ELEMENTS, NOT GUESSED. T6 hudelem
-//  x is measured from the SAFE-AREA edge named by horzalign, and it grows
-//  OUTWARD from that edge into the margin. Both directions are already in this
-//  file with working values:
-//        round_hud()   horzalign "right", x = +25   (top right, 25 into the margin)
-//        healthbar     horzalign "left",  x = -45   (bottom left, 45 into the margin)
-//  So the exact mirror of the round counter's +25 on the right is -25 on the
-//  left, and it lands the same distance in from the screen edge.
-//
-//  🛑 THE WHOLE STACK MOVES, NOT JUST THE NUMBER. timer() and
-//  qol_options.gsc::qol_opt_round_timer_hud() are calibrated to sit directly
-//  under the round counter and both carried its x = 25 verbatim - the comment
-//  above timer() says so and warns that changing one without the other splits
-//  the stack. All three now read this one anchor. Only the SIDE changes; every
-//  y is untouched, which is exactly what the user asked for.
-//
-//  📝 Twin of quality_of_life.gsc::zmqol_hud_round_anchor(). Same shape as
-//  zmqol_minimal(), which is duplicated across these two root scripts for the
-//  same reason - neither file references the other, and adding a cross-file
-//  call would be a new load-order dependency for six lines.
-// ============================================================================
-// ============================================================================
-//  v2.3.4 - HOW MANY DIGITS level.round_number IS, NO INVENTED BUILTIN.
-//  No T6 function measures rendered text width offline (checked GSC
-//  Documentation.md and the stock dump - neither has one), and `.size` is
-//  documented for ARRAYS only (GSC Documentation.md:351), never strings, so
-//  it is not used on a round-number string either. This is a plain numeric
-//  comparison ladder instead - twin of quality_of_life.gsc's copy.
-// ============================================================================
-zmqol_round_digit_count()
-{
-    n = 1;
-
-    if ( isdefined( level.round_number ) )
-        n = int( level.round_number );
-
-    if ( n < 10 )
-        return 1;
-    else if ( n < 100 )
-        return 2;
-    else if ( n < 1000 )
-        return 3;
-    else if ( n < 10000 )
-        return 4;
-    else if ( n < 100000 )
-        return 5;
-    else if ( n < 1000000 )
-        return 6;
-
-    return 7;
-}
-
-zmqol_hud_round_anchor( elem )
-{
-    if ( !isdefined( elem ) )
-        return;
-
-    //  v2.1.3 - `== 1`, not `!= 0`: 2 is OFF and OFF stays on the RIGHT.
-    if ( getdvarintdefault( "hud_round_left", 0 ) == 1 )
-    {
-        elem.horzalign = "left";
-        elem.x = -25;
-    }
-    else
-    {
-        // ====================================================================
-        //  v2.3.4 - DIGIT-COUNT-AWARE INSET. User, 2026-08-25: round 10000 (5
-        //  digits) runs off the right edge at the old fixed x = 25.
-        //
-        //  🌟 THE PER-DIGIT FIGURE IS MEASURED, NOT GUESSED. timer()'s own
-        //  pixel scan (quality_of_life.gsc, right above timer()'s body) found
-        //  round 100's "100" (3 digits, this exact font/fontscale) 33.67
-        //  hud-units wide - about 11.2 units/digit. 3 digits at x = 25 is the
-        //  baseline that was never reported clipping, so every digit beyond 3
-        //  pulls the anchor back toward screen centre by ~12 units (11.2
-        //  rounded up for margin).
-        //
-        //  🛑 NOT YET VISUALLY CONFIRMED AT ROUND 10000. I cannot measure the
-        //  actual on-screen clearance without seeing it rendered - this is the
-        //  documented fallback for "no way to measure it": a digit-count
-        //  inset, not a text-width one. Tell me if round 10000 still clips or
-        //  now sits too far in and the per-digit constant gets tuned from that.
-        // ====================================================================
-        n_extra_digits = zmqol_round_digit_count() - 3;
-
-        if ( n_extra_digits < 0 )
-            n_extra_digits = 0;
-
-        elem.horzalign = "right";
-        elem.x = 25 - n_extra_digits * 12;
-    }
 }
 
 // ============================================================================
@@ -3478,129 +2475,6 @@ qol_opt_knife_lunge()
         }
 
         wait 1;
-    }
-}
-
-// ============================================================================
-//  qol_opt_third_person  -  the GAME 3 tab's THIRD PERSON row       (v2.14.13)
-// ----------------------------------------------------------------------------
-//  User, 2026-09-07: "put a 3rd person toggle in the GAME 3 tab in the mod".
-//
-//  THE ENGINE HAS A METHOD FOR THIS, AND STOCK ZOMBIES USES IT. Not the
-//  cg_thirdPerson dvar (client-side, and the crosshair row already found this
-//  build's cg_* switches cheat-protected) but the player method
-//  setclientthirdperson(), which stock calls at six places in the zombies
-//  dump: _zm.gsc::onplayerconnect_clientdvars() :1257, onplayerspawned()
-//  :1322, set_third_person() :2131/:2137, _globallogic_spawn.gsc :860/:865,
-//  _zm_gametype.gsc :1928. The angle is stock's own: set_third_person() pairs
-//  it with setclientthirdpersonangle( 354 ), and _globallogic.gsc:1947 makes
-//  cg_thirdPersonAngle 354 serverinfo. BO2-Reimagined ships the same call.
-//
-//  NOT A CALL TO STOCK'S set_third_person(). Its "on" branch also writes
-//  setdepthoffield( 0, 128, 512, 4000, 6, 1.8 ) - a real scripted blur that
-//  overrides the renderer's r_dof_enable, which is exactly what this mod's
-//  DOF fix (quality_of_life.gsc, item 48) exists to keep off. That banner
-//  records set_third_person() as "unreached on this platform"; calling it
-//  from here would make it reached and hand DOF a second owner. So only the
-//  two camera methods are used, plus resetfov() as every stock branch does.
-//
-//  STOCK TURNS IT OFF ON EVERY SPAWN. onplayerspawned() :1322 writes
-//  setclientthirdperson( 0 ) - so a revive-respawn in co-op, or the
-//  spawned_player at match start, silently puts the camera back. The
-//  companion thread below resets the applied state on that notify, and the
-//  next 1 Hz pass re-applies; stock's write is synchronous inside the notify,
-//  ours is up to a second later, so ours always lands last.
-//
-//  Live in both directions, seeded with -1 so the first pass always writes -
-//  same shape as qol_opt_crosshair() above. The first-person weapon model is
-//  not drawn in third person; that is the engine's view, not a missing asset
-//  (stock's game-over camera is this same mode).
-// ============================================================================
-qol_opt_third_person()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    self endon( "disconnect" );
-    level endon( "end_game" );
-
-    flag_wait( "initial_blackscreen_passed" );
-
-    self.zmqol_tp_applied = -1;
-    self thread qol_opt_third_person_respawn();
-
-    for ( ;; )
-    {
-        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "third_person", 0 ) != 0;
-
-        if ( n_now != self.zmqol_tp_applied )
-        {
-            self.zmqol_tp_applied = n_now;
-
-            if ( n_now )
-            {
-                self setclientthirdperson( 1 );
-                self setclientthirdpersonangle( 354 );
-
-                //  v2.17.0 - THE THIRD PERSON CAMERA RUNS ON THE PLAYER'S OWN
-                //  FIELD OF VIEW. cg_fov_default_thirdperson defaults to the
-                //  console 65; left alone, the view changes the moment the
-                //  camera mode changes. The host's client shares the server
-                //  dvar table (zmqol_playeropt rule), so a plain setdvar
-                //  points it at the user's own FIELD OF VIEW setting and the
-                //  view keeps whatever they chose.
-                if ( self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
-                    setdvar( "cg_fov_default_thirdperson", getdvarfloat( "cg_fov_default" ) );
-            }
-            else
-            {
-                self setclientthirdperson( 0 );
-                self setclientthirdpersonangle( 0 );
-            }
-
-            self resetfov();
-
-            //  v2.17.0 - KEEP THE PLAYER'S OWN EFFECTIVE FOV AFTER EVERY
-            //  TRANSITION. Measured on r5354 with cg_fov_default "100" and
-            //  cg_fovScale "1.25": toggling out leaves "cg_fov" is: "65" -
-            //  the console default - while BOTH settings dvars still read
-            //  100 and 1.25. The user asked for it the other way round:
-            //  *"your field of view is only meant to change if the person
-            //  changes it."* The settings dvars are never touched by the
-            //  engine, so read them back and re-assert the effective value
-            //  after resetfov()'s own write, then verify once more after a
-            //  beat in case the engine's own write lands late. Host only:
-            //  a remote player's fov is not readable from the server, so
-            //  they keep stock's reset until a client-side route exists.
-            if ( self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
-            {
-                setdvar( "cg_fov", getdvarfloat( "cg_fov_default" ) );
-
-                wait 0.1;
-
-                if ( getdvarfloat( "cg_fov" ) != getdvarfloat( "cg_fov_default" ) )
-                    setdvar( "cg_fov", getdvarfloat( "cg_fov_default" ) );
-            }
-
-            println( "[zm_qol] third person -> " + n_now );
-        }
-
-        wait 0.25;
-    }
-}
-
-//  Stock's onplayerspawned() has just written setclientthirdperson( 0 ) on
-//  this same notify; forgetting the applied state makes the watcher's next
-//  pass put the player's choice back.
-qol_opt_third_person_respawn()
-{
-    self endon( "disconnect" );
-    level endon( "end_game" );
-
-    for ( ;; )
-    {
-        self waittill( "spawned_player" );
-        self.zmqol_tp_applied = -1;
     }
 }
 

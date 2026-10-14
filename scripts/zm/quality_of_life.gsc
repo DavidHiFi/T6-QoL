@@ -94,10 +94,6 @@ main()
     //     get_pack_a_punch_weapon_options() below) ---
     replacefunc( maps\mp\zombies\_zm_weapons::get_pack_a_punch_weapon_options, ::get_pack_a_punch_weapon_options );
 
-    // --- NETWORK FRAME PATCH (v2.0.6) - both copies, see zmqol_wait_network_frame() ---
-    replaceFunc( maps\mp\zombies\_zm_utility::wait_network_frame,  ::zmqol_wait_network_frame );
-    replaceFunc( maps\mp\animscripts\zm_utility::wait_network_frame, ::zmqol_wait_network_frame );
-
     // --- zm_wallbuy_fills_clip ---
     replaceFunc( maps\mp\zombies\_zm_weapons::ammo_give, ::new_ammo_give );
 
@@ -115,13 +111,6 @@ main()
     // force a fifth drop. See zmqol_powerup_drop().
     replaceFunc( maps\mp\zombies\_zm_powerups::powerup_round_start, ::zmqol_powerup_round_start );
     replaceFunc( maps\mp\zombies\_zm_powerups::powerup_drop, ::zmqol_powerup_drop );
-
-    // --- INSTAKILL ROUNDS  (v1.99.93, PATCHES tab) ---
-    //  ONE function with TWO branches: with the row OFF it is byte-exact stock
-    //  (_zm.gsc:3572, which saturates on overflow), with it ON it is the legacy
-    //  mod's cap at round 155's health. See the banner over
-    //  zmqol_ai_calculate_health() for the measured difference between them.
-    replaceFunc( maps\mp\zombies\_zm::ai_calculate_health, ::zmqol_ai_calculate_health );
 
     // --- NO BLEEDOUT PATCH  (v2.2.0, PATCHES tab) ---
     //  See the banner over zmqol_round_spawn_failsafe(). With the row OFF this
@@ -1326,14 +1315,6 @@ init()
     // --- BO2DD ---
     level thread bo2dd_onplayerconnect();
 
-    // --- bo4maxammo ---
-    //  v1.99.39 - user request 2026-08-17: a BO4 MAX AMMO switch on the GAME tab.
-    //  ON by default, because filling the magazine as well as the reserves is
-    //  what this mod has always done and a new toggle must not silently change
-    //  existing behaviour. Off is EXACT stock - see new_full_ammo_powerup().
-    create_dvar( "bo4_max_ammo", 1 );
-    level thread bo4maxammo_onplayerconnect();
-
     // --- bocw_round ---
     precacheshader( "hud_chalk_1" );
     precacheshader( "hud_chalk_2" );
@@ -1493,51 +1474,6 @@ bo2dd_onplayerspawned()
 }
 
 // ============================================================================
-//  bo4maxammo  (was bo4maxammo.gsc)
-// ============================================================================
-bo4maxammo_onplayerconnect()
-{
-    level endon("game_ended");
-    for(;;)
-    {
-        level waittill("connected", player);
-        player thread bo4maxammo_onplayerspawned();
-    }
-}
-
-bo4maxammo_onplayerspawned()
-{
-    self endon("disconnect");
-    level endon("game_ended");
-    for(;;)
-    {
-        self waittill("spawned_player");
-        //  ====================================================================
-        //  v2.13.0 - THE SAME CO-OP RACE THE OLD DEATH MACHINE HOOK HAD, SAME FIX:
-        //  claim the flag BEFORE the wait, not after it.
-        //
-        //  This is a per-player thread installing a level-wide replaceFunc.
-        //  Every player passed the isDefined test inside the same frame and
-        //  all of them ran the replaceFunc five seconds later.
-        //
-        //  STATED HONESTLY: this one was NOT a crash. Every caller passes the
-        //  identical (orig, new) pair, so repeating it re-writes the same
-        //  redirect and the second write is a no-op - unlike the Death Machine
-        //  hook, which saved the live pointer and so could save itself. It is
-        //  fixed anyway because it is the same defect class and one line, and
-        //  leaving a known race in place to be re-derived later is how the
-        //  Death Machine one survived this long.
-        //  ====================================================================
-        if(!isDefined(level.maC1))
-        {
-            level.maC1 = "DONE";
-            wait 5;
-    		replaceFunc(maps\mp\zombies\_zm_powerups::full_ammo_powerup,::new_full_ammo_powerup);
-        }
-    }
-}
-
-// ============================================================================
 //  zmqol_nuke_powerup  -  v1.99.48. INSTANT NUKE.
 //
 //  User request, 2026-08-18: "instead of the typical stock/vanilla effect of the
@@ -1646,63 +1582,6 @@ zmqol_nuke_powerup( drop_item, player_team )
 
     for ( i = 0; i < players.size; i++ )
         players[i] maps\mp\zombies\_zm_score::player_add_points( "nuke_powerup", 400 );
-}
-
-new_full_ammo_powerup( drop_item, player )
-{
-    players = get_players( player.team );
-    if ( isdefined( level._get_game_module_players ) ){
-        players = [[ level._get_game_module_players ]]( player );
-    }
-    for ( i = 0; i < players.size; i++ )
-    {
-        if ( players[i] maps\mp\zombies\_zm_laststand::player_is_in_laststand() )
-            continue;
-        primary_weapons = players[i] getweaponslist( 1 );
-        players[i] notify( "zmb_max_ammo" );
-        players[i] notify( "zmb_lost_knife" );
-        players[i] notify( "zmb_disable_claymore_prompt" );
-        players[i] notify( "zmb_disable_spikemore_prompt" );
-        for ( x = 0; x < primary_weapons.size; x++ )
-        {
-        	curWeapon = primary_weapons[x];
-            if ( level.headshots_only && is_lethal_grenade(curWeapon) ){
-                continue;
-            }
-            if ( isDefined( level.zombie_include_equipment ) && isDefined( level.zombie_include_equipment[curWeapon] ) ){
-                continue;
-            }
-            if ( isDefined( level.zombie_weapons_no_max_ammo ) && isDefined( level.zombie_weapons_no_max_ammo[curWeapon] ) ){
-                continue;
-            }
-            if ( players[i] hasweapon( curWeapon ) ){
-                players[i] givemaxammo( curWeapon );
-
-                //  🌟 v1.99.39 - THIS ONE LINE IS THE WHOLE OF "BO4 MAX AMMO".
-                //  Everything above it is character-for-character stock's
-                //  maps\mp\zombies\_zm_powerups::full_ammo_powerup(), diffed
-                //  against the dump line by line before the switch was added -
-                //  same player loop, same three skip tests, same four notifies,
-                //  same full_ammo_on_hud() call at the end. givemaxammo() alone
-                //  refills the RESERVES only, which is why vanilla makes you
-                //  reload before grabbing the drop; setting the clip as well is
-                //  BO4's behaviour and the only thing this function adds.
-                //
-                //  So `bo4_max_ammo 0` is not an approximation of vanilla, it
-                //  IS vanilla. No copy of stock is kept here to drift, and the
-                //  replaceFunc stays in place either way (calling stock's own
-                //  function back would re-enter this one - it has been replaced).
-                //
-                //  v2.15.37 - placeable mines keep their own clip. A claymore or
-                //  a Betty holds 2, and its count is restored by its own watcher
-                //  (stock's between-rounds restore, this mod's zmb_max_ammo
-                //  watch) - a 300 clip here would hand out 300 mines.
-                if ( getdvarintdefault( "bo4_max_ammo", 1 ) && !is_placeable_mine( curWeapon ) )
-                    players[i] setweaponammoclip( curWeapon, 300);
-            }
-        }
-    }
-    level thread full_ammo_on_hud( drop_item, player.team );
 }
 
 // ============================================================================
@@ -11518,17 +11397,9 @@ perks()
     create_dvar( "whoswho_knife", 1 );
     level thread zmqol_whoswho_knife_onplayerconnect();
 
-    //  v1.99.73 - BETTER DEADSHOT. Off by default: it is new behaviour, and a
-    //  new switch must never change what the mod already does until it is
-    //  thrown. See zmqol_better_deadshot_install() for the whole mechanism.
-    create_dvar( "better_deadshot", 0 );
+    //  Bo2-VN: BETTER DEADSHOT is removed. The actor-damage chain it installed
+    //  stays, because ONE SHOT ONE KILL and the special-enemy marker ride it.
     level thread zmqol_better_deadshot_install();
-
-    //  v2.7.2 - 3 HIT DOWN, user request 2026-08-28, the PATCHES tab. Off by
-    //  default - new behaviour must not change what the mod already does until
-    //  it is thrown. See zmqol_three_hit_down_install() for the whole mechanism.
-    create_dvar( "three_hit_down", 0 );
-    level thread zmqol_three_hit_down_install();
 
     //  v1.99.74 - AIM ASSIST, user request 2026-08-19. Default 1 = stock.
     //  See the banner over zmqol_aim_assist_watch() for exactly what this can
@@ -11580,12 +11451,7 @@ perks()
     //  Both are held for the user's decision rather than shipped broken.
     //  ========================================================================
     create_dvar( "remove_round_cap",   1 );   // ON: the mod already has no cap
-    create_dvar( "solo_zombie_limit",  0 );
-    create_dvar( "instakill_rounds",   0 );
-    create_dvar( "double_tap_1",       0 );
-    create_dvar( "no_barrier_attacks", 0 );
     create_dvar( "no_walkers",        0 );   // v2.8.6 - see zmqol_no_walkers_watch()
-    create_dvar( "network_frame_patch", 0 );   // v2.0.6 - see zmqol_wait_network_frame()
 
     //  ========================================================================
     //  🛑 v2.14.17 - `create_dvar( "sliquifier_prenerf", 0 )` WAS HERE AND IS
@@ -11611,8 +11477,6 @@ perks()
     //  kills every OTHER map at load ( AI_CONTEXT rule 2 ).
     //  ========================================================================
 
-    level thread zmqol_patches_watch();
-    level thread zmqol_solo_zombie_limit();
 
     //  CHEATS tab. set_points HOLDS its value (0 is a real setting); teleport
     //  ALSO now holds its value (v2.4.2 - it is just the destination selector);
@@ -12005,87 +11869,6 @@ zmqol_announcer_line_clear()
 //  reach 1 and it blocked the drop for the whole game. See the banner over
 //  zmqol_fs_should_drop() for the measurement.
 // ============================================================================
-// ============================================================================
-//  zmqol_wait_network_frame  -  NETWORK FRAME PATCH                 (v2.0.6)
-//
-//  User, 2026-08-21: *"add 'NETWORK FRAME PATCH' as a toggleable option, because
-//  that's another patch similar to the BACKSPEED PATCH ... the network frame
-//  patch will match the console one ... like the B2OP script for example."*
-//
-//  🌟 WHAT A NETWORK FRAME IS, AND WHAT CONSOLE'S IS. wait_network_frame() is
-//  the pacing primitive the whole zombies script layer waits on - spawns,
-//  teleports, buildables, dog rounds. Stock ships two IDENTICAL copies,
-//  maps\mp\zombies\_zm_utility and maps\mp\animscripts\zm_utility, and both read:
-//
-//        if ( numremoteclients() ) { ...wait for a snapshot ack... }
-//        else                      wait 0.1;
-//
-//  The console figures are not guessed - T6-B2OP-PATCH, the community patch used
-//  for world-record games, carries them as constants and a live checker:
-//        b2op.gsc:18  #define NET_FRAME_SOLO 100
-//        b2op.gsc:19  #define NET_FRAME_COOP  50
-//  and evaluate_network_frame() (:2084) times a real frame and prints GOOD only
-//  when solo measures 100 ms and coop measures 50 ms.
-//
-//  🌟 THE FIX IS ONE ADDED BRANCH, TAKEN FROM B2OP's fixed_wait_network_frame()
-//  ( b2op.gsc:1412 ): in a ONE-PLAYER game, always wait the flat 100 ms and never
-//  take the snapshot path. Stock only reaches its own 100 ms branch when
-//  numremoteclients() is 0, and on Plutonium a solo game does not always look
-//  like one - the same "every game looks online private" behaviour that already
-//  breaks stock's solo detection elsewhere in this mod. When that happens, solo
-//  paces off snapshot acknowledgement instead of the console's fixed frame.
-//
-//  🛑 OFF IS BYTE-EXACT STOCK, and that is why this is a replaceFunc that reads a
-//  dvar rather than a replaceFunc applied conditionally. replaceFunc cannot be
-//  undone for the session, so a conditional install could not be a live toggle;
-//  reading the dvar inside the function makes the row flip on the very next
-//  frame either way. With the row OFF the body below IS stock's body, copied
-//  from the dump character for character.
-//
-//  🌟 IT CANNOT MAKE A CORRECT BUILD WORSE, and that is the safety argument.
-//  The two functions differ in exactly one case: a 1-player game where
-//  numremoteclients() is non-zero. On a build where that cannot happen, ON and
-//  OFF are the same function. Coop is untouched in both.
-//
-//  🛑 STATED PLAINLY: B2OP DISABLES THIS ON MODERN PLUTONIUM. Its install is
-//  `if (!is_plutonium_version(VER_3K))` with `#define VER_3K 3042` (b2op.gsc:16,
-//  :141), i.e. it only patches builds OLDER than r3042 - so on r5344 B2OP does
-//  not apply it, which is evidence that Plutonium fixed the underlying behaviour.
-//  This ships anyway because the user asked for the row, and it ships **OFF by
-//  default** so nothing changes until it is thrown. If the build is already
-//  correct the row is a no-op; if it is not, it restores the console frame.
-//
-//  📝 BO2-Remix also overrides this ( src\scripts\zm\remix\_utility.gsc:9,
-//  installed at Remix2.gsc:67 ) with a flat `wait 0.05` on EVERY game. That is
-//  the COOP figure applied to solo as well, so by B2OP's own checker it would
-//  read BAD in solo. B2OP's shape is the one ported here, deliberately.
-//
-//  🛑 BOTH COPIES ARE REPLACED. Replacing only _zm_utility's would leave the
-//  animscripts copy on stock timing and the two halves of the game would pace
-//  differently. maps\mp\animscripts\* resolves from a root script - proven, not
-//  assumed: this file already calls maps\mp\animscripts\zm_death::flame_death_fx()
-//  at :882 and ships on every map.
-// ============================================================================
-zmqol_wait_network_frame()
-{
-    if ( getdvarintdefault( "network_frame_patch", 0 ) && isdefined( level.players ) && level.players.size == 1 )
-    {
-        wait 0.1;
-        return;
-    }
-
-    //  ---- stock, from the dump, unchanged ----
-    if ( numremoteclients() )
-    {
-        snapshot_ids = getsnapshotindexarray();
-
-        for ( acked = undefined; !isdefined( acked ); acked = snapshotacknowledged( snapshot_ids ) )
-            level waittill( "snapacknowledged" );
-    }
-    else
-        wait 0.1;
-}
-
 // ============================================================================
 //  zmqol_fs_should_drop  -  FIRE SALE ON EVERY MAP, INCLUDING THE STATIC-BOX
 //                           SURVIVAL LOCATIONS                      (v2.7.3)
@@ -18531,53 +18314,11 @@ zmqol_actor_damage_wrapper( inflictor, attacker, damage, flags, meansofdeath, we
     //  zmqol_special_marker_attach().
     self zmqol_special_marker_attach();
 
-    damage = zmqol_better_deadshot_scale( damage, attacker, meansofdeath, weapon, shitloc );
     //  v2.8.2 - ONE SHOT ONE KILL (CHEATS tab). Last, so it wins over any
     //  multiplier above it. See zmqol_one_shot_scale() below.
     damage = zmqol_one_shot_scale( damage, attacker, meansofdeath );
 
     self [[ level.zmqol_prev_actordamage ]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, shitloc, psoffsettime, boneindex );
-}
-
-//  Returns the damage unchanged unless every condition holds.
-zmqol_better_deadshot_scale( damage, attacker, meansofdeath, weapon, shitloc )
-{
-    b_on = getdvarintdefault( "better_deadshot", 0 ) != 0;
-
-    if ( !isdefined( damage ) || !isdefined( attacker ) || !isplayer( attacker ) )
-        return damage;
-
-    if ( !isdefined( meansofdeath ) || !isdefined( weapon ) )
-        return damage;
-
-    b_perk = attacker hasperk( "specialty_deadshot" );
-    b_bullet = meansofdeath == "MOD_PISTOL_BULLET" || meansofdeath == "MOD_RIFLE_BULLET";
-    b_head = maps\mp\zombies\_zm_utility::is_headshot( weapon, shitloc, meansofdeath );
-
-    if ( !b_on || !b_perk || !b_bullet || !b_head )
-        return damage;
-
-    //  Shotguns are excluded because a pellet spread would multiply per pellet.
-    //  The KSG is the exception Reimagined carves out - it fires a slug.
-    if ( isdefined( weaponclass( weapon ) ) && issubstr( weaponclass( weapon ), "spread" ) )
-    {
-        if ( maps\mp\zombies\_zm_weapons::get_base_weapon_name( weapon, 1 ) != "ksg_zm" )
-            return damage;
-    }
-
-    //  The Storm PSR's charge stages are excluded, and this is Reimagined's own
-    //  rule (_zm.gsc:1760/1775 excludes issubstr(weapon,"metalstorm") from both
-    //  Double Tap and Deadshot). The gun already carries its damage in the def -
-    //  1000 through 5000 by charge stage - so a headshot multiplier on top would
-    //  stack on a number that is already the balance decision.
-    //  📝 v2.12.7 corrected the comment that used to sit here: it credited these
-    //  names to the Peacekeeper, which was simply wrong. `metalstorm` is the
-    //  Storm PSR's internal name; before v2.12.7 no weapon in this mod matched
-    //  this test at all, so the line had never done anything.
-    if ( issubstr( weapon, "metalstorm" ) )
-        return damage;
-
-    return damage * 2;
 }
 
 // ============================================================================
@@ -18630,155 +18371,6 @@ zmqol_one_shot_scale( damage, attacker, meansofdeath )
         return damage;
 
     return self.health;
-}
-
-// ============================================================================
-//  3 HIT DOWN  -  v2.7.2, user request 2026-08-28, the PATCHES tab
-// ----------------------------------------------------------------------------
-//  *"add '3 HIT DOWN' which as the name suggests, makes the player have the
-//  same kinda health as black ops 3 zombies and onwards"*.
-//
-//  🌟 THE HOOK: `self.overrideplayerdamage` / `level.overrideplayerdamage`, A
-//  STOCK EXTENSION POINT - NOT A REPLACEFUNC, NOT A RE-POINT OF THE MAIN
-//  CALLBACK. Verified straight from _zm.gsc:1054-1057
-//  (callback_playerdamage()):
-//        if ( isdefined( self.overrideplayerdamage ) )
-//            idamage = self [[ self.overrideplayerdamage ]]( einflictor,
-//                eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint,
-//                vdir, shitloc, psoffsettime );
-//        else if ( isdefined( level.overrideplayerdamage ) )
-//            idamage = self [[ level.overrideplayerdamage ]]( ... same args );
-//  This is stock's OWN designed-in seam for exactly this kind of thing - the
-//  function is called for every point of player damage and must RETURN the
-//  (possibly modified) damage, unlike callbackplayerdamage/callbackactordamage
-//  which are void.
-//
-//  🛑 CHAINED, NOT CLOBBERED. `level.overrideplayerdamage` is not free ground -
-//  the CLEANSED gametype sets it (Buried/Diner: maps\mp\gametypes_zm\
-//  zcleansed.gsc:100, `level.overrideplayerdamage = ::cleanseddamagechecks`).
-//  Overwriting it outright would silently break that gametype's own damage
-//  rules for anyone who selects it. level.zmqol_prev_overrideplayerdamage
-//  captures whatever is already installed - stock's nothing-at-all in the
-//  ordinary case, or Cleansed's function - and this wrapper calls through to
-//  it FIRST, then applies the 3-hit cap to whatever damage value comes back.
-//
-//  🛑 INSTALLED AFTER initial_blackscreen_passed, same reasoning as
-//  zmqol_better_deadshot_install() directly above: stock/gametype init runs
-//  during map load, before any zombie can deal damage, so installing after
-//  that flag guarantees this sees whatever the map's own init already set
-//  rather than racing it.
-//
-//  🌟 THE CAP, NOT A FULL REIMPLEMENTATION OF BO3+'S HEALTH MODEL. BO2 has no
-//  "hits to down" counter to hook - health is a plain number and downing is
-//  whatever reduces self.health to 0 (self.maxhealth in _zm.gsc:1063-1065's own
-//  magic_bullet_shield code, confirmed the real field name). Capping a single
-//  hit's damage at self.maxhealth / 3 makes it IMPOSSIBLE for fewer than 3 hits
-//  to empty a full health bar, on every round, regardless of how far zombie
-//  melee damage has scaled - which is the BO3+ behaviour being asked for: you
-//  are never one- or two-shot by a claw at a high round the way BO2 stock will
-//  do to you. Natural regen between hits can only make it take MORE than 3,
-//  never fewer.
-//
-//  🛑 SCOPED TO ZOMBIE MELEE ONLY. This paragraph used to say the string was the
-//  lowercase "melee" from _zm.gsc:587 and that "MOD_MELEE" was unrelated. THAT
-//  WAS BACKWARDS and it is why the feature never worked - see the corrected note
-//  over zmqol_three_hit_down_scale(). The real swipe is MOD_MELEE
-//  (_zm_spawner.gsc:895); _zm.gsc:587 is the turret-miss path. Explosives, fire,
-//  fall damage and every other means of death are still untouched - the request
-//  was specifically about zombie hits, not a general damage-reduction cheat.
-// ============================================================================
-zmqol_three_hit_down_install()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    flag_wait( "initial_blackscreen_passed" );
-
-    //  Guarded so a second call can never chain the wrapper to itself.
-    if ( isdefined( level.zmqol_prev_overrideplayerdamage_set ) )
-        return;
-
-    level.zmqol_prev_overrideplayerdamage_set = 1;
-    level.zmqol_prev_overrideplayerdamage = level.overrideplayerdamage;
-    level.overrideplayerdamage = ::zmqol_three_hit_down_wrapper;
-
-    println( "[zm_qol] 3 hit down: damage chain installed" );
-}
-
-zmqol_three_hit_down_wrapper( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
-{
-    if ( isdefined( level.zmqol_prev_overrideplayerdamage ) )
-        idamage = self [[ level.zmqol_prev_overrideplayerdamage ]]( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime );
-
-    return zmqol_three_hit_down_scale( idamage, smeansofdeath, eattacker );
-}
-
-// ----------------------------------------------------------------------------
-//  🛑 v2.7.3 - THIS FUNCTION NEVER FIRED ONCE. Two independent defects, both
-//  measured against the stock dump rather than reasoned about:
-//
-//  1. THE MEANS-OF-DEATH STRING WAS WRONG. The banner above claimed real zombie
-//     melee arrives as the lowercase literal "melee", citing _zm.gsc:587. That
-//     line is `zombiemode_melee_miss()`, which only runs
-//     `if ( isdefined( self.enemy.curr_pay_turret ) )` - the player-on-a-turret
-//     MISS case. It is not the normal swipe at all.
-//
-//     Real zombie melee damage is dealt in _zm_spawner.gsc:895:
-//         self.player_targets[i] dodamage( self.meleedamage, self.origin,
-//                                          self, self, "none", "MOD_MELEE" );
-//     (self.meleedamage = 60, _zm_spawner.gsc:257). _zm_ai_faller.gsc:495 and
-//     _zm_ffotd.gsc:205 use "MOD_MELEE" too. So `smeansofdeath != "melee"`
-//     rejected every genuine zombie hit and the cap was never applied - which is
-//     exactly the report: 3 HIT DOWN on, still downed in 2 hits on Diner.
-//
-//  2. THE CAP WAS OFF BY ONE AND WOULD HAVE GIVEN FOUR HITS, NOT THREE.
-//     int( 100 / 3 ) = 33, and 3 x 33 = 99 < 100 - so a full-health player
-//     survived the third hit and went down on the fourth. To down on exactly the
-//     third hit the cap must be the CEILING: 2d < maxhealth <= 3d. ceil(100/3)
-//     = 34 gives 68 < 100 <= 102. Integer ceiling here is ( n + 2 ) / 3.
-//
-//  Now gated on the attacker being a zombie, which is the actual semantic the
-//  request asks for ("3 zombie hits"), with the means-of-death test kept as a
-//  narrowing filter so player explosives, fire, fall damage and traps stay
-//  untouched. Both melee strings are accepted so the turret-miss path is covered
-//  too.
-//
-//  📝 WHAT THIS DOES TO JUGGERNOG - checked, not left to chance. Jugg is 160 in
-//  BO2, not BO1's 250 (_zm_perks.gsc:69, zombie_perk_juggernaut_health). Stock
-//  zombie melee of 60 already downs a Jugg player in 3 (60/120/180). ceil(160/3)
-//  = 54 binds slightly below 60 and keeps it at exactly 3, so the perk's feel is
-//  unchanged while the guarantee now holds at every health value.
-//
-//  Returns the damage unchanged unless every condition holds.
-// ----------------------------------------------------------------------------
-zmqol_three_hit_down_scale( idamage, smeansofdeath, eattacker )
-{
-    if ( !getdvarintdefault( "three_hit_down", 0 ) )
-        return idamage;
-
-    if ( !isdefined( idamage ) || !isdefined( smeansofdeath ) )
-        return idamage;
-
-    //  the real swipe is MOD_MELEE; "melee" is _zm.gsc:587's turret-miss case
-    if ( smeansofdeath != "MOD_MELEE" && smeansofdeath != "melee" )
-        return idamage;
-
-    if ( !isdefined( eattacker ) || !isdefined( eattacker.is_zombie ) || !eattacker.is_zombie )
-        return idamage;
-
-    if ( !isdefined( self.maxhealth ) || self.maxhealth <= 0 )
-        return idamage;
-
-    //  CEILING, not int() - see the note above. ( n + 2 ) / 3 for positive n.
-    n_cap = int( ( self.maxhealth + 2 ) / 3 );
-
-    if ( n_cap < 1 )
-        n_cap = 1;
-
-    if ( idamage > n_cap )
-        idamage = n_cap;
-
-    return idamage;
 }
 
 // ============================================================================
@@ -19095,206 +18687,6 @@ zmqol_wallbuy_variant_push_live()
 //  getdvarintdefault( name, <the shipping default> ), so a console `reset` or a
 //  missing registration can only fall back to current behaviour.
 // ============================================================================
-
-// ============================================================================
-//  zmqol_ai_calculate_health  -  INSTAKILL ROUNDS
-//
-//  replaceFunc'd in main(). OFF is byte-exact stock; ON is legacy's version.
-//  The two differ in KIND, not degree, and this is the measured difference:
-//
-//    stock ( _zm.gsc:3572 ) SATURATES. From round 10 it grows the health by
-//    +10% a round, and the moment that addition wraps past 2^31 it restores
-//    old_health and RETURNS - so from round 163 on every round carries the same
-//    enormous health and zombies never get easier.
-//
-//    legacy has no saturation check at all, so the wrap is allowed to happen and
-//    lands NEGATIVE; it then resets a negative result to zombie_health_start
-//    ( 150 ) and clamps anything above ai_zombie_health( 155 ) down to that.
-//    Simulated over the stock numbers ( start 150, +100 a round to 9, +10% from
-//    10 - _zm.gsc:860-862 ):
-//
-//        round 155   1,044,606,723   <- the cap
-//        round 156-162   clamped to that same figure
-//        round 163   the addition wraps to -2,055,760,018, which is < 0, so the
-//                    health resets to 150 and one bullet kills again
-//
-//  That is the round-163 "instakill rounds" the row is named for, and it is why
-//  the ON branch has to SKIP the saturation check rather than add a clamp on top
-//  of it: with stock's early return in place the wrap can never happen at all.
-//
-//  🛑 ai_zombie_health() lives in _zm.gsc, so it is called qualified - this is a
-//  root script and _zm* is globally resolvable ( AI_CONTEXT rule 2 ).
-// ============================================================================
-zmqol_ai_calculate_health( round_number )
-{
-    b_instakill = getdvarintdefault( "instakill_rounds", 0 );
-
-    level.zombie_health = level.zombie_vars["zombie_health_start"];
-
-    for ( i = 2; i <= round_number; i++ )
-    {
-        if ( i >= 10 )
-        {
-            old_health = level.zombie_health;
-            level.zombie_health = level.zombie_health + int( level.zombie_health * level.zombie_vars["zombie_health_increase_multiplier"] );
-
-            //  Stock's saturation. Skipped only while the row is on.
-            if ( !b_instakill && level.zombie_health < old_health )
-            {
-                level.zombie_health = old_health;
-                return;
-            }
-        }
-        else
-            level.zombie_health = int( level.zombie_health + level.zombie_vars["zombie_health_increase"] );
-    }
-
-    if ( !b_instakill )
-        return;
-
-    if ( level.zombie_health < 0 )
-        level.zombie_health = level.zombie_vars["zombie_health_start"];
-
-    n_cap = maps\mp\zombies\_zm::ai_zombie_health( 155 );
-
-    if ( level.zombie_health > n_cap )
-        level.zombie_health = n_cap;
-}
-
-// ============================================================================
-//  zmqol_patches_watch  -  DOUBLE TAP 1.0 and NO BARRIER ATTACKS, live
-//
-//  Both are applied ON CHANGE ONLY and both are reversible, because the OFF
-//  position has to be the value the game shipped with rather than a number this
-//  file invented. The stock value of each is CACHED ONCE, before anything is
-//  written, and restored verbatim.
-//
-//  🌟 DOUBLE TAP 1.0 = perk_weapRateEnhanced 0, verified twice over: the boot
-//  dvar dump in console_zm.log carries `perk_weapRateEnhanced "1"` (so the dvar
-//  is real on this build and 1 is its stock value), and BO2-Reimagined - the
-//  designated reference - sets exactly this dvar to 0 and documents the result
-//  in its own README under Double Tap: *"Removed shooting 2 bullets for every
-//  shot"*. Double Tap 2.0's extra damage IS that second bullet, so with it off
-//  the perk is the 1.0 version: fire rate only.
-//
-//  🌟 NO BARRIER ATTACKS NEEDS NO replaceFunc, and that is not a shortcut - it
-//  is the smaller change. The legacy mod replaces
-//  _zm_spawner::should_attack_player_thru_boards with `return false`, but
-//  level.attack_player_thru_boards_range is read in exactly two places in the
-//  whole 2,093-file dump and both are inside that same function's file:
-//  :833 builds self.player_targets from the players within that range, and :878
-//  squares the same value for the damage pass over that array. With the range at
-//  0 the array is always empty, so the function's `attack` flag stays 0 and it
-//  returns false by itself - the reach-through animation and its damage both
-//  stop. Only _zm_spawner.gsc:68-69 ever writes the variable ( 109.8 ), so
-//  nothing else fights over it and the restore is exact.
-// ============================================================================
-zmqol_patches_watch()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "end_game" );
-
-    //  After the blackscreen, so _zm_spawner::init() has certainly run and the
-    //  cached barrier range below is the real stock value, not undefined.
-    flag_wait( "initial_blackscreen_passed" );
-
-    //  🛑 NOT READ FROM THE DVAR. Dvars outlive fast_restart, map_restart and a
-    //  map change, and this loop is the only writer of 0. With DOUBLE TAP 1.0 on
-    //  at a restart, the read cached 0 as "stock" and switching the row off left
-    //  Double Tap 2.0 disabled until the game was closed. 1 is the boot value
-    //  measured in the header above.
-    n_dt_stock = 1;
-
-    n_barrier_stock = 109.8;
-
-    if ( isdefined( level.attack_player_thru_boards_range ) )
-        n_barrier_stock = level.attack_player_thru_boards_range;
-
-    b_dt_last = -1;
-    b_barrier_last = -1;
-
-    for ( ;; )
-    {
-        b_dt = getdvarintdefault( "double_tap_1", 0 ) != 0;
-
-        if ( b_dt != b_dt_last )
-        {
-            b_dt_last = b_dt;
-
-            if ( b_dt )
-            {
-                setdvar( "perk_weapRateEnhanced", 0 );
-                println( "[zm_qol] DOUBLE TAP 1.0 on  - perk_weapRateEnhanced 0" );
-            }
-            else
-            {
-                setdvar( "perk_weapRateEnhanced", n_dt_stock );
-                println( "[zm_qol] DOUBLE TAP 1.0 off - perk_weapRateEnhanced " + n_dt_stock );
-            }
-        }
-
-        b_barrier = getdvarintdefault( "no_barrier_attacks", 0 ) != 0;
-
-        if ( b_barrier != b_barrier_last )
-        {
-            b_barrier_last = b_barrier;
-
-            if ( b_barrier )
-            {
-                level.attack_player_thru_boards_range = 0;
-                println( "[zm_qol] NO BARRIER ATTACKS on  - reach-through range 0" );
-            }
-            else
-            {
-                level.attack_player_thru_boards_range = n_barrier_stock;
-                println( "[zm_qol] NO BARRIER ATTACKS off - reach-through range " + n_barrier_stock );
-            }
-        }
-
-        wait 0.5;
-    }
-}
-
-// ============================================================================
-//  zmqol_solo_zombie_limit  -  24 ZOMBIE SOLO CAP
-//
-//  A straight port of legacy's zombie_total() thread: while the row is on, solo,
-//  and past round 5, the round's remaining spawn count is pinned to 23 at
-//  start_of_round.
-//
-//  🌟 WHY THAT IS THE PRE-PATCH SHAPE. Stock re-derives the round's total in
-//  round_spawning ( _zm.gsc:2928-2949 ) from zombie_max_ai ( 24 ) plus a
-//  per-player term that GROWS with the round: solo round 6 is already 27 and
-//  solo round 20 is 60. Pinning the counter back to a couple of dozen is what
-//  makes late solo rounds short again.
-//
-//  📝 Re-applied every round on purpose: stock writes level.zombie_total afresh
-//  at the start of each round, so a one-shot write would last exactly one round.
-//
-//  🛑 IT IS NOT A CAP ON ZOMBIES ALIVE. level.zombie_ai_limit ( 24, _zm.gsc:114 )
-//  already governs how many can be alive at once; this is the number still to
-//  SPAWN, which is what decides how long the round lasts.
-// ============================================================================
-zmqol_solo_zombie_limit()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    level endon( "end_game" );
-
-    for ( ;; )
-    {
-        level waittill( "start_of_round" );
-
-        if ( !getdvarintdefault( "solo_zombie_limit", 0 ) )
-            continue;
-
-        if ( level.round_number > 5 && get_players().size == 1 )
-            level.zombie_total = 23;
-    }
-}
 
 // ============================================================================
 //  zmqol_set_points_watch  -  CHEATS > SET POINTS
@@ -19638,13 +19030,7 @@ zmqol_hud_round_anchor( elem )
     if ( !isdefined( elem ) )
         return;
 
-    //  v2.1.3 - `== 1`, not `!= 0`: 2 is OFF and OFF stays on the RIGHT.
-    if ( getdvarintdefault( "hud_round_left", 0 ) == 1 )
-    {
-        elem.horzalign = "left";
-        elem.x = -25;
-    }
-    else
+    //  Bo2-VN: ROUND COUNTER POSITION is removed; the counter is always top right.
     {
         // ====================================================================
         //  v2.3.4 - DIGIT-COUNT-AWARE INSET. User, 2026-08-25: round 10000 (5

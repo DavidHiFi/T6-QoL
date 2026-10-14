@@ -52,10 +52,6 @@ init()
 
     qol_ipap_create_dvar( "pap_price", 5000 );
     qol_ipap_create_dvar( "repap_price", 2000 );
-    //  v1.99.26 - user request 2026-08-17: an INSTANT PAP switch on the GAME tab,
-    //  ON by default because it is what the mod has always done. Read live by
-    //  qol_ipap_mode_watch(), not once here.
-    qol_ipap_create_dvar( "instant_pap", 1 );
 
     level thread qol_ipap_trigger();
 }
@@ -90,9 +86,7 @@ qol_ipap_setup_attachments()
 // ============================================================================
 //  qol_ipap_trigger  -  build the radius trigger, then serve it
 //
-//  Stock's vending_weapon_upgrade() thread stays alive and parks on its own
-//  sunk trigger, so the INSTANT PAP switch can hand the machine back to it at
-//  any time. Exactly one of the two triggers stands - see qol_ipap_mode_watch().
+//  Bo2-VN: only built where stock's own Pack-a-Punch thread never started.
 // ============================================================================
 qol_ipap_trigger()
 {
@@ -114,6 +108,14 @@ qol_ipap_trigger()
 
     if ( weapon_upgrade_trigger.size > 0 )
         stock_trigger = weapon_upgrade_trigger[0];
+
+    //  Bo2-VN: the INSTANT PAP switch is removed. Wherever stock's own
+    //  Pack-a-Punch thread runs, stock's machine is the only one. This trigger
+    //  stays only where stock never started (the mod's survival locations, see
+    //  quality_of_life.gsc's level.qol_pap_stock_missing), because there it is
+    //  the only Pack-a-Punch the location has.
+    if ( !is_true( level.qol_pap_stock_missing ) && isdefined( stock_trigger ) )
+        return;
 
     if ( getdvar( "mapname" ) == "zm_transit" && getdvar( "g_gametype" ) == "zclassic" )
     {
@@ -142,20 +144,11 @@ qol_ipap_trigger()
     trigger usetriggerrequirelookat();
     perk_machine thread maps\mp\zombies\_zm_perks::activate_packapunch();
 
-    //  Hand the machine to whichever mode the switch is in RIGHT NOW, then keep
-    //  watching it. Applied before the loop so a match that starts with INSTANT
-    //  PAP disabled never shows this trigger at all.
     level.qol_pap_busy = 0;
-    level.qol_pap_sank_stock = 0;
-    b_instant_now = getdvarintdefault( "instant_pap", 1 ) != 0;
 
-    //  Where stock's Pack-a-Punch thread does not exist, instant mode is the
-    //  only Pack-a-Punch there is - never sink this trigger.
-    if ( is_true( level.qol_pap_stock_missing ) || !isdefined( stock_trigger ) )
-        b_instant_now = 1;
-
-    level qol_ipap_apply_mode( b_instant_now, trigger, stock_trigger );
-    level thread qol_ipap_mode_watch( trigger, stock_trigger );
+    //  Idempotent - skips weapons that already have a list.
+    level.zombiemode_reusing_pack_a_punch = 1;
+    level thread qol_ipap_setup_attachments();
 
     for (;;)
     {
@@ -280,8 +273,7 @@ qol_ipap_buy( player, weapon, cost, trigger )
     if ( !isdefined( upgrade_name ) || upgrade_name == "" || upgrade_name == weapon )
         return;
 
-    //  Claim the machine. qol_ipap_mode_watch() will not hand it over while
-    //  this is set, and stock readers (Die Rise's elevator, Origins' generator
+    //  Claim the machine. Stock readers (Die Rise's elevator, Origins' generator
     //  loss, Buried's time bomb) wait on pack_machine_in_use.
     level.qol_pap_busy = 1;
     level.qol_pap_owner = player;
@@ -398,110 +390,6 @@ qol_ipap_update_hint( trigger, player )
     }
 
     trigger sethintstring( qol_ipap_hint_text( maps\mp\zombies\_zm_weapons::is_weapon_upgraded( weapon ), qol_ipap_weapon_cost( weapon ) ) );
-}
-
-// ----------------------------------------------------------------------------
-//  v1.99.30 - INSTANT PAP IS A LIVE SWITCH
-//
-//      instant_pap 1  ->  this module's radius trigger
-//      instant_pap 0  ->  stock's own "specialty_weapupgrade" trigger, driven by
-//                         stock's own vending_weapon_upgrade() thread
-//
-//  🛑 trigger_on()/trigger_off() (common_scripts\utility) move a trigger 10000
-//  units down and remember `realorigin`. Stock's enable_trigger()/
-//  disable_trigger() do the same move through `.disabled`. Handing over while
-//  stock has its trigger sunk mid-upgrade would record the sunken origin as
-//  `realorigin` and bury the trigger for the rest of the match, so the watcher
-//  refuses to switch while either side is mid-upgrade.
-//
-//  🛑 THE MOD RAISES ONLY WHAT THE MOD SANK. level.qol_pap_sank_stock records
-//  whether stock's trigger is down because of us. On TranZit CLASSIC stock
-//  keeps its trigger off until the machine is BUILT.
-// ----------------------------------------------------------------------------
-qol_ipap_apply_mode( b_instant, qol_trigger, stock_trigger )
-{
-    if ( b_instant )
-    {
-        //  Idempotent - skips weapons that already have a list.
-        level.zombiemode_reusing_pack_a_punch = 1;
-        level thread qol_ipap_setup_attachments();
-
-        if ( isdefined( stock_trigger ) && !is_true( stock_trigger.trigger_off ) )
-        {
-            stock_trigger trigger_off();
-            level.qol_pap_sank_stock = 1;
-        }
-
-        if ( isdefined( qol_trigger ) && is_true( qol_trigger.trigger_off ) )
-        {
-            qol_trigger trigger_on();
-            qol_trigger setvisibletoall();
-        }
-    }
-    else
-    {
-        if ( isdefined( qol_trigger ) && !is_true( qol_trigger.trigger_off ) )
-        {
-            qol_trigger trigger_off();
-            qol_trigger setinvisibletoall();
-        }
-
-        if ( isdefined( stock_trigger ) && is_true( level.qol_pap_sank_stock ) && is_true( stock_trigger.trigger_off ) )
-        {
-            stock_trigger trigger_on();
-            level.qol_pap_sank_stock = 0;
-        }
-    }
-}
-
-//  State-based, not edge-based: compares the switch with what the triggers
-//  actually are, so it repairs a trigger something else moved. On TranZit
-//  CLASSIC stock's vending_weapon_upgrade() calls trigger_on() the moment the
-//  machine is built.
-qol_ipap_mode_watch( qol_trigger, stock_trigger )
-{
-    //  Nothing to switch to on the custom survival locations, where stock's
-    //  Pack-a-Punch thread never started, or on a map with no stock trigger.
-    if ( is_true( level.qol_pap_stock_missing ) || !isdefined( stock_trigger ) )
-        return;
-
-    for (;;)
-    {
-        wait 0.5;
-
-        b_want = getdvarintdefault( "instant_pap", 1 ) != 0;
-        b_qol_on = isdefined( qol_trigger ) && !is_true( qol_trigger.trigger_off );
-        b_mismatch = 0;
-
-        if ( b_want )
-        {
-            if ( !b_qol_on )
-                b_mismatch = 1;
-
-            if ( isdefined( stock_trigger ) && !is_true( stock_trigger.trigger_off ) )
-                b_mismatch = 1;
-        }
-        else
-        {
-            if ( b_qol_on )
-                b_mismatch = 1;
-
-            if ( isdefined( stock_trigger ) && is_true( level.qol_pap_sank_stock ) && is_true( stock_trigger.trigger_off ) )
-                b_mismatch = 1;
-        }
-
-        if ( !b_mismatch )
-            continue;
-
-        //  Never hand the machine over while a weapon is inside it.
-        if ( qol_ipap_machine_in_use() )
-            continue;
-
-        if ( isdefined( stock_trigger ) && is_true( stock_trigger.disabled ) )
-            continue;
-
-        level qol_ipap_apply_mode( b_want, qol_trigger, stock_trigger );
-    }
 }
 
 //  Stock's third_person_weapon_upgrade() fx placement without the floating
