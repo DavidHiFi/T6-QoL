@@ -39,33 +39,7 @@ mg_boot()
     mg_forge_init();
     mg_weapon_init();
     mg_debug_init();
-    level thread mg_chat_listener();
     print( "[MG] Magmagat " + level.mg_version + " loaded\n" );
-}
-mg_chat_listener()
-{
-    level endon( "end_game" );
-    for ( ;; )
-    {
-        level waittill( "say", message, player );
-        if ( !isdefined( player ) || !isplayer( player ) || !isdefined( message ) )
-            continue;
-        if ( message.size < 3 || tolower( getsubstr( message, 0, 3 ) ) != "!mg" )
-            continue;
-        if ( getdvarint( "mg_debug" ) != 1 )
-        {
-            player mg_out( "MG: debug commands need console `set mg_debug 1`" );
-            continue;
-        }
-        args = strtok( message, " " );
-        sub = "help";
-        arg = undefined;
-        if ( args.size > 1 )
-            sub = tolower( args[1] );
-        if ( args.size > 2 )
-            arg = args[2];
-        player thread mg_command( sub, arg, args );
-    }
 }
 mg_command( sub, arg, args )
 {

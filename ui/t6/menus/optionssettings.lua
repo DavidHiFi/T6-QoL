@@ -1917,10 +1917,8 @@ CoD.OptionsSettings.CreateQolHudTab = function (QolHudTab, LocalClientIndex)
 	-- row under the 15.0 ceiling this file measured on the SOUND tab.
 	CoD.OptionsSettings.QolMigrateFlash()
 	C(QolHudButtons, LocalClientIndex, "FLASH MESSAGES", "flash_intro",
-		"Text flashed at match start: the credits, how to find the chat commands, both, or nothing.", {
-			{ "CREDITS",        2 },
-			{ "HELP",           3 },
-			{ "CREDITS + HELP", 1 },
+		"Mod credits flashed at match start, or nothing.", {
+			{ "CREDITS",        1 },
 			{ "DISABLED",       0 }
 		})
 
