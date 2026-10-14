@@ -431,13 +431,9 @@ zmqol_enable_dog_rounds()
     //  function lives in quality_of_life.gsc instead, where a bare
     //  ::dog_round_tracker would look for that name in THIS file and fail to
     //  resolve at load - qualifying it is not a style choice, it is required.
-    //
-    //  v2.16.7 points it at our own copy of the tracker instead of stock's, so
-    //  the dog round's opening callout can be captioned - see
-    //  zmqol_dog_round_tracker(). An override somebody else already set still
-    //  wins, exactly as before.
+    //  An override somebody else already set still wins, exactly as stock.
     if ( !isdefined( level.dog_round_track_override ) )
-        level.dog_round_track_override = ::zmqol_dog_round_tracker;
+        level.dog_round_track_override = maps\mp\zombies\_zm_ai_dogs::dog_round_tracker;
 
     //  The Diner location script installs its own spawn logic and two watchdogs
     //  from its own main(); when it has, it owns this map and none of the
@@ -451,118 +447,6 @@ zmqol_enable_dog_rounds()
     //  points level.dog_spawn_func at zmqol_dog_spawn_logic for its own arena,
     //  and deleting them would break that file's link.
     level thread [[ level.dog_round_track_override ]]();
-}
-
-// ============================================================================
-//  "FETCH ME THEIR SOULS!"  -  the dog round callout, captioned    (v2.16.7)
-// ----------------------------------------------------------------------------
-//  User, 2026-09-14: *"i have my subtitles turned on and when the whole hound
-//  round started Richtofen said fetch me their souls, but the subtitle didn't
-//  appear in the bottom of the screen"* and, on who it is: *"it should say
-//  under the alias of announcer."*
-//
-//  🛑 WHY THE ANNOUNCER HOOK NEVER SAW THIS LINE. Every other announcer quote
-//  reaches the player through _zm_audio_announcer::playleaderdialogonplayer(),
-//  which zmqol_subs_npc_common.gsc replaces - that is the one road the caption
-//  system watches. The dog round's opener does not take it. It is a bare
-//  builtin with a hardcoded alias, at _zm_ai_dogs.gsc:118 inside
-//  dog_round_spawning():
-//
-//        array_thread( players, ::play_dog_round );
-//        wait 1;
-//        playsoundatposition( "vox_zmba_event_dogstart_0", ( 0, 0, 0 ) );
-//
-//  No dialogue function runs, so there was nothing for the hook to catch. The
-//  TEXT was never the problem - it has shipped in the tables the whole time
-//  (zone_assets/zm/zmqol_subs_zm_transit.csv:2148, and the buried / highrise /
-//  nuked / prison tables carry their own row).
-//
-//  🌟 WHY THE TRACKER IS COPIED RATHER THAN THE ROUND LOOP. dog_round_spawning()
-//  is the function that runs a dog round to completion, and getting it wrong is
-//  exactly the hang this version is fixing elsewhere - it is not worth copying
-//  for a caption. The seam is one level up: dog_round_tracker() points
-//  level.round_spawn_func at ::dog_round_spawning for the length of a dog round
-//  and restores the ordinary spawner afterwards. Copying the TRACKER (eight
-//  lines, and the same thing qol_subs_npc_highrise.gsc already does for Die
-//  Rise's leaper round) lets the pointer be set to a wrapper that starts the
-//  caption and then calls stock, untouched.
-//
-//  🛑 AND WHY NOT JUST WAIT ON THE NOTIFY. Watching for "dog_round_starting"
-//  and swapping the pointer afterwards is a race this file has already been
-//  bitten by once - see the ROUND DELAY OFF note in zmqol_round_think(), where
-//  the round loop read round_spawn_func in the same frame as the notify and ran
-//  an ordinary round to jumping-jacks music. Assigning the pointer at the exact
-//  point stock assigns it cannot race.
-// ============================================================================
-
-//  Stock _zm_ai_dogs::dog_round_tracker() verbatim (dev-only /# #/ blocks
-//  dropped, same-file calls qualified) - EXCEPT the one spawn-func pointer,
-//  which goes to the captioning wrapper instead of straight to stock's
-//  ::dog_round_spawning. Stock sets round_wait_func on the way OUT only; that
-//  asymmetry is stock's and is kept.
-zmqol_dog_round_tracker()
-{
-    level.dog_round_count = 1;
-    level.next_dog_round = level.round_number + randomintrange( 4, 7 );
-    old_spawn_func = level.round_spawn_func;
-    old_wait_func = level.round_wait_func;
-
-    while ( 1 )
-    {
-        level waittill( "between_round_over" );
-
-        if ( level.round_number == level.next_dog_round )
-        {
-            level.music_round_override = 1;
-            old_spawn_func = level.round_spawn_func;
-            old_wait_func = level.round_wait_func;
-            maps\mp\zombies\_zm_ai_dogs::dog_round_start();
-            level.round_spawn_func = ::zmqol_dog_round_spawning;
-            level.next_dog_round = level.round_number + randomintrange( 4, 6 );
-            continue;
-        }
-        else
-        {
-            if ( flag( "dog_round" ) )
-            {
-                maps\mp\zombies\_zm_ai_dogs::dog_round_stop();
-                level.round_spawn_func = old_spawn_func;
-                level.round_wait_func = old_wait_func;
-                level.music_round_override = 0;
-                level.dog_round_count += 1;
-            }
-        }
-    }
-}
-
-//  Stock dog_round_spawning() with the caption started alongside it. Stock is
-//  CALLED, never copied, so the round logic is byte-for-byte the shipped one.
-zmqol_dog_round_spawning()
-{
-    level thread zmqol_dog_start_caption();
-    maps\mp\zombies\_zm_ai_dogs::dog_round_spawning();
-}
-
-//  Mirrors stock's own `wait 1` before playsoundatposition(), so the text and
-//  the line land in the same frame.
-//
-//  The alias is hardcoded here because it is hardcoded there: the announcer can
-//  be switched to Samantha mid-match (_zm_utility::sndswitchannouncervox), but
-//  _zm_ai_dogs.gsc:118 plays vox_zmba_event_dogstart_0 either way, so that is
-//  the line the player hears and the one to caption. zmqol_subs_npc() resolves
-//  the speaker to "Announcer" from the vox_zmba_event_ prefix on its own, does
-//  the table lookup, and no-ops when subtitles are off or the map has no table.
-zmqol_dog_start_caption()
-{
-    level endon( "end_game" );
-
-    wait 1;
-
-    //  stock returns before the sound when the match is already ending
-    if ( isdefined( level.intermission ) && level.intermission )
-        return;
-
-    scripts\zm\zmqol_subtitles::zmqol_subs_npc( "vox_zmba_event_dogstart_0" );
 }
 
 //  True when a location script has taken over this map's dog behaviour itself
@@ -12051,28 +11935,6 @@ zmqol_play_announcer_line( str_suffix )
         str_alias = str_alias + "_0";
     else if ( !soundexists( str_alias ) )
         return;
-
-    //  SUBTITLE (v2.14.33). User, 2026-09-09: *"i was getting zombie bloods, blood
-    //  moneys, other power ups and i wasnt seeing any subtitles ... make sure all
-    //  power ups get subtitles when the announcer speaks"*.
-    //
-    //  🛑 THIS FUNCTION IS THE REASON THREE OF THE FOUR WERE SILENT ON SCREEN. The
-    //  subtitle hook is a replaceFunc on _zm_audio_announcer::playleaderdialogonplayer
-    //  (zmqol_subs_npc_common.gsc), and this function deliberately does NOT go through
-    //  it - that is the whole point of it, stock's drop-if-busy. Death Machine
-    //  (:3626), Blood Money (:12713) and Bonfire Sale (:13323) all announce down this
-    //  road, so nothing ever asked for their caption. Zombie Blood failed for the
-    //  other reason - it DOES take the stock road (createvox re-points the key) but
-    //  had no row in the six tables. Both halves are fixed; the tables now carry all
-    //  four lines under all four spellings the engine can build.
-    //
-    //  Called once, with no listener: the alias's DistMaxDry is 5000 (measured, every
-    //  *_qol_powerup_* row in soundbank\mod.all.aliases.additions.csv), so
-    //  zmqol_subs_npc() takes its >= 4000 branch and shows the line to everyone -
-    //  which is what playlocalsound() to every player below means. It returns on its
-    //  own if subtitles are off, the map has no table, or the alias has no playback
-    //  time, and it prints the reason either way.
-    scripts\zm\zmqol_subtitles::zmqol_subs_npc( str_alias, undefined, undefined, undefined );
 
     a_players = get_players();
 
