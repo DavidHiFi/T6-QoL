@@ -10,44 +10,53 @@
 //  go to that new utility tab and click and assign a key the same way you
 //  would on any of all those other tabs ... on your controller or your
 //  keyboard, and then tap one button and go in third person and toggle back
-//  out."* The rows that write the bind live in optionssettings.lua
+//  out."* The row that writes the bind lives in optionssettings.lua
 //  (CONTROLS > UTILITY tab, v2.17.0 block); this file is the side that MAKES
 //  the bound key do something.
 //
-//  ?? THE ROUTE IS THE PROVEN .fly ONE, NOT A DVAR BIND. GSC cannot register
-//  a new console command, and the cg_thirdPerson dvar is one of this build's
-//  cheat-protected cg_* switches (qol_options.gsc's crosshair finding) - a
-//  `bind x "toggle cg_thirdPerson 0 1"` would be refused outside a cheat
-//  server. The mod already solved all of this for .fly (quality_of_life.gsc,
-//  v1.59.3/v1.99.x): ride "+actionslot N", a command the engine accepts,
-//  subscribes through notifyonplayercommand, and never uses in Zombies.
-//  The fly bind took +actionslot 7; this takes +actionslot 5, which nothing
-//  in this mod or the stock zombies binds touches. One notify registration
-//  covers BOTH input devices, so the keyboard key from the native bind
-//  editor and the pad button from the choice row fire the same toggle.
+//  ?? THE ROUTE IS A DVAR TRIGGER, NOT "+actionslot N". The v1 route rode
+//  notifyonplayercommand("zmqol_tp_key", "+actionslot 5") and did not work:
+//  measured 2026-10-09 (audit thread 8cb16e49, zm_qol_mg_audit, PID 13516,
+//  god+ghost confirmed) - with the watcher armed at connect and verified
+//  loaded, a real keypress dispatching "+actionslot 5" via a bind fires
+//  NOTHING, and so do "+actionslot 6" and "+actionslot 7" by key AND by
+//  console, while an ESC press the same minute opens the pause menu. The
+//  engine special-cases actionslot commands away from the player-notify
+//  path. The T6-Data-Archive subscribable list (MPZM/Script/User Input)
+//  lists "+actionslot N", but the shipped .fly "precedent" never proved it:
+//  the user's real fly keys are `bind 9 "fly 1"` / `bind 0 "fly 0"` (their
+//  bindings_zm.bdg) - dvar binds, the same channel as every cheat command.
 //
-//  ?? WHAT THE TOGGLE FLIPS: this player's third person PREFERENCE, the same
-//  thing the GAME 3 tab's THIRD PERSON row writes (qol_opt_third_person's
-//  1 Hz pass owns every setclientthirdperson call - camera mode, angle, FOV
-//  recovery, and stock's own off-on-spawn). Flipping the preference keeps
-//  one owner for the camera; the applied camera follows within 0.25s.
+//  ?? SO THE KEY IS A TRIGGER, THE FLY-SHAPED WAY: the row binds
+//  `set zmqol_tp_fire 1`; this side watches the dvar, consumes it back to 0,
+//  and flips the preference. "The dvar ... is reset to 0 on consumption, so
+//  it is a trigger and a keybind fires on every press" - the established
+//  shape (zmqol_boss_spawn_dvar_watch, zmqol_ww_give_dvar_watch). The flip
+//  itself is unchanged: this player's third person PREFERENCE through
+//  zmqol_playeropt (zmqol_popt / zmqol_popt_store), the same thing the
+//  GAME 3 tab's THIRD PERSON row writes; the 1 Hz pass owns every
+//  setclientthirdperson call, so the camera follows within 0.25s.
 //
-//  ?? WHO CAN USE IT: the host flips the dvar; anyone else gets a per-player
-//  override, both through zmqol_playeropt's own store/read (zmqol_popt /
-//  zmqol_popt_store) - the same split the chat .my command uses. Nothing
-//  here reads or writes another player's client dvars.
+//  ?? CO-OP: the trigger dvar is a server dvar, so like the fly dvar
+//  commands only the host's copy consumes it; a non-host's key press sets
+//  their own client dvar and does not reach this watcher. Solo (the
+//  utility row's target) is unaffected. Non-host players keep the GAME 3
+//  row and the .tp chat route.
 //
 //  ?? WHY A NEW FILE AND NOT quality_of_life.gsc. The ceiling file must not
-//  grow (workspace AGENTS.md item 1b). Every name used here is an engine
-//  builtin or a zmqol_playeropt namespace call with its full path, so a
-//  hotloaded copy of this file resolves cleanly too (hotload-gate defs:
-//  notifyonplayercommand, waittill, wait, endon).
+//  grow (workspace AGENTS.md item 1b). This file is small and self-contained
+//  with its own init(); every helper is an engine builtin or a
+//  zmqol_playeropt namespace call with its full path.
 // ============================================================================
 
 #include maps\mp\_utility;
 
 init()
 {
+    //  Fresh trigger state every map load: a press that landed during a
+    //  match end must not fire once into the next map.
+    setdvar( "zmqol_tp_fire", "0" );
+
     thread zmqol_tp_key_players();
 }
 
@@ -63,17 +72,27 @@ zmqol_tp_key_players()
     }
 }
 
+//  Poll the trigger dvar. 0.1s is well under the 0.25s camera-follow and
+//  far above GSC scheduler cost; the dvar is consumed so one press is one
+//  flip no matter how long the watcher cycle is.
 zmqol_tp_key_watch()
 {
     self endon( "disconnect" );
-    level endon( "game_ended" );
 
-    self notifyonplayercommand( "zmqol_tp_key", "+actionslot 5" );
+    //  Co-op: the trigger acts on a server dvar, so only the host's copy
+    //  may run - the same guard the fly dvar watches use.
+    if ( !self scripts\zm\zmqol_playeropt::zmqol_popt_is_host() )
+        return;
 
     for ( ;; )
     {
-        self waittill( "zmqol_tp_key" );
-        self zmqol_tp_key_flip();
+        wait 0.1;
+
+        if ( getdvarint( "zmqol_tp_fire" ) == 1 )
+        {
+            setdvar( "zmqol_tp_fire", "0" );
+            self zmqol_tp_key_flip();
+        }
     }
 }
 
