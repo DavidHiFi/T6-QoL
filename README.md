@@ -85,7 +85,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 > **Cloning the repo does not give you a playable mod** — `mod.iwd` is a build output and isn't tracked in git. Use the release.
 
 > [!WARNING]
-> **Known issue.** Using **INSTANT EXIT** straight after **FAST RESTART** can cause a `LUI_ERROR`. This comes from Plutonium's `MainMenuOG.lua`, not the mod. **INSTANT EXIT** works normally otherwise.
+> **Known issue.** The launcher has no FAST RESTART any more: on current Plutonium builds a scripted `fast_restart` crashes the game about two seconds in, with the death inside the engine where no script can reach it (three crash dumps agree). **RESTART GAME** (a full map reload) is the safe restart, and it is what the launcher now offers. Typing `fast_restart` into the console has the same crash.
 
 ---
 
@@ -176,6 +176,9 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Bloodhound, the Shadows of Evil revolver, with its own sounds, animations and the stock and animated Pack-a-Punch camos. It Pack-a-Punches into the **Meat Wagon**, a Bloodhound in each hand firing explosive rounds.
   * It's in the box on Nuketown, Die Rise, Mob of the Dead, Docks, Buried and Buried Maze.
   * It's a **STARTING PISTOL** choice in the lobby on every map. On TranZit and Origins it's a starting pistol only, with no box or Pack-a-Punch, because those maps have no room left in the weapon table.
+
+* **Black Ops 4 guns:**
+  * MagmaGat, the Black Ops 4 Mob of the Dead remaster's wonder weapon, Pack-a-Punching into the **Magmus Operandi**. It is not in the box: on Mob of the Dead you earn it through luckass's forge quest, ported with his permission (MIT), models, animations, effects, sounds and behaviour all his. Hosts who want the stock weapon table back can skip the whole quest with `set mg_disable 1` on the console.
 
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
