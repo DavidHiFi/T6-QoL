@@ -61,10 +61,17 @@ zone_assets/sound/
 # folders (images/, scripts/, maps/, weapons/, ui_mp/, ...), all of which ARE
 # tracked. Nothing is lost that cannot be rebuilt.
 #
-# 🛑 The other five shipped files stay tracked on purpose - mod.ff,
-# mod.all.sabl, mod.all.sabs and deathmachine_zm.all.sabl have no source in
-# this project and CANNOT be regenerated. See CLAUDE.md section 5.
+# 🛑 v2.19.0 - THE BUILT ROOT BINARIES ARE UNTRACKED. GitHub rejects any file
+# over 100 MiB and the Magmagat carve pushed mod.all.sabl past it, so the
+# recorded decision (spark-qol-audit, 2026-10-07) is that mod.ff, mod.all.sabl
+# and mod.all.sabs ride RELEASES from now on, not the tree. The donor and
+# deathmachine banks under zone_source\ stay tracked - losing those loses the
+# mod. A clone still builds: build_ff.bat links a complete mod.ff from the
+# donors. The release zip is the only place the built set ships.
 mod.iwd
+mod.ff
+mod.all.sabl
+mod.all.sabs
 
 # The upscaled / BO3-style texture pack (2,852 .iwi, ~2.1 GB) that ships inside
 # mod.iwd. NOT tracked: it would add 2.1 GB to a repo that is otherwise ~86 MB,
