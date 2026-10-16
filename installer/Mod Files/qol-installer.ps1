@@ -101,6 +101,28 @@ $OLDBACKUPS = Join-Path $STATE 'backups'
 # independently - the two must agree, so if you move this, move that too.
 $RESHADEVAULT = Join-Path $STATE 'reshade-vault'
 $LOGFILE  = Join-Path $HERE 'installer.log'
+# 🛑 v2.19.0 - THE LOG NEEDS A SECOND HOME. $HERE is wherever the player unzipped
+# the mod - a Documents or Downloads folder behind Defender's Controlled Folder
+# Access refuses every write, and Write-Log used to swallow that silently, so a
+# failed install left no log and no signal at all (thread 46644: "won't print
+# a log"). Probe the primary path once, up front; if it refuses, log to
+# %LOCALAPPDATA%\Plutonium instead - this script's own state folder already
+# lives there, so it is the one location an install is guaranteed to write.
+# The first line there records the refused path.
+$script:LogPath = $LOGFILE
+try {
+    Add-Content -LiteralPath $LOGFILE -Value '' -ErrorAction Stop
+} catch {
+    $script:LogPath = Join-Path $env:LOCALAPPDATA 'Plutonium\installer.log'
+    try {
+        [void](New-Item -ItemType Directory -Path (Split-Path -Parent $script:LogPath) -Force -ErrorAction Stop)
+        Add-Content -LiteralPath $script:LogPath -Value ("{0}  info  This installer's own folder would not accept a log, so logging here instead. Refused path: {1}" -f (Get-Date -Format 'HH:mm:ss'), $LOGFILE) -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        # Nowhere writable yet; Write-Log will try both homes per line and the
+        # final catch flushes the in-memory copy.
+        $script:LogPath = $LOGFILE
+    }
+}
 
 # 🛑 v2.12.7, 2026-09-05 - THE START MENU GROUP. Read from Windows rather than
 # built out of %APPDATA%: a roamed, redirected or non-English profile moves this
@@ -226,7 +248,24 @@ function Write-Log {
     param([string] $Text, [string] $Level = 'info')
     $line = '{0}  {1,-5}  {2}' -f (Get-Date -Format 'HH:mm:ss'), $Level, $Text
     $script:Log.Add($line) | Out-Null
-    try { Add-Content -LiteralPath $LOGFILE -Value $line -Encoding UTF8 } catch { }
+    if ($script:LogDiskFailed) { return }
+    try {
+        Add-Content -LiteralPath $script:LogPath -Value $line -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        # The current path just refused a write. Try the other home once, then
+        # keep the rest in memory - the catch block at the bottom of the script
+        # flushes it there and tells the player where it ended up. The startup
+        # probe normally prevents ever getting here.
+        $script:LogDiskFailed = $true
+        $other = if ($script:LogPath -ne $LOGFILE) { $LOGFILE } else { Join-Path $env:LOCALAPPDATA 'Plutonium\installer.log' }
+        try {
+            [void](New-Item -ItemType Directory -Path (Split-Path -Parent $other) -Force -ErrorAction Stop)
+            Add-Content -LiteralPath $other -Value ("{0}  info  Log moved here: a write to {1} failed." -f (Get-Date -Format 'HH:mm:ss'), $script:LogPath) -Encoding UTF8 -ErrorAction Stop
+            Add-Content -LiteralPath $other -Value $line -Encoding UTF8 -ErrorAction Stop
+            $script:LogPath = $other
+            $script:LogDiskFailed = $false
+        } catch { }
+    }
 }
 
 function Say {
@@ -4054,7 +4093,28 @@ Start-Sleep -Milliseconds 600
     Write-Host "     $($_.Exception.Message)" -ForegroundColor $C.Bad
     Write-Host '!     Anything already copied stays as it is. Close Plutonium completely' -ForegroundColor $C.Dim
     Write-Host '!     and run this again to finish the job.' -ForegroundColor $C.Dim
-    Write-Host "!     The full detail went to: $LOGFILE" -ForegroundColor $C.Dim
+    # Say where the log REALLY is. The startup probe moves the log to
+    # %LOCALAPPDATA%\Plutonium when the install folder refuses writes, and if
+    # neither home accepted a line the whole in-memory copy flushes here; if
+    # even that fails, the player is told the truth instead of being pointed
+    # at a file that does not exist.
+    if ($script:LogDiskFailed) {
+        $script:LogDiskFailed = $false
+        try {
+            [void](New-Item -ItemType Directory -Path (Split-Path -Parent $script:LogPath) -Force -ErrorAction Stop)
+            [IO.File]::WriteAllLines($script:LogPath, $script:Log)
+        } catch {
+            try {
+                $fallback2 = Join-Path $env:LOCALAPPDATA 'Plutonium\installer.log'
+                [void](New-Item -ItemType Directory -Path (Split-Path -Parent $fallback2) -Force -ErrorAction Stop)
+                [IO.File]::WriteAllLines($fallback2, $script:Log)
+                $script:LogPath = $fallback2
+            } catch {
+                $script:LogDiskFailed = $true
+            }
+        }
+    }
+    Write-Host "!     The full detail went to: $script:LogPath" -ForegroundColor $C.Dim
     if (-not $NoStdin) { [void](Read-Host '     Press Enter to close') }
     exit 1
 }

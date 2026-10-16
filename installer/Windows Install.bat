@@ -34,7 +34,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%PS1%" %*
 if errorlevel 1 (
   echo.
   echo   The installer stopped with an error.
-  echo   See installer.log inside the "Mod Files" folder.
+  echo   A full log should be at "installer.log" inside the "Mod Files" folder,
+  echo   or at %LOCALAPPDATA%\Plutonium\installer.log if that folder would not
+  echo   accept it. If neither file exists, PowerShell itself never started -
+  echo   check your antivirus.
   echo.
   pause
 )
