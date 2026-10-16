@@ -15,7 +15,18 @@ init()
 	//  ported location already threads this function, and a zombie stuck on
 	//  pathenemyfightdist = 4 is not arena-specific - Origins is simply where it
 	//  shows up most. See the banner on fix_stuck_fight_distance().
-	level thread fix_stuck_fight_distance();
+	//
+	//  ⭐ v2.18.3 - the repair is no longer arena-only. Root script
+	//  scripts\zm\zmqol_ai_fightdist.gsc installs the SAME function on every
+	//  map (Farm, Town, Bus Depot and classic had no loc script and therefore
+	//  no repair at all - the 2026-10-11 Farm report). This init now honours
+	//  the shared single-flight flag, so on the replaced locations exactly one
+	//  copy of the watchdog runs - whoever installed first.
+	if ( !isdefined( level.zmqol_fightdist_watchdog ) )
+	{
+		level.zmqol_fightdist_watchdog = 1;
+		level thread fix_stuck_fight_distance();
+	}
 
 	level.enemy_location_override_func = ::enemy_location_override;
 	flag_wait("initial_blackscreen_passed");
@@ -1425,8 +1436,16 @@ fix_stuck_fight_distance()
 //  and nothing here may touch it - that is how a previous pass let zombies
 //  climb through barriers that still had all six boards.
 //
-//  The piece test is _zm_utility::all_chunks_destroyed()'s own test, verbatim:
-//  "open" plus "opening" against getnumzbarrierpieces().
+//  🛑 v2.18.3 - STRICTER PIECE TEST: only a piece fully in state "open" counts
+//  as gone. Stock's own all_chunks_destroyed() (_zm_utility.gsc:410) counts
+//  "opening" as destroyed, and copying that verbatim is exactly the
+//  vault-through hole: a zombie killed or teleported after the tear notetrack
+//  (_zm_spawner.gsc:963) strands its piece in "opening", the window then reads
+//  "all destroyed" to stock, and restarting find_flesh on a zombie standing at
+//  such a window hands it a far-side goal that paths straight past the visible
+//  board. A piece in "targetted_by_zombie" or "opening" still blocks this
+//  window, so its zombie is left to stock and to the
+//  zmqol_barriers.gsc::zmqol_barriers_heal_stranded_pieces() healer.
 // ----------------------------------------------------------------------------
 zmqol_at_own_barrier()
 {
@@ -1444,7 +1463,7 @@ zmqol_at_own_barrier()
 	if ( n_pieces < 1 )
 		return false;
 
-	a_open = arraycombine( zbarrier getzbarrierpieceindicesinstate( "open" ), zbarrier getzbarrierpieceindicesinstate( "opening" ), 1, 0 );
+	a_open = zbarrier getzbarrierpieceindicesinstate( "open" );
 
 	//  boards still standing at its own window - leave the zombie to stock
 	return a_open.size < n_pieces;
