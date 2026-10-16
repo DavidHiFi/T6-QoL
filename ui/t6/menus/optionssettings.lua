@@ -201,6 +201,7 @@ ZmQolCreateUtilityTab = function (utilityTab, localClientIndex)
 		end
 	end)
 	return container
+end
 
 pcall(require, "T6.menus.optionscontrols")
 
