@@ -31,16 +31,33 @@ init()
 
     level thread zmqol_barriers_build_all();
     level thread zmqol_barriers_gate_inside_nodes();
+    level thread zmqol_barriers_heal_stranded_pieces();
     level thread zmqol_barriers_carpenter_rule();
 }
 
-//  Boards still standing: every piece that is not "open" or "opening". This is
-//  _zm_utility::all_chunks_destroyed()'s own test turned into a count.
+//  Boards still standing. This is the GATE counter, not stock's
+//  all_chunks_destroyed() readback.
+//
+//  🛑 v2.18.3 - ONLY a piece in state "open" counts as down. The previous
+//  version copied _zm_utility::all_chunks_destroyed() verbatim ("open" plus
+//  "opening"), and that copy is exactly the vault-through hole the user
+//  reports "again": stock's own tear notetrack (_zm_spawner.gsc:963) sets a
+//  piece to "opening" while it is still visibly attached, stock reverts an
+//  interrupted tear to "closed" only from "targetted_by_zombie"
+//  (_zm_spawner.gsc:1185-1199), and get_non_destroyed_chunks() returns only
+//  "closed" pieces (_zm_utility.gsc:1863) - so a piece stranded in "opening"
+//  is never finished by anyone, while all_chunks_destroyed() already calls
+//  that window torn. Counting "opening" as down re-opened the inside path
+//  node while a board was visibly standing, and every retargeted zombie
+//  vaulted straight through it. A mid-rip piece and a targetted piece both
+//  keep the window gated here; the vault itself is animscripted and does not
+//  need the node, so a normal tear still ends in a normal entry, and
+//  zmqol_barriers_heal_stranded_pieces() (below) reverts pieces that no
+//  zombie will ever finish.
 zmqol_barriers_boards_up( e_zb )
 {
     n = e_zb getnumzbarrierpieces();
     n = n - e_zb getzbarrierpieceindicesinstate( "open" ).size;
-    n = n - e_zb getzbarrierpieceindicesinstate( "opening" ).size;
     return n;
 }
 
@@ -207,6 +224,100 @@ zmqol_barriers_gate_inside_nodes()
         }
 
         wait 0.1;
+    }
+}
+
+// ============================================================================
+//  RULE 2b - FINISH OR REVERT TEAR PIECES NO ZOMBIE WILL EVER FINISH.
+//
+//  🛑 User, 2026-10-11, on TranZit Farm: *"the zombies are just going straight
+//  through the barriers"* - with the gate above already live in that build.
+//  The gate is sound; the leak was the pieces. A zombie dies or is teleported
+//  mid-rip after stock's tear notetrack has moved its piece to "opening"
+//  (_zm_spawner.gsc:963): stock's own cleanup reverts an interrupted tear only
+//  from "targetted_by_zombie" (_zm_spawner.gsc:1185-1199), and
+//  get_non_destroyed_chunks() offers zombies only "closed" pieces
+//  (_zm_utility.gsc:1863). The stranded piece therefore never completes and
+//  is never re-teared - but stock's all_chunks_destroyed() (410) already
+//  counts it destroyed, so every later zombie at that window vaults past a
+//  board that is visibly still there. Players shoot through boards (84-100%
+//  of traces passed a fully boarded Church window, 2026-09-16), so zombie
+//  deaths mid-rip are constant, and every one of them left its window open to
+//  vault-through for the rest of the match.
+//
+//  THE HEAL: any piece held in "targetted_by_zombie" or "opening" for more
+//  than 15 seconds is put back with the same presentation triple
+//  zmqol_barriers_build_all() ships (default model, state "closed", show) -
+//  the exact path that verified 38/38 windows boarded on Farm. A reverted
+//  board is a normal boarded window again: the strict gate above keeps the
+//  inside node disabled, the next zombie re-tears it through the normal
+//  entrance flow, and a player rebuild or Carpenter heals it identically.
+//  15 seconds is far longer than a real single-piece tear (the tear loop
+//  spends roughly a second per chunk_health point), so a live teardown is
+//  never touched - only a piece whose tearer is long gone.
+// ============================================================================
+zmqol_barriers_heal_stranded_pieces()
+{
+    level endon( "end_game" );
+    flag_wait( "start_zombie_round_logic" );
+    wait 2;
+
+    n_heal = 0;
+
+    for ( ;; )
+    {
+        wait 0.5;
+
+        a_win = zmqol_barriers_windows();
+
+        for ( i = 0; i < a_win.size; i++ )
+        {
+            s_goal = a_win[i];
+
+            if ( !isdefined( s_goal.zbarrier ) )
+                continue;
+
+            e_zb = s_goal.zbarrier;
+
+            if ( !isdefined( s_goal.zmqol_strand_since ) )
+                s_goal.zmqol_strand_since = [];
+
+            n_pieces = e_zb getnumzbarrierpieces();
+
+            for ( j = 0; j < n_pieces; j++ )
+            {
+                str_state = e_zb getzbarrierpiecestate( j );
+
+                if ( str_state == "closed" || str_state == "open" )
+                {
+                    if ( isdefined( s_goal.zmqol_strand_since[j] ) )
+                        s_goal.zmqol_strand_since[j] = undefined;
+
+                    continue;
+                }
+
+                if ( str_state != "targetted_by_zombie" && str_state != "opening" )
+                    continue;
+
+                if ( !isdefined( s_goal.zmqol_strand_since[j] ) )
+                {
+                    s_goal.zmqol_strand_since[j] = gettime();
+                    continue;
+                }
+
+                if ( gettime() - s_goal.zmqol_strand_since[j] < 15000 )
+                    continue;
+
+                e_zb zbarrierpieceusedefaultmodel( j );
+                e_zb setzbarrierpiecestate( j, "closed" );
+                e_zb showzbarrierpiece( j );
+                s_goal.zmqol_strand_since[j] = undefined;
+                n_heal++;
+
+                if ( n_heal <= 5 || n_heal % 25 == 0 )
+                    println( "[zm_qol] BARRIERS: reverted a strand " + str_state + " piece " + j + " on " + getdvar( "ui_zm_mapstartlocation" ) + " (total " + n_heal + ") - its tearer died or was teleported mid-rip" );
+            }
+        }
     }
 }
 
