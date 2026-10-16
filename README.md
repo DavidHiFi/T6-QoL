@@ -298,6 +298,22 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 ---
 
+## Contributing
+
+Bug reports, feature ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks and what to include.
+
+## Star history
+
+⭐ Thanks to everyone playing, testing, reporting bugs and supporting the mod.
+
+<a href="https://www.star-history.com/?repos=DavidHiFi%2FT6-QoL&amp;type=date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=DavidHiFi/T6-QoL&amp;type=date&amp;theme=dark&amp;legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=DavidHiFi/T6-QoL&amp;type=date" />
+    <img alt="DavidHiFi/T6-QoL GitHub star history" src="https://api.star-history.com/chart?repos=DavidHiFi/T6-QoL&amp;type=date" />
+  </picture>
+</a>
+
 ## Credits
 
 * **Author:**
