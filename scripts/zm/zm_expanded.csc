@@ -328,8 +328,10 @@ zmqol_mp_weapons_init()
 	//  five slots only exist because this four-slot family steps aside there
 	//  (oldschool_dw_enabled() in scripts\zm\oldschool.gsc has the same guard
 	//  and the measured-budget note). Both Mob survival locations keep the DW.
+	//  Origins classic gives its four slots to the MagmaGat (oldschool.gsc's
+	//  zm_tomb hold-back, the same test here).
 	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
-	     oldschool_map != "zm_prison" )
+	     oldschool_map != "zm_prison" && oldschool_map != "zm_tomb" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
@@ -371,6 +373,19 @@ zmqol_mp_weapons_init()
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "scavenger_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "scavenger_upgraded_zm", 0 );
+	}
+
+	//  ============================================================
+	//  THE MAGMAGAT BOX WEAPON (scripts\zm\magmagat.gsc, the server twin).
+	//  Same test as magmagat_enabled() - Origins classic only for now - or the
+	//  box cannot draw its pickup model. Not the quest below.
+	//  ============================================================
+	magmagat_map = getdvar( "mapname" );
+	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
+	if ( magmagat_map == "zm_tomb" && magmagat_mode == "zclassic" )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );
 	}
 
 	//  ============================================================

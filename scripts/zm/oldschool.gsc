@@ -142,6 +142,13 @@ oldschool_dw_enabled( map, mode )
     if ( map == "zm_prison" )
         return false;
 
+    //  The MagmaGat takes this family's four slots on Origins classic
+    //  (magmagat.gsc, magmagat_enabled). Origins' survival arenas (zstandard)
+    //  never had this DW, so they are not touched. zm_expanded.csc's client
+    //  test carries the same zm_tomb hold-back.
+    if ( map == "zm_tomb" )
+        return false;
+
     return map == "zm_nuked" || map == "zm_buried" || map == "zm_highrise" ||
-           map == "zm_transit" || map == "zm_tomb";
+           map == "zm_transit";
 }
