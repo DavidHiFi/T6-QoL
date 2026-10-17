@@ -102,19 +102,50 @@ emp_detonate( grenade )
     if ( isdefined( grenade.owner ) )
         grenade_owner = grenade.owner;
 
+    self thread zmqol_emp_detonate_timeout( grenade, grenade_owner );
     grenade waittill( "explode", grenade_origin );
+
+    if ( isdefined( grenade.zmqol_emp_done ) )
+        return;
+
+    grenade.zmqol_emp_done = 1;
+    zmqol_emp_apply( grenade_origin, grenade_owner );
+}
+
+//  v2.15.44 - failsafe for grenades that clip through custom-map collision
+//  (seen on Crazy Place survival near the moved box: the grenade sits under
+//  the floor and the engine never sends "explode"). Without this, the wait
+//  above parks the thread forever and no EMP effects run at all. The watcher
+//  detonates at the grenade's last known origin and deletes the litter; the
+//  first path to run claims zmqol_emp_done and the loser exits silently, so
+//  a normal detonation is byte-for-byte the old behavior.
+zmqol_emp_detonate_timeout( grenade, grenade_owner )
+{
+    self endon( "disconnect" );
+    wait 8;
+
+    if ( !isdefined( grenade ) || isdefined( grenade.zmqol_emp_done ) )
+        return;
+
+    grenade.zmqol_emp_done = 1;
+    origin = grenade.origin;
+    grenade delete();
+    zmqol_emp_apply( origin, grenade_owner );
+}
+
+zmqol_emp_apply( origin, grenade_owner )
+{
     emp_radius = level.zombie_vars["emp_perk_off_range"];
     emp_time = level.zombie_vars["emp_perk_off_time"];
-    origin = grenade_origin;
 
     if ( !isdefined( origin ) )
         return;
 
     level notify( "emp_detonate", origin, emp_radius );
-    self thread emp_detonate_zombies( grenade_origin, grenade_owner );
+    self thread emp_detonate_zombies( origin, grenade_owner );
 
     if ( isdefined( level.custom_emp_detonate ) )
-        thread [[ level.custom_emp_detonate ]]( grenade_origin );
+        thread [[ level.custom_emp_detonate ]]( origin );
 
     if ( isdefined( grenade_owner ) )
         grenade_owner thread destroyequipment( origin, emp_radius );
