@@ -1,4 +1,5 @@
-<!-- Rules: AGENTS.md. Keep this a GitHub draft until Built and Loaded are filled in. -->
+<!-- Rules: AGENTS.md. Keep this a GitHub draft until Built, Loaded and Played each say a result,
+     "not tested: <reason>" or "not applicable" (docs-only changes, for example). -->
 
 ## What changes for players
 

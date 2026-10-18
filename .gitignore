@@ -156,11 +156,12 @@ Optionals.zip
 # ============================================================================
 .agents/
 CLAUDE.md
-# ...except the shared root CLAUDE.md. It only imports AGENTS.md, the rules
-# every agent on this repo follows, and is tracked so Claude Code loads them.
-# Private notes stay ignored: nested CLAUDE.md files, CLAUDE.local.md (Claude
+# ...except .claude/CLAUDE.md. It only imports AGENTS.md, the rules every
+# agent on this repo follows, and is tracked so Claude Code loads them. It
+# lives under .claude/ so it can never collide with a private root CLAUDE.md.
+# Private notes stay ignored: every other CLAUDE.md, CLAUDE.local.md (Claude
 # Code's per-person file) and Claude Code's local settings.
-!/CLAUDE.md
+!/.claude/CLAUDE.md
 CLAUDE.local.md
 .claude/settings.local.json
 AI_CONTEXT.md

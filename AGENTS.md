@@ -1,7 +1,7 @@
 # T6-QoL: rules for every agent
 
 These are the rules for any AI agent working on this repository: Claude Code, Codex, OpenCode or any
-other, whoever it works for. `CLAUDE.md` only imports this file. If a rule here is wrong, fix it here
+other, whoever it works for. `.claude/CLAUDE.md` only imports this file. If a rule here is wrong, fix it here
 in a pull request. Do not keep a private copy that disagrees: the other maintainer's agents cannot see
 your machine, so a rule that lives only in your notes does not exist for them.
 
@@ -29,8 +29,10 @@ be willing to release.
 - **Built**: a build script finished and its gates passed. It says nothing about the game.
 - **Loaded**: the game started a map with this build and the console showed no script errors.
 - **Played**: someone did the in-game actions the change affects and saw the expected result.
-- **The five mod files**: `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, `mod.all.sabs`. Nothing
-  else ships in a player's `mods/zm_qol` folder.
+- **The five mod files**: `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, `mod.all.sabs`, the core of
+  a player's `mods/zm_qol` folder. A development deploy also writes `deployed-by.txt` and may fill its
+  `images/` folder; texture installs are in `README.md`. Anything else found there (a bundled custom
+  map, say) is off the mainline: find out what put it there before treating it as normal.
 - **Gate**: a check under `tools/` that a build script runs and that stops the build when it fails.
 - **Donor**: a tracked fastfile or sound bank under `zone_source/` that the build copies assets out
   of, because no other source for those assets exists. Losing one loses the mod.
@@ -54,8 +56,10 @@ before choosing a build.
 ## Before you edit
 
 1. Read this file. Run `git status` and keep anything you did not make.
-2. `git fetch origin` and start a branch from `origin/main` in a checkout that only this task uses
-   (its own clone or `git worktree add`). Two agents never share a checkout.
+2. Start a branch from the latest shared `main` in a checkout that only this task uses (its own clone
+   or `git worktree add`). Two agents never share a checkout. Maintainers work in this repository:
+   `git fetch origin`, then branch from `origin/main`. In a fork, `origin` is the fork: add this
+   repository as `upstream`, `git fetch upstream`, and branch from `upstream/main`.
 3. Check for overlap: `gh pr list --state open` and `gh issue list`. If an open PR or issue covers the
    same bug or the same files, stop and tell your person. The maintainers agree on the order first.
 4. The work needs an issue with one assignee. Maintainers assign themselves; outside contributors ask.
@@ -65,19 +69,24 @@ before choosing a build.
 
 ## How a change reaches main
 
+Status: SickoHours proposed these steps and the version and release rules below on 2026-10-17, and
+DavidHiFi has not yet confirmed them. Follow them unless DavidHiFi says otherwise; he may change them by
+PR.
+
 1. **One issue, one branch, one PR.** Name the branch `fix/`, `feature/`, `docs/` or `chore/` plus a
    short slug. A fix lives in exactly one PR. (PR #18 carried the same EMP fix that PR #20 merged.)
 2. **Open a draft PR** after the first commit and fill in the template.
 3. **Commit only this issue's files.** No reformatting, renames or cleanup on the side; open an issue
    for those.
-4. **Stay current with main.** Merge `origin/main` into your branch before asking for review, and
-   again whenever main moves. Do not rebase a branch someone else may have pulled.
+4. **Stay current with main.** Merge the latest shared `main` (`origin/main`, or `upstream/main` in a
+   fork) into your branch before asking for review, and again whenever it moves. Do not rebase a branch someone else may have pulled.
 5. **Resolve conflicts by keeping both changes.** Never take one side wholesale on a file you did not
    write. Afterwards, confirm the other side's change is still there and rerun the gates. List each
    conflicted file in the PR and how you resolved it. Merges here have silently dropped finished fixes
    before (`df6ae7ff`, `5f81a03c`, and the fix PR #20 had to restore).
 6. **Restoring a lost fix?** Cite the commit it originally came from.
-7. **Mark the PR ready** when Built and Loaded are filled in, and Played is filled in or says why not.
+7. **Mark the PR ready** when Built, Loaded and Played are each filled in with a result, "not tested"
+   and the reason, or "not applicable" (a docs-only change, for example).
 8. **The other maintainer approves before merge.** Their agent reviews in a fresh session that did not
    write the change: it reads the whole diff, runs the gates it can, checks the PR's claims against the
    code, and posts its findings as a PR review. Their person decides whether to approve.
@@ -144,12 +153,15 @@ before its first link. `tools/check-weapon-port.py` runs in both build scripts. 
 - both forms (normal and `_upgraded`) read with every field, including the upgraded form's
   `attachViewModel*` and `attachWorldModel*`;
 - every model, effect, tracer and icon its definitions name is in `mod.ff` or on all six stock maps;
-- it has its own camo table, `camo_qol_<gun>`, that no stock zone owns, with entries in slots 3, 8
-  and 12;
+- it has its own camo table, `camo_qol_<gun>`, that no stock zone owns (a map's own copy of a shared
+  name wins on that map). Slots 3 (stock Pack-a-Punch, animated camos off), 8 (animated) and 12
+  (Origins, animated off) each override every one of the gun's base materials; a slot with no entry
+  for a material draws it black;
 - every sound alias its definitions and notetracks use is in
   `soundbank/mod.all.aliases.additions.csv`, with its audio in `sound/`;
-- someone has played it on a map that is not the donor's, with animated camos on and then off: fire,
-  reload, sprint and look at the gun. No offline check sees a notetrack or a wrong camo.
+- someone has played it on a map that is not the donor's: Pack-a-Punched it with animated camos on,
+  and again with them off, then fired, reloaded, sprinted and looked at the upgraded gun each time. No
+  offline check sees a notetrack or a wrong camo.
 
 ## Building and checking
 
@@ -219,7 +231,7 @@ not add new handoff files to the repository root.
 - In issues and PR comments, paste only the relevant error lines. Remove user names, home folder
   paths, IP addresses and other players' names.
 
-## Releases (DavidHiFi)
+## Releases (DavidHiFi; proposed, see "How a change reaches main")
 
 1. Start from `main` with a release-prep PR that bumps the version in `mod.json`.
 2. After it merges, build from that commit and tag it.

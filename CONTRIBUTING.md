@@ -14,8 +14,10 @@ Open an issue with the **Bug report** form. The most useful reports include:
 - which settings you changed
 - the steps that make it happen
 
-For a crash, `save_crash_log.bat` copies the game's console log into `crashlogs/`. Before posting,
-paste only the lines around the error. Remove your Windows user name, folder paths, IP addresses and
+For a crash or script error, the game's console log is
+`%LOCALAPPDATA%\Plutonium\storage\t6\main\console_zm.log`. In a checkout, `save_crash_log.bat`
+copies it into `../zm_qol - dev/crashlogs/`, beside the checkout. Before posting, paste only the lines
+around the error. Remove your Windows user name, folder paths, IP addresses and
 other players' names.
 
 ## Before you start work
@@ -72,19 +74,20 @@ A pull request reports three things separately:
 - **Played**: someone did what the change affects in the game and it worked.
 
 Each one says which commit, map, mode and settings were used. Anything not tried is written as **not
-tested**. A build that passes does not prove gameplay.
+tested** with the reason, and a section that does not apply (a docs-only change, say) says **not
+applicable**. A build that passes does not prove gameplay.
 
 ## Using AI agents
 
 Agents are welcome; most of this mod was written with them. Agents follow [AGENTS.md](AGENTS.md), and
-`CLAUDE.md` loads it for Claude Code. Say in the pull request which agent did the work. You are
-responsible for what your agent submits: read its summary and play the change before asking for
-review.
+`.claude/CLAUDE.md` loads it for Claude Code. Say in the pull request which agent did the work. You are
+responsible for what your agent submits: read its summary, run the checks that apply, and say what
+was not tested and why before asking for review.
 
 ## Review and merge
 
-The maintainers are DavidHiFi (owner) and SickoHours. Every pull request, including a maintainer's,
-needs an approval from a maintainer who did not write it. DavidHiFi has the final say on what goes into
+The maintainers are DavidHiFi (owner) and SickoHours. The proposed rule (see AGENTS.md) is that every
+pull request, including a maintainer's, gets an approval from a maintainer who did not write it. DavidHiFi has the final say on what goes into
 the mod. Maintainers merge with GitHub's merge button.
 
 ## Credit and license
