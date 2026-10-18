@@ -121,14 +121,6 @@ itself: the built `mod.ff` and sound banks are not in Git, so you rebuild them w
 `build_ff.bat` or copy them from a release. [CONTRIBUTING.md](CONTRIBUTING.md) has
 the steps, and a successful build still needs testing in game.
 
-## Support development
-
-The mod is free and always will be. Any amount of support is greatly appreciated, and I do sincerely hope you enjoy my little project. :-)
-
-[![Support DavidHiFi on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/davidhifi)
-
----
-
 ## Weapons
 
 * **Campaign and Multiplayer guns/equipment in the box:**
