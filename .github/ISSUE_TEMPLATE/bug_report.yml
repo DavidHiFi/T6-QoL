@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in the mod is broken or behaves differently from the description.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Before you post logs or screenshots, remove your Windows user name,
+        folder paths, IP addresses and other players' names.
+  - type: input
+    id: version
+    attributes:
+      label: Mod version
+      description: As shown in Plutonium's Mods menu, for example 2.19.1.
+    validations:
+      required: true
+  - type: input
+    id: map
+    attributes:
+      label: Map, mode and location
+      description: For example "TranZit, Survival, Diner" or "Origins, Classic".
+    validations:
+      required: true
+  - type: dropdown
+    id: players
+    attributes:
+      label: Players
+      options:
+        - Solo
+        - Co-op (online)
+        - Co-op (LAN)
+        - Dedicated server
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings you changed
+      description: Lobby and in-game menu options that are not at their default, and any other mods installed.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start ...
+        2. Buy ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Console log lines
+      description: For a crash or script error, run save_crash_log.bat and paste only the lines around the error.
+      render: text

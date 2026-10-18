@@ -116,11 +116,10 @@ Use a `.`, `!` or `/` prefix, or bind them to keys. Type `.help` in game for the
 
 ## Building from source
 
-Run `build.bat offline` to repack and verify script or menu changes without
-installing them. Run `build.bat` to build, deploy, and update the installer.
-
-Build assets with `build_ff.bat`. It uses `zone_source/mod.zone` and may need
-untracked source assets or donor files. A successful build still needs in-game testing.
+Building needs Windows, PowerShell and Python 3. A fresh clone cannot build by
+itself: the built `mod.ff` and sound banks are not in Git, so you rebuild them with
+`build_ff.bat` or copy them from a release. [CONTRIBUTING.md](CONTRIBUTING.md) has
+the steps, and a successful build still needs testing in game.
 
 ## Contribute To Support Development
 
