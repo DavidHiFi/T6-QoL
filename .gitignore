@@ -156,6 +156,13 @@ Optionals.zip
 # ============================================================================
 .agents/
 CLAUDE.md
+# ...except the shared root CLAUDE.md. It only imports AGENTS.md, the rules
+# every agent on this repo follows, and is tracked so Claude Code loads them.
+# Private notes stay ignored: nested CLAUDE.md files, CLAUDE.local.md (Claude
+# Code's per-person file) and Claude Code's local settings.
+!/CLAUDE.md
+CLAUDE.local.md
+.claude/settings.local.json
 AI_CONTEXT.md
 MOD_CATALOGUE.md
 STOCK_REFERENCE.md

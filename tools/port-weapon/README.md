@@ -1,9 +1,10 @@
 # tools/port-weapon
 
 One command for the mechanical half of a weapon port, plus the helpers the live
-check uses. The full procedure, including how to get a gun that nobody has ported
-out of another Call of Duty, is the `port-weapon` skill
-(`H:\Claude\tools\skills\port-weapon\SKILL.md`). Read that first.
+check uses. The rules a finished port must meet are in the repository's
+`AGENTS.md` ("Weapon ports"); read those first. The owner also keeps a private
+`port-weapon` skill with the full extraction procedure for getting a gun out of
+another Call of Duty; it is not in this repository.
 
 | File | What it does |
 |---|---|
