@@ -5,10 +5,10 @@ Source:   luckass's "MagmaGat - Mob of the Dead Remaster Weapon" T6 port v1.0.5
           mods\zm_magmagat\mod.ff from the v1.0.5 release zip. It is a normal
           OAT-built T6 fastfile (55,974,144 bytes, 616 assets), so the stock tool
           reads it; no DLC5 patch needed.
-Tool:     H:\Plutonium\tools\oat-dlc5\Linker.exe (the same patched OpenAssetTools
+Tool:     H:\C-O-D Configuration\tools\oat-dlc5\Linker.exe (the same patched OpenAssetTools
           build_ff.bat uses; v0.33 + local patches).
 Command (PowerShell):
-          & "H:\Plutonium\tools\oat-dlc5\Linker.exe" `
+          & "H:\C-O-D Configuration\tools\oat-dlc5\Linker.exe" `
             --load "<job>\source\rel-1.0.5\mods\zm_magmagat\mod.ff" `
             --base-folder "<this folder>" --add-source-search-path "<this folder>" `
             --output-folder "<this folder>\out" mod

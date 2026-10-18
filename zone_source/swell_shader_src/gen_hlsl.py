@@ -7,7 +7,7 @@ DXBC disassembly (job wavegun-swell-002/shader). SWELL=1 adds BO1 Moon's
 "world position += world normal * scriptVector3.x" after the world transform.
 """
 import re, os
-J2 = r'H:\Plutonium\modding-jobs\wavegun-swell-002\shader'
+J2 = r'H:\C-O-D Configuration\modding-jobs\wavegun-swell-002\shader'
 
 def parse(path):
     bufs = {}

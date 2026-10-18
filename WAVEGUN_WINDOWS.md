@@ -95,7 +95,7 @@ than being presented as the original Moon visual.
 
 ## Local evidence
 
-All paths below are relative to `H:/Plutonium/modding-jobs`:
+All paths below are relative to `H:\C-O-D Configuration/modding-jobs`:
 
 - `wavegun-stock-compile-001`: unchanged baseline script compilation.
 - `wavegun-stock-compile-002`: repaired server script compilation.
