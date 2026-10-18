@@ -1,6 +1,6 @@
 <div align="center">
 
-<img width="3840" height="2160" alt="image" src="https://github.com/user-attachments/assets/32a1cfbd-7ece-4a91-9690-82691bed24b1" />
+<img width="3840" height="2160" alt="Quality Of Life key art for Black Ops II Zombies" src="https://github.com/user-attachments/assets/32a1cfbd-7ece-4a91-9690-82691bed24b1" />
 
 # Quality Of Life
 
@@ -14,9 +14,9 @@ Adds almost every Campaign and Multiplayer weapon to the Mystery Box, four unrel
 
 <br><br>
 
-<img src="https://img.shields.io/github/v/release/DavidHiFi/T6-QoL?style=flat-square&label=version&color=5865F2&labelColor=161B22">
-<img src="https://img.shields.io/github/downloads/DavidHiFi/T6-QoL/total?style=flat-square&label=downloads&color=5865F2&labelColor=161B22">
-<img src="https://img.shields.io/badge/platform-Windows-5865F2?style=flat-square&labelColor=161B22">
+<img src="https://img.shields.io/github/v/release/DavidHiFi/T6-QoL?style=flat-square&label=version&color=8957E5&labelColor=161B22" alt="Latest version">
+<img src="https://img.shields.io/github/downloads/DavidHiFi/T6-QoL/total?style=flat-square&label=downloads&color=1F6FEB&labelColor=161B22" alt="Total downloads">
+<img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-DB6D28?style=flat-square&labelColor=161B22" alt="Platforms: Windows and Linux">
 
 </div>
 
@@ -24,13 +24,13 @@ Adds almost every Campaign and Multiplayer weapon to the Mystery Box, four unrel
 
 ## Installation
 
-Install Plutonium and run it once so its folders exist, then close it. Then pick either route below - they install the same mod.
+Install Plutonium and run it once so its folders exist, then close it. Then pick either route below. Both install the same mod.
 
 ### With the mod manager
 
-[**Quality of Life Series**](https://github.com/DavidHiFi/QualityOfLifeSeries) is a small app that installs, updates and removes this mod for you, and manages every other mod in your Plutonium folders as well.
+[**Quality of Life Mod Manager**](https://github.com/DavidHiFi/QualityOfLifeModManager) is a small app that installs, updates and removes this mod for you, and manages every other mod in your Plutonium folders as well.
 
-1. [Download it](https://github.com/DavidHiFi/QualityOfLifeSeries/releases/latest) - the setup installs it like any other program, or the portable zip runs as-is.
+1. [Download it](https://github.com/DavidHiFi/QualityOfLifeModManager/releases/latest). The setup installs it like any other program, or the portable zip runs as-is.
 2. Open it and choose **Quality of Life** in the sidebar.
 3. Press **Install** on **Quality of Life for Black Ops II**, then **Install** on **HD texture pack**.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
@@ -63,7 +63,7 @@ in place, so you only need these if you want the art on its own.
 
 <br>
 
-On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer — install by hand; it works like any other Plutonium mod.
+On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer. Install by hand; it works like any other Plutonium mod.
 
 1. Download the release zip and open the **`Mod Files`** folder inside it.
 2. Create a folder called `zm_qol` in `%LOCALAPPDATA%\Plutonium\storage\t6\mods\` *(on Linux, the same path inside your Plutonium prefix).*
@@ -82,7 +82,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 > [!NOTE]
 > **Still in beta.** Some of the newest features haven't had a full play-through yet. Anything that turns out broken gets fixed or pulled.
 >
-> **Cloning the repo does not give you a playable mod** — `mod.iwd` is a build output and isn't tracked in git. Use the release.
+> **Cloning the repo does not give you a playable mod.** `mod.iwd` is a build output and isn't tracked in git. Use the release.
 
 > [!WARNING]
 > **Known issue.** The launcher has no FAST RESTART any more: on current Plutonium builds a scripted `fast_restart` crashes the game about two seconds in, with the death inside the engine where no script can reach it (three crash dumps agree). **RESTART GAME** (a full map reload) is the safe restart, and it is what the launcher now offers. Typing `fast_restart` into the console has the same crash.
@@ -121,7 +121,7 @@ itself: the built `mod.ff` and sound banks are not in Git, so you rebuild them w
 `build_ff.bat` or copy them from a release. [CONTRIBUTING.md](CONTRIBUTING.md) has
 the steps, and a successful build still needs testing in game.
 
-## Contribute To Support Development
+## Support development
 
 The mod is free and always will be. Any amount of support is greatly appreciated, and I do sincerely hope you enjoy my little project. :-)
 
@@ -159,11 +159,11 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * All four are in the Mystery Box on every map except Origins and Buried.
 
 * **Black Ops 1 guns in the box:**
-  * M60 — Pack-a-Punches into **The Pig**
-  * L96A1 — Pack-a-Punches into the **L115 Isolator**
-  * Browning HP — Pack-a-Punches into **Bap**
-  * RPG-7 — Pack-a-Punches into the **Rocket Propelled Grievance**
-  * The L96A1 is on every map. The M60 and the Browning HP are on every map too since the 2026-10-07 gunswap round 2 - they took the stock RPD's and Five-seveN's slots on Origins. The RPG-7 stays off Origins, which has one slot left and nothing to pay for it with.
+  * M60: Pack-a-Punches into **The Pig**
+  * L96A1: Pack-a-Punches into the **L115 Isolator**
+  * Browning HP: Pack-a-Punches into **Bap**
+  * RPG-7: Pack-a-Punches into the **Rocket Propelled Grievance**
+  * The L96A1 is on every map. The M60 and the Browning HP are on every map too since the 2026-10-07 gunswap round 2. They took the stock RPD's and Five-seveN's slots on Origins. The RPG-7 stays off Origins, which has one slot left and nothing to pay for it with.
   * Scavenger, Call of the Dead's explosive sniper. Its bolt sticks, beeps and blows up three seconds later, and zombies it kills turn to mist. It Pack-a-Punches into the **Hyena Infra-dead**, with a bigger blast and an infrared scope. It has its own sounds, scopes, effects and animations, plus the stock and animated Pack-a-Punch camos.
   * The Scavenger appears on Buried, Maze and TranZit's survival maps, the maps with room left in the weapon table.
 
@@ -182,7 +182,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
   * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
-  * The Browning HP Dual Wield appears on every map in classic and survival, since the 2026-10-07 gunswap round 2 put it wherever the stock Five-seveN Dual Wield used to be. The MM1 appears on the same maps and modes except classic TranZit (survival only there) - it took over the War Machine's slot on Mob when the stock one came out. Neither appears in Grief or Turned.
+  * The Browning HP Dual Wield appears on every map in classic and survival, since the 2026-10-07 gunswap round 2 put it wherever the stock Five-seveN Dual Wield used to be. The MM1 appears on the same maps and modes except classic TranZit (survival only there). It took over the War Machine's slot on Mob when the stock one came out. Neither appears in Grief or Turned.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
@@ -200,7 +200,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 
 ---
 
-## Maps, Power-ups, and Perks
+## Maps, power-ups and perks
 
 **Bonus Survival maps:**
 * **TranZit**
@@ -246,7 +246,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * The **SOLO EASTER EGGS** option scales the main quests on TranZit, Die Rise, Buried, Origins, and Mob of the Dead to the current player count. It is off by default and only appears in Classic mode.
 
 * **Instant Pack-a-Punch:**
-  * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War - Zombies. It can be turned on or off in the settings menu.
+  * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War Zombies. It can be turned on or off in the settings menu.
 
 * **Bonfire Sale:**
   * BO1's Pack-a-Punch power-up, from *Five*. Pick it up and Pack-a-Punch costs 1,000 points instead of 5,000 for thirty seconds. Part of the **Custom Power-Ups** option. On Mob of the Dead and Buried it drops in Survival only.
@@ -278,7 +278,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * Selectable hit, kill, crit and downed sounds, or off entirely if you prefer.
 
 * **In-game menu:**
-  * Mechanics, gameplay rules, HUD and audio options are all toggleable in game — no console commands. That includes a **VOICE LINES** switch for your character's spoken lines.
+  * Mechanics, gameplay rules, HUD and audio options are all toggleable in game, with no console commands. That includes a **VOICE LINES** switch for your character's spoken lines.
 
 * **Third person:**
   * A **THIRD PERSON** switch on the GAME 3 tab puts the camera behind your character. Off is the normal view.
@@ -287,7 +287,7 @@ The mod is free and always will be. Any amount of support is greatly appreciated
   * A **KNIFE LUNGE** switch on the GAME 3 tab. On is the normal game. Off removes the melee charge that pulls you onto a zombie, so you knife where you stand.
 
 * **Mud:**
-  * A **NO MUD SLOWDOWN** switch on the GAME 3 tab. Turn it on and Origins mud stops dragging you down — you run and walk through it at full speed, in the main map and in every Origins survival and grief location.
+  * A **NO MUD SLOWDOWN** switch on the GAME 3 tab. Turn it on and Origins mud stops dragging you down. You run and walk through it at full speed, in the main map and in every Origins survival and grief location.
 
 * **Tap to Interact:**
   * Controller support under the standard Gamepad menu.
@@ -300,6 +300,10 @@ The mod is free and always will be. Any amount of support is greatly appreciated
 ## Contributing
 
 Bug reports, feature ideas and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, checks and what to include.
+
+<a href="CONTRIBUTING.md">
+<img src="https://img.shields.io/badge/%F0%9F%A4%9D%20HOW%20TO%20CONTRIBUTE-8957E5?style=for-the-badge&labelColor=161B22" alt="How to contribute" height="36">
+</a>
 
 ## Star history
 
@@ -320,28 +324,26 @@ Bug reports, feature ideas and pull requests are welcome. See [CONTRIBUTING.md](
 
 | Who | What |
 |---|---|
-| **Synarxis** — *Inspiration* | This project wouldn't exist without their kindness & support. |
-| **sehteria** — *T6-ZM-Expanded* | The mod this one grew out of — extra weapons & perks on all maps. |
-| **SadSlothXL** — [t6-ports](https://github.com/SadSlothXL/t6-ports) | The Death Machine power-up — the drop, the weapon swap and its sounds — and the Blast-O-Matic port: its models, animations, textures, sounds and camo table. |
-| **luckass** — [t6_motd_magmagat](https://github.com/lborruto/t6_motd_magmagat) (MIT, used with permission) | The MagmaGat and Magmus Operandi port from the Black Ops 4 Mob of the Dead remaster: the models, animations, effects, sounds and weapon behaviour. |
-| **VenomModding** — [T5-MissingAssets](https://github.com/VenomModding/T5-MissingAssets) | The Scavenger's Black Ops 1 effects: muzzle flash, bolt trail, explosion and death mist. |
-| **Mario Woopsie** — MOTD Old School Weapons (Nexus Mods) | The MM1 and Browning HP Dual Wield ports: the zombies weapon definitions, the Browning's left-hand models and both Pack-a-Punch names. |
-| **Halo / SickoHours** — [plutonium-agent-toolkit](https://github.com/SickoHours/plutonium-agent-toolkit) | The Bloodhound and Meat Wagon port from Black Ops III: the models, textures, animations, weapon definitions and sound-alias chain. |
-| **Logo2K** — [Zombies Declassified](https://github.com/Logo-2K/zombies-declassified) | The native T6 Wave Gun package — Treyarch's DLC5 models, animations, effects, weapon defs, sounds and script. |
-| **Jbleezy** — [BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined) | The extra Survival locations, the Bouncing Betty carry animations, the two lines that let Pack-a-Punch take the Sliquifier, and confirming which two checks stand between a solo player and Mob of the Dead's Final Flight. |
-| **5and5** — [BO2-Remix](https://github.com/5and5/BO2-Remix) | The Die Rise Semtex wall buy. |
-| **Myrix** — [Tranzit Enhanced](https://forum.plutonium.pw/topic/46428/release-zm-tranzit-enhanced) | The TranZit fixes: turbine doors that open with the power, the Pack-a-Punch door that stays open, the Avogadro's Max Ammo and the Town MP5 wall buy. |
-| **Fraaagaaa** — [Strat Tester](https://github.com/Fraaagaaa/Strat-Tester-BO2) | Every destination in the teleport list except Nuketown's three, which are the map's own respawn points. |
-| **B2ORG** — [T6-B2OP-PATCH](https://github.com/B2ORG/T6-B2OP-PATCH)<br><sub>built with **Astrox** and **NoMoleMan**</sub> | The basis for most of the patches — rebuilt against the game's own scripts rather than copied wholesale. |
-| **Hadi77KSA** — [Any Player EE Scripts](https://github.com/Hadi77KSA/Plutonium-T6-Any-Player-EE-Scripts)<br><sub>building on work by **CCDeroga**, **teh_bandit**, **DaddyDontStop**, **shyperson0/znchi** and **Stick Gaming/Nathan3197**</sub> | The Solo Easter Eggs option — the quest steps that scale to the number of players on TranZit, Die Rise, Buried and Origins. |
+| **[Synarxis](https://github.com/Synarxis)** (inspiration) | This project wouldn't exist without their kindness & support. |
+| **sehteria** ([T6-ZM-Expanded](https://github.com/sehteria/T6-ZM-Expanded)) | The mod this one grew out of: extra weapons & perks on all maps. |
+| **SadSlothXL** ([t6-ports](https://github.com/SadSlothXL/t6-ports)) | The Death Machine power-up with its drop, weapon swap and sounds, and the Blast-O-Matic port: its models, animations, textures, sounds and camo table. |
+| **luckass** ([t6_motd_magmagat](https://github.com/lborruto/t6_motd_magmagat), MIT, used with permission) | The MagmaGat and Magmus Operandi port from the Black Ops 4 Mob of the Dead remaster: the models, animations, effects, sounds and weapon behaviour. |
+| **VenomModding** ([T5-MissingAssets](https://github.com/VenomModding/T5-MissingAssets)) | The Scavenger's Black Ops 1 effects: muzzle flash, bolt trail, explosion and death mist. |
+| **Mario Woopsie** ([MOTD Old School Weapons](https://www.nexusmods.com/callofdutyblackops2/mods/58)) | The MM1 and Browning HP Dual Wield ports: the zombies weapon definitions, the Browning's left-hand models and both Pack-a-Punch names. |
+| **Halo / SickoHours** ([plutonium-agent-toolkit](https://github.com/SickoHours/plutonium-agent-toolkit)) | The Bloodhound and Meat Wagon port from Black Ops III: the models, textures, animations, weapon definitions and sound-alias chain. |
+| **Logo2K** ([Zombies Declassified](https://github.com/Logo-2K/zombies-declassified)) | The native T6 Wave Gun package: Treyarch's DLC5 models, animations, effects, weapon defs, sounds and script. |
+| **Jbleezy** ([BO2-Reimagined](https://github.com/Jbleezy/BO2-Reimagined)) | The extra Survival locations, the Bouncing Betty carry animations, the two lines that let Pack-a-Punch take the Sliquifier, and confirming which two checks stand between a solo player and Mob of the Dead's Final Flight. |
+| **5and5** ([BO2-Remix](https://github.com/5and5/BO2-Remix)) | The Die Rise Semtex wall buy. |
+| **Myrix** ([Tranzit Enhanced](https://forum.plutonium.pw/topic/46428/release-zm-tranzit-enhanced)) | The TranZit fixes: turbine doors that open with the power, the Pack-a-Punch door that stays open, the Avogadro's Max Ammo and the Town MP5 wall buy. |
+| **Fraaagaaa** ([Strat Tester](https://github.com/Fraaagaaa/Strat-Tester-BO2)) | Every destination in the teleport list except Nuketown's three, which are the map's own respawn points. |
+| **B2ORG** ([T6-B2OP-PATCH](https://github.com/B2ORG/T6-B2OP-PATCH))<br><sub>built with **Astrox** and **NoMoleMan**</sub> | The basis for most of the patches, rebuilt against the game's own scripts rather than copied wholesale. |
+| **Hadi77KSA** ([Any Player EE Scripts](https://github.com/Hadi77KSA/Plutonium-T6-Any-Player-EE-Scripts))<br><sub>building on work by **CCDeroga**, **teh_bandit**, **DaddyDontStop**, **shyperson0/znchi** and **Stick Gaming/Nathan3197**</sub> | The Solo Easter Eggs option: the quest steps that scale to the number of players on TranZit, Die Rise, Buried and Origins. |
 
-Built on [**Plutonium**](https://plutonium.pw), with **OpenAssetTools** and **xensik**'s **gsc-tool**. The optional ReShade install ships unmodified work by **crosire** ([ReShade](https://reshade.me)), **Barbatos Bachiko**, **Alex Tuduran**, **Marot Satil** and the **GShade** project, **Ioxa**, **Lord of Lunacy**, **prod80**, and **NVIDIA**.
+Built on [Plutonium](https://plutonium.pw), with [OpenAssetTools](https://github.com/Laupetin/OpenAssetTools), [xensik](https://github.com/xensik)'s [gsc-tool](https://github.com/xensik/gsc-tool), [Python](https://www.python.org) and [PowerShell](https://learn.microsoft.com/powershell/). The optional [ReShade](https://reshade.me) install ships unmodified work by **crosire** (ReShade), **Barbatos Bachiko**, **Alex Tuduran**, **Marot Satil** and the **GShade** project, **Ioxa**, **Lord of Lunacy**, **prod80**, and **NVIDIA**.
 
-> Missing or wrong credit? Open an issue and it'll be fixed.
+> Missing or wrong credit? [Open an issue](https://github.com/DavidHiFi/T6-QoL/issues/new) and I'll fix it.
 
----
-
-**Disclaimers/Other Information:**
+## Disclaimers
 
 Most of this mod's code was developed with several **AI coding agents**, including Claude Code, Codex, and OpenCode. No single AI agent made the project. All artwork is human-made. I originally built the mod for personal use and later released it for others to use and improve.
 
