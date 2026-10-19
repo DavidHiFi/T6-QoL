@@ -36,6 +36,12 @@
 //  names. The console belongs to the host, so the host is who the command
 //  runs as - exactly as the existing watcher does.
 //
+//  🛑 2026-10-18 - SLOT 0 IS NOT THE HOST. This watcher shipped attributing
+//  every command to a_players[0], which is lobby order, not the host: in
+//  co-op a bound .pay charged the wrong player. It now asks gethostplayer()
+//  and skips the pass while the host is unknown, the same fail-closed shape
+//  zmqol_console_command_watcher() already uses.
+//
 //  🛑 NAME CHOICES CHECKED. None of the six names is written by any GSC in
 //  this mod (grepped: each name appears only as its chat-command branch),
 //  and none is a stock engine dvar. A bind on one of these names was
@@ -91,8 +97,17 @@ zmqol_twin_command_watcher()
             continue;
 
         //  The console belongs to the host, so the host is who the command
-        //  runs as - the same player the chat path would have supplied.
-        e_host = a_players[0];
+        //  runs as. Slot 0 is not the host; gethostplayer() asks the engine.
+        //  If the host is not known yet, SKIP this pass - attributing a match
+        //  command to the wrong player is worse than delaying it by 0.25s. On
+        //  a dedicated server there is never a host player, so its console
+        //  commands stay inert: that is the fail-closed answer, the same rule
+        //  the chat listener applies. Mirrors zmqol_console_command_watcher()
+        //  in zmqol_playeropt.gsc.
+        e_host = gethostplayer();
+
+        if ( !isdefined( e_host ) )
+            continue;
 
         for ( i = 0; i < a_names.size; i++ )
         {
