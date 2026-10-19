@@ -120,8 +120,9 @@ init()
 //  Keep in step with zm_expanded.csc's twin.
 //  Origins classic only, for now: its four slots come from the Browning HP DW
 //  hold-back in oldschool.gsc. Buried and Mob survival are parked (the lines
-//  came out of this gate). Mob's forge quest (zm_prison_magmagat.gsc) still
-//  registers the same gun there, so that path waits on the quest decision.
+//  came out of this gate). Mob classic's forge quest was REMOVED 2026-10-20
+//  (user: eradicate it) - the five slots it held feed this gun's box path
+//  there next.
 magmagat_enabled( map, mode )
 {
     if ( map == "zm_tomb" )
