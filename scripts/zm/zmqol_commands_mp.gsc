@@ -25,6 +25,9 @@
 //      the granted level.
 //    - .pay: resolved here, charged and transferred by the proven
 //      quality_of_life::zmqol_pay_points exactly as before.
+//    - The grants store, chat edition: .grant / .ungrant / .grants (host only)
+//      write per-player permission for granted-level commands. The phase 4
+//      PLAYERS page will write the same field.
 //
 //  🛑 WHAT DELIBERATELY DOES NOT MOVE YET
 //    - The command bodies themselves. Every other command falls through to the
@@ -159,6 +162,11 @@ zmqol_mp_table_build()
     zmqol_mp_row( "staff", "", "host", 0 );
     zmqol_mp_row( "powerup", "", "host", 0 );
     zmqol_mp_row( "drop", "powerup", "host", 0 );
+
+    //  ---- host: the phase 3 grants store, chat edition ----
+    zmqol_mp_row( "grant", "", "host", 0 );
+    zmqol_mp_row( "ungrant", "", "host", 0 );
+    zmqol_mp_row( "grants", "", "host", 0 );
 }
 
 zmqol_mp_row( str_name, str_canon, str_level, n_targetable )
@@ -231,6 +239,24 @@ zmqol_mp_dispatch( e_player, str_cmd, a_tokens )
 
     if ( str_cmd == "pay" )
         return zmqol_mp_cmd_pay( e_player, a_tokens );
+
+    if ( str_cmd == "grant" )
+    {
+        zmqol_mp_cmd_grant( e_player, a_tokens );
+        return 1;
+    }
+
+    if ( str_cmd == "ungrant" )
+    {
+        zmqol_mp_cmd_ungrant( e_player, a_tokens );
+        return 1;
+    }
+
+    if ( str_cmd == "grants" )
+    {
+        zmqol_mp_cmd_grants( e_player );
+        return 1;
+    }
 
     //  The target grammar is declared on the entity-local rows but delivered
     //  by the per-player update (phase 3). Until then an explicit non-me
@@ -310,6 +336,108 @@ zmqol_mp_cmd_pay( e_caller, a_tokens )
 
     e_caller scripts\zm\quality_of_life::zmqol_pay_points( a_hits[0].name, int( a_tokens[2] ) );
     return 1;
+}
+
+// ============================================================================
+//  THE GRANTS STORE (phase 3, chat edition)
+//
+//  .grant <player> <command> / .ungrant <player> <command> / .grants
+//
+//  Host-only. Grants live on the player entity (e_player.zmqol_mp_grants), so
+//  a disconnect frees them with the entity and a rejoining player starts with
+//  nothing - the connect and disconnect handling the plan asks for is the
+//  entity's own lifetime, with no watcher to write. Only granted-level
+//  commands can be granted; today that is exactly .p (decision 2). The phase 4
+//  PLAYERS page will write the same field.
+// ============================================================================
+zmqol_mp_cmd_grant( e_caller, a_tokens )
+{
+    if ( a_tokens.size < 3 )
+    {
+        e_caller iprintln( "^3[zm_qol] usage: ^7.grant <player> <command>  ^3- today that is ^7.grant <player> p" );
+        return;
+    }
+
+    a_hits = zmqol_mp_resolve_player( e_caller, a_tokens[1] );
+
+    if ( a_hits.size != 1 )
+        return;
+
+    e_target = a_hits[0];
+    str_cmd = tolower( a_tokens[2] );
+    n_i = zmqol_mp_index( str_cmd );
+
+    if ( n_i < 0 || level.zmqol_mp_levels[n_i] != "granted" )
+    {
+        e_caller iprintln( "^1[zm_qol] ^7." + str_cmd + " ^1is not a grantable command" );
+        return;
+    }
+
+    if ( !isdefined( e_target.zmqol_mp_grants ) )
+        e_target.zmqol_mp_grants = [];
+
+    e_target.zmqol_mp_grants[str_cmd] = 1;
+
+    e_caller iprintln( "^2[zm_qol] ^7." + str_cmd + " ^2granted to ^7" + e_target.name );
+    e_target iprintln( "^2[zm_qol] ^7the host granted you ^2." + str_cmd );
+}
+
+zmqol_mp_cmd_ungrant( e_caller, a_tokens )
+{
+    if ( a_tokens.size < 3 )
+    {
+        e_caller iprintln( "^3[zm_qol] usage: ^7.ungrant <player> <command>" );
+        return;
+    }
+
+    a_hits = zmqol_mp_resolve_player( e_caller, a_tokens[1] );
+
+    if ( a_hits.size != 1 )
+        return;
+
+    e_target = a_hits[0];
+    str_cmd = tolower( a_tokens[2] );
+
+    if ( isdefined( e_target.zmqol_mp_grants ) && isdefined( e_target.zmqol_mp_grants[str_cmd] ) )
+        e_target.zmqol_mp_grants[str_cmd] = undefined;
+
+    e_caller iprintln( "^3[zm_qol] ^7." + str_cmd + " ^3taken back from ^7" + e_target.name );
+    e_target iprintln( "^3[zm_qol] ^7the host took ^3." + str_cmd + " ^7back" );
+}
+
+zmqol_mp_cmd_grants( e_caller )
+{
+    a_players = get_players();
+
+    for ( i = 0; i < a_players.size; i++ )
+    {
+        if ( !isdefined( a_players[i].name ) )
+            continue;
+
+        if ( !isdefined( a_players[i].zmqol_mp_grants ) )
+        {
+            a_players[i] iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: no grants" );
+            continue;
+        }
+
+        str_list = "";
+
+        foreach ( str_cmd, n_on in a_players[i].zmqol_mp_grants )
+        {
+            if ( n_on != 1 )
+                continue;
+
+            if ( str_list != "" )
+                str_list = str_list + ", ";
+
+            str_list = str_list + "." + str_cmd;
+        }
+
+        if ( str_list == "" )
+            a_players[i] iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: no grants" );
+        else
+            a_players[i] iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: " + str_list );
+    }
 }
 
 // ============================================================================
