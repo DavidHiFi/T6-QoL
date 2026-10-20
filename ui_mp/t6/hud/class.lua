@@ -6,6 +6,8 @@
 --                         with no game-over music and no scoreboard. Same effect
 --                         as the `disconnect` console command they already have
 --                         bound and have confirmed works.
+--    2026-10-19: the exit now asks once (ZmQolInstantExitPopup below) before
+--    it leaves; what a confirmed exit does is unchanged.
 --    29  QUIT TO DESKTOP - runs `quit`, closes the game instantly.
 --  🛑 END GAME IS NOT TOUCHED. The user was explicit about that; these are
 --  additions beside it.
@@ -126,8 +128,9 @@ end
 -- The popup override has been deleted with this change; stock's own copy in
 -- patch_zm.ff is untouched and is what any other caller now gets.
 --
--- This is the same shape as INSTANT EXIT below, which the user confirmed
--- working in the same session: one Engine.Exec of one command the user named.
+-- This is the one Engine.Exec of one command the user named. INSTANT EXIT
+-- below used to be the same shape; since 2026-10-19 it asks for a
+-- confirmation first, so this handler is now the only direct one.
 CoD.Class.ZmQolRestartPressed = function (IngameMenuWidget, ClientInstance)
 	Engine.Exec(ClientInstance.controller, "map_restart")
 end
@@ -153,7 +156,23 @@ end
 
 CoD.Class.ZmQolInstantExitPressed = function (IngameMenuWidget, ClientInstance)
 	-- ========================================================================
-	-- v2.15.37 - leave the way stock leaves, minus the popup and the game-over.
+	-- 2026-10-19 - the exit now asks once before it leaves (multiplayer plan
+	-- fix 2, decision 3: confirmation first). A row that ends the session for
+	-- everyone sat one accidental press away on a menu people navigate blind;
+	-- the press now opens a two-row popup and only its YES row leaves.
+	--
+	-- The confirm is mod-owned, NOT stock's EndGamePopup: that popup's Yes is
+	-- stock's own end-game (game-over screen plus close_all_ingame_menus,
+	-- which v2.15.34 proved freezes THIS game next to a level teardown). What
+	-- a confirmed exit DOES has not moved - the v2.15.37 sequence runs
+	-- unchanged in ZmQolInstantExitConfirmed below.
+	-- ========================================================================
+	IngameMenuWidget:openPopup("ZmQolInstantExitPopup", ClientInstance.controller)
+end
+
+CoD.Class.ZmQolInstantExitConfirmed = function (PopupWidget, ClientInstance)
+	-- ========================================================================
+	-- v2.15.37 - leave the way stock leaves, minus the game-over.
 	--
 	-- The raw `disconnect` this used to be is the command the user asked for and
 	-- it stays the last line. What is new above it is the two things stock's own
@@ -170,7 +189,8 @@ CoD.Class.ZmQolInstantExitPressed = function (IngameMenuWidget, ClientInstance)
 	--
 	-- 🛑 DELIBERATELY NOT close_all_ingame_menus. Stock's popup calls it, but
 	-- v2.15.34 proved that call freezes THIS game when it runs next to a level
-	-- teardown, so the pause menu is left for the disconnect to tear down.
+	-- teardown, so the pause menu and this popup are left for the disconnect to
+	-- tear down.
 	--
 	-- 🛡️ Both calls are guarded. A nil Engine function here would take the whole
 	-- pause menu down with it, and losing the pause menu is far worse than losing
@@ -183,6 +203,45 @@ CoD.Class.ZmQolInstantExitPressed = function (IngameMenuWidget, ClientInstance)
 		Engine.UpdateStatsForQuit(ClientInstance.controller, false)
 	end
 	Engine.Exec(ClientInstance.controller, "disconnect")
+end
+
+CoD.Class.ZmQolInstantExitCancelled = function (PopupWidget, ClientInstance)
+	-- The pause menu underneath was never closed, so closing the popup hands
+	-- control straight back to it.
+	PopupWidget:close()
+end
+
+LUI.createMenu.ZmQolInstantExitPopup = function (LocalClientIndex)
+	-- The shape is the mod's own CreateQolPageMenu in-game branch
+	-- (ui\t6\menus\optionssettings.lua): CoD.InGameMenu.New for the title band,
+	-- the pause menu's own ButtonList geometry out of PrepareClassButtonList,
+	-- and the addSelectButton/addBackButton prompt pair. YES is focused so the
+	-- confirm is one press from here; NO and ESC both close. Every call here
+	-- is one this mod already ships.
+	local PopupWidget = CoD.InGameMenu.New("ZmQolInstantExitPopup", LocalClientIndex, UIExpression.ToUpper(nil, Engine.Localize("CONFIRM INSTANT EXIT")))
+	PopupWidget:setOwner(LocalClientIndex)
+	PopupWidget:addSelectButton()
+	PopupWidget:addBackButton()
+	PopupWidget:registerEventHandler("button_prompt_back", CoD.Class.ZmQolInstantExitCancelled)
+	PopupWidget:registerEventHandler("zmqol_instant_exit_yes", CoD.Class.ZmQolInstantExitConfirmed)
+	PopupWidget:registerEventHandler("zmqol_instant_exit_no", CoD.Class.ZmQolInstantExitCancelled)
+	PopupWidget.buttonList = CoD.ButtonList.new({
+		leftAnchor = true,
+		rightAnchor = false,
+		left = 0,
+		right = CoD.ButtonList.DefaultWidth,
+		topAnchor = true,
+		bottomAnchor = false,
+		top = CoD.Menu.TitleHeight,
+		bottom = CoD.Menu.TitleHeight + 720
+	})
+	PopupWidget:addElement(PopupWidget.buttonList)
+	local YesButton = PopupWidget.buttonList:addButton(Engine.Localize("YES, INSTANT EXIT"))
+	YesButton:setActionEventName("zmqol_instant_exit_yes")
+	local NoButton = PopupWidget.buttonList:addButton(Engine.Localize("NO, GO BACK"))
+	NoButton:setActionEventName("zmqol_instant_exit_no")
+	YesButton:processEvent({ name = "gain_focus", controller = LocalClientIndex })
+	return PopupWidget
 end
 
 CoD.Class.ZmQolQuitToDesktopPressed = function (IngameMenuWidget, ClientInstance)
