@@ -3164,13 +3164,29 @@ ZmQolInstallParentOptionsMenu = function ()
 				AddedQolPages = true
 
 				local HudButton = AddButton("HUD", "open_qol_hud")
-				local CheatsButton = AddButton("CHEATS", "open_qol_cheats")
+				-- ====================================================================
+				-- 2026-10-19 - CHEATS IS HOST-ONLY IN GAME (multiplayer plan fix 3).
+				-- Most of what the page writes is host-only server state, so a
+				-- remote player's clicks either do nothing for them or change
+				-- things for everyone; hiding the rows stops the fiddling while the
+				-- server-side gate stays the real authority. Out of game there is
+				-- no session to protect, so the front-end keeps the row for everyone
+				-- and solo play is unchanged. CoD.isHost is the stock pause-menu
+				-- test (END GAME vs LEAVE GAME, ui_mp\t6\hud\class.lua); nil-guarded
+				-- so a context without it hides the row instead of crashing the menu.
+				-- ====================================================================
+				local CheatsButton = nil
+				if UIExpression.IsInGame() == 0 or (CoD.isHost and CoD.isHost()) then
+					CheatsButton = AddButton("CHEATS", "open_qol_cheats")
+				end
 
 				if UIExpression.IsInGame() == 0 and not CoD.isSinglePlayer then
 					HudButton.brackets:close()
 					HudButton.m_skipAnimation = true
-					CheatsButton.brackets:close()
-					CheatsButton.m_skipAnimation = true
+					if CheatsButton ~= nil then
+						CheatsButton.brackets:close()
+						CheatsButton.m_skipAnimation = true
+					end
 				end
 			end
 
