@@ -133,15 +133,25 @@ oldschool_dw_enabled( map, mode )
     //  their gate: their weapon budget was never measured, and the FSDW dies
     //  there too (the cost of the swap in the unmeasured modes).
     //  v2.15.43 - the Magmagat quest (scripts\zm\zm_prison\
-    //  zm_prison_magmagat.gsc) needs five weapon-table slots on Mob classic
-    //  that only exist if this four-slot family steps aside there - the
+    //  zm_prison_magmagat.gsc) needed five weapon-table slots on Mob classic
+    //  that only existed if this four-slot family stepped aside there - the
     //  measured budget says so exactly (248 after the hold-back + 5 = 253 of
     //  the 253 ceiling; same night's SaveRegisteredWeapons death says no
-    //  headroom existed before it). The DW keeps every other map it had,
-    //  including both Mob survival locations, which stay at 250.
+    //  headroom existed before it). 2026-10-20: the quest is REMOVED
+    //  (user: eradicate it; its init also hard-crashed Mob boots), and its
+    //  slots now feed the box MagmaGat instead (magmagat.gsc), so this
+    //  hold-back stays. The DW keeps every other map it had, including both
+    //  Mob survival locations, which stay at 250.
     if ( map == "zm_prison" )
         return false;
 
+    //  The MagmaGat takes this family's four slots on Origins classic
+    //  (magmagat.gsc, magmagat_enabled). Origins' survival arenas (zstandard)
+    //  never had this DW, so they are not touched. zm_expanded.csc's client
+    //  test carries the same zm_tomb hold-back.
+    if ( map == "zm_tomb" )
+        return false;
+
     return map == "zm_nuked" || map == "zm_buried" || map == "zm_highrise" ||
-           map == "zm_transit" || map == "zm_tomb";
+           map == "zm_transit";
 }

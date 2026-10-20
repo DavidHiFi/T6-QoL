@@ -158,13 +158,11 @@ zmqol_mp_weapons_init()
 	// ========================================================================
 	b_tomb = ( getdvar( #"mapname" ) == "zm_tomb" );
 
-	// the ten that go in the box
+	// the eight that go in the box (mp7 and vector retired 2026-10-20)
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sig556_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sa58_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mk48_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "qbb95_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mp7_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "vector_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "insas_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "peacekeeper_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "crossbow_zm" );
@@ -328,8 +326,10 @@ zmqol_mp_weapons_init()
 	//  five slots only exist because this four-slot family steps aside there
 	//  (oldschool_dw_enabled() in scripts\zm\oldschool.gsc has the same guard
 	//  and the measured-budget note). Both Mob survival locations keep the DW.
+	//  Origins classic gives its four slots to the MagmaGat (oldschool.gsc's
+	//  zm_tomb hold-back, the same test here).
 	if ( ( oldschool_mode == "zclassic" || oldschool_mode == "zsurvival" ) &&
-	     oldschool_map != "zm_prison" )
+	     oldschool_map != "zm_prison" && oldschool_map != "zm_tomb" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "browninghpdw_upgraded_zm", 0 );
@@ -374,11 +374,27 @@ zmqol_mp_weapons_init()
 	}
 
 	//  ============================================================
+	//  THE MAGMAGAT BOX WEAPON (scripts\zm\magmagat.gsc, the server twin).
+	//  Same test as magmagat_enabled() - every zclassic and zsurvival load,
+	//  which fit once mp7 and vector were retired - or the box cannot draw
+	//  its pickup model. Not the quest below.
+	//  ============================================================
+	magmagat_map = getdvar( "mapname" );
+	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
+	if ( magmagat_mode == "zclassic" || magmagat_mode == "zsurvival" )
+	{
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );
+	}
+
+	//  ============================================================
 	//  v2.15.43 - THE OLD MAGMAGAT CLIENT TWIN IS GONE. The weapon's acquire
-	//  path is luckass's own zm_prison quest again (scripts\zm\zm_prison\
-	//  zm_prison_magmagat.gsc): every map but Mob of the Dead returns from his
-	//  init, so no client include belongs here any more. His own
-	//  zm_prison_magmagat.csc carries the tempered gun's muzzle flame.
+	//  path was luckass's own zm_prison quest (scripts\zm\zm_prison\
+	//  zm_prison_magmagat.gsc): every map but Mob of the Dead returned from
+	//  his init, so no client include belonged here. 2026-10-20: the whole
+	//  quest (his .gsc and .csc) is REMOVED at the user's request - its init
+	//  also hard-crashed Mob boots (0xC0000005, unknown weapon) - and the
+	//  tempered gun's muzzle flame went with it.
 	//  ============================================================
 
 	//  v2.9.13 - THE EMP GRENADE. Server twin: quality_of_life.gsc's
@@ -400,8 +416,6 @@ zmqol_mp_weapons_init()
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sa58_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mk48_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "qbb95_upgraded_zm", 0 );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mp7_upgraded_zm", 0 );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "vector_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "insas_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "peacekeeper_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "crossbow_upgraded_zm", 0 );

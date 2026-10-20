@@ -2,7 +2,7 @@
 
 Status: **source fixes are written; build, deploy and live verify did NOT run** — this
 session's sandbox could not execute any shell command (every `pwsh` call failed with
-`SetNamedSecurityInfoW failed (Win32 5): grantWrite(H:\Plutonium\t6\mods\zm_qol)`, including
+`SetNamedSecurityInfoW failed (Win32 5): grantWrite(H:\C-O-D Configuration\T6 - Black Ops 2\mods\zm_qol)`, including
 the approved ACL-repair attempt). Git, `build.bat`, deploy and the game were unreachable all
 session. Everything below is file-tool work only. Working tree was already on
 `fix/lui-guard-deploy-copies` (last commit `6e74638`, v2.18.2); it was left untouched apart
@@ -55,7 +55,7 @@ open+opening test verbatim, so it re-opened the inside path node while a board s
 vault itself is `animscripted` (no pathing), so the RULE 2 gate alone could never stop the
 entrance-flow vault at such a window — the stranding had to be healed too.
 
-## Changes written (all in `H:\Plutonium\t6\mods\zm_qol`)
+## Changes written (all in `H:\C-O-D Configuration\T6 - Black Ops 2\mods\zm_qol`)
 
 1. **NEW `scripts\zm\zmqol_ai_fightdist.gsc`** — root script (own `init()` per AGENTS.md 1b;
    `quality_of_life.gsc` untouched, still at its ceiling). Waits for
