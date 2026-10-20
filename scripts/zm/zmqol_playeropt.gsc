@@ -36,6 +36,11 @@
 init()
 {
     zmqol_dev_commands();
+
+    //  2026-10-19 - the multiplayer command layer builds its table and seeds
+    //  its switch dvar here. Dormant until zmqol_commands_mp is set to 1;
+    //  see that file's banner for the retirement plan.
+    scripts\zm\zmqol_commands_mp::zmqol_commands_mp_init();
 }
 
 //  The host and a solo player own the server dvars. With no host player at all
@@ -444,6 +449,14 @@ zmqol_dev_command_listener()
 
         // Strip the prefix character, leaving the bare command word.
         cmd = getsubstr( tokens[0], 1 );
+
+        //  2026-10-19 - the multiplayer command layer (scripts\zm\zmqol_commands_mp.gsc)
+        //  sits in front of the gate when its dvar is on: permission levels,
+        //  matcher v2 and the .p / .pay semantics. It returns 1 only when it
+        //  consumed the line; the gate and chain below stay the default path -
+        //  the layer is dormant until the live parity probe passes.
+        if ( scripts\zm\zmqol_commands_mp::zmqol_commands_mp_active() && scripts\zm\zmqol_commands_mp::zmqol_mp_dispatch( player, cmd, tokens ) )
+            continue;
 
         //  Co-op: only the host may change the match or give power. A remote
         //  player keeps the commands that touch their own view. The test is
