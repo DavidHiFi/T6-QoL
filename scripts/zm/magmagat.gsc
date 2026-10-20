@@ -135,7 +135,7 @@ init()
 //  return 0 below, exactly like the Browning DW gate does.
 magmagat_enabled( map, mode )
 {
-    return mode == "zclassic" || mode == "zsurvival";
+    return map != "zm_tomb" && ( mode == "zclassic" || mode == "zsurvival" );
 }
 
 // ---- fx -----------------------------------------------------------------------------------------------------
