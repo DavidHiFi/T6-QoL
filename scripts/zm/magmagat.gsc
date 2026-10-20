@@ -118,31 +118,24 @@ init()
 }
 
 //  Keep in step with zm_expanded.csc's twin.
-//  Register counts are pap-slot-audit-001's "Today (main cc76060)" column
-//  (the freshest memread audit; ceiling 253, a weapon slot is a
-//  precacheitem, and the Browning DW hold-back in oldschool.gsc already
-//  removed 4 from every zm_tomb and zm_prison load). The magmagat family
-//  costs 3 (base, PaP, the blob). Only loads with real headroom get it:
-//    Origins classic  252-4+3 = 251 (2 spare) - shipped first
-//    Mob classic      252-4+3 = 251 (2 spare)
-//    Docks            250-4+3 = 249 (4 spare) - Mob zsurvival
-//    Maze             244+3   = 247 (6 spare) - Buried zsurvival
-//  Every other load is FULL or 1-2 short of fitting and stays magmagat-free
-//  until content is retired there (pap-slot-audit-001 section 2: Buried
-//  zclassic 251+3=254 is PAST the ceiling; TranZit classic 252, TranZit
-//  zsurvival x7 253, Nuketown 253, Die Rise 253, the four Origins zstandard
-//  arenas 252; grief and turned were never measured). Mob's forge quest was
-//  REMOVED 2026-10-20 (user: eradicate it) - its five slots are already out
-//  of the Mob numbers above.
+//  2026-10-20: mp7 and vector are RETIRED globally per pap-slot-audit-001's
+//  section 2 recipe (two 2-slot families, -4 register slots on every load;
+//  the audit's own worked example plus its cheapest sibling). With the
+//  Browning DW hold-backs in oldschool.gsc (zm_tomb and zm_prison) the
+//  magmagat family - 3 slots, base + PaP + blob - fits every measured load
+//  with at least one spare:
+//    TranZit classic 252-4=248 +3 = 251   Docks 250-4-4=242 +3 = 245
+//    TranZit survival 253-4=249 +3 = 252  Maze 244-4=240 +3 = 243
+//    Nuketown 253-4=249 +3 = 252          Buried classic 251-4=247 +3 = 250
+//    Die Rise 253-4=249 +3 = 252          Origins classic 252-4-4=244 +3 = 247
+//    Mob classic 252-4-4=244 +3 = 247     Origins arenas 252-4=248 +3 = 251
+//  (pap-slot-audit-001's Today column; ui_zm_gamemodegroup reports the
+//  survival starts as "zsurvival" and their gametype is zstandard - same
+//  loads.) The never-measured modes stay magmagat-free: zgrief and zturned
+//  return 0 below, exactly like the Browning DW gate does.
 magmagat_enabled( map, mode )
 {
-    if ( mode == "zclassic" )
-        return map == "zm_tomb" || map == "zm_prison";
-
-    if ( mode == "zsurvival" )
-        return map == "zm_prison" || map == "zm_buried";
-
-    return 0;
+    return mode == "zclassic" || mode == "zsurvival";
 }
 
 // ---- fx -----------------------------------------------------------------------------------------------------

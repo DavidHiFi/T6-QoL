@@ -158,13 +158,11 @@ zmqol_mp_weapons_init()
 	// ========================================================================
 	b_tomb = ( getdvar( #"mapname" ) == "zm_tomb" );
 
-	// the ten that go in the box
+	// the eight that go in the box (mp7 and vector retired 2026-10-20)
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sig556_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sa58_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mk48_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "qbb95_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mp7_zm" );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "vector_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "insas_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "peacekeeper_zm" );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "crossbow_zm" );
@@ -377,14 +375,13 @@ zmqol_mp_weapons_init()
 
 	//  ============================================================
 	//  THE MAGMAGAT BOX WEAPON (scripts\zm\magmagat.gsc, the server twin).
-	//  Same test as magmagat_enabled() - the four loads with real headroom
-	//  (pap-slot-audit-001's Today column) - or the box cannot draw its
-	//  pickup model. Not the quest below.
+	//  Same test as magmagat_enabled() - every zclassic and zsurvival load,
+	//  which fit once mp7 and vector were retired - or the box cannot draw
+	//  its pickup model. Not the quest below.
 	//  ============================================================
 	magmagat_map = getdvar( "mapname" );
 	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( ( magmagat_mode == "zclassic" && ( magmagat_map == "zm_tomb" || magmagat_map == "zm_prison" ) )
-		|| ( magmagat_mode == "zsurvival" && ( magmagat_map == "zm_prison" || magmagat_map == "zm_buried" ) ) )
+	if ( magmagat_mode == "zclassic" || magmagat_mode == "zsurvival" )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );
@@ -419,8 +416,6 @@ zmqol_mp_weapons_init()
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "sa58_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mk48_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "qbb95_upgraded_zm", 0 );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "mp7_upgraded_zm", 0 );
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "vector_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "insas_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "peacekeeper_upgraded_zm", 0 );
 	clientscripts\mp\zombies\_zm_weapons::include_weapon( "crossbow_upgraded_zm", 0 );
