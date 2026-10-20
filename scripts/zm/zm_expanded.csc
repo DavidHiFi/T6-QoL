@@ -377,12 +377,14 @@ zmqol_mp_weapons_init()
 
 	//  ============================================================
 	//  THE MAGMAGAT BOX WEAPON (scripts\zm\magmagat.gsc, the server twin).
-	//  Same test as magmagat_enabled() - Origins classic only for now - or the
-	//  box cannot draw its pickup model. Not the quest below.
+	//  Same test as magmagat_enabled() - the four loads with real headroom
+	//  (pap-slot-audit-001's Today column) - or the box cannot draw its
+	//  pickup model. Not the quest below.
 	//  ============================================================
 	magmagat_map = getdvar( "mapname" );
 	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( magmagat_map == "zm_tomb" && magmagat_mode == "zclassic" )
+	if ( ( magmagat_mode == "zclassic" && ( magmagat_map == "zm_tomb" || magmagat_map == "zm_prison" ) )
+		|| ( magmagat_mode == "zsurvival" && ( magmagat_map == "zm_prison" || magmagat_map == "zm_buried" ) ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );

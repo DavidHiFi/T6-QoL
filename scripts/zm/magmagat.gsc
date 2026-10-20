@@ -118,15 +118,29 @@ init()
 }
 
 //  Keep in step with zm_expanded.csc's twin.
-//  Origins classic only, for now: its four slots come from the Browning HP DW
-//  hold-back in oldschool.gsc. Buried and Mob survival are parked (the lines
-//  came out of this gate). Mob classic's forge quest was REMOVED 2026-10-20
-//  (user: eradicate it) - the five slots it held feed this gun's box path
-//  there next.
+//  Register counts are pap-slot-audit-001's "Today (main cc76060)" column
+//  (the freshest memread audit; ceiling 253, a weapon slot is a
+//  precacheitem, and the Browning DW hold-back in oldschool.gsc already
+//  removed 4 from every zm_tomb and zm_prison load). The magmagat family
+//  costs 3 (base, PaP, the blob). Only loads with real headroom get it:
+//    Origins classic  252-4+3 = 251 (2 spare) - shipped first
+//    Mob classic      252-4+3 = 251 (2 spare)
+//    Docks            250-4+3 = 249 (4 spare) - Mob zsurvival
+//    Maze             244+3   = 247 (6 spare) - Buried zsurvival
+//  Every other load is FULL or 1-2 short of fitting and stays magmagat-free
+//  until content is retired there (pap-slot-audit-001 section 2: Buried
+//  zclassic 251+3=254 is PAST the ceiling; TranZit classic 252, TranZit
+//  zsurvival x7 253, Nuketown 253, Die Rise 253, the four Origins zstandard
+//  arenas 252; grief and turned were never measured). Mob's forge quest was
+//  REMOVED 2026-10-20 (user: eradicate it) - its five slots are already out
+//  of the Mob numbers above.
 magmagat_enabled( map, mode )
 {
-    if ( map == "zm_tomb" )
-        return mode == "zclassic";
+    if ( mode == "zclassic" )
+        return map == "zm_tomb" || map == "zm_prison";
+
+    if ( mode == "zsurvival" )
+        return map == "zm_prison" || map == "zm_buried";
 
     return 0;
 }
