@@ -16,7 +16,10 @@ def code_only(text):
 def check(root):
     findings = []
     for path in sorted([*(root / 'scripts').rglob('*.csc'), *(root / 'clientscripts').rglob('*.csc')]):
-        code = code_only(path.read_text())
+        data = path.read_bytes()
+        if data.startswith(b"\x80GSC"):
+            continue  # Compiled stock inputs have no source-level dvar calls to inspect.
+        code = code_only(data.decode("utf-8"))
         for switch in SWITCHES:
             for match in re.finditer(r'getdvar(?:int(?:default)?)?\s*\(\s*#?"' + switch + '"', code, re.I):
                 findings.append({'file': str(path.relative_to(root)), 'line': code[:match.start()].count('\n') + 1,
