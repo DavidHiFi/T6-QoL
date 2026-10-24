@@ -141,9 +141,9 @@ scavenger_watch_impact()
             continue;
 
         if ( str_weapon == "scavenger_zm" )
-            self thread scavenger_bolt( v_point, 0 );
+            level thread scavenger_bolt( self, v_point, 0 );
         else if ( str_weapon == "scavenger_upgraded_zm" )
-            self thread scavenger_bolt( v_point, 1 );
+            level thread scavenger_bolt( self, v_point, 1 );
     }
 }
 
@@ -159,11 +159,12 @@ scavenger_watch_impact()
 //  the engine, times the blast; the def deals no damage and plays no blast of
 //  its own either way. Its position is read every frame, so a bolt that goes
 //  away early (the zombie it rode was deleted) still blows where it last was.
-scavenger_bolt( v_point, b_upgraded )
+// The level owns the fuse so the shooter may leave before the blast.
+scavenger_bolt( shooter, v_point, b_upgraded )
 {
     level endon( "end_game" );
 
-    v_eye = self geteye();
+    v_eye = shooter geteye();
     v_dir = vectornormalize( v_point - v_eye );
 
     //  40 back clears a zombie's collision box however the shot entered it;
@@ -177,7 +178,7 @@ scavenger_bolt( v_point, b_upgraded )
     if ( n_back < 0 )
         n_back = 0;
 
-    e_bolt = self magicgrenadetype( "scavenger_bolt_zm", v_point - v_dir * n_back, v_dir * 2000, level.scavenger_fuse + 1 );
+    e_bolt = shooter magicgrenadetype( "scavenger_bolt_zm", v_point - v_dir * n_back, v_dir * 2000, level.scavenger_fuse + 1 );
 
     //  BO1: wpn_ubersniper_bomb_rampup on the bolt, then the blast
     if ( isdefined( e_bolt ) )
@@ -211,10 +212,10 @@ scavenger_bolt( v_point, b_upgraded )
     if ( b_rode )
         v_blast = v_blast + ( 0, 0, 10 );
 
-    self scavenger_explode( v_blast, b_upgraded );
+    scavenger_explode( v_blast, b_upgraded, shooter );
 }
 
-scavenger_explode( v_blast, b_upgraded )
+scavenger_explode( v_blast, b_upgraded, shooter )
 {
     n_radius = level.scavenger_radius;
     str_fx = "scavenger_exp";
@@ -270,8 +271,8 @@ scavenger_explode( v_blast, b_upgraded )
 
         n_health_before = e_zombie.health;
 
-        if ( isdefined( self ) && isplayer( self ) )
-            e_zombie dodamage( n_damage, v_blast, self, self, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
+        if ( isdefined( shooter ) && isplayer( shooter ) )
+            e_zombie dodamage( n_damage, v_blast, shooter, shooter, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
         else
             e_zombie dodamage( n_damage, v_blast, undefined, undefined, "none", "MOD_GRENADE_SPLASH", 0, str_weapon );
 
@@ -288,8 +289,8 @@ scavenger_explode( v_blast, b_upgraded )
 
     // One response per explosion, owned by the shooter. A kill takes precedence
     // over nonlethal hits, so a horde does not play dozens of feedback sounds.
-    if ( b_hit && isdefined( self ) && isplayer( self ) )
-        self thread scripts\zm\quality_of_life::updatedamagefeedback( "MOD_EXPLOSIVE", self, b_kill, 0 );
+    if ( b_hit && isdefined( shooter ) && isplayer( shooter ) )
+        shooter thread scripts\zm\quality_of_life::updatedamagefeedback( "MOD_EXPLOSIVE", shooter, b_kill, 0 );
 }
 
 //  BO1's sniper_explosive_death_response(): a zombie the blast kills turns to
