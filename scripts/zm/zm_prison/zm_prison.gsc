@@ -622,84 +622,77 @@ added_weapons()
     }
 }
 
-// ============================================================================
-//  qol_check_solo_status  (replaces maps\mp\zm_alcatraz_utility::check_solo_status)
-//
-//  🛑 Same defect as Origins - see the long comment on the twin function in
-//  scripts\zm\zm_tomb\zm_tomb.gsc for the full reasoning. Short version: stock
-//  requires ( !sessionmodeisonlinegame() || !sessionmodeisprivate() ) on top of
-//  the player count, and Plutonium runs every game as an online private match,
-//  so level.is_forever_solo_game was stuck at 0 even playing alone.
-//
-//  On Mob that is what forces the plane parts to be carried ONE AT A TIME:
-//  zm_alcatraz_craftables::init sets is_shared = 1 on all five plane pieces
-//  (and all five fuel cans) only inside `if ( level.is_forever_solo_game )`.
-//  It also costs the solo Brutus behaviour (_zm_ai_brutus, rounds < 9), the
-//  solo afterlife timings (_zm_afterlife), and the solo side-quest gate
-//  (zm_alcatraz_sq).
-//
-//  Stock threads this from zm_prison::main(), before craftables init reads the
-//  flag unguarded - the replacement keeps that slot and adds no wait, so the
-//  ordering is unchanged.
-// ============================================================================
-//  🛑 v1.62.0 - `== 1` WAS NOT ENOUGH, AND THIS PROJECT ALREADY KNEW WHY.
-//
-//  quality_of_life.gsc::onallplayersready_instant carries this measured note:
-//      "getnumexpectedplayers() never becomes non-zero - which is what happens
-//       on solo and custom games launched from the Mods menu, since there is no
-//       real party populating it"
-//  Nobody connected that to this function. `getnumexpectedplayers() == 1` is
-//  FALSE when the engine reports 0, so this set is_forever_solo_game = 0 and Mob
-//  kept its co-op rules while playing alone - one plane part at a time.
-//
-//  Origins escapes it: its call site (zm_tomb.gsc:290) runs later in the load
-//  than Mob's (zm_prison.gsc:222), and by then the count has resolved - which is
-//  exactly why the Origins log line reads `expected=1` while Mob misbehaves.
-//
-//  So the test is now `<= 1`. It differs from `== 1` ONLY when the engine says
-//  0, which is precisely the broken case, so it cannot regress a game that was
-//  already working.
-//
-//  📝 Trade-off, stated rather than hidden: a genuine 2-player co-op game whose
-//  count has not resolved at this point would also read as solo. Both counts are
-//  logged below so a single boot shows exactly what the engine reported.
+// Expected count can stay zero on both Mods-menu solo and dedicated co-op.
+// Keep solo until a second player is known, then permanently leave solo.
 qol_check_solo_status()
 {
-    n_expected = getnumexpectedplayers();
-
-    if ( n_expected <= 1 )
-        level.is_forever_solo_game = 1;
-    else
-        level.is_forever_solo_game = 0;
-
-    println( "[zm_qol] solo status: expected=" + n_expected + " connected=" + getnumconnectedplayers() + " is_forever_solo_game=" + level.is_forever_solo_game );
-
-    //  ========================================================================
-    //  🛑 v2.13.0 - THE ONE CO-OP QUESTION THIS PROJECT CANNOT ANSWER OFFLINE,
-    //  SO IT ASKS THE LOG INSTEAD OF GUESSING.
-    //
-    //  The `<= 1` above differs from stock's `== 1` only when the engine reports
-    //  ZERO expected players, and the v1.62.0 note says that is what happens on
-    //  a Mods-menu game. If it ALSO happens in a Mods-menu CO-OP game, then this
-    //  line hands a two-player match the solo rules: shared plane parts, three
-    //  afterlives, the solo Brutus and Panzer behaviour, the solo side-quest
-    //  gate, and no per-player craftable networking.
-    //
-    //  🛑 IT IS DELIBERATELY NOT "FIXED" BY GUESSING. Flipping it late is the
-    //  one thing that would be worse: zm_alcatraz_craftables builds the plane
-    //  and fuel pieces with is_shared = 1 AND client_field_state = undefined
-    //  while solo, and the co-op pickup path then does
-    //      level setclientfield( "piece_player" + n, self.client_field_state )
-    //  on that undefined name. Correcting the flag after the pieces exist would
-    //  turn a wrong-but-playable game into a script error.
-    //
-    //  So: one co-op boot on this map, and this log line settles it. If it reads
-    //  expected=0 with two players in the game, the fix is to derive the value
-    //  from the real roster BEFORE the craftables are built, not after.
-    //  ========================================================================
-    if ( n_expected <= 1 )
-        println( "[zm_qol] *** solo rules are ON. If this is a CO-OP game, this line is the bug - report it with the two counts above." );
+    level.is_forever_solo_game = !scripts\zm\qol_coop::zmqol_coop_roster();
+    println( "[zm_qol] solo status: expected=" + getnumexpectedplayers() + " connected=" + getnumconnectedplayers() + " is_forever_solo_game=" + level.is_forever_solo_game );
+    level thread zmqol_coop_solo_watch();
 }
+
+zmqol_coop_solo_watch()
+{
+    level endon( "end_game" );
+    while ( level.is_forever_solo_game )
+    {
+        if ( scripts\zm\qol_coop::zmqol_coop_roster() )
+        {
+            // Restore the fields stock removes from solo plane/fuel pieces
+            // before its co-op pickup callbacks can read them.
+            level.is_forever_solo_game = 0;
+            zmqol_coop_plane_pieces( "plane", strtok( "cloth fueltanks engine steering rigging", " " ), 1 );
+            zmqol_coop_plane_pieces( "refuelable_plane", strtok( "fuel1 fuel2 fuel3 fuel4 fuel5", " " ), 6 );
+            foreach ( player in get_players() )
+            {
+                if ( isdefined( player.lives ) )
+                {
+                    // Solo starts with two extra lives. Preserve any lives
+                    // already spent, including the initial afterlife.
+                    player.lives = max( 0, player.lives - 2 );
+                    player setclientfieldtoplayer( "player_lives", player.lives );
+                }
+            }
+            println( "[zm_qol] co-op: Mob forever solo cleared, players=" + get_players().size );
+            return;
+        }
+        wait 0.05;
+    }
+}
+
+zmqol_coop_plane_pieces( name, pieces, first_state )
+{
+    if ( !isdefined( level.zombie_include_craftables ) || !isdefined( level.zombie_include_craftables[name] ) )
+        return;
+
+    craftable = level.zombie_include_craftables[name];
+    foreach ( stub in craftable.a_piecestubs )
+    {
+        for ( i = 0; i < pieces.size; i++ )
+        {
+            if ( stub.piecename != pieces[i] )
+                continue;
+
+            stub.is_shared = 0;
+            stub.client_field_state = first_state + i;
+            if ( !isdefined( stub.piecespawn ) )
+                continue;
+
+            piece = stub.piecespawn;
+            piece.is_shared = 0;
+            piece.client_field_state = stub.client_field_state;
+            if ( isdefined( piece.in_shared_inventory ) && piece.in_shared_inventory
+                 && !( isdefined( piece.crafted ) && piece.crafted ) )
+            {
+                // A solo player may already carry several parts. Return
+                // them to the world through stock's drop path, losing none.
+                piece.in_shared_inventory = 0;
+                piece.piece_owner maps\mp\zombies\_zm_craftables::player_drop_piece( piece );
+            }
+        }
+    }
+}
+
 
 
 // ============================================================================
