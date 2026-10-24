@@ -1,0 +1,13 @@
+// Black Ops 4 Icons for players 5-8 (scripts/zm/qol_icons_pack.gsc). Model dependencies come from qol_icons_donor/mod.ff.
+xmodel,c_halo_t6_reznov_fb
+xmodel,c_halo_t6_reznov_viewhands
+xmodel,c_halo_t6_mason_fb
+xmodel,c_halo_t6_mason_viewhands
+xmodel,c_halo_t6_woods_fb
+xmodel,c_halo_t6_woods_viewhands
+xmodel,c_halo_t6_menendez_fb
+xmodel,c_halo_t6_menendez_viewhands
+material,halo_bo7_hud_portrait_4_reznov
+material,halo_bo7_hud_portrait_5_mason
+material,halo_bo7_hud_portrait_6_woods
+material,halo_bo7_hud_portrait_7_menendez

@@ -126,7 +126,7 @@ perks or points already given.
 .pack / .unpack           Pack-a-Punch or unpack the held weapon
 .giveperks / .removeperks Grant or remove perks
 .pay <player> <amount>    Send points to another player
-.character <1-4>          Pick your own character (each player, not the host's choice)
+.character <1-8>          Pick your own character (each player, not the host's choice)
 .shield / .staff <elem>   Spawn a shield or an Origins elemental staff
 ```
 
@@ -283,6 +283,9 @@ the steps, and a successful build still needs testing in game.
   * The HUD menu can show subtitles with optional speaker names on every map in solo and co-op. It covers characters, announcers, radios, quest dialogue, and other map voices. Overlapping lines stack on screen. The text was machine-transcribed, so some words may be wrong.
   * Easter egg songs show their title, and the sung ones show timed lyrics.
 
+* **Black Ops 4 Icons for players 5-8:**
+  * In a match with more than four players, players five to eight play as Reznov, Mason, Woods and Menendez from Black Ops 4, each with their own portrait in the points list. Anyone can pick one with `.character 5` to `.character 8`.
+
 * **Scoreboard crew emblems:**
   * The scoreboard shows the correct crew emblem for each map and mode instead of a missing texture.
 
@@ -350,6 +353,7 @@ Bug reports, feature ideas and pull requests are welcome. See [CONTRIBUTING.md](
 | **Fraaagaaa** ([Strat Tester](https://github.com/Fraaagaaa/Strat-Tester-BO2)) | Every destination in the teleport list except Nuketown's three, which are the map's own respawn points. |
 | **B2ORG** ([T6-B2OP-PATCH](https://github.com/B2ORG/T6-B2OP-PATCH))<br><sub>built with **Astrox** and **NoMoleMan**</sub> | The basis for most of the patches, rebuilt against the game's own scripts rather than copied wholesale. |
 | **Hadi77KSA** ([Any Player EE Scripts](https://github.com/Hadi77KSA/Plutonium-T6-Any-Player-EE-Scripts))<br><sub>building on work by **CCDeroga**, **teh_bandit**, **DaddyDontStop**, **shyperson0/znchi** and **Stick Gaming/Nathan3197**</sub> | The Solo Easter Eggs option: the quest steps that scale to the number of players on TranZit, Die Rise, Buried and Origins. |
+| **Treyarch / Activision** (*Call of Duty: Black Ops 4*) and **Halo / SickoHours** | The four Black Ops 4 Icons characters for players 5-8 (Reznov, Mason, Woods and Menendez): Treyarch's models, textures and portraits, converted to Black Ops II skeletons and materials by SickoHours, extracted with [Greyhound](https://github.com/Scobalula/Greyhound) by **Scobalula**, **DTZxPorter** and contributors. |
 
 Built on [Plutonium](https://plutonium.pw), with [OpenAssetTools](https://github.com/Laupetin/OpenAssetTools), [xensik](https://github.com/xensik)'s [gsc-tool](https://github.com/xensik/gsc-tool), [Python](https://www.python.org) and [PowerShell](https://learn.microsoft.com/powershell/). The optional [ReShade](https://reshade.me) install ships unmodified work by **crosire** (ReShade), **Barbatos Bachiko**, **Alex Tuduran**, **Marot Satil** and the **GShade** project, **Ioxa**, **Lord of Lunacy**, **prod80**, and **NVIDIA**.
 
