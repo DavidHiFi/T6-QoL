@@ -6,14 +6,15 @@ init()
     if ( getdvar( "g_gametype" ) == "zgrief" || getdvar( "g_gametype" ) == "zmeat" )
         return;
 
-    // Plutonium installs its dedicated-server spawn detour during startup.
-    // Install after that pass, before any connected player can spawn.
-    level thread qol_install_spawns();
+    qol_install_spawns( 0 );
+    // Plutonium's dedicated startup hooks can run after the mod's init pass.
+    level thread qol_install_spawns( 1 );
 }
 
-qol_install_spawns()
+qol_install_spawns( wait_for_player )
 {
-    wait 0.05;
+    if ( wait_for_player )
+        level waittill( "connected", player );
     replacefunc( maps\mp\zombies\_zm::getfreespawnpoint, ::qol_initial_spawn );
     replacefunc( maps\mp\zombies\_zm::get_valid_spawn_location, ::qol_respawn );
 }
