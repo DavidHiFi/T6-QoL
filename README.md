@@ -96,6 +96,27 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer —
 
 Use a `.`, `!` or `/` prefix, or bind them to keys. Type `.help` in game for the current list.
 
+The host's **CHEATS** switch in the lobby or GAME 3 selects the mode, using
+server `sv_cheats`. Disabled is no-cheat mode: cheat commands need a named host
+grant, including commands run by the host. Enabled lets everyone use self cheats
+such as `.give`, `.pack`, `.p`, perks, ammo and movement speed on themselves.
+Match cheats such as `.god`, `.fly`, round changes, boss spawns and the CHEATS
+page stay host-only in both modes.
+
+The host can use `.grant <player> <command>`, `.ungrant <player> <command>` and
+`.grants` in either mode. For example, `.grant dave give` permits Dave's `.give`,
+`.gun` and `.giveweapon`; aliases share the same grant. Grants expire when that
+player disconnects. In no-cheat mode the host can grant their own player a match
+command, or `cheats` for the CHEATS page. Match commands cannot be granted to a
+guest. Guests' `.p` only changes their own points; the host may name a target.
+
+Utilities remain open in either mode: `.my`/`.popt`/`.mine`, `.hud`,
+`.character`/`.char`, `.help`, `.where`, `.wallhere`, `.afk`,
+`.velocity`/`.vel`/`.speed`, `.powerups` and `.pay`. The multiplayer permission
+layer always runs; the old `zmqol_commands_mp` probe switch cannot bypass it.
+Turning cheat mode off stops running CHEATS toggles. It does not undo guns,
+perks or points already given.
+
 ```text
 .help                     Show / hide the in-game command list
 .give <weapon> [pap]      Give any weapon ('.give list' shows what's available)

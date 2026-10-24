@@ -5272,11 +5272,10 @@ player_too_many_weapons_monitor()
 //                    you can take points away too.
 //      !god          toggle invulnerability on/off, with feedback either way.
 //
-//  sv_cheats was forced to 1 here until 2026-10-19 (multiplayer plan fix 4):
-//  every session ran with engine cheats open whether the host wanted them or
-//  not. The mod's own commands never needed the setting, and the host can
-//  turn sv_cheats back on from the GAME 3 row in the pause menu when the
-//  usual Plutonium console cheats are wanted.
+//  sv_cheats is no longer forced on (multiplayer plan fix 4). The host's
+//  lobby / GAME 3 CHEATS row now selects cheat mode for the command layer:
+//  self cheats are open when enabled, and need named grants when disabled.
+//  Match-wide cheats remain host-only. See zmqol_commands_mp.gsc.
 //
 //  Mechanism: T6 fires a level notify "say" carrying the speaker and the raw
 //  message. Verified against a known-working release rather than guessed -
@@ -7792,6 +7791,8 @@ zmqol_weapon_give_table()
     a[a.size] = zmqol_give_row( "falosw sa58 osw",                  "sa58_zm",        "FAL OSW" );
     a[a.size] = zmqol_give_row( "mk48",                             "mk48_zm",        "Mk 48" );
     a[a.size] = zmqol_give_row( "qbb qbb95 lsw",                    "qbb95_zm",       "QBB LSW" );
+    a[a.size] = zmqol_give_row( "mp7",                              "mp7_zm",         "MP7" );
+    a[a.size] = zmqol_give_row( "vector k10",                       "vector_zm",      "Vector K10" );
     a[a.size] = zmqol_give_row( "msmc insas",                       "insas_zm",       "MSMC" );
     a[a.size] = zmqol_give_row( "peacekeeper pk",                   "peacekeeper_zm", "Peacekeeper" );
     a[a.size] = zmqol_give_row( "crossbow bow",                     "crossbow_zm",    "Crossbow" );
@@ -8625,6 +8626,7 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "mp40_stalker_zm",  "mp40stalker", "" );
     a[a.size] = zmqol_give_name_row( "mp44_zm",          "stg44",       "stg mp44" );
     a[a.size] = zmqol_give_name_row( "mp5k_zm",          "mp5",         "mp5k" );
+    a[a.size] = zmqol_give_name_row( "mp7_zm",           "mp7",         "" );
     a[a.size] = zmqol_give_name_row( "pdw57_zm",         "pdw57",       "pdw" );
     a[a.size] = zmqol_give_name_row( "peacekeeper_zm",   "peacekeeper", "pk" );
     a[a.size] = zmqol_give_name_row( "python_zm",        "python",      "" );
@@ -8672,6 +8674,7 @@ zmqol_give_names_table()
     a[a.size] = zmqol_give_name_row( "type95_zm",        "type25",      "type95 type" );
     a[a.size] = zmqol_give_name_row( "upgraded_tomahawk_zm", "redeemer", "hellsredeemer upgradedtomahawk" );
     a[a.size] = zmqol_give_name_row( "uzi_zm",           "uzi",         "" );
+    a[a.size] = zmqol_give_name_row( "vector_zm",        "vector",      "k10 vectork10" );
     a[a.size] = zmqol_give_name_row( "willy_pete_zm",    "smoke",       "smokegrenade willypete" );
     a[a.size] = zmqol_give_name_row( "xm8_zm",           "m8a1",        "m8 xm8" );
 
@@ -9452,6 +9455,8 @@ zmqol_mp_weapons_init()
     zmqol_add_mp_weapon( "sa58_zm",        "sa58_upgraded_zm",        &"WEAPON_SA58",               1000, "wpck_mg" );
     zmqol_add_mp_weapon( "mk48_zm",        "mk48_upgraded_zm",        &"WEAPON_MK48",               1000, "wpck_mg" );
     zmqol_add_mp_weapon( "qbb95_zm",       "qbb95_upgraded_zm",       &"WEAPON_QBB95",              1000, "wpck_mg" );
+    zmqol_add_mp_weapon( "mp7_zm",         "mp7_upgraded_zm",         &"WEAPON_MP7",                1000, "wpck_smg" );
+    zmqol_add_mp_weapon( "vector_zm",      "vector_upgraded_zm",      &"WEAPON_VECTOR",             1200, "wpck_smg" );
     zmqol_add_mp_weapon( "insas_zm",       "insas_upgraded_zm",       &"WEAPON_INSAS",              1000, "wpck_smg" );
     zmqol_add_mp_weapon( "peacekeeper_zm", "peacekeeper_upgraded_zm", &"WEAPON_PEACEKEEPER",        1000, "wpck_smg" );
     zmqol_add_mp_weapon( "crossbow_zm",    "crossbow_upgraded_zm",    &"WEAPON_CROSSBOW_EXPLOSIVE", 1000, "wpck_launcher" );

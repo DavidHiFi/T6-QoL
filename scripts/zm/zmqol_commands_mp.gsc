@@ -1,49 +1,7 @@
-// ============================================================================
-//  zm_qol - THE MULTIPLAYER COMMAND LAYER                           (2026-10-19)
-//
-//  Phase 2 of .agents/plan-multiplayer-commands.md: the permission levels, the
-//  name matcher v2 and the .p / .pay semantics move in front of the existing
-//  chat chain, which stays the executor.
-//
-//  🛑 DORMANT BY DEFAULT. Everything here is gated on the mod dvar
-//  `zmqol_commands_mp`; while it is 0 (the shipped default) this file does
-//  nothing and the chain in zmqol_playeropt.gsc behaves exactly as today. The
-//  plan's own rule is that the old chain retires only after the new layer has
-//  full parity, and parity is a live two-client test this machine cannot run:
-//  set `zmqol_commands_mp 1` in the host console for the probe session and
-//  back to 0 to return to the shipped behaviour.
-//
-//  WHAT RUNS HERE WHEN IT IS ON
-//    - Permission levels per command: self (today's open list), host (the old
-//      fail-closed gate), granted (new - decision 2 moved .p here, host-only
-//      until the phase 3 grants store gives the host a way to grant).
-//    - Name matcher v2 for .p and .pay: clan tags stripped, exact match wins,
-//      then a unique prefix, and when two players match the reply is a
-//      numbered candidate list instead of a silent first-match.
-//    - .p [amount] [player]: the owner's ".p 100 dave". Points are per-entity
-//      state, so this one can target another player today; the permission is
-//      the granted level.
-//    - .pay: resolved here, charged and transferred by the proven
-//      quality_of_life::zmqol_pay_points exactly as before.
-//    - The grants store, chat edition: .grant / .ungrant / .grants (host only)
-//      write per-player permission for granted-level commands. The phase 4
-//      PLAYERS page will write the same field.
-//
-//  🛑 WHAT DELIBERATELY DOES NOT MOVE YET
-//    - The command bodies themselves. Every other command falls through to the
-//      old chain unchanged (this layer returns 0), so parity is exact by
-//      construction. Migrating bodies into a table happens after the live
-//      parity probe passes, per the plan.
-//    - The me/all/<name> grammar on the cheat toggles. Their state is a global
-//      dvar plus a per-player field today; giving .god a target before the
-//      per-player watchers exist (phase 3) would let the dvar poll fight the
-//      target an instant later. An explicit non-me target gets a clear "not
-//      available yet" reply instead of a silent solo effect.
-//    - The console name list and the help panel. The list carries a collision
-//      diff against 3,210 dvars that must be redone before new names register,
-//      and the help panel lives in quality_of_life.gsc, which is on the
-//      compiled-bytecode ceiling. Both move in the retirement pass.
-// ============================================================================
+// Multiplayer permissions and name matcher, built on the command-table-mp layer.
+// sv_cheats is the host's single mode switch. Off is no-cheat mode; grants
+// live on the player entity and expire on disconnect. Utilities stay open.
+// This policy always runs: zmqol_commands_mp is no longer a bypass switch.
 
 #include common_scripts\utility;
 #include maps\mp\_utility;
@@ -51,34 +9,17 @@
 
 zmqol_commands_mp_init()
 {
-    //  Seeded so the console shows the switch; getdvarintdefault would read
-    //  fine without it, but an explicit 0 makes the state discoverable.
-    if ( getdvar( "zmqol_commands_mp" ) == "" )
-        setdvar( "zmqol_commands_mp", "0" );
-
     zmqol_mp_table_build();
+    level thread zmqol_mp_mode_watch();
 }
 
-zmqol_commands_mp_active()
+zmqol_mp_cheat_mode()
 {
-    return getdvarintdefault( "zmqol_commands_mp", 0 ) == 1;
+    return getdvarintdefault( "sv_cheats", 0 ) == 1;
 }
 
-// ============================================================================
-//  THE TABLE
-//
-//  One row per command name or alias: ( name, canonical-or-empty, level,
-//  targetable ). Levels are "self" (touches only the caller's own view or
-//  score - today's open list), "host" (match and power changes - the old
-//  fail-closed gate), "granted" (the host marks individual players; nobody is
-//  granted anything at ship, which is decision 2's locked default).
-//
-//  The levels below are today's permissions read off the old gate, with the
-//  one deliberate change decision 2 asks for: .p is "granted", not "self".
-//  A name missing from the table is "host", which is exactly what the old
-//  gate did to anything outside its open list - the power-up alias families
-//  (.nuke, .maxammo, .dm, ...) ride that catch-all and need no rows.
-// ============================================================================
+// utility rows always run. self rows require cheat mode or a named grant.
+// host rows also require the caller to be the engine's current host.
 zmqol_mp_table_build()
 {
     level.zmqol_mp_names = [];
@@ -86,34 +27,34 @@ zmqol_mp_table_build()
     level.zmqol_mp_levels = [];
     level.zmqol_mp_target = [];
 
-    //  ---- self: the open list, verbatim ----
+    // Self cheats and utilities from the existing open list.
     zmqol_mp_row( "give", "", "self", 0 );
     zmqol_mp_row( "giveweapon", "give", "self", 0 );
     zmqol_mp_row( "gun", "give", "self", 0 );
     zmqol_mp_row( "pack", "", "self", 0 );
     zmqol_mp_row( "unpack", "", "self", 0 );
-    zmqol_mp_row( "pay", "", "self", 0 );
-    zmqol_mp_row( "character", "", "self", 0 );
-    zmqol_mp_row( "char", "character", "self", 0 );
-    zmqol_mp_row( "help", "", "self", 0 );
-    zmqol_mp_row( "where", "", "self", 0 );
-    zmqol_mp_row( "wallhere", "", "self", 0 );
+    zmqol_mp_row( "pay", "", "utility", 0 );
+    zmqol_mp_row( "character", "", "utility", 0 );
+    zmqol_mp_row( "char", "character", "utility", 0 );
+    zmqol_mp_row( "help", "", "utility", 0 );
+    zmqol_mp_row( "where", "", "utility", 0 );
+    zmqol_mp_row( "wallhere", "", "utility", 0 );
     zmqol_mp_row( "reload", "", "self", 1 );
     zmqol_mp_row( "giveperks", "", "self", 1 );
     zmqol_mp_row( "removeperks", "", "self", 1 );
     zmqol_mp_row( "movespeed", "", "self", 0 );
-    zmqol_mp_row( "velocity", "", "self", 0 );
-    zmqol_mp_row( "vel", "velocity", "self", 0 );
-    zmqol_mp_row( "speed", "velocity", "self", 0 );
-    zmqol_mp_row( "afk", "", "self", 1 );
-    zmqol_mp_row( "my", "", "self", 0 );
-    zmqol_mp_row( "popt", "my", "self", 0 );
-    zmqol_mp_row( "mine", "my", "self", 0 );
-    zmqol_mp_row( "hud", "", "self", 0 );
-    zmqol_mp_row( "powerups", "", "self", 0 );
+    zmqol_mp_row( "velocity", "", "utility", 0 );
+    zmqol_mp_row( "vel", "velocity", "utility", 0 );
+    zmqol_mp_row( "speed", "velocity", "utility", 0 );
+    zmqol_mp_row( "afk", "", "utility", 1 );
+    zmqol_mp_row( "my", "", "utility", 0 );
+    zmqol_mp_row( "popt", "my", "utility", 0 );
+    zmqol_mp_row( "mine", "my", "utility", 0 );
+    zmqol_mp_row( "hud", "", "utility", 0 );
+    zmqol_mp_row( "powerups", "", "utility", 0 );
 
-    //  ---- granted: decision 2 ----
-    zmqol_mp_row( "p", "", "granted", 0 );
+    // Points are self-scoped for guests; the host may still name a target.
+    zmqol_mp_row( "p", "", "self", 0 );
 
     //  ---- host: everything the old gate kept for itself ----
     zmqol_mp_row( "round", "", "host", 0 );
@@ -163,6 +104,9 @@ zmqol_mp_table_build()
     zmqol_mp_row( "powerup", "", "host", 0 );
     zmqol_mp_row( "drop", "powerup", "host", 0 );
 
+    zmqol_mp_row( "cheats", "", "host", 0 );
+    zmqol_mp_row( "cheatrow", "cheats", "host", 0 );
+
     //  ---- host: the phase 3 grants store, chat edition ----
     zmqol_mp_row( "grant", "", "host", 0 );
     zmqol_mp_row( "ungrant", "", "host", 0 );
@@ -188,15 +132,48 @@ zmqol_mp_index( str_cmd )
     return -1;
 }
 
-//  The granted level. Phase 3 turns this into the host's per-player grants
-//  store (the PLAYERS page writes it, chat can read it); until then nobody is
-//  granted anything and the level is host-only in effect.
+// Canonical grants apply to aliases and the perk/power-up alias families.
+zmqol_mp_canonical( str_cmd )
+{
+    n_i = zmqol_mp_index( str_cmd );
+    if ( n_i >= 0 )
+    {
+        if ( level.zmqol_mp_canon[n_i] != "" )
+            return level.zmqol_mp_canon[n_i];
+        return str_cmd;
+    }
+    if ( str_cmd.size > 4 && getsubstr( str_cmd, 0, 4 ) == "give" && isdefined( scripts\zm\quality_of_life::zmqol_perk_from_alias( getsubstr( str_cmd, 4, str_cmd.size ) ) ) )
+        return "giveperks";
+    if ( str_cmd.size > 6 && getsubstr( str_cmd, 0, 6 ) == "remove" && isdefined( scripts\zm\quality_of_life::zmqol_perk_from_alias( getsubstr( str_cmd, 6, str_cmd.size ) ) ) )
+        return "removeperks";
+    if ( isdefined( scripts\zm\quality_of_life::zmqol_powerup_alias( str_cmd ) ) )
+        return "powerup";
+    return str_cmd;
+}
+
 zmqol_mp_granted( e_player, str_cmd )
 {
-    if ( isdefined( e_player.zmqol_mp_grants ) && isdefined( e_player.zmqol_mp_grants[str_cmd] ) && e_player.zmqol_mp_grants[str_cmd] == 1 )
-        return 1;
+    return isdefined( e_player.zmqol_mp_grants ) && isdefined( e_player.zmqol_mp_grants[str_cmd] ) && e_player.zmqol_mp_grants[str_cmd] == 1;
+}
 
-    return 0;
+// Empty means allowed; otherwise return the one-line refusal for the speaker.
+zmqol_mp_refusal( e_player, str_cmd )
+{
+    str_cmd = zmqol_mp_canonical( str_cmd );
+    n_i = zmqol_mp_index( str_cmd );
+    str_level = "host";
+    if ( n_i >= 0 )
+        str_level = level.zmqol_mp_levels[n_i];
+    if ( str_level == "utility" )
+        return "";
+    e_host = gethostplayer();
+    if ( str_level == "host" && ( !isdefined( e_host ) || e_player != e_host ) )
+        return "is host only";
+    if ( str_cmd == "grant" || str_cmd == "ungrant" || str_cmd == "grants" )
+        return "";
+    if ( !zmqol_mp_cheat_mode() && !zmqol_mp_granted( e_player, str_cmd ) )
+        return "cheats are off in this game; ask the host for a grant";
+    return "";
 }
 
 // ============================================================================
@@ -208,26 +185,21 @@ zmqol_mp_granted( e_player, str_cmd )
 // ============================================================================
 zmqol_mp_dispatch( e_player, str_cmd, a_tokens )
 {
-    if ( !zmqol_commands_mp_active() )
-        return 0;
-
-    //  Ask the engine every time; never cache the host (plan rule).
-    e_host = gethostplayer();
-    n_i = zmqol_mp_index( str_cmd );
-    str_level = "host";
-
-    if ( n_i >= 0 )
-        str_level = level.zmqol_mp_levels[n_i];
-
-    //  Fail closed, exactly like the gate this sits in front of: an unknown
-    //  host denies every host command.
-    if ( str_level != "self" && ( !isdefined( e_host ) || e_player != e_host ) )
+    str_reason = zmqol_mp_refusal( e_player, str_cmd );
+    if ( str_reason != "" )
     {
-        if ( str_level == "granted" )
-            e_player iprintln( "^1[zm_qol] ^7." + str_cmd + " ^1needs the host to grant it to you" );
-        else
-            e_player iprintln( "^1[zm_qol] ^7." + str_cmd + " ^1is host only" );
-
+        e_player iprintln( "^1[zm_qol] ^7." + str_cmd + " ^1" + str_reason );
+        return 1;
+    }
+    n_i = zmqol_mp_index( zmqol_mp_canonical( str_cmd ) );
+    if ( str_cmd == "cheatrow" )
+    {
+        zmqol_mp_cmd_cheatrow( e_player, a_tokens );
+        return 1;
+    }
+    if ( str_cmd == "cheats" )
+    {
+        e_player iprintln( "^3[zm_qol] use the CHEATS page" );
         return 1;
     }
 
@@ -269,14 +241,14 @@ zmqol_mp_dispatch( e_player, str_cmd, a_tokens )
         if ( str_t != "me" )
         {
             e_player iprintln( "^3[zm_qol] ^7." + str_cmd + " <player> ^7is not available yet - it runs for you only" );
-            return 0;
+            return 1;
         }
     }
 
     return 0;
 }
 
-//  .p [amount] [player] - decision 2 and the owner's ".p 100 dave". The
+//  .p [amount] [player]. Only the host may name somebody else. The
 //  amount default and the int()-of-junk rule are the old branch's; points are
 //  per-entity, so this can name another player on day one.
 zmqol_mp_cmd_p( e_caller, a_tokens )
@@ -305,6 +277,12 @@ zmqol_mp_cmd_p( e_caller, a_tokens )
             return;
 
         e_target = a_hits[0];
+    }
+
+    if ( e_target != e_caller && e_caller != gethostplayer() )
+    {
+        e_caller iprintln( "^1[zm_qol] .p runs for you only; use .pay for a teammate" );
+        return;
     }
 
     if ( e_target == e_caller )
@@ -346,15 +324,13 @@ zmqol_mp_cmd_pay( e_caller, a_tokens )
 //  Host-only. Grants live on the player entity (e_player.zmqol_mp_grants), so
 //  a disconnect frees them with the entity and a rejoining player starts with
 //  nothing - the connect and disconnect handling the plan asks for is the
-//  entity's own lifetime, with no watcher to write. Only granted-level
-//  commands can be granted; today that is exactly .p (decision 2). The phase 4
-//  PLAYERS page will write the same field.
-// ============================================================================
+//  entity's own lifetime. Aliases share a canonical grant. Host commands
+//  and CHEATS rows can only be granted to the host, never a remote player.
 zmqol_mp_cmd_grant( e_caller, a_tokens )
 {
     if ( a_tokens.size < 3 )
     {
-        e_caller iprintln( "^3[zm_qol] usage: ^7.grant <player> <command>  ^3- today that is ^7.grant <player> p" );
+        e_caller iprintln( "^3[zm_qol] usage: ^7.grant <player> <command>" );
         return;
     }
 
@@ -364,12 +340,18 @@ zmqol_mp_cmd_grant( e_caller, a_tokens )
         return;
 
     e_target = a_hits[0];
-    str_cmd = tolower( a_tokens[2] );
+    str_cmd = zmqol_mp_canonical( tolower( a_tokens[2] ) );
     n_i = zmqol_mp_index( str_cmd );
 
-    if ( n_i < 0 || level.zmqol_mp_levels[n_i] != "granted" )
+    if ( n_i < 0 || level.zmqol_mp_levels[n_i] == "utility" || str_cmd == "grant" || str_cmd == "ungrant" || str_cmd == "grants" )
     {
         e_caller iprintln( "^1[zm_qol] ^7." + str_cmd + " ^1is not a grantable command" );
+        return;
+    }
+
+    if ( level.zmqol_mp_levels[n_i] == "host" && e_target != gethostplayer() )
+    {
+        e_caller iprintln( "^1[zm_qol] match cheats and CHEATS rows stay host only" );
         return;
     }
 
@@ -396,7 +378,7 @@ zmqol_mp_cmd_ungrant( e_caller, a_tokens )
         return;
 
     e_target = a_hits[0];
-    str_cmd = tolower( a_tokens[2] );
+    str_cmd = zmqol_mp_canonical( tolower( a_tokens[2] ) );
 
     if ( isdefined( e_target.zmqol_mp_grants ) && isdefined( e_target.zmqol_mp_grants[str_cmd] ) )
         e_target.zmqol_mp_grants[str_cmd] = undefined;
@@ -416,7 +398,7 @@ zmqol_mp_cmd_grants( e_caller )
 
         if ( !isdefined( a_players[i].zmqol_mp_grants ) )
         {
-            a_players[i] iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: no grants" );
+            e_caller iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: no grants" );
             continue;
         }
 
@@ -434,9 +416,9 @@ zmqol_mp_cmd_grants( e_caller )
         }
 
         if ( str_list == "" )
-            a_players[i] iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: no grants" );
+            e_caller iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: no grants" );
         else
-            a_players[i] iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: " + str_list );
+            e_caller iprintln( "^3[zm_qol] ^7" + a_players[i].name + "^3: " + str_list );
     }
 }
 
@@ -552,4 +534,66 @@ zmqol_mp_is_number( str_in )
     }
 
     return 1;
+}
+
+// A CHEATS row uses chat instead of writing an unchecked server dvar. This
+// allow-list is shared with the mode-reset list and the menu callbacks.
+zmqol_mp_cheat_rows()
+{
+    return strTok( "godmode ghostmode infinite_ammo bottomless_clip infinite_sprint fly rapid_fire no_power one_shot_one_kill set_round kill_horde end_round set_points teleport execute_teleport", " " );
+}
+
+zmqol_mp_cmd_cheatrow( e_player, a_tokens )
+{
+    if ( a_tokens.size != 3 || !zmqol_mp_is_number( a_tokens[2] ) )
+        return;
+    a_rows = zmqol_mp_cheat_rows();
+    foreach ( str_row in a_rows )
+    {
+        if ( str_row == a_tokens[1] )
+        {
+            setdvar( str_row, int( a_tokens[2] ) );
+            return;
+        }
+    }
+    e_player iprintln( "^1[zm_qol] unknown CHEATS row" );
+}
+
+zmqol_mp_reset_cheats()
+{
+    foreach ( str_row in zmqol_mp_cheat_rows() )
+    {
+        // These are selections, not running effects. Setting set_points to
+        // zero would take players' earned points when mode changes.
+        if ( str_row != "set_points" && str_row != "teleport" )
+            setdvar( str_row, 0 );
+    }
+}
+
+zmqol_mp_mode_watch()
+{
+    level endon( "game_ended" );
+    if ( !zmqol_mp_cheat_mode() )
+        zmqol_mp_reset_cheats();
+    b_last_mode = zmqol_mp_cheat_mode();
+    b_last_rows = 0;
+    e_last_host = undefined;
+    for ( ;; )
+    {
+        e_host = gethostplayer();
+        b_rows = 0;
+        if ( isdefined( e_host ) )
+            b_rows = zmqol_mp_refusal( e_host, "cheats" ) == "";
+        b_mode = zmqol_mp_cheat_mode();
+        if ( ( b_last_mode && !b_mode ) || ( b_last_rows && !b_rows ) )
+            zmqol_mp_reset_cheats();
+        // This is a display hint only. Every row request is checked again
+        // on the server with the actual speaking player and server sv_cheats.
+        if ( isdefined( e_host ) && ( !isdefined( e_last_host ) || e_host != e_last_host || b_rows != b_last_rows ) )
+            e_host setclientdvar( "zmqol_cheats_allowed", int( b_rows ) );
+        e_last_host = e_host;
+        b_last_mode = b_mode;
+        b_last_rows = b_rows;
+        wait 0.25;
+    }
 }

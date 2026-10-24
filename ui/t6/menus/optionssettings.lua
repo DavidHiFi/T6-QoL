@@ -1676,10 +1676,20 @@ CoD.OptionsSettings.QolArchive = function (DvarName)
 	end)
 end
 
-CoD.OptionsSettings.QolChoice = function (ButtonList, LocalClientIndex, Label, DvarName, Description, Choices)
+-- CHEATS rows keep their existing dvar display but send writes through the
+-- server command policy. A stale page or forged client hint grants nothing.
+CoD.OptionsSettings.QolCheatChoice = function (LocalClientIndex)
+	return function (Params, UserRequested)
+		if UserRequested == true then
+			Engine.Exec(LocalClientIndex, "say .cheatrow " .. Params.parentSelectorButton.m_dvarName .. " " .. tostring(Params.value))
+		end
+	end
+end
+
+CoD.OptionsSettings.QolChoice = function (ButtonList, LocalClientIndex, Label, DvarName, Description, Choices, CheatRow)
 	local Selector = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize(Label), DvarName, Engine.Localize(Description))
 	for i = 1, #Choices do
-		Selector:addChoice(LocalClientIndex, Engine.Localize(Choices[i][1]), Choices[i][2])
+		Selector:addChoice(LocalClientIndex, Engine.Localize(Choices[i][1]), Choices[i][2], nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or nil)
 	end
 	CoD.OptionsSettings.QolArchive(DvarName)
 	return Selector
@@ -1785,10 +1795,10 @@ CoD.OptionsSettings.QolMigrateFlash = function ()
 	end)
 end
 
-CoD.OptionsSettings.QolToggle = function (ButtonList, LocalClientIndex, Label, DvarName, Description)
+CoD.OptionsSettings.QolToggle = function (ButtonList, LocalClientIndex, Label, DvarName, Description, CheatRow)
 	local Selector = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize(Label), DvarName, Engine.Localize(Description))
-	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
-	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
+	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0, nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or nil)
+	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1, nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or nil)
 	CoD.OptionsSettings.QolArchive(DvarName)
 	return Selector
 end
@@ -2610,7 +2620,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 			LocalClientIndex,
 			Engine.Localize("CHEATS"),
 			"sv_cheats",
-			Engine.Localize("Enable cheats on server.")
+			Engine.Localize("Cheat mode: self cheats for everyone. Match cheats stay host only. Disabled requires host grants.")
 		)
 		CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 		CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
@@ -2625,7 +2635,17 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	QolCheatsTab.buttonList = QolCheatsButtons
 	QolCheatsContainer:addElement(QolCheatsButtons)
 
-	local T = CoD.OptionsSettings.QolToggle
+	-- Guests never get match-wide controls. The server remains authoritative.
+	if not (CoD.isHost and CoD.isHost()) or UIExpression.DvarString(nil, "zmqol_cheats_allowed") ~= "1" then
+		QolCheatsButtons:addButton(Engine.Localize("CHEATS UNAVAILABLE"), Engine.Localize("Host only. Enable CHEATS in GAME 3, or use .grant <host> cheats."))
+		return QolCheatsContainer
+	end
+	local T = function (Buttons, ClientIndex, Label, DvarName, Description)
+		return CoD.OptionsSettings.QolToggle(Buttons, ClientIndex, Label, DvarName, Description, true)
+	end
+	local C = function (Buttons, ClientIndex, Label, DvarName, Description, Choices)
+		return CoD.OptionsSettings.QolChoice(Buttons, ClientIndex, Label, DvarName, Description, Choices, true)
+	end
 
 	-- 🛑 godmode / ghostmode, NOT god / ghost. Those two names belong to the
 	-- mod's CHAT-COMMAND dvar channel, which blanks them the moment they are
@@ -2715,7 +2735,7 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 		ZmQolRounds[#ZmQolRounds + 1] = { "10000", 10000 }
 	end
 
-	CoD.OptionsSettings.QolChoice(QolCheatsButtons, LocalClientIndex, "CHANGE ROUND", "set_round",
+	C(QolCheatsButtons, LocalClientIndex, "CHANGE ROUND", "set_round",
 		"Jump to a round. Returns to OFF once it fires.", ZmQolRounds)
 	T(QolCheatsButtons, LocalClientIndex, "KILL HORDE",      "kill_horde",     "Kill every zombie on the map. Bosses are left alone.")
 	T(QolCheatsButtons, LocalClientIndex, "END ROUND",       "end_round",      "Finish this round now.")
@@ -2740,7 +2760,7 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	--  set_points 1000000 would hand out a million points on the next launch
 	--  before the player had touched anything.
 	-- ========================================================================
-	CoD.OptionsSettings.QolChoice(QolCheatsButtons, LocalClientIndex, "SET POINTS", "set_points",
+	C(QolCheatsButtons, LocalClientIndex, "SET POINTS", "set_points",
 		"Sets your points to this amount. Pick a lower one to go back down.", {
 			{ "NONE", 0 }, { "1000", 1000 }, { "5000", 5000 }, { "10000", 10000 },
 			{ "100000", 100000 }, { "1000000", 1000000 }
@@ -2796,7 +2816,7 @@ CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientInde
 	end
 
 	if ZmTele ~= nil then
-		CoD.OptionsSettings.QolChoice(QolCheatsButtons, LocalClientIndex, "TELEPORT", "teleport",
+		C(QolCheatsButtons, LocalClientIndex, "TELEPORT", "teleport",
 			"Pick a landmark on this map, then use EXECUTE TELEPORT below to jump there.", ZmTele)
 
 		T(QolCheatsButtons, LocalClientIndex, "EXECUTE TELEPORT", "execute_teleport",

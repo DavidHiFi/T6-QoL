@@ -35,12 +35,9 @@
 
 init()
 {
-    zmqol_dev_commands();
-
-    //  2026-10-19 - the multiplayer command layer builds its table and seeds
-    //  its switch dvar here. Dormant until zmqol_commands_mp is set to 1;
-    //  see that file's banner for the retirement plan.
+    // Build the mandatory permission table and start mode-state updates.
     scripts\zm\zmqol_commands_mp::zmqol_commands_mp_init();
+    zmqol_dev_commands();
 }
 
 //  The host and a solo player own the server dvars. With no host player at all
@@ -457,24 +454,9 @@ zmqol_dev_command_listener()
         // Strip the prefix character, leaving the bare command word.
         cmd = getsubstr( tokens[0], 1 );
 
-        //  2026-10-19 - the multiplayer command layer (scripts\zm\zmqol_commands_mp.gsc)
-        //  sits in front of the gate when its dvar is on: permission levels,
-        //  matcher v2 and the .p / .pay semantics. It returns 1 only when it
-        //  consumed the line; the gate and chain below stay the default path -
-        //  the layer is dormant until the live parity probe passes.
-        if ( scripts\zm\zmqol_commands_mp::zmqol_commands_mp_active() && scripts\zm\zmqol_commands_mp::zmqol_mp_dispatch( player, cmd, tokens ) )
+        // Permissions always run; the remaining chain only executes commands.
+        if ( scripts\zm\zmqol_commands_mp::zmqol_mp_dispatch( player, cmd, tokens ) )
             continue;
-
-        //  Co-op: only the host may change the match or give power. A remote
-        //  player keeps the commands that touch their own view. The test is
-        //  self == gethostplayer() exactly, not the popt_is_host() helper: an
-        //  unknown host must FAIL CLOSED here (nobody runs match commands),
-        //  while the dvar readers fail open to the shipped defaults instead.
-        if ( !zmqol_popt_cmd_open( cmd ) && player != gethostplayer() )
-        {
-            player iprintln( "^1[zm_qol] ^7." + cmd + " ^1is host only" );
-            continue;
-        }
 
         if ( cmd == "my" || cmd == "popt" || cmd == "mine" )
         {
