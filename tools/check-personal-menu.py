@@ -26,6 +26,9 @@ def main():
         return 2
     source = (ROOT / 'ui/t6/menus/optionssettings.lua').read_text()
     factories = '\n'.join(function(source, name) for name in ('QolToggle', 'QolChoice'))
+    tab_start = source.index('\tSettingsTabs:addTab(LocalClientIndex, "GAME 1"')
+    tab_end = source.index('\treturn OptionsSettingsWidget', tab_start)
+    navigation = '\nlocal function BuildTabs(SettingsTabs, LocalClientIndex)\n' + source[tab_start:tab_end] + '\nend\n'
     module = (ROOT / 'ui_mp/t6/zombie/qolpersonaloptions.lua').read_text()
     harness = r'''
 local values, sent, archives = {}, {}, {}
@@ -39,7 +42,7 @@ Engine = {
     Localize = function (text) return text end,
     SetDvar = function (name, value) values[name] = tostring(value) end,
     SendMenuResponse = function (controller, menu, response)
-        assert(menu == 'luisystem')
+        assert(menu == 'luisystem' and not string.find(response, '%s'), 'the response must stay one command token')
         sent[#sent + 1] = {controller, response}
     end
 }
@@ -73,7 +76,7 @@ for name, spec in pairs(Options.Personal) do
     Options.Choice(2, name)({value = spec[1]}, true)
     assert(#sent == before + 1)
     assert(sent[#sent][1] == 2)
-    assert(sent[#sent][2] == 'zmqol_popt ' .. name .. ' ' .. tostring(spec[1]))
+    assert(sent[#sent][2] == 'zmqol_popt:' .. name .. ':' .. string.gsub(tostring(spec[1]), '%s+', ':'))
 end
 assert(Options.Choice(0, 'sv_cheats') == nil)
 assert(CoD.OptionsSettings.QolToggle(list, 2, 'GOD', 'godmode', '') == nil)
@@ -85,7 +88,7 @@ toggle.choices[1].callback({value = 0}, true)
 assert(values.fog_enabled == '0' and #sent == count + 1)
 local enum = CoD.OptionsSettings.QolChoice(list, 2, 'TIMERS', 'hud_timers', '', {{'OFF', 0}, {'ROUND', 3}})
 enum.choices[2].callback({value = 3}, true)
-assert(values.hud_timers == '3' and sent[#sent][2] == 'zmqol_popt hud_timers 3')
+assert(values.hud_timers == '3' and sent[#sent][2] == 'zmqol_popt:hud_timers:3')
 -- A retained selector never sends from the frontend. Hosting still uses the same transport.
 inGame = 0
 Options.Choice(2, 'voice_lines')({value = 0}, nil)
@@ -95,7 +98,7 @@ assert(#sent == count + 2)
 inGame, host = 1, true
 assert(CoD.OptionsSettings.QolToggle(list, 0, 'RULE', 'remove_round_cap', '') ~= nil)
 Options.Send(0, 'fog_enabled', 1)
-assert(sent[#sent][1] == 0 and sent[#sent][2] == 'zmqol_popt fog_enabled 1')
+assert(sent[#sent][1] == 0 and sent[#sent][2] == 'zmqol_popt:fog_enabled:1')
 host = false
 local tick
 local menu = {
@@ -116,7 +119,7 @@ for index = 1, 30 do tick() end
 assert(#sent == count + 26, 'one sync per token')
 local synced = {}
 for index = count + 1, #sent do
-    local name = string.match(sent[index][2], '^zmqol_popt ([%w_]+) ')
+    local name = string.match(sent[index][2], '^zmqol_popt:([%w_]+):')
     assert(not synced[name], 'duplicate name')
     synced[name] = true
 end
@@ -128,9 +131,22 @@ host = true
 values.zmqol_popt_sync = 'spawn_3'
 tick()
 assert(#sent == count + 52, 'host spawn must preserve solo preferences')
-print('PASS: 26 personal callbacks, host/frontend gates, hidden shared rows, saved spawn and respawn sync')
+local tabs = {tabsList = {1, 2, 3, 4}, names = {}}
+tabs.addTab = function (self, client, label) self.tabsList[#self.tabsList + 1] = label; self.names[label] = true end
+tabs.loadTab = function (self, client, index) assert(index >= 1 and index <= #self.tabsList); self.loaded = index end
+tabs.refreshTab = function () error('expected a retained tab index') end
+host = false
+CoD.OptionsSettings.CurrentTabIndex = 7
+BuildTabs(tabs, 2)
+assert(#tabs.tabsList == 6 and not tabs.names['GAME 2'] and tabs.loaded == 1)
+tabs.tabsList, tabs.names = {1, 2, 3, 4}, {}
+host = true
+CoD.OptionsSettings.CurrentTabIndex = 7
+BuildTabs(tabs, 0)
+assert(#tabs.tabsList == 7 and tabs.names['GAME 2'] and tabs.loaded == 7)
+print('PASS: 26 personal callbacks, host/frontend gates, hidden shared rows, saved spawn and respawn sync, nonempty tab navigation')
 '''
-    proc = subprocess.run([lua, '-'], input=harness + module + factories + checks,
+    proc = subprocess.run([lua, '-'], input=harness + module + factories + navigation + checks,
                           text=True, cwd=ROOT, capture_output=True)
     print(proc.stdout, end='')
     print(proc.stderr, end='', file=sys.stderr)

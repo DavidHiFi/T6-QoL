@@ -3118,11 +3118,14 @@ LUI.createMenu.OptionsSettingsMenu = function (LocalClientIndex)
 	SettingsTabs:addTab(LocalClientIndex, "GAME 1", CoD.OptionsSettings.CreateQolTab)
 	-- v1.99.93 - the PATCHES tab, directly after GAME as asked then; renamed
 	-- GAME 2 in v2.12.5, contents untouched.
-	SettingsTabs:addTab(LocalClientIndex, "GAME 2", CoD.OptionsSettings.CreateQolPatchesTab)
+	-- This page contains shared rules only; an empty tab cannot receive focus.
+	if not CoD.QolPersonalOptions.Remote() then
+		SettingsTabs:addTab(LocalClientIndex, "GAME 2", CoD.OptionsSettings.CreateQolPatchesTab)
+	end
 	-- v2.12.5 - GAME 3, directly after GAME 2 as asked.
 	SettingsTabs:addTab(LocalClientIndex, "GAME 3", CoD.OptionsSettings.CreateQolGame3Tab)
 	if CoD.OptionsSettings.CurrentTabIndex then
-		if CoD.OptionsSettings.CurrentTabIndex > 7 then
+		if CoD.OptionsSettings.CurrentTabIndex > #SettingsTabs.tabsList then
 			CoD.OptionsSettings.CurrentTabIndex = 1
 		end
 		SettingsTabs:loadTab(LocalClientIndex, CoD.OptionsSettings.CurrentTabIndex)

@@ -36,7 +36,9 @@ Options.Value = function (controller, name)
 end
 Options.Send = function (controller, name, value)
     if UIExpression.IsInGame() == 1 and Options.Personal[name] then
-        Engine.SendMenuResponse(controller, "luisystem", "zmqol_popt " .. name .. " " .. tostring(value))
+        -- One response token follows the stock mr command's argument shape.
+        local encoded = string.gsub(tostring(value), "%s+", ":")
+        Engine.SendMenuResponse(controller, "luisystem", "zmqol_popt:" .. name .. ":" .. encoded)
     end
 end
 Options.Choice = function (controller, name)

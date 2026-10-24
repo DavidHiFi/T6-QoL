@@ -87,7 +87,7 @@ zmqol_menu_listen()
         self waittill( "menuresponse", menu, response );
         if ( menu != "luisystem" || !isstring( response ) || response.size > 140 )
             continue;
-        words = strtok( response, " " );
+        words = strtok( response, ":" );
         value = zmqol_menu_value( words );
         if ( !isdefined( value ) )
             continue;
