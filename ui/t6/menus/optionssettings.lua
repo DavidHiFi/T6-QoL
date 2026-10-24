@@ -489,6 +489,8 @@ if ZmQolModLoaded() and CoD and CoD.OptionsControls and CoD.OptionsControls.Crea
 	end
 end
 
+require("T6.Zombie.QolPersonalOptions")
+
 CoD.OptionsSettings = {}
 CoD.OptionsSettings.CurrentTabIndex = 1
 CoD.OptionsSettings.NeedVidRestart = false
@@ -1081,8 +1083,14 @@ CoD.OptionsSettings.QolDofCallback = function (DofChoice)
 end
 
 CoD.OptionsSettings.QolAddDepthOfFieldRow = function (ButtonList, LocalClientIndex)
+	CoD.QolPersonalOptions.Seed(LocalClientIndex, "dof_quality")
 	local DOFChoices = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize("PLATFORM_DEPTH_OF_FIELD_CAPS"), "dof_quality", "Blurs whatever you are not aiming at.")
-	local Apply = CoD.OptionsSettings.QolDofCallback
+	local Apply = function (Choice, UserRequested)
+		CoD.OptionsSettings.QolDofCallback(Choice)
+		if UserRequested == true then
+			CoD.QolPersonalOptions.Send(LocalClientIndex, "dof_quality", Choice.value)
+		end
+	end
 	DOFChoices:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0, nil, Apply)
 	DOFChoices:addChoice(LocalClientIndex, Engine.Localize("PLATFORM_LOW_CAPS"), 1, nil, Apply)
 	DOFChoices:addChoice(LocalClientIndex, Engine.Localize("PLATFORM_MEDIUM_CAPS"), 2, nil, Apply)
@@ -1687,9 +1695,13 @@ CoD.OptionsSettings.QolCheatChoice = function (LocalClientIndex)
 end
 
 CoD.OptionsSettings.QolChoice = function (ButtonList, LocalClientIndex, Label, DvarName, Description, Choices, CheatRow)
+	if CoD.QolPersonalOptions.Remote() and not CoD.QolPersonalOptions.Personal[DvarName] and not CoD.QolPersonalOptions.Local[DvarName] then
+		return
+	end
+	local Apply = CoD.QolPersonalOptions.Choice(LocalClientIndex, DvarName)
 	local Selector = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize(Label), DvarName, Engine.Localize(Description))
 	for i = 1, #Choices do
-		Selector:addChoice(LocalClientIndex, Engine.Localize(Choices[i][1]), Choices[i][2], nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or nil)
+		Selector:addChoice(LocalClientIndex, Engine.Localize(Choices[i][1]), Choices[i][2], nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or Apply)
 	end
 	CoD.OptionsSettings.QolArchive(DvarName)
 	return Selector
@@ -1796,9 +1808,13 @@ CoD.OptionsSettings.QolMigrateFlash = function ()
 end
 
 CoD.OptionsSettings.QolToggle = function (ButtonList, LocalClientIndex, Label, DvarName, Description, CheatRow)
+	if CoD.QolPersonalOptions.Remote() and not CoD.QolPersonalOptions.Personal[DvarName] and not CoD.QolPersonalOptions.Local[DvarName] then
+		return
+	end
+	local Apply = CoD.QolPersonalOptions.Choice(LocalClientIndex, DvarName)
 	local Selector = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize(Label), DvarName, Engine.Localize(Description))
-	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0, nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or nil)
-	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1, nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or nil)
+	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0, nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or Apply)
+	Selector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1, nil, CheatRow and CoD.OptionsSettings.QolCheatChoice(LocalClientIndex) or Apply)
 	CoD.OptionsSettings.QolArchive(DvarName)
 	return Selector
 end
@@ -2594,6 +2610,7 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 
 	-- Moved from the pre-game lobby. This remains the stock gametype setting,
 	-- so map-start code reads the same "magic" value as before.
+	if not CoD.QolPersonalOptions.Remote() then
 	local MagicSelector = QolGame3Buttons:addGametypeSettingLeftRightSelector(
 		LocalClientIndex,
 		Engine.Localize("ZMUI_MAGIC_CAPS"),
@@ -2625,12 +2642,16 @@ CoD.OptionsSettings.CreateQolGame3Tab = function (QolGame3Tab, LocalClientIndex)
 		CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_DISABLED_CAPS"), 0)
 		CheatsSelector:addChoice(LocalClientIndex, Engine.Localize("MENU_ENABLED_CAPS"), 1)
 	end
+	end
 
 	return QolGame3Container                          -- 7 rows for the host (6 without CHEATS) + 0 spacers = 7.0 (v2.18.x: SCAVENGER BUFF)
 end
 
 CoD.OptionsSettings.CreateQolCheatsTab = function (QolCheatsTab, LocalClientIndex)
 	local QolCheatsContainer = LUI.UIContainer.new()
+	if CoD.QolPersonalOptions.Remote() then
+		return QolCheatsContainer
+	end
 	local QolCheatsButtons = CoD.Options.CreateButtonList()
 	QolCheatsTab.buttonList = QolCheatsButtons
 	QolCheatsContainer:addElement(QolCheatsButtons)
@@ -3129,11 +3150,14 @@ LUI.createMenu.OptionsSettingsMenu = function (LocalClientIndex)
 	SettingsTabs:addTab(LocalClientIndex, "GAME 1", CoD.OptionsSettings.CreateQolTab)
 	-- v1.99.93 - the PATCHES tab, directly after GAME as asked then; renamed
 	-- GAME 2 in v2.12.5, contents untouched.
-	SettingsTabs:addTab(LocalClientIndex, "GAME 2", CoD.OptionsSettings.CreateQolPatchesTab)
+	-- This page contains shared rules only; an empty tab cannot receive focus.
+	if not CoD.QolPersonalOptions.Remote() then
+		SettingsTabs:addTab(LocalClientIndex, "GAME 2", CoD.OptionsSettings.CreateQolPatchesTab)
+	end
 	-- v2.12.5 - GAME 3, directly after GAME 2 as asked.
 	SettingsTabs:addTab(LocalClientIndex, "GAME 3", CoD.OptionsSettings.CreateQolGame3Tab)
 	if CoD.OptionsSettings.CurrentTabIndex then
-		if CoD.OptionsSettings.CurrentTabIndex > 7 then
+		if CoD.OptionsSettings.CurrentTabIndex > #SettingsTabs.tabsList then
 			CoD.OptionsSettings.CurrentTabIndex = 1
 		end
 		SettingsTabs:loadTab(LocalClientIndex, CoD.OptionsSettings.CurrentTabIndex)
@@ -3196,13 +3220,18 @@ ZmQolInstallParentOptionsMenu = function ()
 				AddedQolPages = true
 
 				local HudButton = AddButton("HUD", "open_qol_hud")
-				local CheatsButton = AddButton("CHEATS", "open_qol_cheats")
+				local CheatsButton
+				if not CoD.QolPersonalOptions.Remote() then
+					CheatsButton = AddButton("CHEATS", "open_qol_cheats")
+				end
 
 				if UIExpression.IsInGame() == 0 and not CoD.isSinglePlayer then
 					HudButton.brackets:close()
 					HudButton.m_skipAnimation = true
-					CheatsButton.brackets:close()
-					CheatsButton.m_skipAnimation = true
+					if CheatsButton then
+						CheatsButton.brackets:close()
+						CheatsButton.m_skipAnimation = true
+					end
 				end
 			end
 

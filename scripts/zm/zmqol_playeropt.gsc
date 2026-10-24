@@ -13,8 +13,9 @@
 //     the console watcher took players[0] as the host, which slot order does
 //     not guarantee.
 //
-//  🌟 THE ONLY CLIENT-TO-SERVER CHANNEL THIS MOD USES IS CHAT. The "say"
-//  notify carries the speaking player, so `.my <option> <value>` writes
+//  The "say" notify carries the speaking player. The Options menu has its
+//  own validated menu-response listener in zmqol_personal_menu.gsc.
+//  `.my <option> <value>` writes
 //  self.zmqol_popt[option] on whoever typed it. zmqol_popt() reads that first.
 //  Without an override, the host (or a solo player, who is the host) reads the
 //  server dvar exactly as before, and a remote player reads the row's shipped
