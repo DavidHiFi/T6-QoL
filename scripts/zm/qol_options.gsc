@@ -1303,17 +1303,10 @@ qol_opt_night_mode()
     }
 
     b_on = 0;
-    n_dof_prev = -1;
 
     for ( ;; )
     {
         b_want = self scripts\zm\zmqol_playeropt::zmqol_popt( "night_mode", 0 );
-        n_dof = self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 );
-
-        if ( !b_want && n_dof != n_dof_prev )
-            self setclientdvar( "r_dof_enable", int( n_dof > 0 ) );
-
-        n_dof_prev = n_dof;
 
         if ( b_want && !b_on )
         {
@@ -1638,7 +1631,7 @@ qol_opt_night_off()
     //  the way in would be stale if the row were changed while night mode was
     //  on, and would then overwrite the player's newer choice.
     //  ========================================================================
-    self setclientdvar( "r_dof_enable", int( self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) > 0 ) );
+    self scripts\zm\quality_of_life::zmqol_dof_apply( self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) );
 
 }
 

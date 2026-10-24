@@ -4277,7 +4277,7 @@ zmqol_spawnintermission_dof( usedefaultcallback )
 {
     self maps\mp\gametypes_zm\_globallogic_spawn::spawnintermission( usedefaultcallback );
 
-    if ( !getdvarintdefault( "dof_quality", 0 ) )
+    if ( !self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) )
         self zmqol_dof_off_tuple();
 }
 
@@ -4352,13 +4352,13 @@ zmqol_dof_quality_watch()
     self endon( "disconnect" );
     level endon( "game_ended" );
 
-    n_prev = getdvarintdefault( "dof_quality", 0 );
+    n_prev = self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 );
 
     for ( ;; )
     {
         wait 0.25;
 
-        n_now = getdvarintdefault( "dof_quality", 0 );
+        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 );
 
         if ( n_now != n_prev )
         {
@@ -4386,11 +4386,11 @@ zmqol_dof_connect_apply()
 {
     self endon( "disconnect" );
 
-    self zmqol_dof_apply( getdvarintdefault( "dof_quality", 0 ) );
+    self zmqol_dof_apply( self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) );
 
     self waittill( "spawned_player" );
 
-    self zmqol_dof_apply( getdvarintdefault( "dof_quality", 0 ) );
+    self zmqol_dof_apply( self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) );
     self thread zmqol_dof_quality_watch();
 }
 
@@ -4407,7 +4407,7 @@ zmqol_dof_roundend_watch()
         //  server frames of margin, not a guess at exact timing.
         wait 0.1;
 
-        if ( !getdvarintdefault( "dof_quality", 0 ) )
+        if ( !self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) )
             self zmqol_dof_off_tuple();
     }
 }
