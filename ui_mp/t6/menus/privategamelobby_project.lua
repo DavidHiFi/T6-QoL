@@ -506,6 +506,14 @@ local QolCrewRow = function (Index, Maps, ModeGroups, Names)
 		Row.labels[i + 1] = Names[i]
 		Row.values[i + 1] = i
 	end
+	pcall(require, "T6.QolCharacterPack")
+	local extra = CoD.QolCharacterPack or {}
+	for slot = 4, 7 do
+		if extra[slot] and extra[slot].name then
+			Row.labels[#Row.labels + 1] = extra[slot].name
+			Row.values[#Row.values + 1] = slot + 1
+		end
+	end
 	CoD.PrivateGameLobby.QolCharacter[Index] = Row
 end
 
