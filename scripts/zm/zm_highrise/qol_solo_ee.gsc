@@ -123,7 +123,10 @@ qol_spawn_navcomputer()
     if ( !b_spawn_navcomputer )
         return;
 
-    get_players()[0] maps\mp\zombies\_zm_buildables::player_finish_buildable( level.sq_buildable.buildablezone );
+    if ( !isdefined( level.sq_buildable ) || !isdefined( level.sq_buildable.buildablezone ) )
+        return;
+
+    players[i] maps\mp\zombies\_zm_buildables::player_finish_buildable( level.sq_buildable.buildablezone );
 
     if ( isdefined( level.sq_buildable ) && isdefined( level.sq_buildable.model ) )
     {
