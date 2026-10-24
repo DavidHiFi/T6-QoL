@@ -38,16 +38,17 @@ init()
     zmqol_dev_commands();
 }
 
-//  The host and a solo player own the server dvars. With no host player at all
-//  (a dedicated server) everybody falls back to the dvars, the old behaviour.
+//  Only the engine-reported listen host owns the server dvars. A dedicated
+//  server has no player host: players use personal overrides or defaults,
+//  and server-owned rule threads still read the server configuration.
 zmqol_popt_is_host()
 {
     if ( !isplayer( self ) )
-        return 1;
+        return 0;
 
     e_host = gethostplayer();
 
-    return !isdefined( e_host ) || e_host == self;
+    return isdefined( e_host ) && e_host == self;
 }
 
 //  This player's value for a personal option: their own override, else the
