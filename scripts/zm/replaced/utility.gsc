@@ -213,7 +213,7 @@ register_map_spawn(origin, angles, zone, team_num)
 	spawn_struct.angles = angles;
 	spawn_struct.script_string = gametype + "_" + location;
 
-	if (isDefined(team_num) || (gametype != "zgrief" && gametype != "zmeat"))
+	if (isDefined(team_num) || gametype == "zstandard")
 	{
 		spawn_struct.script_noteworthy = "initial_spawn";
 	}

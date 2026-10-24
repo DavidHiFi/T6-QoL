@@ -2,8 +2,8 @@
 
 init()
 {
-    // Competitive modes retain stock team separation and spawn ownership.
-    if ( getdvar( "g_gametype" ) == "zgrief" || getdvar( "g_gametype" ) == "zmeat" )
+    // Classic and competitive modes retain stock spawn selection.
+    if ( getdvar( "ui_zm_gamemodegroup" ) != "zsurvival" )
         return;
 
     qol_install_spawns( 0 );
