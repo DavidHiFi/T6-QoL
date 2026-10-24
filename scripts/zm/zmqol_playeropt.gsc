@@ -248,7 +248,14 @@ zmqol_popt_command( tokens )
 
 zmqol_dev_commands()
 {
-    setdvar( "sv_cheats", 1 );
+    //  🛑 2026-10-19 - sv_cheats IS NO LONGER FORCED (multiplayer plan fix 4,
+    //  decision 4). The force ran every session with engine cheats open
+    //  whether the host wanted them or not. The mod's own commands do not
+    //  need the engine setting (script builtins and the chat pipe), and the
+    //  host can turn sv_cheats back on from the pause menu GAME 3 row when
+    //  they want the usual Plutonium console cheats. The old reason note in
+    //  quality_of_life.gsc's chat-commands banner is updated in the same
+    //  commit.
     level thread zmqol_dev_command_listener();
     level thread zmqol_console_command_watcher();
 }
