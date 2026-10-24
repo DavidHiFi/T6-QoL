@@ -13,8 +13,9 @@
 //     the console watcher took players[0] as the host, which slot order does
 //     not guarantee.
 //
-//  🌟 THE ONLY CLIENT-TO-SERVER CHANNEL THIS MOD USES IS CHAT. The "say"
-//  notify carries the speaking player, so `.my <option> <value>` writes
+//  The "say" notify carries the speaking player. The Options menu has its
+//  own validated menu-response listener in zmqol_personal_menu.gsc.
+//  `.my <option> <value>` writes
 //  self.zmqol_popt[option] on whoever typed it. zmqol_popt() reads that first.
 //  Without an override, the host (or a solo player, who is the host) reads the
 //  server dvar exactly as before, and a remote player reads the row's shipped
@@ -38,8 +39,8 @@ init()
     zmqol_dev_commands();
 }
 
-//  The host and a solo player own the server dvars. With no host player at all
-//  (a dedicated server) everybody falls back to the dvars, the old behaviour.
+//  Only the actual listen host owns the server dvars. Dedicated clients keep
+//  their preferences on their own player entity too.
 zmqol_popt_is_host()
 {
     if ( !isplayer( self ) )
@@ -47,7 +48,7 @@ zmqol_popt_is_host()
 
     e_host = gethostplayer();
 
-    return !isdefined( e_host ) || e_host == self;
+    return isdefined( e_host ) && e_host == self;
 }
 
 //  This player's value for a personal option: their own override, else the
