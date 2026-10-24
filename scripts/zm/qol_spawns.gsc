@@ -21,6 +21,7 @@ qol_install_spawns( wait_for_player )
 
 qol_initial_spawn( spawnpoints, player )
 {
+    println( "[zm_qol] co-op initial spawn selection" );
     // Co-op can use both authored team halves. A disconnected player's ordinal
     // must not send every later join back to spawnpoints[0].
     point = qol_free_spawn( spawnpoints, player, 1 );
