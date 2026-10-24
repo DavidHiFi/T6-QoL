@@ -3335,7 +3335,7 @@ first_spawn()
         //
         //  🛑 frame and track are never recoloured either way. They are the
         //  border and the backing plate, not a readout.
-        str_hc = getdvar( "hud_color_health" );
+        str_hc = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_color_health", "1 1 1" );
 
         if ( str_hc != "1 1 1" && str_hc != "" )
         {
@@ -4059,8 +4059,7 @@ nofog_onplayerconnect()
         //  the renderer reads, so typing `r_fog 0` at the console still works
         //  until the next spawn.
         // ====================================================================
-        player setclientdvar( "r_fog", getdvarintdefault( "fog_enabled", 1 ) );
-        player thread zmqol_fog_dvar_watch();
+        player thread scripts\zm\qol_options::zmqol_fog_dvar_watch();
 
         //  v2.9.31 - explicit zeros on every connect, for the same reason the
         //  fog line above sets 1 explicitly: zmqol_raygun_hand_watch() below
@@ -4088,45 +4087,6 @@ nofog_onplayerconnect()
         //  because this is a per-player connect hook that always runs, and the
         //  bind must exist before the first flight, not after it.
         player zmqol_fly_key_bind();
-    }
-}
-
-// ============================================================================
-//  zmqol_fog_dvar_watch  -  v1.99.91, the FOG row's live half
-//
-//  The ADVANCED tab's FOG row writes `fog_enabled` (an ordinary mod dvar, so it
-//  archives to the per-mod config like every other row); the renderer only ever
-//  reads r_fog. This carries one to the other the moment it changes, so the row
-//  still applies instantly the way it did when it wrote r_fog directly.
-//
-//  🛑 ONE WRITER, AND ONLY ON CHANGE. setclientdvar every quarter second would
-//  fight anyone typing `r_fog 0` at the console and would spend a reliable
-//  command each time ([[t6-reliable-command-ring]]); this writes only when
-//  fog_enabled actually moves.
-// ============================================================================
-zmqol_fog_dvar_watch()
-{
-    if ( zmqol_minimal() )
-        return;
-
-    self endon( "disconnect" );
-    level endon( "game_ended" );
-
-    //  Seeded with the value already applied by the connect hook, so the first
-    //  pass is a no-op.
-    n_prev = getdvarintdefault( "fog_enabled", 1 );
-
-    for ( ;; )
-    {
-        wait 0.25;
-
-        n_now = getdvarintdefault( "fog_enabled", 1 );
-
-        if ( n_now != n_prev )
-        {
-            n_prev = n_now;
-            self setclientdvar( "r_fog", n_now );
-        }
     }
 }
 
