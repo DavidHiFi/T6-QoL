@@ -43,9 +43,10 @@ Options.Choice = function (controller, name)
     if not Options.Personal[name] then return nil end
     Options.Seed(controller, name)
     return function (choice, userRequested)
-        -- The stock selector invokes callbacks while constructing choices too.
-        if userRequested ~= true then return end
+        -- Preserve stock local writes while constructing choices. Only a user
+        -- change is sent to the server or archived again.
         Engine.SetDvar(name, choice.value)
+        if userRequested ~= true then return end
         CoD.OptionsSettings.QolArchive(name)
         Options.Send(controller, name, choice.value)
     end

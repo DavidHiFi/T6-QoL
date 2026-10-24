@@ -88,6 +88,8 @@ enum.choices[2].callback({value = 3}, true)
 assert(values.hud_timers == '3' and sent[#sent][2] == 'zmqol_popt hud_timers 3')
 -- A retained selector never sends from the frontend. Hosting still uses the same transport.
 inGame = 0
+Options.Choice(2, 'voice_lines')({value = 0}, nil)
+assert(values.voice_lines == '0', 'frontend construction must retain stock local writes')
 Options.Send(2, 'fog_enabled', 0)
 assert(#sent == count + 2)
 inGame, host = 1, true
