@@ -9587,7 +9587,7 @@ zmqol_mp_weapons_init()
     //  which is what zmqol_add_mp_weapon() does - because that is what was asked
     //  for and because every asset it needs now rides in mod.ff, so no map can
     //  be missing a piece of it.
-    zmqol_add_mp_weapon( "metalstorm_mms_zm", "metalstorm_mms_upgraded_zm", &"WEAPON_METALSTORM", 1000, "sniper" );
+    scripts\zm\qol_weapon_budget::add_psr( "metalstorm_mms_zm", "metalstorm_mms_upgraded_zm", &"WEAPON_METALSTORM", 1000, "sniper" );
 
     // ========================================================================
     //  v2.15.0 - THE FOUR BLACK OPS 1 GUNS, weapons 16-19. User request
@@ -9780,14 +9780,14 @@ zmqol_mp_weapons_init()
     //  and back down when it is released, through each def's altWeapon field. They
     //  must exist on the level or the chain cannot resolve and the gun stops
     //  charging at stage one.
-    zmqol_include_variant( "metalstorm2_mms_zm" );
-    zmqol_include_variant( "metalstorm3_mms_zm" );
-    zmqol_include_variant( "metalstorm4_mms_zm" );
-    zmqol_include_variant( "metalstorm5_mms_zm" );
-    zmqol_include_variant( "metalstorm2_mms_upgraded_zm" );
-    zmqol_include_variant( "metalstorm3_mms_upgraded_zm" );
-    zmqol_include_variant( "metalstorm4_mms_upgraded_zm" );
-    zmqol_include_variant( "metalstorm5_mms_upgraded_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm2_mms_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm3_mms_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm4_mms_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm5_mms_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm2_mms_upgraded_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm3_mms_upgraded_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm4_mms_upgraded_zm" );
+    scripts\zm\qol_weapon_budget::include_psr_variant( "metalstorm5_mms_upgraded_zm" );
 
     //  🛑 was a hardcoded "19" that drifted from the real list (old logs print
     //  13 for a 15-pair list). Counted, not asserted - and it is map-dependent
