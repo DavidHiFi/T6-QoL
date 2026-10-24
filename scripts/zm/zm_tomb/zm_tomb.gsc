@@ -23,6 +23,7 @@ main()
     replaceFunc( maps\mp\zm_tomb_giant_robot::zombie_stomp_death, ::zmqol_tomb_zombie_stomp_death );
     replaceFunc( maps\mp\zm_tomb_ee_side::check_for_change, ::origins_change_patch ); // prone "loose change" -> 100
     replaceFunc( maps\mp\zm_tomb_utility::check_solo_status, ::qol_check_solo_status ); // 1 player = solo rules
+    replaceFunc( maps\mp\zm_tomb_utility::adjustments_for_solo, ::zmqol_adjustments_for_solo );
 
     // ========================================================================
     //  v2.11.11 - THE PANZER DEATH CRASH.
@@ -1905,81 +1906,71 @@ origins_change_patch()
     }
 }
 
-// ============================================================================
-//  qol_check_solo_status  (replaces maps\mp\zm_tomb_utility::check_solo_status)
-//
-//  🛑 A one-player game on Plutonium was getting CO-OP rules. Stock:
-//
-//      if ( getnumexpectedplayers() == 1 && ( !sessionmodeisonlinegame() || !sessionmodeisprivate() ) )
-//          level.is_forever_solo_game = 1;
-//
-//  On retail the session clause is what separates "alone on the couch" from
-//  "online private lobby my friends can still join". Plutonium runs EVERY game
-//  - including the Solo entry - as an online private match, so both builtins
-//  return true, the OR is false, and the flag is never set no matter how the
-//  game was started. Origins then ran the whole map on co-op rules.
-//
-//  What that actually broke, all from stock (nothing here is a guess):
-//    - zm_tomb_utility::zone_capture_powerup - the start-bunker reward chest
-//      after the first generator gives reward_powerup_double_points in solo and
-//      reward_powerup_zombie_blood in co-op. The zombie blood the user got IS
-//      this branch.
-//    - zm_tomb_utility::adjustments_for_solo - the solo door/debris price cut
-//      and the 750-point Beretta/870 never applied.
-//    - zm_tomb_capture_zones::get_recapture_zombies_needed - 6 instead of 4.
-//    - zm_tomb_capture_zones::get_capture_rate - the slower co-op rate, scaled
-//      by (players in zone / players total), instead of rate_capture_solo.
-//    - _zm_ai_mechz - solo has its own Mechz behaviour.
-//
-//  Fix: keep stock's player-count test exactly, drop only the session-mode
-//  clause that Plutonium always fails. getnumexpectedplayers() is valid at this
-//  call site - stock reads it here itself. Evaluated once, never re-checked,
-//  which is what "forever solo" means in stock too.
-// ============================================================================
-//  v1.62.0: `<= 1`, matching zm_prison's copy. Origins already reported
-//  expected=1 in a real boot log, so this changes nothing here today - it is
-//  kept identical to Mob's on purpose, so the two cannot drift and so Origins
-//  is covered if its call site ever resolves the count as late as Mob's does.
-//  See the long note above zm_prison.gsc::qol_check_solo_status.
+// Zero expected players also occurs in co-op. A known second player wins
+// over that unresolved count, and a later join permanently ends solo rules.
 qol_check_solo_status()
 {
-    n_expected = getnumexpectedplayers();
-
-    if ( n_expected <= 1 )
-        level.is_forever_solo_game = 1;
-    else
-        level.is_forever_solo_game = 0;
-
-    println( "[zm_qol] solo status: expected=" + n_expected + " connected=" + getnumconnectedplayers() + " is_forever_solo_game=" + level.is_forever_solo_game );
-
-    //  ========================================================================
-    //  v2.13.0 - THE ONE CO-OP QUESTION THIS MAP CANNOT ANSWER OFFLINE, SO IT
-    //  ASKS THE LOG INSTEAD OF GUESSING.
-    //
-    //  The `<= 1` above differs from stock's `== 1` only when the engine
-    //  reports ZERO expected players. The v1.62.0 note thirty lines up says
-    //  Origins has never been seen to do that - it reported expected=1 - but
-    //  that reading is from a SOLO boot, and nobody has ever read this line
-    //  out of a co-op one. If a Mods-menu co-op game also resolves to 0, this
-    //  hands a two-player match the solo rules, and on THIS map that means
-    //  exactly the five stock behaviours the v1.62.0 note lists:
-    //    - zone_capture_powerup gives the solo reward chest (double points
-    //      rather than zombie blood) after the first generator
-    //    - adjustments_for_solo applies the solo door/debris prices and the
-    //      750-point Beretta/870
-    //    - get_recapture_zombies_needed returns 4 instead of 6
-    //    - get_capture_rate uses rate_capture_solo instead of the co-op rate
-    //    - _zm_ai_mechz runs its solo Panzer behaviour
-    //  Wrong, but playable - none of it is a script error.
-    //
-    //  IT IS DELIBERATELY NOT PRE-EMPTIVELY "FIXED". This value is read once
-    //  and never re-checked, which is what "forever solo" means in stock too,
-    //  and flipping it on a guess would break the solo case that is currently
-    //  correct on this map. One co-op boot and this log line settles it.
-    //  ========================================================================
-    if ( n_expected <= 1 )
-        println( "[zm_qol] *** solo rules are ON. If this is a CO-OP game, this line is the bug - report it with the two counts above." );
+    level.is_forever_solo_game = !scripts\zm\qol_coop::zmqol_coop_roster();
+    println( "[zm_qol] solo status: expected=" + getnumexpectedplayers() + " connected=" + getnumconnectedplayers() + " is_forever_solo_game=" + level.is_forever_solo_game );
+    level thread zmqol_coop_solo_watch();
 }
+
+zmqol_coop_solo_watch()
+{
+    level endon( "end_game" );
+    while ( level.is_forever_solo_game )
+    {
+        if ( scripts\zm\qol_coop::zmqol_coop_roster() )
+        {
+            level.is_forever_solo_game = 0;
+            if ( isdefined( level.zmqol_solo_doors ) )
+            {
+                foreach ( door in level.zmqol_solo_doors )
+                {
+                    if ( !isdefined( door ) )
+                        continue;
+                    door.zombie_cost = door.zmqol_coop_cost;
+                    hint = "default_buy_debris";
+                    if ( door.targetname == "zombie_door" )
+                        hint = "default_buy_door";
+                    door maps\mp\zombies\_zm_utility::set_hint_string( door, hint, door.zombie_cost );
+                }
+                foreach ( name in strtok( "beretta93r_zm 870mcs_zm", " " ) )
+                {
+                    weapon = level.zombie_weapons[name];
+                    weapon.cost = weapon.zmqol_coop_cost;
+                    weapon.ammo_cost = weapon.zmqol_coop_ammo_cost;
+                }
+            }
+            println( "[zm_qol] co-op: Origins forever solo cleared, players=" + get_players().size );
+            return;
+        }
+        wait 0.05;
+    }
+}
+
+// Save the stock co-op prices before applying its solo discount so a late
+// join can restore them without guessing prices or changing purchased doors.
+zmqol_adjustments_for_solo()
+{
+    if ( !level.is_forever_solo_game )
+        return;
+
+    level.zmqol_solo_doors = getentarray( "zombie_door", "targetname" );
+    foreach ( debris in getentarray( "zombie_debris", "targetname" ) )
+        level.zmqol_solo_doors[level.zmqol_solo_doors.size] = debris;
+    foreach ( door in level.zmqol_solo_doors )
+        door.zmqol_coop_cost = door.zombie_cost;
+    foreach ( name in strtok( "beretta93r_zm 870mcs_zm", " " ) )
+    {
+        weapon = level.zombie_weapons[name];
+        weapon.zmqol_coop_cost = weapon.cost;
+        weapon.zmqol_coop_ammo_cost = weapon.ammo_cost;
+        maps\mp\zm_tomb_utility::change_weapon_cost( name, 750 );
+    }
+    array_thread( level.zmqol_solo_doors, maps\mp\zm_tomb_utility::door_price_reduction_for_solo );
+}
+
 
 //  Stock maps\mp\zombies\_zm_ai_mechz::mechz_explode, unchanged except for the
 //  seventh radiusdamage argument. See the note in main() for why it is there.
