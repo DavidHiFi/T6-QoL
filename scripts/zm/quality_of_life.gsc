@@ -5232,8 +5232,10 @@ player_too_many_weapons_monitor()
 //                    you can take points away too.
 //      !god          toggle invulnerability on/off, with feedback either way.
 //
-//  sv_cheats is forced to 1 here so the commands behave consistently and the
-//  usual Plutonium console cheats keep working alongside them.
+//  sv_cheats is no longer forced on (multiplayer plan fix 4). The host's
+//  lobby / GAME 3 CHEATS row now selects cheat mode for the command layer:
+//  self cheats are open when enabled, and need named grants when disabled.
+//  Match-wide cheats remain host-only. See zmqol_commands_mp.gsc.
 //
 //  Mechanism: T6 fires a level notify "say" carrying the speaker and the raw
 //  message. Verified against a known-working release rather than guessed -
