@@ -66,9 +66,8 @@ in place, so you only need these if you want the art on its own.
 On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer. Install by hand; it works like any other Plutonium mod.
 
 1. Download the release zip and open the **`Mod Files`** folder inside it.
-2. Create a folder called `zm_qol` in `%LOCALAPPDATA%\Plutonium\storage\t6\mods\` *(on Linux, the same path inside your Plutonium prefix).*
-3. Copy these five files into it: `mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, `mod.all.sabs`. Nothing else is needed.
-4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
+2. Drag the **`zm_qol`** folder into `%LOCALAPPDATA%\Plutonium\storage\t6\mods\` *(on Linux, the same path inside your Plutonium prefix).* It holds the five mod files (`mod.ff`, `mod.iwd`, `mod.json`, `mod.all.sabl`, `mod.all.sabs`); nothing else is needed.
+3. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
 </details>
 

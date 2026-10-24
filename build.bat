@@ -8,7 +8,7 @@ REM  Edit any script under scripts\zm\ then double-click this.
 REM  Rebuilds mod.iwd and writes all 5 mod files to:
 REM    1) a send-ready copy:  <project>\build\zm_qol\
 REM    2) your Plutonium mods folder (skipped if Plutonium isn't installed)
-REM    3) installer\Mod Files\ - so the installer can never reinstall a stale
+REM    3) installer\Mod Files\zm_qol\ - so the installer can never reinstall a stale
 REM       build over a fresh one (see [6/9]'s comment for why this exists)
 REM  Use build.bat offline to pack and verify without deployment or global cleanup.
 REM  Needs only Windows + PowerShell (both built in) - no other tools.
@@ -421,7 +421,7 @@ if errorlevel 1 goto menuartfail
 echo.
 echo.
 echo [6/9] Refreshing the installer's own bundled copy:
-echo        %~dp0installer\Mod Files
+echo        %~dp0installer\Mod Files\zm_qol
 REM  ============================================================================
 REM  ?? v2.3.2 - THE INSTALLER WAS SILENTLY REVERTING EVERY FIX.
 REM
@@ -443,8 +443,13 @@ REM  .gitignore): it is a byte-for-byte copy of files already tracked at the
 REM  project root, and doubling ~115 MB of binaries in history for a copy this
 REM  script regenerates every run buys nothing.
 REM  ============================================================================
-call :deploy "%~dp0installer\Mod Files"
+REM  2026-10-24 - into a zm_qol folder inside Mod Files: the release zip is this
+REM  installer folder, and players drag that folder straight into mods\.
+REM  Find-ModSource looks there first. The old loose copies go, so a zipped
+REM  installer folder never carries two different builds.
+call :deploy "%~dp0installer\Mod Files\zm_qol"
 if errorlevel 1 echo    [skip] couldn't write the installer's bundled copy.
+if not errorlevel 1 for %%F in (%FILES%) do if exist "%~dp0installer\Mod Files\%%F" del /q "%~dp0installer\Mod Files\%%F"
 echo.
 echo [7/9] Cleaning this mod's LUI out of Plutonium's raw\ folder...
 REM  ============================================================================

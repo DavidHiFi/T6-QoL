@@ -179,7 +179,7 @@ before its first link. `tools/check-weapon-port.py` runs in both build scripts. 
 of two ways, and say which in the PR:
 
 - run `build_ff.bat`;
-- copy them from the `Mod Files` folder of the release zip that matches `main`.
+- copy them from the `Mod Files/zm_qol` folder of the release zip that matches `main`.
 
 If no release zip matches `main`, ask the owner instead of guessing.
 
@@ -236,8 +236,8 @@ not add new handoff files to the repository root.
 1. Start from `main` with a release-prep PR that bumps the version in `mod.json`.
 2. After it merges, build from that commit and tag it.
 3. Attach the mod zip, the HD texture pack and the controller icons.
-4. Download the published zip, extract it, and confirm the five mod files and the installer layout
-   are there.
+4. Download the published zip, extract it, and confirm the installer layout is there and the five mod
+   files sit in `Mod Files/zm_qol/`, the folder players drag into `mods`.
 5. Open every download link in `README.md`.
 6. Note the tag and commit in the release text. (v2.19.1 was published with no zip attached: issue
    #19.)

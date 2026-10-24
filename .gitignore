@@ -186,6 +186,9 @@ installer/Mod Files/mod.iwd
 installer/Mod Files/mod.json
 installer/Mod Files/mod.all.sabl
 installer/Mod Files/mod.all.sabs
+# 2026-10-24 - the copy now goes in installer\Mod Files\zm_qol\, the folder players drag into
+# mods; Find-ModSource looks there first. The loose names above stay for older checkouts.
+installer/Mod Files/zm_qol/
 
 # ============================================================================
 #  v2.2.0 - THE FULL RESHADE SHADER COLLECTION IS NOT TRACKED.
