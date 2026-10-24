@@ -21,6 +21,13 @@ Options.Local = {
 Options.Remote = function ()
     return UIExpression.IsInGame() == 1 and not (CoD.isHost and CoD.isHost())
 end
+Options.Seed = function (controller, name)
+    if not Options.Remote() then return end
+    local value = UIExpression.DvarString(controller, name)
+    if value == nil or value == "" then
+        Engine.SetDvar(name, Options.Personal[name][1])
+    end
+end
 Options.Value = function (controller, name)
     local spec = Options.Personal[name]
     local value = UIExpression.DvarString(controller, name)
@@ -34,6 +41,7 @@ Options.Send = function (controller, name, value)
 end
 Options.Choice = function (controller, name)
     if not Options.Personal[name] then return nil end
+    Options.Seed(controller, name)
     return function (choice, userRequested)
         -- The stock selector invokes callbacks while constructing choices too.
         if userRequested ~= true then return end

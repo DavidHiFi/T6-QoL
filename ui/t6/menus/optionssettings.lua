@@ -1083,6 +1083,7 @@ CoD.OptionsSettings.QolDofCallback = function (DofChoice)
 end
 
 CoD.OptionsSettings.QolAddDepthOfFieldRow = function (ButtonList, LocalClientIndex)
+	CoD.QolPersonalOptions.Seed(LocalClientIndex, "dof_quality")
 	local DOFChoices = ButtonList:addDvarLeftRightSelector(LocalClientIndex, Engine.Localize("PLATFORM_DEPTH_OF_FIELD_CAPS"), "dof_quality", "Blurs whatever you are not aiming at.")
 	local Apply = function (Choice, UserRequested)
 		CoD.OptionsSettings.QolDofCallback(Choice)

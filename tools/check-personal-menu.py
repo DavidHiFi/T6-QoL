@@ -67,6 +67,7 @@ for name, spec in pairs(Options.Personal) do
     assert(#sent == 0, 'building a selector sent ' .. name)
 end
 assert(total == 26)
+assert(values.fog_enabled == "1" and values.hud_color == "1 1 1", "unset remote rows must display their shipped defaults")
 for name, spec in pairs(Options.Personal) do
     local before = #sent
     Options.Choice(2, name)({value = spec[1]}, true)
