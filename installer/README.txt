@@ -12,10 +12,9 @@ Black Ops II Zombies mod; the T4, T5 and T7 releases use the same menu.
 
    Linux        No installer script - Wine/Proton/Lutris/Bottles users
                 install by hand. See "Install by hand" in the README
-                on GitHub, or just: make a folder called "zm_qol" in
-                storage\t6\mods\ inside your Plutonium prefix,
-                then copy the five mod.* files from "Mod Files"
-                into it.
+                on GitHub, or just: drag the "zm_qol" folder from
+                "Mod Files" into storage\t6\mods\ inside your
+                Plutonium prefix.
 
    Then pick what you want from the menu. That is the whole thing.
 

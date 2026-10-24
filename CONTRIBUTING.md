@@ -42,7 +42,7 @@ The Wave Gun swell needs the owner's patched Linker.
 
 **A fresh clone cannot build by itself.** The built `mod.ff`, `mod.all.sabl` and `mod.all.sabs` are not
 in Git, and `build.bat offline` stops without them. Run `build_ff.bat`, or copy those three files from
-the `Mod Files` folder of the release zip that matches `main`. If none matches, ask on your issue.
+the `Mod Files/zm_qol` folder of the release zip that matches `main`. If none matches, ask on your issue.
 [AGENTS.md](AGENTS.md#building-and-checking) shows which build each kind of change needs.
 
 **On Linux**, the build scripts do not run, but the Python checks in `tools/` do. To play a build, install
