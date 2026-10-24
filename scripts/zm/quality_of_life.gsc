@@ -5233,8 +5233,10 @@ player_too_many_weapons_monitor()
 //                    you can take points away too.
 //      !god          toggle invulnerability on/off, with feedback either way.
 //
-//  sv_cheats is forced to 1 here so the commands behave consistently and the
-//  usual Plutonium console cheats keep working alongside them.
+//  sv_cheats is no longer forced on (multiplayer plan fix 4). The host's
+//  lobby / GAME 3 CHEATS row now selects cheat mode for the command layer:
+//  self cheats are open when enabled, and need named grants when disabled.
+//  Match-wide cheats remain host-only. See zmqol_commands_mp.gsc.
 //
 //  Mechanism: T6 fires a level notify "say" carrying the speaker and the raw
 //  message. Verified against a known-working release rather than guessed -
@@ -9526,7 +9528,7 @@ zmqol_mp_weapons_init()
     //      metalstorm_mms_zm -> metalstorm2 -> metalstorm3 -> metalstorm4 -> metalstorm5
     //  with damage 1000/2000/3000/4000/5000 (doubled Pack-a-Punched), a bigger
     //  muzzle flash each stage, and tracers mstorm_2 / _3 / _5. ONLY stage one may
-    //  be a box result; the other eight defs are included below as variants, the
+    //  be a box result; the other eight defs are included by qol_weapon_budget as variants, the
     //  same shape as the Titus-6's alt-fire half. Box a later stage and the player
     //  starts holding a gun that cannot charge from the beginning.
     //
@@ -9545,7 +9547,7 @@ zmqol_mp_weapons_init()
     //  which is what zmqol_add_mp_weapon() does - because that is what was asked
     //  for and because every asset it needs now rides in mod.ff, so no map can
     //  be missing a piece of it.
-    zmqol_add_mp_weapon( "metalstorm_mms_zm", "metalstorm_mms_upgraded_zm", &"WEAPON_METALSTORM", 1000, "sniper" );
+    scripts\zm\qol_weapon_budget::register_psr();
 
     // ========================================================================
     //  v2.15.0 - THE FOUR BLACK OPS 1 GUNS, weapons 16-19. User request
@@ -9738,14 +9740,6 @@ zmqol_mp_weapons_init()
     //  and back down when it is released, through each def's altWeapon field. They
     //  must exist on the level or the chain cannot resolve and the gun stops
     //  charging at stage one.
-    zmqol_include_variant( "metalstorm2_mms_zm" );
-    zmqol_include_variant( "metalstorm3_mms_zm" );
-    zmqol_include_variant( "metalstorm4_mms_zm" );
-    zmqol_include_variant( "metalstorm5_mms_zm" );
-    zmqol_include_variant( "metalstorm2_mms_upgraded_zm" );
-    zmqol_include_variant( "metalstorm3_mms_upgraded_zm" );
-    zmqol_include_variant( "metalstorm4_mms_upgraded_zm" );
-    zmqol_include_variant( "metalstorm5_mms_upgraded_zm" );
 
     //  🛑 was a hardcoded "19" that drifted from the real list (old logs print
     //  13 for a 15-pair list). Counted, not asserted - and it is map-dependent

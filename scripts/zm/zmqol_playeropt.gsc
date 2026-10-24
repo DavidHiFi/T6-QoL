@@ -36,6 +36,8 @@
 
 init()
 {
+    // Build the mandatory permission table and start mode-state updates.
+    scripts\zm\zmqol_commands_mp::zmqol_commands_mp_init();
     zmqol_dev_commands();
 }
 
@@ -304,7 +306,14 @@ zmqol_popt_command( tokens )
 
 zmqol_dev_commands()
 {
-    setdvar( "sv_cheats", 1 );
+    //  🛑 2026-10-19 - sv_cheats IS NO LONGER FORCED (multiplayer plan fix 4,
+    //  decision 4). The force ran every session with engine cheats open
+    //  whether the host wanted them or not. The mod's own commands do not
+    //  need the engine setting (script builtins and the chat pipe), and the
+    //  host can turn sv_cheats back on from the pause menu GAME 3 row when
+    //  they want the usual Plutonium console cheats. The old reason note in
+    //  quality_of_life.gsc's chat-commands banner is updated in the same
+    //  commit.
     level thread zmqol_dev_command_listener();
     level thread zmqol_console_command_watcher();
 }
@@ -506,16 +515,9 @@ zmqol_dev_command_listener()
         // Strip the prefix character, leaving the bare command word.
         cmd = getsubstr( tokens[0], 1 );
 
-        //  Co-op: only the host may change the match or give power. A remote
-        //  player keeps the commands that touch their own view. The test is
-        //  self == gethostplayer() exactly, not the popt_is_host() helper: an
-        //  unknown host must FAIL CLOSED here (nobody runs match commands),
-        //  while the dvar readers fail open to the shipped defaults instead.
-        if ( !zmqol_popt_cmd_open( cmd ) && player != gethostplayer() )
-        {
-            player iprintln( "^1[zm_qol] ^7." + cmd + " ^1is host only" );
+        // Permissions always run; the remaining chain only executes commands.
+        if ( scripts\zm\zmqol_commands_mp::zmqol_mp_dispatch( player, cmd, tokens ) )
             continue;
-        }
 
         if ( cmd == "my" || cmd == "popt" || cmd == "mine" )
         {
@@ -778,14 +780,14 @@ zmqol_dev_command_listener()
                 else
                     player iprintln( "^3[zm_qol] ^7your character follows the menu (^3" + player zmqol_popt( "character", 0 ) + "^7)" );
 
-                player iprintln( "^5.character 1-4 ^7to choose, ^5.character 0 ^7for the map's own pick" );
+                player iprintln( scripts\zm\qol_characters::selection_help() );
             }
             else
             {
                 n_pick = int( str_arg );
 
-                if ( n_pick < 0 || n_pick > 4 )
-                    player iprintln( "^1[zm_qol] character must be 0-4 ^7(0 = the map's own pick)" );
+                if ( !scripts\zm\qol_characters::available_pick( n_pick ) )
+                    player iprintln( scripts\zm\qol_characters::selection_help() );
                 else
                 {
                     //  0 means "go back to following the menu/lobby default",

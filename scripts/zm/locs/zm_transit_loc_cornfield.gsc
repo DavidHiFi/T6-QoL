@@ -46,11 +46,16 @@ struct_init()
 
 	structs = getstructarray("player_respawn_point", "targetname");
 	respawn_point = undefined;
-	zone = "zone_cornfield_prototype";
+	//  🛑 SEPARATE LOCALS. Reusing one `zone` and reassigning it meant the
+	//  prototype block at the second register call ran with the field zone
+	//  still in scope, so both groups emitted the same target and all 16
+	//  points joined one ~3,400-unit pool. Solo never hits the path; co-op
+	//  respawns had ~50% odds of landing at the far end of the arena.
+	zone_proto = "zone_cornfield_prototype";
 
 	foreach (struct in structs)
 	{
-		if (isdefined(struct.script_noteworthy) && struct.script_noteworthy == zone)
+		if (isdefined(struct.script_noteworthy) && struct.script_noteworthy == zone_proto)
 		{
 			respawn_point = struct;
 			break;
@@ -58,12 +63,12 @@ struct_init()
 	}
 
 	respawn_point2 = undefined;
-	zone = "zone_amb_cornfield";
+	zone_field = "zone_amb_cornfield";
 	target = "cornfield_nml_player_spawns";
 
 	foreach (struct in structs)
 	{
-		if (isdefined(struct.script_noteworthy) && struct.script_noteworthy == zone)
+		if (isdefined(struct.script_noteworthy) && struct.script_noteworthy == zone_field)
 		{
 			if (isdefined(struct.target) && struct.target == target)
 			{
@@ -73,33 +78,38 @@ struct_init()
 		}
 	}
 
-	level.struct_class_names["targetname"]["player_respawn_point"] = [];
-	level.struct_class_names["script_noteworthy"]["initial_spawn"] = [];
+	//  Wipe only when at least one group will be re-registered, so an empty
+	//  match cannot blank the stock pool first (same shape as the Borough bug).
+	if (isdefined(respawn_point) || isdefined(respawn_point2))
+	{
+		level.struct_class_names["targetname"]["player_respawn_point"] = [];
+		level.struct_class_names["script_noteworthy"]["initial_spawn"] = [];
+	}
 
 	if (isdefined(respawn_point))
 	{
-		scripts\zm\replaced\utility::register_map_spawn_group(respawn_point.origin, zone, respawn_point.script_int);
+		scripts\zm\replaced\utility::register_map_spawn_group(respawn_point.origin, zone_proto, respawn_point.script_int);
 
 		respawn_array = getstructarray(respawn_point.target, "targetname");
 
 		foreach (respawn in respawn_array)
 		{
-			scripts\zm\replaced\utility::register_map_spawn(respawn.origin + (150, -150, 0), respawn.angles + (0, 180, 0), zone, respawn.script_int);
+			scripts\zm\replaced\utility::register_map_spawn(respawn.origin + (150, -150, 0), respawn.angles + (0, 180, 0), zone_proto, respawn.script_int);
 		}
 	}
 
 	if (isdefined(respawn_point2))
 	{
-		scripts\zm\replaced\utility::register_map_spawn_group(respawn_point2.origin, zone, respawn_point2.script_int);
+		scripts\zm\replaced\utility::register_map_spawn_group(respawn_point2.origin, zone_field, respawn_point2.script_int);
 
-		scripts\zm\replaced\utility::register_map_spawn((11986, -1858, -132), (0, 80, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((12158, -61, -141), (0, -85, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((11366, 20, -193), (0, -5, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((11199, -1768, -156), (0, -5, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((10448, 90, -189), (0, -5, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((10255, -1698, -186), (0, -5, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((10046, -591, -192), (0, 0, 0), zone);
-		scripts\zm\replaced\utility::register_map_spawn((10036, -967, -186), (0, 0, 0), zone);
+		scripts\zm\replaced\utility::register_map_spawn((11986, -1858, -132), (0, 80, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((12158, -61, -141), (0, -85, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((11366, 20, -193), (0, -5, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((11199, -1768, -156), (0, -5, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((10448, 90, -189), (0, -5, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((10255, -1698, -186), (0, -5, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((10046, -591, -192), (0, 0, 0), zone_field);
+		scripts\zm\replaced\utility::register_map_spawn((10036, -967, -186), (0, 0, 0), zone_field);
 	}
 
 	structs = getstructarray("game_mode_object", "targetname");

@@ -187,7 +187,9 @@ zmqol_mp_weapons_init()
 	//  📝 Only stage ONE is listed. The four later charge stages are included
 	//  server-side with in_box 0 and are never a box result, and this list is
 	//  what the client draws over the box - so they do not belong here.
-	clientscripts\mp\zombies\_zm_weapons::include_weapon( "metalstorm_mms_zm" );
+	// The ten-stage server chain is held back on these full weapon tables.
+	if ( !b_tomb && getdvar( #"mapname" ) != "zm_prison" )
+		clientscripts\mp\zombies\_zm_weapons::include_weapon( "metalstorm_mms_zm" );
 
 	//  v2.15.0 - the four Black Ops 1 guns. Server twin: the four
 	//  zmqol_add_mp_weapon() calls at the end of that list in quality_of_life.gsc.

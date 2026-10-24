@@ -506,6 +506,14 @@ local QolCrewRow = function (Index, Maps, ModeGroups, Names)
 		Row.labels[i + 1] = Names[i]
 		Row.values[i + 1] = i
 	end
+	pcall(require, "T6.QolCharacterPack")
+	local extra = CoD.QolCharacterPack or {}
+	for slot = 4, 7 do
+		if extra[slot] and extra[slot].name then
+			Row.labels[#Row.labels + 1] = extra[slot].name
+			Row.values[#Row.values + 1] = slot + 1
+		end
+	end
 	CoD.PrivateGameLobby.QolCharacter[Index] = Row
 end
 
@@ -709,7 +717,7 @@ CoD.PrivateGameLobby.Dvars = {}
 CoD.PrivateGameLobby.Dvars[1] = {}
 CoD.PrivateGameLobby.Dvars[1].id = "sv_cheats"
 CoD.PrivateGameLobby.Dvars[1].name = "CHEATS"
-CoD.PrivateGameLobby.Dvars[1].hintText = "Enable cheats on server."
+CoD.PrivateGameLobby.Dvars[1].hintText = "Cheat mode: self cheats for everyone. Match cheats stay host only. Disabled requires host grants."
 CoD.PrivateGameLobby.Dvars[1].labels = {}
 CoD.PrivateGameLobby.Dvars[1].labels[1] = "MENU_DISABLED_CAPS"
 CoD.PrivateGameLobby.Dvars[1].labels[2] = "MENU_ENABLED_CAPS"

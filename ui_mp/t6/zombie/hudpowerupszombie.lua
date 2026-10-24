@@ -559,6 +559,8 @@ CoD.PowerUps.ZmqolInstallPerkRowFix = function ()
 end
 
 LUI.createMenu.PowerUpsArea = function (f1_arg0)
+	require("T6.Zombie.QolEightPlayerPoints")
+	CoD.QolEightPlayerPoints.Install()
 	require("T6.Zombie.QolPersonalOptions")
 	CoD.PowerUps.ZmqolInstallPerkRowFix()
 	local f1_local0 = CoD.Menu.NewSafeAreaFromState("PowerUpsArea", f1_arg0)
