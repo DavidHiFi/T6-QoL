@@ -77,12 +77,8 @@
 
 init()
 {
-    //  Same kill switch as the other three wonder weapons, same reason
-    //  ("" or "1" = on, "5" = this gun alone; teslagun.gsc:26).
-    str_ww = getdvar( "zmqol_ww" );
-
-    if ( str_ww != "" && str_ww != "1" && str_ww != "5" )
-        return;
+    // The swell field and resource roster must also exist for late clients.
+    enabled = scripts\zm\quality_of_life::zmqol_ww_gate_allows( "5" );
 
     //  2026-10-08: TranZit and Die Rise are MEASURED over the raw weapon-load pool
     //  with the Zap Guns on (modding-jobs\overnight-20261008-001): the upgraded trio
@@ -107,7 +103,7 @@ init()
     //  DualWieldWeapon field and the combined gun off altWeapon, so neither is
     //  included on its own. The left-hand models are precached explicitly
     //  because _zm_magicbox::get_left_hand_weapon_model_name asks for them.
-    include_weapon( "microwavegundw_zm" );
+    include_weapon( "microwavegundw_zm", enabled );
     include_weapon( "microwavegundw_upgraded_zm", 0 );
     add_limited_weapon( "microwavegundw_zm", 1 );   // lifted by NO BOX LIMITS like its siblings
     add_zombie_weapon( "microwavegundw_zm", "microwavegundw_upgraded_zm", &"ZOMBIE_WEAPON_MICROWAVEGUNDW", 10, "", "", undefined );

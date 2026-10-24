@@ -1103,11 +1103,7 @@ zmqol_add_claymore_wallbuy()
 	//  buy's "world" clientfield from the struct (:889 server, :218 client).
 	//  If you flip this default, flip the client's in the same edit.
 	// ========================================================================
-	if ( getdvarintdefault( "zmqol_claymore_diner_enabled", 1 ) == 0 )
-	{
-		println( "[zm_qol] diner claymore: DISABLED (zmqol_claymore_diner_enabled 0)" );
-		return;
-	}
+	// The world clientfield must exist even when the server disables this wall buy.
 
 	v_origin = zmqol_claymore_wallbuy_origin();
 	// v2.4.9 - CORRECTED SIGN: back-to-the-wall facing direction IS the wall's
@@ -1302,6 +1298,14 @@ zmqol_fix_claymore_zone_gate()
 	if ( !isdefined( stub ) )
 	{
 		println( "[zm_qol] CLAYMORE FIX: no trigger_stub found for claymore_purchase - init_spawnable_weapon_upgrade() did not register one, this is a different bug" );
+		return;
+	}
+
+	if ( !getdvarintdefault( "zmqol_claymore_diner_enabled", 1 ) )
+	{
+		maps\mp\zombies\_zm_unitrigger::unregister_unitrigger( stub );
+		if ( isdefined( stub.clientfieldname ) )
+			level setclientfield( stub.clientfieldname, 0 );
 		return;
 	}
 

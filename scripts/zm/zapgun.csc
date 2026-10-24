@@ -49,10 +49,7 @@
 
 init()
 {
-    str_ww = getdvar( "zmqol_ww" );
-
-    if ( str_ww != "" && str_ww != "1" && str_ww != "5" )
-        return;
+    // Keep the default map resource layout even when the host disables the gun.
 
     //  2026-10-08: TranZit and Die Rise are MEASURED over the raw weapon-load pool
     //  with the Zap Guns on (modding-jobs\overnight-20261008-001): the upgraded trio

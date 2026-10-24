@@ -2017,7 +2017,7 @@ getPerks()
 	{
 		perks[perks.size] = "specialty_armorvest";
 	}
-	if(isDefined(level._custom_perks[ "specialty_nomotionsensor"] ))
+	if(isDefined(level._custom_perks[ "specialty_nomotionsensor"] ) && scripts\zm\qol_feature_switches::perk_allowed( "specialty_nomotionsensor" ))
 	{
 		perks[perks.size] = "specialty_nomotionsensor";
 	}

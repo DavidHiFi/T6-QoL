@@ -121,8 +121,7 @@ main()
 // ============================================================================
 zmqol_mp_weapons_init()
 {
-	if ( !getdvarintdefault( "zmqol_mp_weapons", 1 ) )
-		return;
+	// Register the shipped resource roster; availability is decided by the server.
 
 	// ========================================================================
 	//  🛑 v2.9.4 - THE XPR-50 IS NOT INCLUDED ON ORIGINS, AND SKIPPING IT IS
@@ -394,7 +393,7 @@ zmqol_mp_weapons_init()
 	//
 	//  📝 mod.ff owns emp_grenade_zm and its models now, so the def exists on
 	//  every map and the as50/Origins missing-def crash class cannot apply.
-	if ( getdvarintdefault( "emp_all_maps", 1 ) && getdvar( "mapname" ) != "zm_transit" )
+	if ( getdvar( "mapname" ) != "zm_transit" )
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "emp_grenade_zm" );
 
 	// their upgraded halves - included, but never a box result
@@ -888,11 +887,7 @@ zmqol_add_claymore_wallbuy()
 	//  🛑 EXACT TWIN OF THE GATE ON THE SERVER COPY. Same dvar, same default.
 	//  Registering this pair on one side only is EXE_CLIENT_FIELD_MISMATCH at
 	//  load. If this default changes, the server's changes in the same edit.
-	if ( getdvarintdefault( "zmqol_claymore_diner_enabled", 1 ) == 0 )
-	{
-		println( "[zm_qol] CLIENT diner claymore: DISABLED (zmqol_claymore_diner_enabled 0)" );
-		return;
-	}
+	// The world clientfield must exist even when the server disables this wall buy.
 
 	v_origin = zmqol_claymore_wallbuy_origin();
 	// v2.4.9 - corrected sign: the reading (269) IS the outward normal
@@ -1675,14 +1670,7 @@ zmqol_vulture_enabled()
 {
 	map = getDvar( "mapname" );
 
-	//  🔬 MEASUREMENT DVAR, v1.78.0 - EXACT TWIN of the line in
-	//  quality_of_life.gsc::zmqol_vulture_enabled(), same dvar, same default of
-	//  1, so shipped behaviour is unchanged. The full reasoning for why this
-	//  probe exists lives there. Both halves run in one process, so they read
-	//  one value - but they must be changed together regardless, because a
-	//  disagreement here is EXE_CLIENT_FIELD_MISMATCH on every map.
-	if ( !getdvarintdefault( "zmqol_vulture", 1 ) )
-		return 0;
+	// Only replicated map/mode facts select the clientfield layout.
 
 	if ( map == "zm_buried" )
 		return 0;
@@ -3256,8 +3244,7 @@ zmqol_testsound_watch()
 // ============================================================================
 zmqol_wallbuy_box_init()
 {
-	if ( !getdvarintdefault( "zmqol_wallbuy_box", 1 ) )
-		return;
+	// Register the shipped resource roster; availability is decided by the server.
 
 	// the four that go in the box - v1.99.91 added the M14, and this list MUST
 	// stay identical to quality_of_life.gsc::zmqol_wallbuy_box_init()'s: the

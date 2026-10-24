@@ -409,6 +409,9 @@ vulture_set_clientfield( state )
 
 give_vulture_perk()
 {
+    if ( !scripts\zm\qol_feature_switches::perk_allowed( "specialty_nomotionsensor" ) )
+        return;
+
     vulture_debug_text( "player " + self getentitynumber() + " has vulture perk!" );
 
     if ( !isdefined( self.perk_vulture ) )
