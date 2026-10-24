@@ -1262,7 +1262,7 @@ qol_opt_voice_lines()
 
     for ( ;; )
     {
-        b_on = getdvarintdefault( "voice_lines", 1 );
+        b_on = self scripts\zm\zmqol_playeropt::zmqol_popt( "voice_lines", 1 );
 
         if ( !b_on )
             self.isspeaking = 1;
@@ -1308,7 +1308,7 @@ qol_opt_night_mode()
 
     for ( ;; )
     {
-        b_want = getdvarintdefault( "night_mode", 0 );
+        b_want = self scripts\zm\zmqol_playeropt::zmqol_popt( "night_mode", 0 );
 
         if ( b_want && !b_on )
         {
@@ -1633,8 +1633,7 @@ qol_opt_night_off()
     //  the way in would be stale if the row were changed while night mode was
     //  on, and would then overwrite the player's newer choice.
     //  ========================================================================
-    if ( getdvarintdefault( "dof_quality", 0 ) > 0 )
-        self setclientdvar( "r_dof_enable", "1" );
+    self scripts\zm\quality_of_life::zmqol_dof_apply( self scripts\zm\zmqol_playeropt::zmqol_popt( "dof_quality", 0 ) );
 
 }
 
@@ -2820,7 +2819,7 @@ qol_opt_hud_watcher()
         //  Colour is only re-applied when the string actually changes. Writing
         //  .color every tick on every element would be a lot of needless work
         //  for a value that changes when someone types at the console.
-        str_color = getdvar( "hud_color" );
+        str_color = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_color", "1 1 1" );
 
         if ( str_color != str_prev_color )
         {
@@ -2838,7 +2837,7 @@ qol_opt_hud_watcher()
             }
         }
 
-        str_color_zone = getdvar( "hud_color_zone" );
+        str_color_zone = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_color_zone", "0.7 0.7 0.7" );
 
         if ( str_color_zone != str_prev_color_zone )
         {
@@ -2850,7 +2849,7 @@ qol_opt_hud_watcher()
         }
 
         //  The two stacked top-right timers, each with its own colour dvar.
-        str_color_timer = getdvar( "hud_color_timer" );
+        str_color_timer = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_color_timer", "1 1 1" );
 
         if ( str_color_timer != str_prev_color_timer )
         {
@@ -2861,7 +2860,7 @@ qol_opt_hud_watcher()
                 self qol_opt_tint( self.qol_hud_timer, v_color );
         }
 
-        str_color_round = getdvar( "hud_color_round_timer" );
+        str_color_round = self scripts\zm\zmqol_playeropt::zmqol_popt( "hud_color_round_timer", "0.7 0.7 0.7" );
 
         if ( str_color_round != str_prev_color_round )
         {
@@ -3442,10 +3441,10 @@ qol_opt_crosshair()
 //  aim_automelee_range "120", aim_automelee_region_width "320" and the rest,
 //  plus tu_aim_automelee_fix1. That banner is corrected in the same commit.
 //
-//  Two writes, because Plutonium runs every match as a listen server: the
+//  The personal client-dvar helper selects the owner of the write: the
 //  host's client and the server share one dvar table, so the plain setdvar
 //  (Reimagined's route) covers the host; a co-op joiner has its own table, so
-//  each player also gets setclientdvar (Remix's route). Both are written ONLY
+//  each joiner gets setclientdvar (Remix's route). Values are written ONLY
 //  ON CHANGE - ERROR_CATALOGUE §7b, a setclientdvar loop with no stop
 //  condition is how EXE_ERR_RELIABLE_CYCLED_OUT happened twice.
 //
@@ -3467,17 +3466,14 @@ qol_opt_knife_lunge()
     {
         n_want = 0;
 
-        if ( getdvarintdefault( "knife_lunge", 1 ) != 0 )
+        if ( self scripts\zm\zmqol_playeropt::zmqol_popt( "knife_lunge", 1 ) != 0 )
             n_want = 1;
 
         if ( n_want != self.zmqol_lunge_applied )
         {
             self.zmqol_lunge_applied = n_want;
 
-            self setclientdvar( "aim_automelee_enabled", n_want );
-
-            if ( getdvarintdefault( "aim_automelee_enabled", 1 ) != n_want )
-                setdvar( "aim_automelee_enabled", n_want );
+            self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "aim_automelee_enabled", n_want );
 
             println( "[zm_qol] knife lunge -> " + n_want + " (aim_automelee_enabled now " + getdvar( "aim_automelee_enabled" ) + ")" );
         }
@@ -3669,4 +3665,42 @@ zmqol_nb_near_player()
     }
 
     return 0;
+}
+
+// ============================================================================
+//  zmqol_fog_dvar_watch  -  v1.99.91, the FOG row's live half
+//
+//  The ADVANCED tab's FOG row writes `fog_enabled` (an ordinary mod dvar, so it
+//  archives to the per-mod config like every other row); the renderer only ever
+//  reads r_fog. This carries one to the other the moment it changes, so the row
+//  still applies instantly the way it did when it wrote r_fog directly.
+//
+//  🛑 ONE WRITER, AND ONLY ON CHANGE. setclientdvar every quarter second would
+//  fight anyone typing `r_fog 0` at the console and would spend a reliable
+//  command each time ([[t6-reliable-command-ring]]); this writes only when
+//  fog_enabled actually moves.
+// ============================================================================
+zmqol_fog_dvar_watch()
+{
+    n_prev = self scripts\zm\zmqol_playeropt::zmqol_popt( "fog_enabled", 1 );
+    self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "r_fog", n_prev );
+
+    if ( zmqol_minimal() )
+        return;
+
+    self endon( "disconnect" );
+    level endon( "game_ended" );
+
+    for ( ;; )
+    {
+        wait 0.25;
+
+        n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "fog_enabled", 1 );
+
+        if ( n_now != n_prev )
+        {
+            n_prev = n_now;
+            self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "r_fog", n_now );
+        }
+    }
 }
