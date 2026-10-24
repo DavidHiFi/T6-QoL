@@ -58,7 +58,16 @@ zmqol_popt( str_name, n_default )
         return self.zmqol_popt[str_name];
 
     if ( self zmqol_popt_is_host() )
+    {
+        if ( isstring( n_default ) )
+        {
+            value = getdvar( str_name );
+            if ( value != "" )
+                return value;
+            return n_default;
+        }
         return getdvarintdefault( str_name, n_default );
+    }
 
     return n_default;
 }
@@ -109,6 +118,8 @@ zmqol_popt_default( str_name )
 {
     switch ( str_name )
     {
+        case "night_mode":
+        case "dof_quality":
         case "hud_all":
         case "hud_zone":
         case "hud_compass":
@@ -116,6 +127,9 @@ zmqol_popt_default( str_name )
         case "third_person":
         case "velocity":
             return 0;
+        case "voice_lines":
+        case "fog_enabled":
+        case "knife_lunge":
         case "hud_master":
         case "hud_health_bar":
         case "hud_timers":
@@ -127,6 +141,13 @@ zmqol_popt_default( str_name )
         case "hitmarkers":
         case "redhitmarkers":
             return 1;
+        case "hud_color":
+        case "hud_color_health":
+        case "hud_color_timer":
+            return "1 1 1";
+        case "hud_color_zone":
+        case "hud_color_round_timer":
+            return "0.7 0.7 0.7";
     }
 
     return undefined;
@@ -224,6 +245,43 @@ zmqol_popt_command( tokens )
             self.zmqol_popt[str_name] = undefined;
 
         self iprintln( "^3[zm_qol] ^7" + str_name + " back to its default" );
+        return;
+    }
+
+    if ( isstring( n_default ) )
+    {
+        //  RGB channels, or one channel repeated for a grey shade.
+        if ( tokens.size != 3 && tokens.size != 5 )
+        {
+            self iprintln( "^1[zm_qol] colour needs r g b, each from 0 to 1" );
+            return;
+        }
+        for ( i = 2; i < tokens.size; i++ )
+        {
+            dots = 0;
+            digits = 0;
+            for ( j = 0; j < tokens[i].size; j++ )
+            {
+                ch = tokens[i][j];
+                if ( ch == "." )
+                    dots++;
+                else if ( issubstr( "0123456789", ch ) )
+                    digits++;
+                else
+                    dots = 2;
+            }
+            if ( dots > 1 || !digits || string_to_float( tokens[i] ) > 1 )
+            {
+                self iprintln( "^1[zm_qol] colour needs r g b, each from 0 to 1" );
+                return;
+            }
+        }
+        if ( tokens.size == 3 )
+            str_val = str_val + " " + str_val + " " + str_val;
+        else
+            str_val = str_val + " " + tokens[3] + " " + tokens[4];
+        self zmqol_popt_store( str_name, str_val );
+        self iprintln( "^2[zm_qol] ^7" + str_name + " = ^3" + str_val + " ^7- yours only" );
         return;
     }
 
