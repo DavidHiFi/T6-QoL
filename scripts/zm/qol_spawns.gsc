@@ -22,7 +22,7 @@ qol_initial_spawn( spawnpoints, player )
 {
     // Co-op can use both authored team halves. A disconnected player's ordinal
     // must not send every later join back to spawnpoints[0].
-    point = qol_free_spawn( spawnpoints, player );
+    point = qol_free_spawn( spawnpoints, player, 1 );
     if ( isdefined( point ) )
         return point;
     return spawnpoints[0];
@@ -32,17 +32,18 @@ qol_respawn( player, groups, group, return_struct )
 {
     // Stock's persistent .plyr reservations survive disconnects. Occupancy is
     // authoritative; an exhausted group falls back to the initial pool.
-    point = qol_free_spawn( getstructarray( groups[group].target, "targetname" ), player );
+    point = qol_free_spawn( getstructarray( groups[group].target, "targetname" ), player, 0 );
     if ( !isdefined( point ) || ( isdefined( return_struct ) && return_struct ) )
         return point;
     return point.origin;
 }
 
-qol_free_spawn( points, player )
+qol_free_spawn( points, player, allow_blocked )
 {
     if ( !isdefined( points ) )
         return undefined;
     players = getplayers();
+    backup = undefined;
     foreach ( point in points )
     {
         occupied = 0;
@@ -57,8 +58,16 @@ qol_free_spawn( points, player )
                 break;
             }
         }
-        if ( !occupied && !positionwouldtelefrag( point.origin ) )
-            return point;
+        if ( !occupied )
+        {
+            // Zombies can block every start; that must not select an occupied
+            // player start when the initial pool is the last resort.
+            backup = point;
+            if ( !positionwouldtelefrag( point.origin ) )
+                return point;
+        }
     }
+    if ( allow_blocked )
+        return backup;
     return undefined;
 }
