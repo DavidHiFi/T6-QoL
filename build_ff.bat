@@ -551,6 +551,7 @@ REM  first-load-wins otherwise drops the ghoul anims the quest needs.
   --load "%PROJ%\zone_source\refreshed_donor\mod.ff" ^
   --load "%PROJ%\zone_source\oldschool_donor\mod.ff" ^
   --load "%PROJ%\zone_source\magmagat_donor\mod.ff" ^
+  --load "%PROJ%\zone_source\qol_icons_donor\mod.ff" ^
   --base-folder "%PROJ%" ^
   --add-asset-search-path "%PROJ%\zone_assets" ^
   --add-source-search-path "%PROJ%\zone_source" ^
