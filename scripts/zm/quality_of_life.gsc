@@ -2038,21 +2038,22 @@ zmqol_wait_out_intro_cutscene()
     //  the thing being fixed stays fixed.
     //  ------------------------------------------------------------------
     n_deadline = gettime() + 210000;
+    // No player host on dedicated: only the dvar or deadline ends its gate.
     v_start = undefined;
-    a_players = get_players();
+    e_host = gethostplayer();
 
-    if ( isdefined( a_players ) && a_players.size > 0 && isdefined( a_players[0] ) )
-        v_start = a_players[0] getplayerangles();
+    if ( isdefined( e_host ) )
+        v_start = e_host getplayerangles();
 
     while ( getdvarintdefault( "zmqol_cutscene", 0 ) == 1 && gettime() < n_deadline )
     {
         if ( isdefined( v_start ) )
         {
-            a_players = get_players();
+            e_host = gethostplayer();
 
-            if ( isdefined( a_players ) && a_players.size > 0 && isdefined( a_players[0] ) )
+            if ( isdefined( e_host ) )
             {
-                v_now = a_players[0] getplayerangles();
+                v_now = e_host getplayerangles();
 
                 //  A degree of movement in any axis - far more than drift, far
                 //  less than a deliberate turn.
@@ -7567,9 +7568,6 @@ zmqol_velocity_dvar_watch()
 
     self endon( "disconnect" );
     level endon( "game_ended" );
-
-    if ( getdvar( "velocity" ) == "" )
-        setdvar( "velocity", "0" );
 
     //  v1.95.0 - the first pass is SILENT. It is not a user action; it is this
     //  watcher catching up with a value the config already had.

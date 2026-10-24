@@ -119,6 +119,8 @@ init()
     //  hud_all forces the individual hud_* options ON; hud_master overrides the
     //  lot in the other direction, including the game's OWN LUI hud (points,
     //  ammo, round, perk icons) which no hud_* dvar has ever reached. 1 = normal.
+    // Seed once on the server, rather than from each player's HUD watcher.
+    qol_opt_dvar( "velocity",         "0" );
     qol_opt_dvar( "hud_master",       "1" );
     qol_opt_dvar( "hud_all",          "0" );
     qol_opt_dvar( "hud_timer",        "1" );

@@ -39,12 +39,13 @@ init()
     zmqol_dev_commands();
 }
 
-//  Only the actual listen host owns the server dvars. Dedicated clients keep
-//  their preferences on their own player entity too.
+//  Only the engine-reported listen host owns the server dvars. A dedicated
+//  server has no player host: nobody writes them from a player thread, and
+//  players read the server's configured value unless they set their own.
 zmqol_popt_is_host()
 {
     if ( !isplayer( self ) )
-        return 1;
+        return 0;
 
     e_host = gethostplayer();
 
@@ -52,13 +53,14 @@ zmqol_popt_is_host()
 }
 
 //  This player's value for a personal option: their own override, else the
-//  server dvar if they own it, else the row's shipped default.
+//  server dvar if they own it or nobody does (dedicated), else the row's
+//  shipped default.
 zmqol_popt( str_name, n_default )
 {
     if ( isdefined( self.zmqol_popt ) && isdefined( self.zmqol_popt[str_name] ) )
         return self.zmqol_popt[str_name];
 
-    if ( self zmqol_popt_is_host() )
+    if ( self zmqol_popt_is_host() || !isdefined( gethostplayer() ) )
     {
         if ( isstring( n_default ) )
         {
