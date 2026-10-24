@@ -107,6 +107,9 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn( (10201, -7963, -420), (0, 22.5, 0), zone, 2 );
 	scripts\zm\replaced\utility::register_map_spawn( (10283, -8045, -420), (0, 67.5, 0), zone, 2 );
 	scripts\zm\replaced\utility::register_map_spawn( (10397, -8045, -420), (0, 112.5, 0), zone, 2 );
+	//  Fix 8: untagged spares (never half-filtered) — inside the ring, same floor plane.
+	scripts\zm\replaced\utility::register_map_spawn( (10365, -7912, -420), (0, 0, 0), zone );
+	scripts\zm\replaced\utility::register_map_spawn( (10340, -7906, -420), (0, 0, 0), zone );
 
 	// ========================================================================
 	//  The respawn GROUP is this mod's addition, not Reimagined's.
