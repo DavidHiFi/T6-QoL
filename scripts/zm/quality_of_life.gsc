@@ -14654,7 +14654,7 @@ zmqol_whoswho_overlay_on()
 //  23-value apply it existed to undo.
 zmqol_whoswho_overlay_off()
 {
-    if ( getdvarintdefault( "night_mode", 0 ) )
+    if ( self scripts\zm\zmqol_playeropt::zmqol_popt( "night_mode", 0 ) )
     {
         self setclientdvar( "r_filmUseTweaks", 1 );
         self setclientdvar( "r_bloomTweaks", 1 );
@@ -14669,7 +14669,7 @@ zmqol_whoswho_overlay_off()
         }
     }
 
-    println( "[zm_qol] whoswho overlay: OFF (night_mode=" + getdvarintdefault( "night_mode", 0 ) + ")" );
+    println( "[zm_qol] whoswho overlay: OFF (night_mode=" + self scripts\zm\zmqol_playeropt::zmqol_popt( "night_mode", 0 ) + ")" );
 }
 
 // ============================================================================
