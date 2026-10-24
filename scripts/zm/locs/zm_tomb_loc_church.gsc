@@ -120,6 +120,9 @@ struct_init()
 	scripts\zm\replaced\utility::register_map_spawn((591, -2673, 37), (0, 105, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((446, -2712, 37), (0, 105, 0), zone, 2);
 	scripts\zm\replaced\utility::register_map_spawn((301, -2751, 37), (0, 105, 0), zone, 2);
+	//  Fix 8: untagged spares (never half-filtered) — midpoints of existing points.
+	scripts\zm\replaced\utility::register_map_spawn((723, -2587, 37), (0, 285, 0), zone);
+	scripts\zm\replaced\utility::register_map_spawn((288, -2703, 37), (0, 105, 0), zone);
 
 	// --- perk machine: Double Tap, Reimagined's own mapents position ----------
 	//  This mod ships no zm_tomb mapents, so the stock mapents' machines (all
