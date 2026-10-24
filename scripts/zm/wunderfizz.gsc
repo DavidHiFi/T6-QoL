@@ -2649,7 +2649,7 @@ wunderfizz(origin, angles, model, cost, perks, trig, wunderfizzBottle )
 							self thread zmqol_wf_spin_fx();
 							self thread perk_bottle_motion();
 							wait .1;
-							while(rtime>0)
+							while(rtime>0 && isdefined( player ))
 							{
 								for(;;)
 								{
@@ -2671,6 +2671,14 @@ wunderfizz(origin, angles, model, cost, perks, trig, wunderfizzBottle )
 							}
 							self notify( "done_cycling" );
 							self.zmqol_wf_cycling = 0;
+							// The machine owns this loop; a departed buyer must not end it.
+							if( !isdefined( player ) )
+							{
+								self zmqol_wf_anim( "idle" );
+								self.bottle setModel( "tag_origin" );
+								if( isdefined( wunderfx ) ) wunderfx Delete();
+								continue;
+							}
 							if((self.uses >= RandomIntRange(3,7)) && (level.wunderfizz_locations > 1))
 							{
 								// Refund this spin because the bear moves the machine instead
@@ -2798,7 +2806,7 @@ wunderfizz(origin, angles, model, cost, perks, trig, wunderfizzBottle )
 										// ================================================
 										time = 7;
 										n_fx_beat = 0;
-										while(time > 0)
+										while(time > 0 && isdefined( player ))
 										{
 											//  v2.7.3 - the latch is tested HERE as well as inside
 											//  givePerk(). Spamming the use key drove this loop and
