@@ -885,11 +885,7 @@ zmqol_add_claymore_wallbuy()
 	//  🛑 EXACT TWIN OF THE GATE ON THE SERVER COPY. Same dvar, same default.
 	//  Registering this pair on one side only is EXE_CLIENT_FIELD_MISMATCH at
 	//  load. If this default changes, the server's changes in the same edit.
-	if ( getdvarintdefault( "zmqol_claymore_diner_enabled", 1 ) == 0 )
-	{
-		println( "[zm_qol] CLIENT diner claymore: DISABLED (zmqol_claymore_diner_enabled 0)" );
-		return;
-	}
+	// The world clientfield must exist even when the server disables this wall buy.
 
 	v_origin = zmqol_claymore_wallbuy_origin();
 	// v2.4.9 - corrected sign: the reading (269) IS the outward normal
