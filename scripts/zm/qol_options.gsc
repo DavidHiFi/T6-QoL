@@ -1750,6 +1750,14 @@ qol_opt_character()
         else
             n_want = self scripts\zm\zmqol_playeropt::zmqol_popt( "character", 0 );
 
+        // Extra packs keep the map's stock identity and own only appearance.
+        if ( self scripts\zm\qol_characters::update( n_want ) )
+        {
+            n_last = -1;
+            wait 0.5;
+            continue;
+        }
+
         b_sees_cia_flag = isdefined( level.should_use_cia );
 
         //  🛑 OWNERSHIP OF THE LEVEL FLAG IS DECIDED BY WHO THE PLAYER IS, NOT

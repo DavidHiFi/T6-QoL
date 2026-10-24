@@ -45,6 +45,8 @@ qol_points_roster()
 qol_points_character()
 {
     // Optional character portraits are supplied by the build, never by this script.
+    if ( isdefined( level.qol_character_portrait ) )
+        return self [[ level.qol_character_portrait ]]();
     if ( isdefined( self.qol_hud_portrait ) )
         return self.qol_hud_portrait;
     if ( isdefined( self.characterindex ) )

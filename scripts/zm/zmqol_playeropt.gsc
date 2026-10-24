@@ -717,14 +717,14 @@ zmqol_dev_command_listener()
                 else
                     player iprintln( "^3[zm_qol] ^7your character follows the menu (^3" + player zmqol_popt( "character", 0 ) + "^7)" );
 
-                player iprintln( "^5.character 1-4 ^7to choose, ^5.character 0 ^7for the map's own pick" );
+                player iprintln( scripts\zm\qol_characters::selection_help() );
             }
             else
             {
                 n_pick = int( str_arg );
 
-                if ( n_pick < 0 || n_pick > 4 )
-                    player iprintln( "^1[zm_qol] character must be 0-4 ^7(0 = the map's own pick)" );
+                if ( !scripts\zm\qol_characters::available_pick( n_pick ) )
+                    player iprintln( scripts\zm\qol_characters::selection_help() );
                 else
                 {
                     //  0 means "go back to following the menu/lobby default",

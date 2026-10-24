@@ -4,6 +4,10 @@ CoD.QolEightPlayerPoints = CoD.QolEightPlayerPoints or {}
 local Q = CoD.QolEightPlayerPoints
 -- Optional build-supplied material names, keyed by the server's character portrait ID.
 Q.Portraits = Q.Portraits or {}
+pcall(require, "T6.QolCharacterPack")
+for slot, character in pairs(CoD.QolCharacterPack or {}) do
+	if character.portrait then Q.Portraits[slot] = character.portrait end
+end
 local avatars = {
 	[0] = "faction_cdc", [1] = "faction_cia", [2] = "faction_tranzit",
 	[3] = "faction_highrise", [4] = "faction_prison", [5] = "faction_buried", [6] = "faction_tomb"
