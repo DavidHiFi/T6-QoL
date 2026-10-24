@@ -119,7 +119,7 @@ zmqol_diner_shield_enabled()
     // Twin of zm_transit.csc::zmqol_diner_shield_enabled(). Same two dvars,
     // same order, same comparisons - if these ever disagree the server and
     // client clientfield sets differ in width and everyone is dropped at load.
-    return getdvarintdefault( "zmqol_diner_shield", 1 ) && getdvar( "ui_zm_mapstartlocation" ) == "diner" && getdvar( "ui_gametype" ) != "zgrief";
+    return getdvar( "ui_zm_mapstartlocation" ) == "diner" && getdvar( "ui_gametype" ) != "zgrief";
 }
 
 zmqol_diner_shield_init()
@@ -185,6 +185,9 @@ zmqol_diner_init_buildables()
     // rungametypemain(). It iterates level.zombie_include_buildables, which in
     // Diner survival contains only the riot shield, because nothing else calls
     // include_buildable() in this mode.
+    if ( !getdvarintdefault( "zmqol_diner_shield", 1 ) )
+        return;
+
     level thread maps\mp\zombies\_zm_buildables::think_buildables();
 
     // Real println, not a /# #/ dev block: the two stock diagnostics in this

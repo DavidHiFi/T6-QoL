@@ -5612,6 +5612,8 @@ zmqol_map_perks()
         {
             if ( getDvar( "mapname" ) == "zm_buried" && a_keys[i] == "specialty_flakjacket" )
                 continue;
+            if ( !scripts\zm\qol_feature_switches::perk_allowed( a_keys[i] ) )
+                continue;
             if ( !isinarray( a_perks, a_keys[i] ) )
                 a_perks[a_perks.size] = a_keys[i];
         }
@@ -9421,8 +9423,7 @@ zmqol_mp_weapons_enabled()
 
 zmqol_mp_weapons_init()
 {
-    if ( !zmqol_mp_weapons_enabled() )
-        return;
+    // The resource roster is fixed; zmqol_add_mp_weapon gates box availability.
 
     // ========================================================================
     //  🛑 THIS LINE IS THE PACK-A-PUNCH CRASH FIX (v1.89.3). It must run
@@ -9842,12 +9843,7 @@ zmqol_mp_weapons_init()
 // ============================================================================
 zmqol_emp_grenade_init()
 {
-    if ( !getdvarintdefault( "emp_all_maps", 1 ) )
-    {
-        println( "[zm_qol] emp: disabled by emp_all_maps 0" );
-        return;
-    }
-
+    // Keep the EMP resource loaded on both sides when acquisition is disabled.
     //  TranZit ships the grenade itself - leave its own registration alone.
     if ( level.script == "zm_transit" )
     {
@@ -9856,7 +9852,7 @@ zmqol_emp_grenade_init()
     }
 
     precacheitem( "emp_grenade_zm" );
-    include_weapon( "emp_grenade_zm", 1, undefined, ::zmqol_emp_box_weight );
+    include_weapon( "emp_grenade_zm", getdvarintdefault( "emp_all_maps", 1 ), undefined, ::zmqol_emp_box_weight );
     add_zombie_weapon( "emp_grenade_zm", undefined, &"ZOMBIE_WEAPON_EMP_GRENADE", 2000, "wpck_emp", "", undefined, 1 );
 
     //  AFTER the two calls above, never before: the module's own init() returns
@@ -10002,8 +9998,7 @@ zmqol_wallbuy_box_names()
 
 zmqol_wallbuy_box_init()
 {
-    if ( !zmqol_wallbuy_box_enabled() )
-        return;
+    // Keep resources loaded even when these guns remain wall-buy-only.
 
     //  base, upgraded, hint, cost, vox - every value is the map script's own.
     zmqol_wallbuy_box_add( "m16_zm",        "m16_gl_upgraded_zm",     &"ZOMBIE_WEAPON_M16",        1200, "burstrifle" );
@@ -10030,13 +10025,13 @@ zmqol_wallbuy_box_add( str_base, str_upgraded, str_hint, n_cost, str_vox )
     precacheitem( str_base );
     precacheitem( str_upgraded );
 
-    include_weapon( str_base );          // in_box defaults to 1
+    include_weapon( str_base, scripts\zm\qol_feature_switches::wallbuy_in_box( str_base ) ); // Preserve native box availability when the switch is off.
     include_weapon( str_upgraded, 0 );
 
     //  The map already built the struct, so only the box flag changes.
     if ( isdefined( level.zombie_weapons ) && isdefined( level.zombie_weapons[ str_base ] ) )
     {
-        level.zombie_weapons[ str_base ].is_in_box = 1;
+        level.zombie_weapons[ str_base ].is_in_box = scripts\zm\qol_feature_switches::wallbuy_in_box( str_base );
         return;
     }
 
@@ -10144,17 +10139,7 @@ zmqol_tomb_weapon( str_name )
 
 zmqol_add_mp_weapon( str_base, str_upgraded, str_hint, n_cost, str_vox )
 {
-    //  Origins swaps in its private copies; every other map is unchanged.
-    str_base     = zmqol_tomb_weapon( str_base );
-    str_upgraded = zmqol_tomb_weapon( str_upgraded );
-
-    precacheitem( str_base );
-    precacheitem( str_upgraded );
-
-    include_weapon( str_base );          // in_box defaults to 1
-    include_weapon( str_upgraded, 0 );   // exists, but never a box result
-
-    add_zombie_weapon( str_base, str_upgraded, str_hint, n_cost, str_vox, "", undefined, 1 );
+    scripts\zm\qol_feature_switches::add_mp_weapon( str_base, str_upgraded, str_hint, n_cost, str_vox );
 }
 
 zmqol_include_variant( str_weapon )
@@ -14898,39 +14883,7 @@ zmqol_vulture_enabled()
 {
     map = getDvar( "mapname" );
 
-    // ========================================================================
-    //  🔬 MEASUREMENT DVAR, v1.78.0 - `zmqol_vulture 0` forces the perk off
-    //  everywhere. DEFAULT 1, so shipped behaviour is byte-identical to v1.77.0.
-    //
-    //  WHY IT EXISTS. TranZit classic dies at `vulture_perk_toplayer`, and the
-    //  source-derived bit accounting cannot be trusted to size the hole: it
-    //  totals TranZit at 65 while Buried classic runs at >=71 and boots. About
-    //  28 bits of TranZit's real usage are unexplained, and every offline
-    //  search for them came back empty (the mod's own registerclientfield
-    //  calls, weapon includes, buildables, powerups, the replaced/ folder).
-    //
-    //  This dvar buys ONE number that no amount of reading can produce: does
-    //  TranZit classic load with Vulture absent?
-    //    - loads  => Vulture alone is the overflow, deficit <= 10 bits
-    //                (its 9 + the overlay_lerp 4->5 its 31-step stink forces)
-    //    - fails  => the next error names the next field, which is another
-    //                exact zero-free-bits measurement, and Vulture is not the
-    //                whole story
-    //
-    //  🛑 IT IS A PROBE, NOT A FIX, AND NOT A SHIPPED OPTION. Nothing decides
-    //  to leave Vulture off anywhere on the strength of this dvar; it exists to
-    //  size the problem. No degraded variant gets shipped either way.
-    //
-    //  🛑 THE CLIENT TWIN IS zm_expanded.csc::zmqol_vulture_enabled() AND IT
-    //  READS THE SAME DVAR WITH THE SAME DEFAULT. Both halves run in one
-    //  process here, so they cannot observe different values - but if the two
-    //  lines ever drift apart the toplayer/actor sets differ in width between
-    //  server and client and every player is dropped with
-    //  EXE_CLIENT_FIELD_MISMATCH. Change neither without the other.
-    // ========================================================================
-    if ( !getdvarintdefault( "zmqol_vulture", 1 ) )
-        return 0;
-
+    // Map-only resource layout. The perk offer follows the server switch separately.
     if ( map == "zm_buried" )   // ships the perk itself
         return 0;
 
