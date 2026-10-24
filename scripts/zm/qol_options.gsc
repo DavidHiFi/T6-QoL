@@ -3687,17 +3687,19 @@ zmqol_nb_near_player()
 // ============================================================================
 zmqol_fog_dvar_watch()
 {
+    n_prev = self scripts\zm\zmqol_playeropt::zmqol_popt( "fog_enabled", 1 );
+    self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "r_fog", n_prev );
+
     if ( zmqol_minimal() )
         return;
 
     self endon( "disconnect" );
     level endon( "game_ended" );
 
-    //  Apply this player's value on connect, then only when it changes.
-    n_prev = -1;
-
     for ( ;; )
     {
+        wait 0.25;
+
         n_now = self scripts\zm\zmqol_playeropt::zmqol_popt( "fog_enabled", 1 );
 
         if ( n_now != n_prev )
@@ -3705,7 +3707,5 @@ zmqol_fog_dvar_watch()
             n_prev = n_now;
             self scripts\zm\zmqol_playeropt::zmqol_popt_client_dvar( "r_fog", n_now );
         }
-
-        wait 0.25;
     }
 }
