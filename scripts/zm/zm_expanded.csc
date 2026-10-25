@@ -375,13 +375,13 @@ zmqol_mp_weapons_init()
 
 	//  ============================================================
 	//  THE MAGMAGAT BOX WEAPON (scripts\zm\magmagat.gsc, the server twin).
-	//  Same test as magmagat_enabled() - every zclassic and zsurvival load,
-	//  which fit once mp7 and vector were retired - or the box cannot draw
-	//  its pickup model. Not the quest below.
+	//  Same test as magmagat_enabled() - every zclassic and zsurvival load
+	//  except zm_tomb (Origins is held back, 13ee642: its weapon table has no
+	//  room) - or the box cannot draw its pickup model. Not the quest below.
 	//  ============================================================
 	magmagat_map = getdvar( "mapname" );
 	magmagat_mode = getdvar( "ui_zm_gamemodegroup" );
-	if ( magmagat_mode == "zclassic" || magmagat_mode == "zsurvival" )
+	if ( magmagat_map != "zm_tomb" && ( magmagat_mode == "zclassic" || magmagat_mode == "zsurvival" ) )
 	{
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_zm" );
 		clientscripts\mp\zombies\_zm_weapons::include_weapon( "magmagat_upgraded_zm", 0 );
