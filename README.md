@@ -28,10 +28,10 @@ Install Plutonium and run it once so its folders exist, then close it. Then pick
 
 ### With the mod manager
 
-[**Quality of Life Mod Manager**](https://github.com/DavidHiFi/QualityOfLifeModManager) is a small app that installs, updates and removes this mod for you, and manages every other mod in your Plutonium folders as well.
+[**Blutac Launcher**](https://github.com/DavidHiFi/Blutac-Launcher) is a small app that installs, updates and removes this mod for you, and manages every other mod in your Plutonium folders as well.
 
-1. [Download it](https://github.com/DavidHiFi/QualityOfLifeModManager/releases/latest). The setup installs it like any other program, or the portable zip runs as-is.
-2. Open it and choose **Quality of Life** in the sidebar.
+1. [Download it](https://github.com/DavidHiFi/Blutac-Launcher/releases/latest). The setup installs it like any other program, or the portable zip runs as-is.
+2. Open it and choose **Game Configuration** in the sidebar.
 3. Press **Install** on **Quality of Life for Black Ops II**, then **Install** on **HD texture pack**.
 4. Launch Plutonium T6 → **Zombies → Mods → Quality Of Life**.
 
@@ -84,7 +84,7 @@ On **Linux** (Wine, Proton, Lutris, Bottles) there is no automated installer. In
 > **Cloning the repo does not give you a playable mod.** `mod.iwd` is a build output and isn't tracked in git. Use the release.
 
 > [!WARNING]
-> **Known issue.** The launcher has no FAST RESTART any more: on current Plutonium builds a scripted `fast_restart` crashes the game about two seconds in, with the death inside the engine where no script can reach it (three crash dumps agree). **RESTART GAME** (a full map reload) is the safe restart, and it is what the launcher now offers. Typing `fast_restart` into the console has the same crash.
+> **Known issue.** The pause menu has no FAST RESTART any more: on current Plutonium builds a scripted `fast_restart` crashes the game about two seconds in, with the death inside the engine where no script can reach it (three crash dumps agree). **RESTART GAME** (a full map reload) is the safe restart, and it is what the pause menu now offers. Typing `fast_restart` into the console has the same crash.
 
 ---
 
@@ -144,7 +144,7 @@ the steps, and a successful build still needs testing in game.
 ## Weapons
 
 * **Campaign and Multiplayer guns/equipment in the box:**
-  * Storm PSR
+  * Storm PSR (every map except Mob of the Dead and Origins)
   * Dragunov
   * SPAS-12
   * SWAT-556
@@ -168,7 +168,7 @@ the steps, and a successful build still needs testing in game.
   * Thundergun
   * Wunderwaffe DG-2
   * Winter's Howl
-  * All four are in the Mystery Box on every map except Origins and Buried.
+  * The Thundergun, Wunderwaffe DG-2 and Winter's Howl are in the Mystery Box on every map except Origins and Buried. The Wave Gun is only on Mob of the Dead and Nuketown.
 
 * **Black Ops 1 guns in the box:**
   * M60: Pack-a-Punches into **The Pig**
@@ -194,7 +194,7 @@ the steps, and a successful build still needs testing in game.
 * **Old-school guns in the box:**
   * MM1 Grenade Launcher, the twelve-round revolver launcher from the Black Ops II campaign. It Pack-a-Punches into the **Parasitic MIST**.
   * Browning HP Dual Wield, a Browning in each hand. It Pack-a-Punches into the **Grand Puissances**.
-  * The Browning HP Dual Wield appears on every map in classic and survival, since the 2026-10-07 gunswap round 2 put it wherever the stock Five-seveN Dual Wield used to be. The MM1 appears on the same maps and modes except classic TranZit (survival only there). It took over the War Machine's slot on Mob when the stock one came out. Neither appears in Grief or Turned.
+  * The Browning HP Dual Wield appears on every map except Mob of the Dead in classic and survival, since the 2026-10-07 gunswap round 2 put it wherever the stock Five-seveN Dual Wield used to be. The MM1 appears on every map in the same modes except classic TranZit (survival only there). It took over the War Machine's slot on Mob when the stock one came out. Neither appears in Grief or Turned.
 
 * **Reloads that don't waste your time:**
   * The Pack-a-Punched SPAS-12 loads all 24 shells in one go instead of feeding them in one by one.
@@ -255,7 +255,7 @@ the steps, and a successful build still needs testing in game.
   * Classic TranZit gets Town Survival's MP5 wall buy in the Juggernog room.
 
 * **Solo Easter Eggs:**
-  * The **SOLO EASTER EGGS** option scales the main quests on TranZit, Die Rise, Buried, Origins, and Mob of the Dead to the current player count. It is off by default and only appears in Classic mode.
+  * The **SOLO EASTER EGGS** option scales the main quests on TranZit, Die Rise, Buried and Mob of the Dead to the current player count. On Origins, whose quest already works solo, it gives players five to eight the One Inch Punch. It is off by default and only appears in Classic mode.
 
 * **Instant Pack-a-Punch:**
   * Instant Pack-a-Punch, like in Call of Duty: Black Ops Cold War Zombies. It can be turned on or off in the settings menu.
@@ -284,7 +284,7 @@ the steps, and a successful build still needs testing in game.
   * Easter egg songs show their title, and the sung ones show timed lyrics.
 
 * **Black Ops 4 Icons for players 5-8:**
-  * In a match with more than four players, players five to eight play as Reznov, Mason, Woods and Menendez from Black Ops 4, each with their own portrait in the points list. Anyone can pick one with `.character 5` to `.character 8`.
+  * Co-op matches hold up to eight players when the server allows it. Players five to eight play as Reznov, Mason, Woods and Menendez from Black Ops 4, each with their own portrait in the points list. Anyone can pick one with `.character 5` to `.character 8`.
 
 * **Scoreboard crew emblems:**
   * The scoreboard shows the correct crew emblem for each map and mode instead of a missing texture.
@@ -294,6 +294,10 @@ the steps, and a successful build still needs testing in game.
 
 * **In-game menu:**
   * Mechanics, gameplay rules, HUD and audio options are all toggleable in game, with no console commands. That includes a **VOICE LINES** switch for your character's spoken lines.
+  * In co-op, each player's visual and voice settings apply only to that player.
+
+* **Pause menu:**
+  * **INSTANT EXIT** asks once, then leaves straight to the lobby with no game-over screen. **QUIT TO DESKTOP** closes the game.
 
 * **Third person:**
   * A **THIRD PERSON** switch on the GAME 3 tab puts the camera behind your character. Off is the normal view.
