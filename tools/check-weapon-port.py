@@ -63,8 +63,8 @@ MATERIAL_KEYS = {"hudIcon", "killIcon", "ammoCounterIcon", "dpadIcon", "indicato
 
 
 def oat_dir():
-    for candidate in (os.environ.get("OAT_BASE"), r"H:\Plutonium\tools\oat-dlc5",
-                      r"H:\Plutonium\tools\oat-windows"):
+    for candidate in (os.environ.get("OAT_BASE"), r"H:\C-O-D Configuration\tools\oat-dlc5",
+                      r"H:\C-O-D Configuration\tools\oat-windows"):
         if candidate and (Path(candidate) / "Unlinker.exe").is_file():
             return Path(candidate)
     return None
