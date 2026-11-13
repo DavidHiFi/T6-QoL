@@ -1,3 +1,5 @@
+> [!IMPORTANT]
+> **This mod is no longer maintained.** I built Quality Of Life as a concept and research project, and I have moved on to other work. The releases below stay up and still run on Plutonium, but no updates or fixes are planned.
 <div align="center">
 
 <img width="3840" height="2160" alt="Quality Of Life key art for Black Ops II Zombies" src="https://github.com/user-attachments/assets/32a1cfbd-7ece-4a91-9690-82691bed24b1" />
