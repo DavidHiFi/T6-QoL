@@ -1,5 +1,5 @@
 Loaded zone "mod" (T6)
-Loaded search path "H:/Plutonium/t6/mods/zm_qol/zone_source/magmagat_donor"
+Loaded search path "H:\C-O-D Configuration/t6/mods/zm_qol/zone_source/magmagat_donor"
 Zone 'mod' (T6)
 Content:
 techniqueset, mc_lit_sm_r0c0n0s0_zqq1fze7
@@ -349,5 +349,5 @@ material, mg_gfx_spark_single_orange_em
 fx, mg/fx_prison_magmagat_press_fire
 
 Unloaded zone "mod"
-Unloaded search path "H:/Plutonium/t6/mods/zm_qol/zone_source/magmagat_donor"
+Unloaded search path "H:\C-O-D Configuration/t6/mods/zm_qol/zone_source/magmagat_donor"
 Finished with 0 warnings, 0 errors

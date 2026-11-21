@@ -25,8 +25,8 @@
 # =============================================================================
 [CmdletBinding()]
 param(
-    [string] $Mod    = 'H:\Plutonium\t6\mods\zm_qol',
-    [string] $JobDir = 'H:\Plutonium\modding-jobs\pack-merge-001',
+    [string] $Mod    = 'H:\C-O-D Configuration\T6 - Black Ops 2\mods\zm_qol',
+    [string] $JobDir = 'H:\C-O-D Configuration\modding-jobs\pack-merge-001',
     [switch] $WhatIfOnly
 )
 
