@@ -343,6 +343,17 @@ Bug reports, feature ideas and pull requests are welcome. See [CONTRIBUTING.md](
 * **Author:**
   * Myself, [DavidHiFi](https://github.com/DavidHiFi)
 
+<!-- contributors:start -->
+- **Contributors:** [SickoHours](https://github.com/SickoHours)
+- **AI coding agents:** [Claude Code](https://github.com/anthropics/claude-code), [Codex](https://github.com/openai/codex), [OpenCode](https://github.com/anomalyco/opencode) and Halo Sparks
+
+<p>
+  <a href="https://github.com/DavidHiFi"><img src="https://github.com/DavidHiFi.png?size=96" width="48" height="48" alt="DavidHiFi" title="DavidHiFi"></a>
+  <a href="https://github.com/SickoHours"><img src="https://github.com/SickoHours.png?size=96" width="48" height="48" alt="SickoHours" title="SickoHours"></a>
+  <a href="https://github.com/anthropics/claude-code"><img src="https://github.com/claude.png?size=96" width="48" height="48" alt="Claude Code" title="Claude Code"></a>
+</p>
+<!-- contributors:end -->
+
 | Who | What |
 |---|---|
 | **[Synarxis](https://github.com/Synarxis)** (inspiration) | This project wouldn't exist without their kindness & support. |
