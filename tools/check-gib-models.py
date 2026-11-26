@@ -28,7 +28,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
-STOCK = Path(os.environ.get("T6_RAW", r"H:\Plutonium\t6\t6-mod-tools\raw"))
+STOCK = Path(os.environ.get("T6_RAW", r"H:\C-O-D Configuration\T6 - Black Ops 2\t6-mod-tools\raw"))
 GIB = re.compile(r'gibspawn[1-5]\s*=\s*"([^"]+)"', re.I)
 
 

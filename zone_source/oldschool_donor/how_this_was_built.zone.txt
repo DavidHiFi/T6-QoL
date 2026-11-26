@@ -24,7 +24,7 @@ Not in here, on purpose:
   - sounds: see soundbank\mod.all.aliases.additions.csv (MM1 uses stock wpn_m32_*; the
     dual wield uses the mod's own wpn_browninghp_* chain).
 
-Tool:     H:\Plutonium\tools\oat-dlc5\Linker.exe
+Tool:     H:\C-O-D Configuration\tools\oat-dlc5\Linker.exe
 Command (Git Bash):
           export MSYS2_ARG_CONV_EXCL='*'
           B="F:/SteamLibrary/steamapps/common/Call of Duty Black Ops II/zone/all"
@@ -33,7 +33,7 @@ Command (Git Bash):
             --load "$B/zm_prison.ff" --load "$B/zm_tomb.ff" --load "$B/common_zm.ff" \
             --load "$B/patch_zm.ff" --load "$B/code_post_gfx_zm.ff" \
             --load "$B/angola.ff" --load "<MOTD zip>/zm_MOTDOldSchoolWeapons/mod.ff" \
-            --base-folder "H:/Plutonium/tools/oat-dlc5" \
+            --base-folder "H:\C-O-D Configuration/tools/oat-dlc5" \
             --add-source-search-path "<folder holding this mod.zone>" \
             --output-folder "<out>" mod
           then move out\mod.ff here. mod.ff.list.txt is the Unlinker --list of the result.

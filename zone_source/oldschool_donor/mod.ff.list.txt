@@ -56,5 +56,5 @@ xanim, viewmodel_mm1_sprint_loop
 xanim, viewmodel_mm1_sprint_out
 
 Unloaded zone "mod"
-Unloaded search path "H:/Plutonium/modding-jobs/motd-port-001/checkout/zone_source/oldschool_donor"
+Unloaded search path "H:\C-O-D Configuration/modding-jobs/motd-port-001/checkout/zone_source/oldschool_donor"
 Finished with 0 warnings, 0 errors

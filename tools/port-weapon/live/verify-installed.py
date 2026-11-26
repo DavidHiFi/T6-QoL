@@ -14,7 +14,7 @@ import zipfile
 LIVE = os.path.join(os.environ['LOCALAPPDATA'], 'Plutonium', 'storage', 't6', 'mods', 'zm_qol')
 TREE = sys.argv[1] if len(sys.argv) > 1 else r'H:\Plutonium\t6\mods\zm_qol'
 GUN = sys.argv[2] if len(sys.argv) > 2 else None
-UNLINKER = r'H:\Plutonium\tools\oat-dlc5\Unlinker.exe'
+UNLINKER = r'H:\C-O-D Configuration\tools\oat-dlc5\Unlinker.exe'
 
 
 def sha(path):

@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 REPO = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent
-DUMP = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(r"H:\Plutonium\t6\t6-mod-tools\raw\weapons")
+DUMP = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(r"H:\C-O-D Configuration\T6 - Black Ops 2\t6-mod-tools\raw\weapons")
 OUT = Path(sys.argv[3]) if len(sys.argv) > 3 else REPO / "tools" / "weapon-matrix.csv"
 
 STOCK_MAPS = ["zm_transit", "zm_nuked", "zm_highrise", "zm_prison", "zm_buried", "zm_tomb"]
