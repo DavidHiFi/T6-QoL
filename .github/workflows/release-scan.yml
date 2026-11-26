@@ -1,0 +1,25 @@
+# Adds SHA-256 checksums and VirusTotal results to every release.
+# The steps live in DavidHiFi/.github. Needs the VT_API_KEY repo secret.
+# Run it by hand for an older release: gh workflow run release-scan.yml -f tag=v1.2.3
+name: Release checksums and VirusTotal
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to scan (empty means the latest)
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    uses: DavidHiFi/.github/.github/workflows/release-scan.yml@main
+    with:
+      tag: ${{ github.event.release.tag_name || inputs.tag }}
+    secrets:
+      VT_API_KEY: ${{ secrets.VT_API_KEY }}
